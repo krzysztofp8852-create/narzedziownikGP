@@ -1,0 +1,258 @@
+:root {
+  color-scheme: dark;
+  --bg: #0e0e0e;
+  --surface: #181818;
+  --surface-raised: #202020;
+  --border: #2d2d2d;
+  --text: #f2f2f0;
+  --text-muted: #9c9c96;
+  --yellow: #ffc800;
+  --yellow-ink: #121212;
+  --danger: #ff5a4f;
+  --radius: 6px;
+  --gutter: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+/* Żółto-czarne pasy ostrzegawcze */
+.hazard {
+  height: 10px;
+  background: repeating-linear-gradient(-45deg, var(--yellow) 0 14px, var(--yellow-ink) 14px 28px);
+}
+
+/* Kod jak na tabliczce znamionowej */
+.plate {
+  display: inline-block;
+  font-family: var(--font-plate), ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--yellow);
+  color: var(--yellow-ink);
+  border: 2px solid var(--yellow-ink);
+  box-shadow: 0 0 0 1px var(--yellow);
+  border-radius: 4px;
+  padding: 1px 8px;
+  line-height: 1.4;
+}
+
+.display {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* Formularze */
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.field input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  min-height: 48px;
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 1px;
+  border-color: var(--yellow);
+}
+
+.field small {
+  color: var(--text-muted);
+}
+
+.button {
+  font: inherit;
+  font-weight: 700;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  border: 2px solid var(--yellow);
+  background: var(--yellow);
+  color: var(--yellow-ink);
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.button-quiet {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.form-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Strony logowania i zmiany hasła */
+.auth-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 32px var(--gutter);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  display: grid;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+}
+
+.auth-card form {
+  display: grid;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.brand-name {
+  font-size: 1.75rem;
+}
+
+.brand-name span {
+  color: var(--yellow);
+}
+
+/* Aplikacja */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px var(--gutter);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.app-header-company {
+  font-size: 1.35rem;
+  overflow-wrap: anywhere;
+}
+
+.app-header-user {
+  font-size: 0.85rem;
+}
+
+.app-main {
+  padding: 20px var(--gutter) 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 2rem;
+}
+
+.location {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.location-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.location-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.4rem;
+}
+
+.location-count {
+  font-family: var(--font-plate), ui-monospace, monospace;
+  font-weight: 700;
+}
+
+.empty {
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+}

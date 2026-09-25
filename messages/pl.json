@@ -1,0 +1,58 @@
+{
+  "app": {
+    "name": "NarzędziownikGP",
+    "nameLead": "Narzędziownik",
+    "nameMark": "GP",
+    "description": "Ewidencja i monitorowanie narzędzi dla firm budowlanych",
+    "vendor": "GP Engineering"
+  },
+  "defaults": {
+    "baseName": "Baza"
+  },
+  "roles": {
+    "wlasciciel": "Właściciel",
+    "magazynier": "Magazynier",
+    "kierownik": "Kierownik"
+  },
+  "login": {
+    "title": "Logowanie",
+    "email": "E-mail",
+    "password": "Hasło",
+    "submit": "Zaloguj się",
+    "submitting": "Logowanie…",
+    "invalidCredentials": "Nieprawidłowy e-mail lub hasło."
+  },
+  "changePassword": {
+    "title": "Ustaw własne hasło",
+    "intro": "Logujesz się hasłem tymczasowym. Zanim przejdziesz dalej, ustaw hasło, które znasz tylko Ty.",
+    "newPassword": "Nowe hasło",
+    "repeatPassword": "Powtórz nowe hasło",
+    "hint": "Co najmniej {min} znaków.",
+    "submit": "Zapisz hasło",
+    "submitting": "Zapisywanie…",
+    "mismatch": "Hasła nie są takie same."
+  },
+  "header": {
+    "logout": "Wyloguj"
+  },
+  "board": {
+    "title": "Gdzie jest co",
+    "baseKind": "Baza",
+    "toolCount": "{count} szt.",
+    "baseEmpty": "Na bazie nie ma jeszcze żadnych narzędzi."
+  },
+  "noAccess": {
+    "title": "Brak dostępu",
+    "body": "To konto nie jest przypisane do żadnej aktywnej firmy. Skontaktuj się z właścicielem firmy.",
+    "logout": "Wyloguj"
+  },
+  "errors": {
+    "forbidden": "Nie masz uprawnień do tej operacji.",
+    "no_access": "To konto nie ma dostępu do żadnej firmy.",
+    "password_change_required": "Najpierw ustaw własne hasło.",
+    "password_too_short": "Hasło musi mieć co najmniej {min} znaków.",
+    "invalid_input": "Sprawdź wpisane dane.",
+    "email_taken": "Ten e-mail ma już konto.",
+    "unexpected": "Coś poszło nie tak. Spróbuj ponownie."
+  }
+}
