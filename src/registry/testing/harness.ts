@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createPgDb } from "../pg-db";
 import type { Db } from "../ports";
-import { createRegistry, type Registry } from "../registry";
-import { FakeAuthAdmin, FixedClock } from "./fakes";
+import { createRegistry, type Registry, type Role } from "../registry";
+import { FakeAuthAdmin, FakePhotoStore, FixedClock } from "./fakes";
 import { createPgliteDb } from "./pglite-db";
 
 export const START = new Date("2026-03-02T07:00:00+01:00");
@@ -11,9 +11,14 @@ export interface RegistryTestbed {
   registry: Registry;
   clock: FixedClock;
   auth: FakeAuthAdmin;
+  photos: FakePhotoStore;
   db: Db;
   /** Firma z bazą i właścicielem, założona tak jak robi to skrypt. */
   givenCompany(name: string, options?: { email?: string; fullName?: string; baseName?: string }): Promise<GivenCompany>;
+  /** Jak givenCompany, ale właściciel ma już własne hasło. */
+  givenActiveCompany(name: string, options?: { baseName?: string }): Promise<GivenCompany>;
+  /** Osoba z rolą w firmie, z własnym hasłem. */
+  givenMember(company: GivenCompany, role: Role, fullName?: string): Promise<string>;
 }
 
 export interface GivenCompany {
@@ -34,17 +39,19 @@ export function setupRegistryTestbed(): RegistryTestbed {
   const clock = new FixedClock(START);
   let db: Db & { close(): Promise<void> };
   let auth: FakeAuthAdmin;
+  const photos = new FakePhotoStore();
   let registry: Registry;
 
   beforeAll(async () => {
     db = await openTestDb();
     auth = new FakeAuthAdmin(db);
-    registry = createRegistry({ db, clock, authAdmin: auth });
+    registry = createRegistry({ db, clock, authAdmin: auth, photos });
   });
 
   beforeEach(async () => {
     await resetDb(db);
     auth.clear();
+    photos.clear();
     clock.set(START);
   });
 
@@ -53,6 +60,19 @@ export function setupRegistryTestbed(): RegistryTestbed {
   });
 
   let counter = 0;
+  const givenCompany: RegistryTestbed["givenCompany"] = async (name, options = {}) => {
+    counter += 1;
+    const result = await registry.system().createCompany({
+      name,
+      baseName: options.baseName ?? "Baza",
+      owner: {
+        email: options.email ?? `wlasciciel${counter}@${slug(name)}.test`,
+        fullName: options.fullName ?? `Właściciel ${name}`,
+      },
+    });
+    return { companyId: result.companyId, ownerId: result.ownerUserId, temporaryPassword: result.temporaryPassword };
+  };
+
   return {
     get registry() {
       return registry;
@@ -64,17 +84,26 @@ export function setupRegistryTestbed(): RegistryTestbed {
       return auth;
     },
     clock,
-    async givenCompany(name, options = {}) {
+    photos,
+    givenCompany,
+    async givenActiveCompany(name, options = {}) {
+      const company = await givenCompany(name, options);
+      await registry.as(company.ownerId).changePassword(`${name}-haslo-1`);
+      return company;
+    },
+    // Dopóki właściciel nie umie dodawać osób (#4), zakładamy je bezpośrednio w bazie.
+    async givenMember(company, role, fullName = `${role} ${counter}`) {
       counter += 1;
-      const result = await registry.system().createCompany({
-        name,
-        baseName: options.baseName ?? "Baza",
-        owner: {
-          email: options.email ?? `wlasciciel${counter}@${slug(name)}.test`,
-          fullName: options.fullName ?? `Właściciel ${name}`,
-        },
-      });
-      return { companyId: result.companyId, ownerId: result.ownerUserId, temporaryPassword: result.temporaryPassword };
+      const email = `${role}${counter}@${company.companyId}.test`;
+      const { userId } = await auth.createUser({ email, password: `${role}-haslo-${counter}` });
+      await db.transaction((sql) =>
+        sql(
+          `insert into app.users (user_id, company_id, role, full_name, email, must_change_password, created_at)
+           values ($1, $2, $3, $4, $5, false, $6)`,
+          [userId, company.companyId, role, fullName, email, clock.now()],
+        ),
+      );
+      return userId;
     },
   };
 }

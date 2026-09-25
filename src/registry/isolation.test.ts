@@ -4,24 +4,18 @@ import { setupRegistryTestbed } from "./testing/harness";
 
 const testbed = setupRegistryTestbed();
 
-async function givenActiveCompany(name: string, baseName = "Baza") {
-  const company = await testbed.givenCompany(name, { baseName });
-  await testbed.registry.as(company.ownerId).changePassword(`${name}-haslo-1`);
-  return company;
-}
-
 describe("izolacja firm", () => {
   it("właściciel firmy A widzi na tablicy i w nagłówku swoją firmę, a nie firmę B", async () => {
-    const a = await givenActiveCompany("Zawbud", "Magazyn Swarzędz");
-    await givenActiveCompany("Budrex", "Magazyn Rataje");
+    const a = await testbed.givenActiveCompany("Zawbud", { baseName: "Magazyn Swarzędz" });
+    await testbed.givenActiveCompany("Budrex", { baseName: "Magazyn Rataje" });
 
     expect(await testbed.registry.as(a.ownerId).whereIsWhat()).toMatchObject({ base: { name: "Magazyn Swarzędz" } });
     expect(await testbed.registry.as(a.ownerId).session()).toMatchObject({ company: { id: a.companyId, name: "Zawbud" } });
   });
 
   it("połączenie z bazą jako użytkownik firmy A nie zwraca żadnego wiersza firmy B z żadnej tabeli", async () => {
-    const a = await givenActiveCompany("Zawbud");
-    const b = await givenActiveCompany("Budrex");
+    const a = await testbed.givenActiveCompany("Zawbud");
+    const b = await testbed.givenActiveCompany("Budrex");
     const baseB = (await testbed.registry.as(b.ownerId).whereIsWhat()).base.id;
 
     const visibleToA = await withActor(testbed.db, a.ownerId, async (sql) => {

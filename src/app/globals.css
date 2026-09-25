@@ -82,7 +82,8 @@ a {
   font-size: 0.95rem;
 }
 
-.field input {
+.field input,
+.field select {
   font: inherit;
   color: var(--text);
   background: var(--bg);
@@ -92,7 +93,12 @@ a {
   min-height: 48px;
 }
 
-.field input:focus-visible {
+.field input[type="file"] {
+  padding: 10px;
+}
+
+.field input:focus-visible,
+.field select:focus-visible {
   outline: 2px solid var(--yellow);
   outline-offset: 1px;
   border-color: var(--yellow);
@@ -122,6 +128,13 @@ a {
 .button:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
+}
+
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .button-quiet {
@@ -255,4 +268,187 @@ a {
   border-radius: var(--radius);
   padding: 14px;
   text-align: center;
+}
+
+.page-head,
+.tool-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+
+/* Lista narzędzi w lokalizacji */
+.tool-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.tool-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 10px;
+  background: var(--surface-raised);
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+
+.tool-row:hover,
+.tool-row:focus-visible {
+  outline: 1px solid var(--yellow);
+}
+
+.tool-row-name {
+  overflow-wrap: anywhere;
+}
+
+.tool-row-days {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Formularz karty narzędzia */
+.stack-form {
+  display: grid;
+  gap: 16px;
+  max-width: 640px;
+}
+
+.field-row {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.plate-input {
+  font-family: var(--font-plate), ui-monospace, monospace !important;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400 !important;
+}
+
+.checkbox input {
+  min-height: auto;
+  width: 20px;
+  height: 20px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.panel {
+  max-width: 640px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.panel[open] {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+/* Karta narzędzia */
+.plate-large {
+  font-size: 1.6rem;
+  vertical-align: middle;
+}
+
+.tool-card-body {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 760px) {
+  .tool-card-body {
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.tool-photo img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.details {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.details div {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.details dt {
+  color: var(--text-muted);
+}
+
+.details dd {
+  overflow-wrap: anywhere;
+}
+
+.history {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.history li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.history time {
+  font-family: var(--font-plate), ui-monospace, monospace;
 }
