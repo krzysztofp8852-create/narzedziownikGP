@@ -18,6 +18,20 @@ export interface AuthAdmin {
   deleteUser(userId: string): Promise<void>;
 }
 
+/** Zdjęcie przesłane przez użytkownika. */
+export interface Photo {
+  bytes: Uint8Array;
+  contentType: string;
+}
+
+/** Magazyn zdjęć narzędzi (prywatny, poza zasięgiem przeglądarki). */
+export interface PhotoStore {
+  put(path: string, photo: Photo): Promise<void>;
+  remove(path: string): Promise<void>;
+  /** Krótko ważny adres do wyświetlenia zdjęcia. */
+  url(path: string): Promise<string>;
+}
+
 export class EmailTakenError extends Error {
   constructor(email: string) {
     super(`E-mail ${email} ma już konto`);

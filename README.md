@@ -70,13 +70,20 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 ## Architektura w skrócie
 
 - `src/registry/`: moduł **Rejestr**, przez który przechodzi każdy zapis i odczyt domeny. Dostaje porty:
-  bazę (`Db`), zegar (`Clock`) i konta logowania (`AuthAdmin`).
+  bazę (`Db`), zegar (`Clock`), konta logowania (`AuthAdmin`) i magazyn zdjęć narzędzi (`PhotoStore`).
 - Dane domeny są w schemacie `app`, którego PostgREST nie wystawia. Rejestr łączy się z bazą
   bezpośrednio (`DATABASE_URL`) i na czas transakcji przyjmuje rolę `authenticated` z JWT aktora,
   więc izolację firm wymusza RLS w bazie, a nie filtr w aplikacji.
 - `messages/pl.json`: wszystkie teksty interfejsu (`t()` z `src/i18n/t.ts`).
+- Bieżąca lokalizacja narzędzia to projekcja historii ruchów, zapisywana w tej samej transakcji co ruch.
+  Historia (`app.movements`) tylko się dopisuje, czego pilnuje też wyzwalacz w bazie. Wartość narzędzia
+  leży w osobnej tabeli `app.tool_values`, którą RLS pokazuje tylko właścicielowi.
+- Zdjęcia narzędzi są w prywatnym kubełku Supabase Storage `tool-photos` (zakłada się sam przy pierwszym
+  zdjęciu). Przeglądarka nie ma do niego dostępu; serwer wydaje krótko ważne adresy tylko z karty narzędzia,
+  którą Rejestr pokazał użytkownikowi jego firmy.
 - `src/app/`: logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
-  tablica „Gdzie jest co” (`/`).
+  tablica „Gdzie jest co” (`/`), dodawanie narzędzia (`/narzedzia/nowe`), karta narzędzia
+  (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`).
 
 ## Środowiska i wdrożenie
 

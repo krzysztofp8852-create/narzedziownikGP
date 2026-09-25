@@ -5,7 +5,12 @@ export type RegistryErrorCode =
   | "password_change_required"
   | "password_too_short"
   | "invalid_input"
-  | "email_taken";
+  | "email_taken"
+  | "not_found"
+  | "code_taken"
+  | "category_taken"
+  | "prefix_taken"
+  | "invalid_photo";
 
 export class RegistryError extends Error {
   constructor(

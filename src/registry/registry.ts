@@ -1,8 +1,13 @@
 import { RegistryError } from "./errors";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Sql } from "./ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type PhotoStore, type Sql } from "./ports";
 import { generateTemporaryPassword } from "./temporary-password";
+import * as tools from "./tools";
+import type { AddToolInput, Category, EditToolInput, ToolCard, ToolOnBoard } from "./tools";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
+
+export type { AddToolInput, Category, EditToolInput, HistoryEntry, ToolCard, ToolOnBoard } from "./tools";
+export { canManageTools, canSeeValues, MAX_PHOTO_BYTES, PHOTO_CONTENT_TYPES } from "./tools";
 
 export interface Session {
   userId: string;
@@ -32,11 +37,16 @@ export interface Registry {
     session(): Promise<Session | null>;
     changePassword(newPassword: string): Promise<void>;
     whereIsWhat(): Promise<WhereIsWhat>;
+    categories(): Promise<Category[]>;
+    addCategory(input: { name: string; prefix: string }): Promise<Category>;
+    /** Kolejny wolny kod w kategorii, np. S-05. */
+    suggestCode(categoryId: string): Promise<string>;
+    addTool(input: AddToolInput): Promise<{ toolId: string; code: string }>;
+    editTool(toolId: string, input: EditToolInput): Promise<void>;
+    /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
+    toolCard(toolId: string): Promise<ToolCard | null>;
   };
 }
-
-/** Narzędzie widoczne na tablicy. Pola dojdą razem z kartą narzędzia. */
-export type ToolOnBoard = never;
 
 export interface WhereIsWhat {
   base: { id: string; name: string; tools: ToolOnBoard[] };
@@ -48,6 +58,7 @@ interface Deps {
   db: Db;
   clock: Clock;
   authAdmin: AuthAdmin;
+  photos: PhotoStore;
 }
 
 export function createRegistry(deps: Deps): Registry {
@@ -84,12 +95,44 @@ export function createRegistry(deps: Deps): Registry {
         },
         whereIsWhat: () =>
           asMember(async (sql, session) => {
-            const [base] = await sql<{ id: string; name: string }>(
-              "select id, name from app.locations where company_id = $1 and kind = 'baza'",
-              [session.company.id],
-            );
-            return { base: { id: base.id, name: base.name, tools: [] } };
+            const base = await tools.baseLocation(sql, session);
+            return { base: { ...base, tools: await tools.toolsAt(sql, base.id, deps.clock.now()) } };
           }),
+        categories: () => asMember((sql) => tools.listCategories(sql)),
+        addCategory: (input) =>
+          asMember((sql, session) => {
+            tools.requireToolManager(session);
+            return tools.addCategory(sql, session, input, deps.clock.now());
+          }),
+        suggestCode: (categoryId) => asMember((sql) => tools.suggestCode(sql, categoryId)),
+        addTool: async (input) => {
+          const attempt = () =>
+            withPhotoCleanup(deps.photos, (putPhoto) =>
+              asMember((sql, session) => {
+                tools.requireToolManager(session);
+                return tools.addTool(sql, session, input, deps.clock.now(), putPhoto);
+              }),
+            );
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
+            if (error instanceof tools.ReplayedOperationError) return attempt();
+            throw error;
+          }
+        },
+        editTool: async (toolId, input) => {
+          const { replacedPhotoPath } = await withPhotoCleanup(deps.photos, (putPhoto) =>
+            asMember((sql, session) => {
+              tools.requireToolManager(session);
+              return tools.editTool(sql, session, toolId, input, putPhoto);
+            }),
+          );
+          // Stare zdjęcie usuwamy dopiero po zatwierdzeniu zmian; nieudane usunięcie niczego nie psuje.
+          if (replacedPhotoPath) await deps.photos.remove(replacedPhotoPath).catch((error) => console.error(error));
+        },
+        toolCard: (toolId) =>
+          asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now(), deps.photos)),
       };
     },
   };
@@ -107,6 +150,20 @@ export function withActor<T>(db: Db, userId: string, fn: (sql: Sql) => Promise<T
     await sql("set local role authenticated");
     return fn(sql);
   });
+}
+
+/** Zdjęcia zapisane w trakcie nieudanej transakcji usuwamy, żeby w magazynie nie zostały sieroty. */
+async function withPhotoCleanup<T>(photos: PhotoStore, fn: (putPhoto: tools.PutPhoto) => Promise<T>): Promise<T> {
+  const uploaded: string[] = [];
+  try {
+    return await fn(async (path, photo) => {
+      await photos.put(path, photo);
+      uploaded.push(path);
+    });
+  } catch (error) {
+    await Promise.all(uploaded.map((path) => photos.remove(path).catch((cleanupError) => console.error(cleanupError))));
+    throw error;
+  }
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

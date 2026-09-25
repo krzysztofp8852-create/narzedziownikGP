@@ -39,7 +39,8 @@
     "title": "Gdzie jest co",
     "baseKind": "Baza",
     "toolCount": "{count} szt.",
-    "baseEmpty": "Na bazie nie ma jeszcze żadnych narzędzi."
+    "baseEmpty": "Na bazie nie ma jeszcze żadnych narzędzi.",
+    "addTool": "Dodaj narzędzie"
   },
   "noAccess": {
     "title": "Brak dostępu",
@@ -53,6 +54,83 @@
     "password_too_short": "Hasło musi mieć co najmniej {min} znaków.",
     "invalid_input": "Sprawdź wpisane dane.",
     "email_taken": "Ten e-mail ma już konto.",
+    "not_found": "Nie znaleziono.",
+    "code_taken": "Ten kod ma już inne narzędzie w firmie.",
+    "category_taken": "Kategoria o tej nazwie już istnieje.",
+    "prefix_taken": "Ten prefiks ma już inna kategoria.",
+    "invalid_photo": "Zdjęcie musi być plikiem JPEG, PNG lub WebP do 3 MB.",
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie."
+  },
+  "days": {
+    "one": "{count} dzień",
+    "many": "{count} dni"
+  },
+  "tools": {
+    "newTitle": "Nowe narzędzie",
+    "editTitle": "Edycja {code}",
+    "code": "Kod",
+    "codeHint": "Podpowiadamy kolejny wolny kod w kategorii. Możesz wpisać własny.",
+    "name": "Nazwa",
+    "category": "Kategoria",
+    "categoryPlaceholder": "Wybierz kategorię",
+    "brand": "Marka",
+    "model": "Model",
+    "serialNumber": "Numer seryjny",
+    "value": "Wartość (zł)",
+    "purchaseDate": "Data zakupu",
+    "photo": "Zdjęcie",
+    "photoHint": "JPEG, PNG lub WebP. Duże zdjęcia zmniejszamy przed wysłaniem.",
+    "removePhoto": "Usuń obecne zdjęcie",
+    "threshold": "Próg dni na budowie",
+    "thresholdHint": "Puste: obowiązuje próg firmy.",
+    "submitAdd": "Dodaj narzędzie",
+    "submitEdit": "Zapisz zmiany",
+    "submitting": "Zapisywanie…",
+    "cancel": "Anuluj",
+    "invalidNumber": "Wpisz liczbę, np. 3200 albo 3200,50.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Dodaj pierwszą poniżej.",
+    "categoryOption": "{name} ({prefix})"
+  },
+  "categories": {
+    "newTitle": "Nowa kategoria",
+    "name": "Nazwa kategorii",
+    "prefix": "Prefiks kodu",
+    "prefixHint": "1–4 litery, np. S dla szlifierek (S-01, S-02…).",
+    "submit": "Dodaj kategorię",
+    "submitting": "Dodawanie…",
+    "added": "Dodano kategorię {name}."
+  },
+  "toolCard": {
+    "edit": "Edytuj kartę",
+    "back": "← Wróć do tablicy",
+    "location": "Gdzie jest",
+    "inPlace": "{place}, od {days}",
+    "details": "Dane",
+    "none": "—",
+    "noPhoto": "Brak zdjęcia",
+    "photoAlt": "Zdjęcie: {name}",
+    "threshold": "Próg dni na budowie",
+    "thresholdCompany": "{days} dni (próg firmy)",
+    "thresholdOwn": "{days} dni",
+    "history": "Historia",
+    "movementTo": "→ {place}",
+    "state": "Stan",
+    "stateValue": "{state} · {registration}",
+    "movementBy": "{author} · {source}"
+  },
+  "toolState": {
+    "w_obiegu": "W obiegu",
+    "zaginione": "Zaginione",
+    "wycofane": "Wycofane"
+  },
+  "toolRegistration": {
+    "zgloszone": "Zgłoszone",
+    "zaakceptowane": "Zaakceptowane"
+  },
+  "movementKind": {
+    "przyjecie": "Przyjęcie"
+  },
+  "movementSource": {
+    "panel": "panel"
   }
 }
