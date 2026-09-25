@@ -17,6 +17,7 @@ export interface ChecklistTool {
 
 export interface ChecklistProps {
   kind: RegisteredKind;
+  /** Identyfikator pierwszej operacji; każda zmiana zaznaczenia albo budowy to nowa operacja. */
   operationId: string;
   base: { id: string; name: string };
   baseTools: ChecklistTool[];
@@ -34,6 +35,16 @@ function normalize(text: string) {
     .toLowerCase();
 }
 
+/** UUID v4; crypto.randomUUID działa tylko w bezpiecznym kontekście (HTTPS, localhost). */
+function newOperationId(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function matches(tool: ChecklistTool, query: string) {
   const wanted = normalize(query.trim());
   if (!wanted) return true;
@@ -41,9 +52,12 @@ function matches(tool: ChecklistTool, query: string) {
   return normalize(tool.name).includes(wanted) || bare(normalize(tool.code)).includes(bare(wanted));
 }
 
-export function Checklist({ kind, operationId, base, baseTools, sites }: ChecklistProps) {
+export function Checklist({ kind, operationId: firstOperationId, base, baseTools, sites }: ChecklistProps) {
   const [state, formAction, pending] = useActionState(registerMovement, {});
-  const [siteId, setSiteId] = useState(sites.length === 1 ? sites[0].id : "");
+  // Ponowne wysłanie tego samego wyboru (np. po zerwanym połączeniu) nie zdubluje ruchu, a zmiana
+  // wyboru, także na ekranie przywróconym przyciskiem Wstecz, nie zwróci poprzedniego ruchu.
+  const [operationId, setOperationId] = useState(firstOperationId);
+  const [siteId, setSiteIdState] = useState(sites.length === 1 ? sites[0].id : "");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -58,6 +72,12 @@ export function Checklist({ kind, operationId, base, baseTools, sites }: Checkli
 
   function toggle(toolId: string, checked: boolean) {
     setSelectedIds((ids) => (checked ? [...ids, toolId] : ids.filter((id) => id !== toolId)));
+    setOperationId(newOperationId());
+  }
+
+  function setSiteId(id: string) {
+    setSiteIdState(id);
+    setOperationId(newOperationId());
   }
 
   if (sites.length === 0) {
@@ -115,7 +135,7 @@ export function Checklist({ kind, operationId, base, baseTools, sites }: Checkli
                       type="checkbox"
                       checked={selectedIds.includes(tool.id)}
                       onChange={(event) => toggle(tool.id, event.target.checked)}
-                      aria-label={`${tool.code} ${tool.name}`}
+                      aria-label={t("checklist.toolLabel", { code: tool.code, name: tool.name })}
                     />
                     <span className="plate">{tool.code}</span>
                     <span className="tool-row-name">{tool.name}</span>

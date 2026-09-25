@@ -180,6 +180,26 @@ describe("uprawnienia do ruchów w bazie", () => {
   });
 });
 
+describe("ruch jest niepodzielny", () => {
+  it("do zapisanego ruchu nie da się później dopisać narzędzia, nawet własnego ruchu z pominięciem Rejestru", async () => {
+    const z = await givenZawbud();
+    const movement = await issue(z, z.nowakId, [z.s01]);
+
+    await expect(
+      withActor(testbed.db, z.nowakId, (sql) =>
+        sql("insert into app.movement_tools (movement_id, tool_id, company_id) values ($1, $2, $3)", [
+          movement.id,
+          z.s02,
+          z.zawbud.companyId,
+        ]),
+      ),
+    ).rejects.toThrow();
+
+    expect(await whereIs(z, z.s02)).toBe("Magazyn Swarzędz");
+    expect((await z.owner.recentMovements())[0].tools.map((tool) => tool.code)).toEqual(["S-01"]);
+  });
+});
+
 describe("idempotencja ruchu", () => {
   it("ponowne wysłanie z tym samym identyfikatorem operacji zwraca pierwotny ruch bez duplikatu, nawet gdy stan się zmienił", async () => {
     const z = await givenZawbud();
@@ -203,6 +223,16 @@ describe("idempotencja ruchu", () => {
 
     expect(a).toEqual(b);
     expect((await z.owner.recentMovements()).filter((movement) => movement.kind === "wydanie")).toHaveLength(1);
+  });
+
+  it("identyfikator operacji innej osoby z firmy nie zwraca jej ruchu", async () => {
+    const z = await givenZawbud();
+    const storekeeperId = await testbed.givenMember(z.zawbud, "magazynier");
+    const operationId = randomUUID();
+    await issue(z, z.nowakId, [z.s01], { operationId });
+
+    await expect(issue(z, storekeeperId, [z.s02], { operationId })).rejects.toMatchObject({ code: "invalid_input" });
+    expect(await whereIs(z, z.s02)).toBe("Magazyn Swarzędz");
   });
 
   it("ten sam identyfikator operacji w innej firmie to osobny ruch tamtej firmy", async () => {

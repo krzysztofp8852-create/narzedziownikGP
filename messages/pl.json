@@ -254,6 +254,7 @@
     "cancel": "Anuluj",
     "conflictMoved": "{code} jest teraz: {place} (przeniósł: {author}, {when}).",
     "conflictState": "{code}: {state}.",
-    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź zaznaczenie i zatwierdź ponownie."
+    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź zaznaczenie i zatwierdź ponownie.",
+    "toolLabel": "{code} {name}"
   }
 }

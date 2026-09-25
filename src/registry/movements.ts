@@ -56,6 +56,9 @@ export class MovementConflictError extends RegistryError {
   }
 }
 
+/** Równoległy ruch przeniósł narzędzie po naszym sprawdzeniu; ponowienie pokaże, kto i dokąd. */
+export class ConcurrentMoveError extends Error {}
+
 /** Kierownik rusza tylko sprzęt swoich budów; magazynier i właściciel wszystkich. */
 export function canMoveTools(session: Session, site: { manager: { id: string } }) {
   return session.role !== "kierownik" || site.manager.id === session.userId;
@@ -75,7 +78,7 @@ interface LocationRow {
 
 export async function registerMovement(sql: Sql, session: Session, input: RegisterMovementInput, now: Date): Promise<Movement> {
   if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
-  const done = await movementByOperation(sql, input.operationId);
+  const done = await movementByOperation(sql, session, input.operationId);
   if (done) return done;
 
   const occurredAt = input.occurredAt ?? now;
@@ -122,8 +125,7 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
      select $1, tool_id, $2 from unnest($3::uuid[]) as tool_id`,
     [movement.id, session.company.id, toolIds],
   ).catch((error) => {
-    // Równoległy ruch przeniósł narzędzie po naszym sprawdzeniu; ponowienie pokaże, kto i dokąd.
-    throw (error as { code?: string }).code === "GP409" ? new ReplayedOperationError() : error;
+    throw (error as { code?: string }).code === "GP409" ? new ConcurrentMoveError() : error;
   });
   return (await movementById(sql, movement.id))!;
 }
@@ -137,9 +139,15 @@ export async function recentMovements(sql: Sql, limit: number): Promise<Movement
   return movementsByIds(sql, rows.map((row) => row.id));
 }
 
-async function movementByOperation(sql: Sql, operationId: string) {
-  const [row] = await sql<{ id: string }>("select id from app.movements where client_operation_id = $1", [operationId]);
-  return row ? movementById(sql, row.id) : null;
+/** Ruch zapisany już pod tym identyfikatorem operacji. Tylko autor może go ponowić. */
+async function movementByOperation(sql: Sql, session: Session, operationId: string) {
+  const [row] = await sql<{ id: string; author_id: string }>(
+    "select id, author_id from app.movements where client_operation_id = $1",
+    [operationId],
+  );
+  if (!row) return null;
+  if (row.author_id !== session.userId) throw new RegistryError("invalid_input");
+  return movementById(sql, row.id);
 }
 
 async function movementById(sql: Sql, id: string): Promise<Movement | null> {

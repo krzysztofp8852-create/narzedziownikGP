@@ -11,7 +11,6 @@ export async function loadChecklist(kind: RegisteredKind): Promise<ChecklistProp
   const { base, sites } = await getRegistry().as(session.userId).whereIsWhat();
   return {
     kind,
-    // Nowy przy każdym otwarciu ekranu; ponowne wysłanie tego samego formularza nie zdubluje ruchu.
     operationId: randomUUID(),
     base: { id: base.id, name: base.name },
     baseTools: base.tools.map(toChecklistTool),

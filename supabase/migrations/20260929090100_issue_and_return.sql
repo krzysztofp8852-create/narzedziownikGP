@@ -46,14 +46,20 @@ create policy movement_tools_insert on app.movement_tools for insert to authenti
 -- źródłowej) tylko potwierdza lokalizację, z którą narzędzie powstało. Narzędzie
 -- musi być w obiegu, w lokalizacji źródłowej ruchu i nie może mieć ruchu
 -- późniejszego niż ten; inaczej błąd GP409 wycofuje całą transakcję.
+-- Narzędzia dopisuje się tylko w transakcji, w której powstał ruch: uprawnienia
+-- sprawdzone przy zapisie ruchu nie obejmą później cudzej czy zakończonej budowy.
 create function app.apply_movement_to_tool() returns trigger
 language plpgsql security definer set search_path = ''
 as $$
 declare
   movement record;
 begin
-  select m.from_location_id, m.to_location_id, m.occurred_at into movement
+  select m.from_location_id, m.to_location_id, m.occurred_at, m.xmin = pg_current_xact_id()::xid as is_new
+  into movement
   from app.movements m where m.id = new.movement_id;
+  if not movement.is_new then
+    raise exception 'Do zapisanego ruchu % nie można dopisać narzędzi', new.movement_id;
+  end if;
   if movement.from_location_id is null then
     return new;
   end if;

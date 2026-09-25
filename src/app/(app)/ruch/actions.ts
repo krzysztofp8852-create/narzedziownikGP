@@ -2,6 +2,7 @@
 
 import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
@@ -14,8 +15,6 @@ export interface ChecklistState {
   /** Przy odrzuceniu z powodu zmienionego stanu: co i gdzie jest teraz. */
   conflicts?: string[];
 }
-
-const dateTime = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Warsaw" });
 
 export async function registerMovement(_prev: ChecklistState, formData: FormData): Promise<ChecklistState> {
   const session = await requireSession();
@@ -42,7 +41,7 @@ export async function registerMovement(_prev: ChecklistState, formData: FormData
               code: conflict.code,
               place: conflict.location.name,
               author: conflict.movedBy,
-              when: dateTime.format(conflict.movedAt),
+              when: formatDateTime(conflict.movedAt),
             })
           : t("checklist.conflictState", { code: conflict.code, state: t(`toolState.${conflict.state}`) }),
       ),

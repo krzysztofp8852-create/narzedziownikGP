@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteManagerLabel } from "@/components/site-manager-label";
+import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -8,8 +9,6 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canManageLocations, canManageTools, type Movement, type ToolOnBoard } from "@/registry/registry";
 
 export const metadata: Metadata = { title: t("board.title") };
-
-const dateTime = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Warsaw" });
 
 function ToolList({ tools }: { tools: ToolOnBoard[] }) {
   return (
@@ -39,7 +38,7 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
         <ol className="history">
           {movements.map((movement) => (
             <li key={movement.id}>
-              <time dateTime={movement.occurredAt.toISOString()}>{dateTime.format(movement.occurredAt)}</time>
+              <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
               <strong>{t(`movementKind.${movement.kind}`)}</strong>
               <span>{movement.tools.map((tool) => tool.code).join(", ")}</span>
               <span>

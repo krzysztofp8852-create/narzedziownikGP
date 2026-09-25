@@ -280,7 +280,9 @@ export function createRegistry(deps: Deps): Registry {
             return await attempt();
           } catch (error) {
             // Równoległa transakcja zapisała tę operację albo ruszyła te narzędzia; drugie podejście to pokaże.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
+            if (error instanceof tools.ReplayedOperationError || error instanceof movements.ConcurrentMoveError) {
+              return attempt();
+            }
             throw error;
           }
         },
