@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { t } from "@/i18n/t";
 import { signIn } from "./actions";
@@ -24,6 +25,9 @@ export function LoginForm() {
       <button className="button" type="submit" disabled={pending}>
         {pending ? t("login.submitting") : t("login.submit")}
       </button>
+      <p className="auth-links">
+        <Link href="/reset-hasla">{t("login.forgotPassword")}</Link>
+      </p>
     </form>
   );
 }

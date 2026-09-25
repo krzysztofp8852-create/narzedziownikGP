@@ -1,13 +1,18 @@
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type PhotoStore, type Sql } from "./ports";
 import { generateTemporaryPassword } from "./temporary-password";
+import * as team from "./team";
+import type { NewMemberInput, TeamMember } from "./team";
 import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard, ToolOnBoard } from "./tools";
+import { EMAIL_PATTERN } from "./validation";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, ToolCard, ToolOnBoard } from "./tools";
 export { canManageTools, canSeeValues, MAX_PHOTO_BYTES, PHOTO_CONTENT_TYPES } from "./tools";
+export type { MemberRole, NewMemberInput, TeamMember } from "./team";
+export { canManageTeam, MEMBER_ROLES } from "./team";
 
 export interface Session {
   userId: string;
@@ -35,7 +40,13 @@ export interface Registry {
   /** Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. */
   as(userId: string): {
     session(): Promise<Session | null>;
-    changePassword(newPassword: string): Promise<void>;
+    /**
+     * Zamienia hasło tymczasowe na własne. `signedInAt`: kiedy aktor się zalogował (z JWT);
+     * sesja sprzed nadania obecnego hasła tymczasowego go nie zmieni.
+     */
+    changePassword(newPassword: string, signIn: { signedInAt: Date }): Promise<void>;
+    /** Nowe hasło w sesji z linku resetu hasła, otwartego (`recoveredAt`, z JWT) najwyżej godzinę temu. */
+    setPasswordFromRecoveryLink(newPassword: string, recovery: { recoveredAt: Date | null }): Promise<void>;
     whereIsWhat(): Promise<WhereIsWhat>;
     categories(): Promise<Category[]>;
     addCategory(input: { name: string; prefix: string }): Promise<Category>;
@@ -45,6 +56,14 @@ export interface Registry {
     editTool(toolId: string, input: EditToolInput): Promise<void>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
+    /** Wszystkie osoby w firmie, także dezaktywowane. Tylko właściciel. */
+    team(): Promise<TeamMember[]>;
+    /** Zakłada konto kierownika lub magazyniera z hasłem tymczasowym do przekazania osobiście. */
+    addMember(input: NewMemberInput): Promise<{ userId: string; fullName: string; email: string; temporaryPassword: string }>;
+    /** Nowe hasło tymczasowe dla kierownika lub magazyniera; przy logowaniu znowu musi ustawić własne. */
+    resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
+    /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
+    deactivateMember(memberId: string): Promise<void>;
   };
 }
 
@@ -53,6 +72,7 @@ export interface WhereIsWhat {
 }
 
 export const MIN_PASSWORD_LENGTH = 8;
+const RECOVERY_WINDOW_MS = 60 * 60 * 1000;
 
 interface Deps {
   db: Db;
@@ -81,13 +101,35 @@ export function createRegistry(deps: Deps): Registry {
       return {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
         /** Zamienia hasło tymczasowe na własne. Poza tym stanem odmawia, bo nie zna obecnego hasła. */
-        changePassword: async (newPassword) => {
+        changePassword: async (newPassword, { signedInAt }) => {
           if (newPassword.length < MIN_PASSWORD_LENGTH) throw new RegistryError("password_too_short");
           await asMember(
             async (sql, session) => {
               if (!session.mustChangePassword) throw new RegistryError("forbidden");
+              const [{ issued_at }] = await sql<{ issued_at: Date | null }>(
+                "select temporary_password_issued_at as issued_at from app.users where user_id = $1",
+                [userId],
+              );
+              // Czas logowania w JWT ma dokładność do sekundy.
+              if (issued_at && signedInAt.getTime() < Math.floor(new Date(issued_at).getTime() / 1000) * 1000) {
+                throw new RegistryError("stale_session");
+              }
               await sql("update app.users set must_change_password = false where user_id = $1", [userId]);
               // Hasło zmieniamy przed zatwierdzeniem transakcji: gdy Auth odmówi, flaga zostaje.
+              await deps.authAdmin.setPassword(userId, newPassword);
+            },
+            { allowPendingPasswordChange: true },
+          );
+        },
+        setPasswordFromRecoveryLink: async (newPassword, { recoveredAt }) => {
+          if (newPassword.length < MIN_PASSWORD_LENGTH) throw new RegistryError("password_too_short");
+          await asMember(
+            async (sql) => {
+              if (!recoveredAt || deps.clock.now().getTime() - recoveredAt.getTime() > RECOVERY_WINDOW_MS) {
+                throw new RegistryError("recovery_expired");
+              }
+              // Link z e-maila potwierdza tożsamość, więc zastępuje też hasło tymczasowe.
+              await sql("update app.users set must_change_password = false where user_id = $1", [userId]);
               await deps.authAdmin.setPassword(userId, newPassword);
             },
             { allowPendingPasswordChange: true },
@@ -133,6 +175,48 @@ export function createRegistry(deps: Deps): Registry {
         },
         toolCard: (toolId) =>
           asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now(), deps.photos)),
+        team: () =>
+          asMember((sql, session) => {
+            team.requireTeamManager(session);
+            return team.listTeam(sql);
+          }),
+        addMember: async (input) => {
+          // Uprawnienia sprawdzamy, zanim powstanie konto logowania.
+          const member = await asMember(async (_sql, session) => {
+            team.requireTeamManager(session);
+            return team.normalizeNewMember(input);
+          });
+          const temporaryPassword = generateTemporaryPassword();
+          const { userId } = await createAccount(deps, member.email, temporaryPassword);
+          try {
+            await asMember((sql, session) => {
+              team.requireTeamManager(session);
+              return team.insertMember(sql, session, userId, member, deps.clock.now());
+            });
+          } catch (error) {
+            await deps.authAdmin.deleteUser(userId).catch((cleanupError) => console.error(cleanupError));
+            throw error;
+          }
+          return { userId, fullName: member.fullName, email: member.email, temporaryPassword };
+        },
+        resetMemberPassword: (memberId) =>
+          asMember(async (sql, session) => {
+            team.requireTeamManager(session);
+            await team.requireManagedMember(sql, memberId);
+            await team.markPasswordTemporary(sql, memberId, deps.clock.now());
+            const temporaryPassword = generateTemporaryPassword();
+            // Hasło zmieniamy przed zatwierdzeniem transakcji: gdy Auth odmówi, flaga się nie zmieni.
+            await deps.authAdmin.setPassword(memberId, temporaryPassword);
+            return { temporaryPassword };
+          }),
+        deactivateMember: (memberId) =>
+          asMember(async (sql, session) => {
+            team.requireTeamManager(session);
+            await team.requireManagedMember(sql, memberId);
+            await team.deactivate(sql, memberId);
+            // Blokada przed zatwierdzeniem: gdy Auth odmówi, osoba zostaje aktywna i można ponowić.
+            await deps.authAdmin.blockSignIn(memberId);
+          }),
       };
     },
   };
@@ -166,8 +250,6 @@ async function withPhotoCleanup<T>(photos: PhotoStore, fn: (putPhoto: tools.PutP
   }
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<CreatedCompany> {
   const input = {
     name: raw.name.trim(),
@@ -179,11 +261,7 @@ async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<Creat
   }
 
   const temporaryPassword = generateTemporaryPassword();
-  const { userId } = await deps.authAdmin
-    .createUser({ email: input.owner.email, password: temporaryPassword })
-    .catch((error) => {
-      throw error instanceof EmailTakenError ? new RegistryError("email_taken") : error;
-    });
+  const { userId } = await createAccount(deps, input.owner.email, temporaryPassword);
   const now = deps.clock.now();
   try {
     const companyId = await deps.db.transaction(async (sql) => {
@@ -197,8 +275,9 @@ async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<Creat
         now,
       ]);
       await sql(
-        `insert into app.users (user_id, company_id, role, full_name, email, must_change_password, created_at)
-         values ($1, $2, 'wlasciciel', $3, $4, true, $5)`,
+        `insert into app.users (user_id, company_id, role, full_name, email, must_change_password,
+                                temporary_password_issued_at, created_at)
+         values ($1, $2, 'wlasciciel', $3, $4, true, $5, $5)`,
         [userId, company.id, input.owner.fullName, input.owner.email, now],
       );
       return company.id;
@@ -209,6 +288,13 @@ async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<Creat
     await deps.authAdmin.deleteUser(userId).catch((cleanupError) => console.error(cleanupError));
     throw error;
   }
+}
+
+/** Konto logowania; zajęty e-mail (w dowolnej firmie) to błąd Rejestru. */
+function createAccount(deps: Deps, email: string, password: string) {
+  return deps.authAdmin.createUser({ email, password }).catch((error) => {
+    throw error instanceof EmailTakenError ? new RegistryError("email_taken") : error;
+  });
 }
 
 async function loadSession(sql: Sql, userId: string): Promise<Session | null> {

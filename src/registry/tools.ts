@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { RegistryError, type RegistryErrorCode } from "./errors";
 import type { Photo, PhotoStore, Sql } from "./ports";
 import type { Session } from "./registry";
+import { UUID_PATTERN } from "./validation";
 
 export type ToolState = "w_obiegu" | "zaginione" | "wycofane";
 export type ToolRegistration = "zgloszone" | "zaakceptowane";
@@ -295,7 +296,6 @@ async function requireCategory(sql: Sql, categoryId: string) {
 
 const CODE_PATTERN = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_VALUE = 9_999_999_999.99;
 
 /** Sprawdza i porządkuje podane pola karty; pól nieobecnych (undefined) nie dotyka. */

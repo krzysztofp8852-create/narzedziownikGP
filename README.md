@@ -82,8 +82,17 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   zdjęciu). Przeglądarka nie ma do niego dostępu; serwer wydaje krótko ważne adresy tylko z karty narzędzia,
   którą Rejestr pokazał użytkownikowi jego firmy.
 - `src/app/`: logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
+  reset hasła przez e-mail (`/reset-hasla` → link → `/auth/confirm` → `/nowe-haslo`),
   tablica „Gdzie jest co” (`/`), dodawanie narzędzia (`/narzedzia/nowe`), karta narzędzia
-  (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`).
+  (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`), zespół właściciela (`/zespol`).
+- Konta kierowników i magazynierów zakłada właściciel na `/zespol` (Rejestr przez API administracyjne
+  Supabase) i dostaje hasło tymczasowe do przekazania osobiście. Dezaktywacja zostawia osobę w bazie
+  (z historią), odcina ją od danych firmy i blokuje logowanie w Supabase Auth.
+  Hasło tymczasowe może zamienić na własne tylko sesja zalogowana po jego nadaniu (czas logowania z `amr`
+  w JWT), więc sesja sprzed resetu nie przejmie konta. `/nowe-haslo` działa tylko w sesji z linku z e-maila
+  otwartego najwyżej godzinę wcześniej.
+- Sesja jest długa: token odświeżania nie wygasa, a proxy (`src/proxy.ts`) odświeża go przy każdym
+  żądaniu.
 
 ## Środowiska i wdrożenie
 
@@ -95,3 +104,11 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   serwera weryfikowany głównym CA Supabase (`src/lib/supabase-root-ca.ts`).
 - W Supabase wyłącz samodzielną rejestrację (Authentication → Sign In / Providers →
   „Allow new users to sign up”). Konta zakłada wyłącznie serwer.
+- Reset hasła przez e-mail wymaga w Supabase:
+  - szablonu Authentication → Emails → Reset Password z `supabase/templates/recovery.html`
+    (link z `token_hash` działa także w przeglądarce otwartej z aplikacji pocztowej),
+  - adresu aplikacji w Authentication → URL Configuration (Site URL, a w Redirect URLs `<adres>/auth/confirm`),
+  - własnego SMTP (np. Resend) w Authentication → Emails → SMTP Settings: wbudowana poczta Supabase
+    wysyła tylko do członków zespołu projektu i kilka wiadomości na godzinę.
+- Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
+  i „Inactivity timeout”.

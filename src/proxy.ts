@@ -2,9 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-const PUBLIC_PATHS = ["/logowanie"];
+const PUBLIC_PATHS = ["/logowanie", "/reset-hasla", "/auth/confirm"];
 
-/** Odświeża sesję Supabase w ciasteczkach i odsyła niezalogowanych do logowania. */
+/**
+ * Odświeża sesję Supabase w ciasteczkach i odsyła niezalogowanych do logowania.
+ * Sesja jest długa: token odświeżania nie wygasa, a ciasteczka żyją 400 dni (domyślnie w @supabase/ssr),
+ * więc telefon zostaje zalogowany, dopóki ktoś się nie wyloguje albo konto nie zostanie zablokowane.
+ */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 

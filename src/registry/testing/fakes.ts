@@ -22,6 +22,7 @@ export class FixedClock implements Clock {
 export class FakeAuthAdmin implements AuthAdmin {
   private passwords = new Map<string, string>();
   private emails = new Map<string, string>();
+  private blocked = new Set<string>();
 
   constructor(private db: Db) {}
 
@@ -40,15 +41,26 @@ export class FakeAuthAdmin implements AuthAdmin {
     this.passwords.set(userId, password);
   }
 
+  async blockSignIn(userId: string) {
+    if (!this.passwords.has(userId)) throw new Error(`Brak konta ${userId}`);
+    this.blocked.add(userId);
+  }
+
   async deleteUser(userId: string) {
     await this.db.transaction((sql) => sql("delete from auth.users where id = $1", [userId]));
     this.passwords.delete(userId);
     this.emails.delete(userId);
+    this.blocked.delete(userId);
   }
 
   /** Hasło, którym dana osoba zalogowałaby się teraz. */
   passwordOf(userId: string) {
     return this.passwords.get(userId);
+  }
+
+  /** Czy logowanie tego konta jest zablokowane. */
+  isBlocked(userId: string) {
+    return this.blocked.has(userId);
   }
 
   accountCount() {
@@ -58,6 +70,7 @@ export class FakeAuthAdmin implements AuthAdmin {
   clear() {
     this.passwords.clear();
     this.emails.clear();
+    this.blocked.clear();
   }
 }
 

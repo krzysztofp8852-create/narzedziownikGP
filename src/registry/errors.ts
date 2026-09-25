@@ -4,6 +4,8 @@ export type RegistryErrorCode =
   | "no_access"
   | "password_change_required"
   | "password_too_short"
+  | "stale_session"
+  | "recovery_expired"
   | "invalid_input"
   | "email_taken"
   | "not_found"

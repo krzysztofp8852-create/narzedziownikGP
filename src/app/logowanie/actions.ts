@@ -15,6 +15,7 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error?.code === "invalid_credentials") return { error: t("login.invalidCredentials"), email };
+  if (error?.code === "user_banned") return { error: t("login.accountBlocked"), email };
   if (error) {
     console.error(error);
     return { error: t("errors.unexpected"), email };
