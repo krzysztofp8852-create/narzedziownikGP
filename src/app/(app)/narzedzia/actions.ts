@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
@@ -11,6 +10,10 @@ import type { Category, EditToolInput } from "@/registry/registry";
 
 export interface ToolFormState {
   error?: string;
+  /** Dodane narzędzie; tablica czyści wtedy formularz pod następne. */
+  added?: { id: string; code: string; name: string };
+  /** Zapisane zmiany karty. */
+  saved?: boolean;
 }
 
 export interface CategoryFormState {
@@ -22,10 +25,9 @@ class InvalidNumberError extends Error {}
 
 export async function addTool(_prev: ToolFormState, formData: FormData): Promise<ToolFormState> {
   const session = await requireSession();
-  let toolId: string;
   try {
     const fields = readToolFields(formData, "add");
-    ({ toolId } = await getRegistry()
+    const { toolId, code } = await getRegistry()
       .as(session.userId)
       .addTool({
         ...fields,
@@ -33,12 +35,12 @@ export async function addTool(_prev: ToolFormState, formData: FormData): Promise
         name: fields.name ?? "",
         categoryId: fields.categoryId ?? "",
         photo: await readPhoto(formData),
-      }));
+      });
+    revalidatePath("/");
+    return { added: { id: toolId, code, name: fields.name ?? "" } };
   } catch (error) {
     return { error: formError(error) };
   }
-  revalidatePath("/");
-  redirect(`/narzedzia/${toolId}`);
 }
 
 export async function editTool(toolId: string, _prev: ToolFormState, formData: FormData): Promise<ToolFormState> {
@@ -53,7 +55,8 @@ export async function editTool(toolId: string, _prev: ToolFormState, formData: F
     return { error: formError(error) };
   }
   revalidatePath("/");
-  redirect(`/narzedzia/${toolId}`);
+  revalidatePath(`/narzedzia/${toolId}`);
+  return { saved: true };
 }
 
 export async function addCategory(_prev: CategoryFormState, formData: FormData): Promise<CategoryFormState> {

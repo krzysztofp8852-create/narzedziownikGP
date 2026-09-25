@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { type ChangeEvent, useActionState, useRef, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
@@ -30,7 +29,6 @@ interface ToolFormProps {
   /** Tylko przy dodawaniu: identyfikator operacji, dzięki któremu ponowne wysłanie nie tworzy duplikatu. */
   operationId?: string;
   submitLabel: string;
-  cancelHref: string;
 }
 
 const MAX_PHOTO_SIDE = 1600;
@@ -43,7 +41,6 @@ export function ToolForm({
   initial,
   operationId,
   submitLabel,
-  cancelHref,
 }: ToolFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
   const [categories, setCategories] = useState(initialCategories);
@@ -124,13 +121,11 @@ export function ToolForm({
             {state.error}
           </p>
         )}
+        {state.saved && !pending && <p role="status">{t("tools.saved")}</p>}
         <div className="form-actions">
           <button className="button" type="submit" disabled={pending}>
             {pending ? t("tools.submitting") : submitLabel}
           </button>
-          <Link className="button button-quiet" href={cancelHref}>
-            {t("tools.cancel")}
-          </Link>
         </div>
       </form>
       <CategoryForm

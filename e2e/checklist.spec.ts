@@ -8,7 +8,7 @@ function seedCompany() {
   return JSON.parse(output.trim().split("\n").at(-1)!) as { companyName: string; email: string; password: string };
 }
 
-test("kierownik wydaje dwie szlifierki z bazy przez checklistę i widzi je na swojej budowie", async ({ page }) => {
+test("kierownik wydaje dwie szlifierki z bazy checklistą na tablicy i widzi je na swojej budowie", async ({ page }) => {
   const company = seedCompany();
 
   await page.goto("/logowanie");
@@ -17,8 +17,7 @@ test("kierownik wydaje dwie szlifierki z bazy przez checklistę i widzi je na sw
   await page.getByRole("button", { name: "Zaloguj się" }).click();
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 
-  await page.getByRole("link", { name: "Wydaj z bazy" }).click();
-  await expect(page).toHaveURL(/\/ruch\/wydanie$/);
+  await page.getByRole("button", { name: "Wydaj z bazy" }).click();
   const confirm = page.getByRole("button", { name: "Zatwierdź ✓" });
   await expect(confirm).toBeDisabled();
 
@@ -33,6 +32,8 @@ test("kierownik wydaje dwie szlifierki z bazy przez checklistę i widzi je na sw
 
   await confirm.click();
 
+  // Checklista zostaje na tablicy, pusta i gotowa na następny ruch.
+  await expect(page.getByRole("status")).toHaveText("Zapisano: S-01, S-02 → Rataje");
   await expect(page).toHaveURL(/\/$/);
   const rataje = page.getByRole("region", { name: "Budowa Rataje" });
   await expect(rataje.getByRole("link", { name: /S-01/ })).toContainText("0 dni");

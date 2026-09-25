@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
-import { canManageTools } from "@/registry/registry";
+import { getRegistry } from "@/lib/registry-instance";
+import { canManageTools, canSeeValues, MAX_PHOTO_BYTES } from "@/registry/registry";
+import { editTool } from "../actions";
+import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
 
 const money = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
@@ -17,6 +20,7 @@ export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Pro
 export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) {
   const { session, card } = await loadToolCard((await props.params).id);
   if (!card) notFound();
+  const categories = canManageTools(session) ? await getRegistry().as(session.userId).categories() : [];
 
   const none = t("toolCard.none");
   const details: [label: string, value: string][] = [
@@ -46,11 +50,6 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
         <h1 className="display page-title">
           <span className="plate plate-large">{card.code}</span> {card.name}
         </h1>
-        {canManageTools(session) && (
-          <Link className="button button-quiet" href={`/narzedzia/${card.id}/edycja`}>
-            {t("toolCard.edit")}
-          </Link>
-        )}
       </div>
 
       <section className="location" aria-label={t("toolCard.location")}>
@@ -84,6 +83,31 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
           </dl>
         </section>
       </div>
+
+      {canManageTools(session) && (
+        <details className="panel">
+          <summary className="panel-summary">{t("toolCard.edit")}</summary>
+          <ToolForm
+            action={editTool.bind(null, card.id)}
+            categories={categories}
+            showOwnerFields={canSeeValues(session)}
+            maxPhotoBytes={MAX_PHOTO_BYTES}
+            initial={{
+              code: card.code,
+              name: card.name,
+              categoryId: card.category.id,
+              brand: card.brand ?? "",
+              model: card.model ?? "",
+              serialNumber: card.serialNumber ?? "",
+              value: card.value == null ? "" : String(card.value).replace(".", ","),
+              purchaseDate: card.purchaseDate ?? "",
+              alarmThresholdDays: card.alarmThresholdDays == null ? "" : String(card.alarmThresholdDays),
+              hasPhoto: card.photoUrl !== null,
+            }}
+            submitLabel={t("tools.submitEdit")}
+          />
+        </details>
+      )}
 
       <section aria-labelledby="history">
         <h2 id="history" className="display section-title">

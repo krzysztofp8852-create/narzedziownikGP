@@ -1,16 +1,11 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { requireSession } from "@/lib/auth";
-import { getRegistry } from "@/lib/registry-instance";
-import { canMoveTools, type RegisteredKind, type ToolOnBoard } from "@/registry/registry";
-import type { ChecklistProps, ChecklistTool } from "./checklist";
+import { canMoveTools, type Session, type ToolOnBoard, type WhereIsWhat } from "@/registry/registry";
+import type { ChecklistData, ChecklistTool } from "./checklist";
 
-/** Dane checklisty: narzędzia bazy i budowy, na które (lub z których) aktor może ruszać sprzęt, najpierw jego. */
-export async function loadChecklist(kind: RegisteredKind): Promise<ChecklistProps> {
-  const session = await requireSession();
-  const { base, sites } = await getRegistry().as(session.userId).whereIsWhat();
+/** Dane checklist z tablicy: narzędzia bazy i budowy, na które (lub z których) aktor może ruszać sprzęt, najpierw jego. */
+export function checklistData(session: Session, { base, sites }: WhereIsWhat): ChecklistData {
   return {
-    kind,
     operationId: randomUUID(),
     base: { id: base.id, name: base.name },
     baseTools: base.tools.map(toChecklistTool),

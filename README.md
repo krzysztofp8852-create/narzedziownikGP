@@ -83,10 +83,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   którą Rejestr pokazał użytkownikowi jego firmy.
 - `src/app/`: logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
   reset hasła przez e-mail (`/reset-hasla` → link → `/auth/confirm` → `/nowe-haslo`),
-  tablica „Gdzie jest co” (`/`), dodawanie narzędzia (`/narzedzia/nowe`), karta narzędzia
-  (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`), zespół właściciela (`/zespol`),
-  budowy i serwisy właściciela (`/lokalizacje`), checklisty „Wydaj z bazy” (`/ruch/wydanie`)
-  i „Zwróć na bazę” (`/ruch/zwrot`).
+  tablica „Gdzie jest co” (`/`) i karta narzędzia z edycją (`/narzedzia/<id>`). Tablica to jeden
+  ekran na wszystko: panel operacji (checklisty „Wydaj z bazy” i „Zwróć na bazę”, dodawanie narzędzia),
+  baza i budowy z listą narzędzi, ostatnie ruchy, a dla właściciela także dodawanie budowy, zmiana
+  kierownika, serwisy i zespół. Na komputerze panel operacji stoi obok tablicy, na telefonie nad nią.
 - Ruchy: polecenie Rejestru `registerMovement` (wydanie, zwrot) niesie identyfikator operacji klienta
   (ponowne wysłanie zwraca pierwotny ruch) i oczekiwaną lokalizację źródłową narzędzi. Gdy któreś
   narzędzie jest gdzie indziej, cały ruch jest odrzucany (`MovementConflictError`: gdzie jest i kto je

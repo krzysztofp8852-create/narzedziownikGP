@@ -1,7 +1,6 @@
 "use server";
 
 import { refresh, revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -14,15 +13,18 @@ export interface ChecklistState {
   error?: string;
   /** Przy odrzuceniu z powodu zmienionego stanu: co i gdzie jest teraz. */
   conflicts?: string[];
+  /** Zapisany ruch: operacja, którą checklista właśnie zatwierdziła. */
+  done?: { operationId: string };
 }
 
 export async function registerMovement(_prev: ChecklistState, formData: FormData): Promise<ChecklistState> {
   const session = await requireSession();
+  const operationId = formText(formData, "operationId");
   try {
     await getRegistry()
       .as(session.userId)
       .registerMovement({
-        operationId: formText(formData, "operationId"),
+        operationId,
         kind: formText(formData, "kind") as RegisteredKind,
         fromLocationId: formText(formData, "fromLocationId"),
         toLocationId: formText(formData, "toLocationId"),
@@ -48,5 +50,5 @@ export async function registerMovement(_prev: ChecklistState, formData: FormData
     };
   }
   revalidatePath("/");
-  redirect("/");
+  return { done: { operationId } };
 }

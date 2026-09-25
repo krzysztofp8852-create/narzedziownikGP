@@ -1,18 +1,35 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { randomUUID } from "node:crypto";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageLocations, canManageTools, type Movement, type ToolOnBoard } from "@/registry/registry";
+import {
+  canManageLocations,
+  canManageTeam,
+  canManageTools,
+  canSeeValues,
+  MAX_PHOTO_BYTES,
+  type Movement,
+  type Site,
+  type SiteManagerCandidate,
+  type ToolOnBoard,
+} from "@/registry/registry";
+import { changeSiteManager } from "./lokalizacje/actions";
+import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
+import { ServicesSection } from "./lokalizacje/services-section";
+import { OperationsPanel } from "./operations-panel";
+import { checklistData } from "./ruch/load-checklist";
+import { TeamSection } from "./zespol/team-section";
 
 export const metadata: Metadata = { title: t("board.title") };
 
-function ToolList({ tools }: { tools: ToolOnBoard[] }) {
+function ToolList({ tools, wide }: { tools: ToolOnBoard[]; wide?: boolean }) {
   return (
-    <ul className="tool-list">
+    <ul className={wide ? "tool-list tool-list-wide" : "tool-list"}>
       {tools.map((tool) => (
         <li key={tool.id}>
           <Link href={`/narzedzia/${tool.id}`} className="tool-row">
@@ -28,14 +45,14 @@ function ToolList({ tools }: { tools: ToolOnBoard[] }) {
 
 function RecentMovements({ movements }: { movements: Movement[] }) {
   return (
-    <section aria-labelledby="recent-movements">
+    <section className="recent" aria-labelledby="recent-movements">
       <h2 id="recent-movements" className="display section-title">
         {t("board.recentTitle")}
       </h2>
       {movements.length === 0 ? (
         <p className="empty">{t("board.recentEmpty")}</p>
       ) : (
-        <ol className="history">
+        <ol className="history history-compact">
           {movements.map((movement) => (
             <li key={movement.id}>
               <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
@@ -57,72 +74,159 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
   );
 }
 
+function SiteCard({ site, managers }: { site: Site & { tools: ToolOnBoard[] }; managers: SiteManagerCandidate[] | null }) {
+  return (
+    <section className="location location-site" aria-labelledby={`location-${site.id}`}>
+      <div className="location-head">
+        <h3 id={`location-${site.id}`} className="display location-name">
+          <span className="plate">{t("board.siteKind")}</span>
+          {site.name}
+        </h3>
+        <span className="location-count">{t("board.toolCount", { count: site.tools.length })}</span>
+      </div>
+      <div className="location-details">
+        <p className="muted">{site.address}</p>
+        <p>
+          <SiteManagerLabel manager={site.manager} />
+        </p>
+      </div>
+      {site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />}
+      {managers && managers.length > 0 && (
+        <details className="location-more">
+          <summary>{t("locations.changeManager")}</summary>
+          <ChangeManagerForm action={changeSiteManager.bind(null, site.id)} site={site} managers={managers} />
+        </details>
+      )}
+    </section>
+  );
+}
+
+function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
+  return (
+    <details className="location location-add">
+      <summary className="panel-summary">{t("board.addSite")}</summary>
+      {managers.length === 0 ? (
+        <div className="stack-form">
+          <p className="empty">{t("locations.noManagers")}</p>
+          <p>
+            <a className="button button-quiet" href="#zespol">
+              {t("locations.goToTeam")}
+            </a>
+          </p>
+        </div>
+      ) : (
+        <AddSiteForm managers={managers} />
+      )}
+    </details>
+  );
+}
+
 export default async function BoardPage() {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
-  const [{ base, sites }, movements] = await Promise.all([registry.whereIsWhat(), registry.recentMovements()]);
+  const ownsLocations = canManageLocations(session);
+  const [board, movements, locations, managers, members, categories] = await Promise.all([
+    registry.whereIsWhat(),
+    registry.recentMovements(),
+    ownsLocations ? registry.locations() : null,
+    ownsLocations ? registry.siteManagerCandidates() : null,
+    canManageTeam(session) ? registry.team() : null,
+    canManageTools(session) ? registry.categories() : null,
+  ]);
+  const { base, sites } = board;
+  const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
+  const finishedSites = locations?.sites.filter((site) => site.status === "zakonczona") ?? [];
 
   return (
-    <>
-      <div className="page-head">
-        <h1 className="display page-title">{t("board.title")}</h1>
-        <div className="form-actions">
-          <Link className="button" href="/ruch/wydanie">
-            {t("board.issue")}
-          </Link>
-          <Link className="button" href="/ruch/zwrot">
-            {t("board.return")}
-          </Link>
-          {canManageTools(session) && (
-            <Link className="button button-quiet" href="/narzedzia/nowe">
-              {t("board.addTool")}
-            </Link>
-          )}
-        </div>
-      </div>
-      <section className="location" aria-labelledby="location-base">
-        <div className="location-head">
-          <h2 id="location-base" className="display location-name">
-            <span className="plate">{t("board.baseKind")}</span>
-            {base.name}
-          </h2>
-          <span className="location-count">{t("board.toolCount", { count: base.tools.length })}</span>
-        </div>
-        {base.tools.length === 0 ? <p className="empty">{t("board.baseEmpty")}</p> : <ToolList tools={base.tools} />}
-      </section>
-      {sites.length === 0 ? (
-        <div className="empty">
-          <p>{t("board.noSites")}</p>
-          {canManageLocations(session) && (
-            <p>
-              <Link href="/lokalizacje">{t("board.addSite")}</Link>
-            </p>
-          )}
-        </div>
-      ) : (
-        sites.map((site) => (
-          <section key={site.id} className="location location-site" aria-labelledby={`location-${site.id}`}>
+    <div className="board">
+      <div className="board-main">
+        <section className="where" aria-labelledby="board-title">
+          <div className="page-head">
+            <h1 id="board-title" className="display page-title">
+              {t("board.title")}
+            </h1>
+            <dl className="stats">
+              <div>
+                <dt>{t("board.statBase")}</dt>
+                <dd>{base.tools.length}</dd>
+              </div>
+              <div>
+                <dt>{t("board.statSites")}</dt>
+                <dd>{onSites}</dd>
+              </div>
+              <div>
+                <dt>{t("board.statSiteCount")}</dt>
+                <dd>{sites.length}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <section className="location" aria-labelledby="location-base">
             <div className="location-head">
-              <h2 id={`location-${site.id}`} className="display location-name">
-                <span className="plate">{t("board.siteKind")}</span>
-                {site.name}
+              <h2 id="location-base" className="display location-name">
+                <span className="plate">{t("board.baseKind")}</span>
+                {base.name}
               </h2>
-              <span className="location-meta">
-                <span className="location-status">{t(`siteStatus.${site.status}`)}</span>
-                <span className="location-count">{t("board.toolCount", { count: site.tools.length })}</span>
-              </span>
+              <span className="location-count">{t("board.toolCount", { count: base.tools.length })}</span>
             </div>
-            <div className="location-details">
-              <p className="muted">{site.address}</p>
-              <p>
-                <SiteManagerLabel manager={site.manager} />
-              </p>
-            </div>
-            {site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />}
+            {base.tools.length === 0 ? <p className="empty">{t("board.baseEmpty")}</p> : <ToolList tools={base.tools} wide />}
           </section>
-        ))
-      )}
-      <RecentMovements movements={movements} />
-    </>
+
+          <div className="site-grid">
+            {sites.length === 0 && !managers && (
+              <div className="empty">
+                <p>{t("board.noSites")}</p>
+              </div>
+            )}
+            {sites.map((site) => (
+              <SiteCard key={site.id} site={site} managers={managers} />
+            ))}
+            {managers && <AddSiteTile managers={managers} />}
+          </div>
+        </section>
+
+        {(locations || members) && (
+          <section className="company" aria-labelledby="company-title">
+            <h2 id="company-title" className="display section-title">
+              {t("board.companyTitle")}
+            </h2>
+            <div className="company-grid">
+              {members && <TeamSection session={session} members={members} />}
+              {locations && <ServicesSection services={locations.services} />}
+              {finishedSites.length > 0 && (
+                <section className="company-card" aria-labelledby="finished-sites">
+                  <h3 id="finished-sites" className="display section-title">
+                    {t("board.finishedSites")}
+                  </h3>
+                  <ul className="member-list">
+                    {finishedSites.map((site) => (
+                      <li key={site.id} className="member member-inactive">
+                        <strong>{site.name}</strong>
+                        <p className="muted member-email">{site.address}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <aside className="board-side" aria-label={t("board.sidebar")}>
+        <OperationsPanel
+          checklist={checklistData(session, board)}
+          newTool={
+            categories && {
+              categories,
+              showOwnerFields: canSeeValues(session),
+              maxPhotoBytes: MAX_PHOTO_BYTES,
+              operationId: randomUUID(),
+            }
+          }
+        />
+        <RecentMovements movements={movements} />
+      </aside>
+    </div>
   );
 }
