@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { RegistryError, type RegistryErrorCode } from "./errors";
+import type { MovementKind, MovementSource } from "./movements";
 import type { Photo, PhotoStore, Sql } from "./ports";
 import type { Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
@@ -74,8 +75,8 @@ export interface ToolCard {
 }
 
 export interface HistoryEntry {
-  kind: "przyjecie";
-  source: "panel";
+  kind: MovementKind;
+  source: MovementSource;
   occurredAt: Date;
   author: string;
   from: string | null;
@@ -329,19 +330,32 @@ function isCalendarDate(text: string) {
   return date.toISOString().slice(0, 10) === text;
 }
 
-export async function toolsAt(sql: Sql, locationId: string, now: Date): Promise<ToolOnBoard[]> {
-  const rows = await sql<{ id: string; code: string; name: string; registration: ToolRegistration; located_since: Date }>(
-    `select id, code, name, registration, located_since from app.tools
-     where location_id = $1 and state = 'w_obiegu' order by code`,
-    [locationId],
+/** Narzędzia w obiegu według lokalizacji, po kodzie. */
+export async function toolsByLocation(sql: Sql, now: Date): Promise<Map<string, ToolOnBoard[]>> {
+  const rows = await sql<{
+    id: string;
+    code: string;
+    name: string;
+    registration: ToolRegistration;
+    location_id: string;
+    located_since: Date;
+  }>(
+    `select id, code, name, registration, location_id, located_since from app.tools
+     where state = 'w_obiegu' order by code`,
   );
-  return rows.map((row) => ({
-    id: row.id,
-    code: row.code,
-    name: row.name,
-    registration: row.registration,
-    daysInPlace: daysSince(row.located_since, now),
-  }));
+  const byLocation = new Map<string, ToolOnBoard[]>();
+  for (const row of rows) {
+    const tools = byLocation.get(row.location_id) ?? [];
+    tools.push({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      registration: row.registration,
+      daysInPlace: daysSince(row.located_since, now),
+    });
+    byLocation.set(row.location_id, tools);
+  }
+  return byLocation;
 }
 
 export async function toolCard(
@@ -389,7 +403,7 @@ export async function toolCard(
   );
   if (!row) return null;
 
-  const history = await sql<{ kind: "przyjecie"; source: "panel"; occurred_at: Date; author: string; from_name: string | null; to_name: string | null }>(
+  const history = await sql<{ kind: MovementKind; source: MovementSource; occurred_at: Date; author: string; from_name: string | null; to_name: string | null }>(
     `select m.kind, m.source, m.occurred_at, u.full_name as author, lf.name as from_name, lt.name as to_name
      from app.movement_tools mt
      join app.movements m on m.id = mt.movement_id
@@ -397,7 +411,7 @@ export async function toolCard(
      left join app.locations lf on lf.id = m.from_location_id
      left join app.locations lt on lt.id = m.to_location_id
      where mt.tool_id = $1
-     order by m.occurred_at desc, m.recorded_at desc`,
+     order by m.occurred_at desc, m.recorded_at desc, m.sequence_number desc`,
     [toolId],
   );
 
@@ -445,7 +459,7 @@ async function uniqueOr<T>(query: Promise<T>): Promise<T> {
   }
 }
 
-function isUniqueViolation(error: unknown, constraint: string) {
+export function isUniqueViolation(error: unknown, constraint: string) {
   const { code, constraint: violated } = error as { code?: string; constraint?: string };
   return code === "23505" && violated === constraint;
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { canManageTools } from "@/registry/registry";
@@ -8,8 +9,6 @@ import { loadToolCard } from "./load-tool-card";
 
 const money = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 const date = new Intl.DateTimeFormat("pl-PL", { dateStyle: "long", timeZone: "Europe/Warsaw" });
-const dateTime = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Warsaw" });
-
 export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Promise<Metadata> {
   const { card } = await loadToolCard((await props.params).id);
   return { title: card ? `${card.code} ${card.name}` : undefined };
@@ -93,7 +92,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
         <ol className="history">
           {card.history.map((entry, index) => (
             <li key={index}>
-              <time dateTime={entry.occurredAt.toISOString()}>{dateTime.format(entry.occurredAt)}</time>
+              <time dateTime={entry.occurredAt.toISOString()}>{formatDateTime(entry.occurredAt)}</time>
               <strong>{t(`movementKind.${entry.kind}`)}</strong>
               {entry.to && <span>{t("toolCard.movementTo", { place: entry.to })}</span>}
               <span className="muted">

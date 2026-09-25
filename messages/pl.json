@@ -67,7 +67,13 @@
     "managerInactive": "{name} (konto dezaktywowane)",
     "siteEmpty": "Na tej budowie nie ma jeszcze narzędzi.",
     "noSites": "Nie ma aktywnych budów.",
-    "addSite": "Dodaj budowę"
+    "addSite": "Dodaj budowę",
+    "issue": "Wydaj z bazy",
+    "return": "Zwróć na bazę",
+    "recentTitle": "Ostatnie ruchy",
+    "recentEmpty": "Nie ma jeszcze żadnych ruchów.",
+    "movementRoute": "{from} → {to}",
+    "movementBy": "{author} · {source}"
   },
   "team": {
     "title": "Zespół",
@@ -116,7 +122,8 @@
     "invalid_photo": "Zdjęcie musi być plikiem JPEG, PNG lub WebP do 3 MB.",
     "invalid_manager": "Kierownikiem budowy może być tylko aktywny kierownik z Twojej firmy.",
     "site_finished": "Ta budowa jest zakończona.",
-    "unexpected": "Coś poszło nie tak. Spróbuj ponownie."
+    "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
+    "movement_conflict": "Ruch odrzucony: stan narzędzi zmienił się w międzyczasie. Nic nie zostało zapisane."
   },
   "days": {
     "one": "{count} dzień",
@@ -185,10 +192,13 @@
     "zaakceptowane": "Zaakceptowane"
   },
   "movementKind": {
-    "przyjecie": "Przyjęcie"
+    "przyjecie": "Przyjęcie",
+    "wydanie": "Wydanie",
+    "zwrot": "Zwrot"
   },
   "movementSource": {
-    "panel": "panel"
+    "panel": "panel",
+    "checklista": "checklista"
   },
   "locations": {
     "title": "Lokalizacje",
@@ -220,5 +230,31 @@
   "siteStatus": {
     "aktywna": "Aktywna",
     "zakonczona": "Zakończona"
+  },
+  "checklist": {
+    "issueTitle": "Wydaj z bazy",
+    "returnTitle": "Zwróć na bazę",
+    "tools": "Narzędzia",
+    "search": "Szukaj po nazwie lub kodzie",
+    "searchPlaceholder": "np. szlifierka albo S-01",
+    "noToolsAtBase": "Na bazie nie ma narzędzi do wydania.",
+    "noToolsAtSite": "Na tej budowie nie ma narzędzi.",
+    "noMatches": "Żadne narzędzie nie pasuje do wyszukiwania.",
+    "chooseSiteFirst": "Najpierw wybierz budowę.",
+    "siteTo": "Na budowę",
+    "siteFrom": "Z budowy",
+    "mine": "moja",
+    "noSites": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
+    "noSitesToReturn": "Nie ma budowy, z której możesz zwracać sprzęt.",
+    "selected": "Zaznaczone: {count}",
+    "summaryEmpty": "Zaznacz narzędzia i wybierz budowę.",
+    "summary": "{codes} → {place}",
+    "confirm": "Zatwierdź ✓",
+    "confirming": "Zapisywanie…",
+    "cancel": "Anuluj",
+    "conflictMoved": "{code} jest teraz: {place} (przeniósł: {author}, {when}).",
+    "conflictState": "{code}: {state}.",
+    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź zaznaczenie i zatwierdź ponownie.",
+    "toolLabel": "{code} {name}"
   }
 }
