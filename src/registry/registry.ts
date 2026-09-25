@@ -1,5 +1,7 @@
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type PhotoStore, type Sql } from "./ports";
+import * as locations from "./locations";
+import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
 import { generateTemporaryPassword } from "./temporary-password";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
@@ -11,6 +13,8 @@ export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, ToolCard, ToolOnBoard } from "./tools";
 export { canManageTools, canSeeValues, MAX_PHOTO_BYTES, PHOTO_CONTENT_TYPES } from "./tools";
+export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
+export { canManageLocations } from "./locations";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 
@@ -64,11 +68,23 @@ export interface Registry {
     resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
     /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
     deactivateMember(memberId: string): Promise<void>;
+    /** Budowy (także zakończone) i serwisy firmy. */
+    locations(): Promise<{ sites: Site[]; services: Service[] }>;
+    /** Aktywni kierownicy, którym można przypisać budowę. Tylko właściciel. */
+    siteManagerCandidates(): Promise<SiteManagerCandidate[]>;
+    /** Nowa aktywna budowa z kierownikiem. Tylko właściciel. */
+    addSite(input: NewSiteInput): Promise<{ locationId: string }>;
+    /** Przekazuje budowę innemu aktywnemu kierownikowi. Tylko właściciel. */
+    changeSiteManager(siteId: string, managerId: string): Promise<void>;
+    /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
+    addService(input: { name: string }): Promise<{ locationId: string }>;
   };
 }
 
 export interface WhereIsWhat {
   base: { id: string; name: string; tools: ToolOnBoard[] };
+  /** Aktywne budowy; narzędzia na budowach pojawią się razem z ruchami. */
+  sites: Site[];
 }
 
 export const MIN_PASSWORD_LENGTH = 8;
@@ -138,7 +154,10 @@ export function createRegistry(deps: Deps): Registry {
         whereIsWhat: () =>
           asMember(async (sql, session) => {
             const base = await tools.baseLocation(sql, session);
-            return { base: { ...base, tools: await tools.toolsAt(sql, base.id, deps.clock.now()) } };
+            return {
+              base: { ...base, tools: await tools.toolsAt(sql, base.id, deps.clock.now()) },
+              sites: await locations.sites(sql, { activeOnly: true }),
+            };
           }),
         categories: () => asMember((sql) => tools.listCategories(sql)),
         addCategory: (input) =>
@@ -216,6 +235,31 @@ export function createRegistry(deps: Deps): Registry {
             await team.deactivate(sql, memberId);
             // Blokada przed zatwierdzeniem: gdy Auth odmówi, osoba zostaje aktywna i można ponowić.
             await deps.authAdmin.blockSignIn(memberId);
+          }),
+        locations: () =>
+          asMember(async (sql) => ({
+            sites: await locations.sites(sql, { activeOnly: false }),
+            services: await locations.services(sql),
+          })),
+        siteManagerCandidates: () =>
+          asMember((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.siteManagerCandidates(sql);
+          }),
+        addSite: (input) =>
+          asMember((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.addSite(sql, session, input, deps.clock.now());
+          }),
+        changeSiteManager: (siteId, managerId) =>
+          asMember((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.changeSiteManager(sql, siteId, managerId);
+          }),
+        addService: (input) =>
+          asMember((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.addService(sql, session, input, deps.clock.now());
           }),
       };
     },

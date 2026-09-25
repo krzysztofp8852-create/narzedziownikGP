@@ -12,7 +12,9 @@ export type RegistryErrorCode =
   | "code_taken"
   | "category_taken"
   | "prefix_taken"
-  | "invalid_photo";
+  | "invalid_photo"
+  | "invalid_manager"
+  | "site_finished";
 
 export class RegistryError extends Error {
   constructor(

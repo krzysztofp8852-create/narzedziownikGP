@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { type ChangeEvent, type FormEvent, startTransition, useActionState, useRef, useState, useTransition } from "react";
+import { type ChangeEvent, useActionState, useRef, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
+import { submitKeepingValues } from "@/lib/forms";
 import type { Category } from "@/registry/registry";
 import { addCategory, type CategoryFormState, suggestCode, type ToolFormState } from "./actions";
 
@@ -269,18 +270,6 @@ function CategoryForm({ onAdded }: { onAdded: (category: Category) => void }) {
       </form>
     </details>
   );
-}
-
-/**
- * Wysyła formularz do akcji bez `<form action>`, bo React czyści wtedy pola po każdej
- * odpowiedzi, także po błędzie, a karta narzędzia ma ich sporo.
- */
-function submitKeepingValues(formAction: (formData: FormData) => void) {
-  return (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => formAction(formData));
-  };
 }
 
 /** Pierwsza litera nazwy bez polskich znaków: „Łaty” → L. */

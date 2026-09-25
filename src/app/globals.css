@@ -288,6 +288,28 @@ a.button {
   font-weight: 700;
 }
 
+.location-site {
+  border-left-color: var(--text-muted);
+}
+
+.location-status {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.location-details {
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
 .empty {
   color: var(--text-muted);
   border: 1px dashed var(--border);
@@ -512,6 +534,12 @@ a.button {
 
 .member-status {
   font-size: 0.9rem;
+}
+
+.site-manager-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .member-actions,

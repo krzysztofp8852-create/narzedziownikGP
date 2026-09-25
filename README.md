@@ -84,7 +84,12 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - `src/app/`: logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
   reset hasła przez e-mail (`/reset-hasla` → link → `/auth/confirm` → `/nowe-haslo`),
   tablica „Gdzie jest co” (`/`), dodawanie narzędzia (`/narzedzia/nowe`), karta narzędzia
-  (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`), zespół właściciela (`/zespol`).
+  (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`), zespół właściciela (`/zespol`),
+  budowy i serwisy właściciela (`/lokalizacje`).
+- Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
+  i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
+  aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu
+  budowy: tablica oznacza wtedy konto jako dezaktywowane, a właściciel przekazuje budowę komuś innemu.
 - Konta kierowników i magazynierów zakłada właściciel na `/zespol` (Rejestr przez API administracyjne
   Supabase) i dostaje hasło tymczasowe do przekazania osobiście. Dezaktywacja zostawia osobę w bazie
   (z historią), odcina ją od danych firmy i blokuje logowanie w Supabase Auth.

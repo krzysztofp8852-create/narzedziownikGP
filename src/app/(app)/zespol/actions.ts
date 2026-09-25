@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
+import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
 import type { MemberRole } from "@/registry/registry";
 
@@ -23,10 +24,10 @@ export async function addMember(_prev: AddMemberState, formData: FormData): Prom
     const added = await getRegistry()
       .as(session.userId)
       .addMember({
-        firstName: text(formData, "firstName"),
-        lastName: text(formData, "lastName"),
-        email: text(formData, "email"),
-        role: text(formData, "role") as MemberRole,
+        firstName: formText(formData, "firstName"),
+        lastName: formText(formData, "lastName"),
+        email: formText(formData, "email"),
+        role: formText(formData, "role") as MemberRole,
       });
     revalidatePath("/zespol");
     return { added };
@@ -55,9 +56,4 @@ export async function deactivateMember(memberId: string): Promise<MemberActionSt
   } catch (error) {
     return { error: errorMessage(error) };
   }
-}
-
-function text(formData: FormData, name: string): string {
-  const value = formData.get(name);
-  return typeof value === "string" ? value : "";
 }
