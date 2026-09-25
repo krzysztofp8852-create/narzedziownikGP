@@ -53,14 +53,21 @@
     "logout": "Wyloguj",
     "navigation": "Nawigacja",
     "board": "Tablica",
-    "team": "Zespół"
+    "team": "Zespół",
+    "locations": "Lokalizacje"
   },
   "board": {
     "title": "Gdzie jest co",
     "baseKind": "Baza",
     "toolCount": "{count} szt.",
     "baseEmpty": "Na bazie nie ma jeszcze żadnych narzędzi.",
-    "addTool": "Dodaj narzędzie"
+    "addTool": "Dodaj narzędzie",
+    "siteKind": "Budowa",
+    "siteManager": "Kierownik: {name}",
+    "managerInactive": "{name} (konto dezaktywowane)",
+    "siteEmpty": "Na tej budowie nie ma jeszcze narzędzi.",
+    "noSites": "Nie ma aktywnych budów.",
+    "addSite": "Dodaj budowę"
   },
   "team": {
     "title": "Zespół",
@@ -107,6 +114,8 @@
     "category_taken": "Kategoria o tej nazwie już istnieje.",
     "prefix_taken": "Ten prefiks ma już inna kategoria.",
     "invalid_photo": "Zdjęcie musi być plikiem JPEG, PNG lub WebP do 3 MB.",
+    "invalid_manager": "Kierownikiem budowy może być tylko aktywny kierownik z Twojej firmy.",
+    "site_finished": "Ta budowa jest zakończona.",
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie."
   },
   "days": {
@@ -180,5 +189,36 @@
   },
   "movementSource": {
     "panel": "panel"
+  },
+  "locations": {
+    "title": "Lokalizacje",
+    "addSiteTitle": "Dodaj budowę",
+    "siteName": "Nazwa budowy",
+    "siteNameHint": "Krótka nazwa, np. Rataje. Tak budowa będzie widoczna na tablicy.",
+    "address": "Adres",
+    "manager": "Kierownik",
+    "managerPlaceholder": "Wybierz kierownika",
+    "noManagers": "Firma nie ma jeszcze aktywnego kierownika. Dodaj go w zakładce Zespół.",
+    "goToTeam": "Przejdź do zespołu",
+    "submitSite": "Dodaj budowę",
+    "siteAdded": "Dodano budowę {name}.",
+    "addServiceTitle": "Dodaj serwis",
+    "serviceName": "Nazwa serwisu",
+    "serviceNameHint": "Np. Serwis Hilti Poznań. Sprzęt w naprawie nie będzie wyglądał na zaginiony.",
+    "submitService": "Dodaj serwis",
+    "serviceAdded": "Dodano serwis {name}.",
+    "submitting": "Dodawanie…",
+    "sites": "Budowy",
+    "noSitesYet": "Firma nie ma jeszcze żadnej budowy.",
+    "services": "Serwisy",
+    "noServicesYet": "Firma nie ma jeszcze żadnego serwisu.",
+    "newManager": "Nowy kierownik budowy {name}",
+    "changeManager": "Zmień kierownika",
+    "changing": "Zapisywanie…",
+    "managerChanged": "Zmieniono kierownika."
+  },
+  "siteStatus": {
+    "aktywna": "Aktywna",
+    "zakonczona": "Zakończona"
   }
 }

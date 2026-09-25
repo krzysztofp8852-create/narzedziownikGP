@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteManagerLabel } from "@/components/site-manager-label";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageTools } from "@/registry/registry";
+import { canManageLocations, canManageTools } from "@/registry/registry";
 
 export const metadata: Metadata = { title: t("board.title") };
 
 export default async function BoardPage() {
   const session = await requireSession();
-  const { base } = await getRegistry().as(session.userId).whereIsWhat();
+  const { base, sites } = await getRegistry().as(session.userId).whereIsWhat();
 
   return (
     <>
@@ -46,6 +47,35 @@ export default async function BoardPage() {
           </ul>
         )}
       </section>
+      {sites.length === 0 ? (
+        <div className="empty">
+          <p>{t("board.noSites")}</p>
+          {canManageLocations(session) && (
+            <p>
+              <Link href="/lokalizacje">{t("board.addSite")}</Link>
+            </p>
+          )}
+        </div>
+      ) : (
+        sites.map((site) => (
+          <section key={site.id} className="location location-site" aria-labelledby={`location-${site.id}`}>
+            <div className="location-head">
+              <h2 id={`location-${site.id}`} className="display location-name">
+                <span className="plate">{t("board.siteKind")}</span>
+                {site.name}
+              </h2>
+              <span className="location-status">{t(`siteStatus.${site.status}`)}</span>
+            </div>
+            <div className="location-details">
+              <p className="muted">{site.address}</p>
+              <p>
+                <SiteManagerLabel manager={site.manager} />
+              </p>
+            </div>
+            <p className="empty">{t("board.siteEmpty")}</p>
+          </section>
+        ))
+      )}
     </>
   );
 }

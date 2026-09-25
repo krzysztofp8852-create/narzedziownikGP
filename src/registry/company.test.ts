@@ -77,12 +77,13 @@ describe("zmiana hasła tymczasowego", () => {
 });
 
 describe("tablica „Gdzie jest co”", () => {
-  it("nowa firma ma na tablicy tylko swoją bazę, bez narzędzi", async () => {
+  it("nowa firma ma na tablicy tylko swoją bazę, bez narzędzi i bez budów", async () => {
     const { ownerId } = await testbed.givenCompany("Zawbud");
     await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7", testbed.signedInNow());
 
     expect(await testbed.registry.as(ownerId).whereIsWhat()).toEqual({
       base: { id: expect.any(String), name: "Baza", tools: [] },
+      sites: [],
     });
   });
 });

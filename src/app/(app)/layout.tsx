@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
-import { canManageTeam } from "@/registry/registry";
+import { canManageLocations, canManageTeam } from "@/registry/registry";
 import { signOut } from "../actions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -25,10 +25,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             </button>
           </form>
         </div>
-        {canManageTeam(session) && (
+        {(canManageLocations(session) || canManageTeam(session)) && (
           <nav className="app-nav" aria-label={t("header.navigation")}>
             <Link href="/">{t("header.board")}</Link>
-            <Link href="/zespol">{t("header.team")}</Link>
+            {canManageLocations(session) && <Link href="/lokalizacje">{t("header.locations")}</Link>}
+            {canManageTeam(session) && <Link href="/zespol">{t("header.team")}</Link>}
           </nav>
         )}
       </header>

@@ -1,20 +1,14 @@
 "use client";
 
-import { type FormEvent, startTransition, useActionState } from "react";
+import { useActionState } from "react";
 import { t } from "@/i18n/t";
+import { submitKeepingValues } from "@/lib/forms";
 import type { MemberRole } from "@/registry/registry";
 import { addMember } from "./actions";
 import { TemporaryPassword } from "./temporary-password";
 
 export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
   const [state, formAction, pending] = useActionState(addMember, {});
-
-  // Po błędzie wpisane dane zostają w formularzu; po dodaniu osoby formularz się czyści.
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => formAction(formData));
-  }
 
   return (
     <div className="stack-form">
@@ -24,7 +18,7 @@ export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
           password={state.added.temporaryPassword}
         />
       )}
-      <form onSubmit={submit} className="stack-form" key={state.added?.userId}>
+      <form onSubmit={submitKeepingValues(formAction)} className="stack-form" key={state.added?.userId}>
         <div className="field-row">
           <div className="field">
             <label htmlFor="firstName">{t("team.firstName")}</label>
