@@ -22,26 +22,8 @@ describe("zakładanie firmy", () => {
   });
 });
 
-describe("kto zakłada firmę", () => {
+describe("dane przy zakładaniu firmy", () => {
   const input = { name: "Budrex", baseName: "Magazyn", owner: { email: "anna@budrex.pl", fullName: "Anna Nowak" } };
-
-  it("super-admin zakłada firmę tak samo jak skrypt", async () => {
-    const adminId = await testbed.givenSuperAdmin();
-
-    const created = await testbed.registry.as(adminId).createCompany(input);
-
-    expect(await testbed.registry.as(created.ownerUserId).session()).toMatchObject({
-      role: "wlasciciel",
-      company: { id: created.companyId, name: "Budrex" },
-    });
-  });
-
-  it("właściciel firmy nie może założyć kolejnej firmy", async () => {
-    const { ownerId } = await testbed.givenCompany("Zawbud");
-
-    await expect(testbed.registry.as(ownerId).createCompany(input)).rejects.toMatchObject({ code: "forbidden" });
-    expect(testbed.auth.accountCount()).toBe(1);
-  });
 
   it("odrzuca firmę bez nazwy i właściciela bez e-maila, nie zakładając kont", async () => {
     await expect(testbed.registry.system().createCompany({ ...input, name: "  " })).rejects.toMatchObject({ code: "invalid_input" });

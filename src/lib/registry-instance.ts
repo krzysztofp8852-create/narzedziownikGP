@@ -3,6 +3,7 @@ import { systemClock } from "@/registry/ports";
 import { createRegistry, type Registry } from "@/registry/registry";
 import { createSupabaseAuthAdmin } from "@/registry/supabase-auth-admin";
 import { publicEnv, serverEnv } from "./env";
+import { SUPABASE_ROOT_CA } from "./supabase-root-ca";
 
 let registry: Registry | undefined;
 
@@ -16,11 +17,8 @@ export function getRegistry(): Registry {
   return registry;
 }
 
-/**
- * Poza lokalnym Supabase połączenie jest szyfrowane. Certyfikat Supabase nie
- * pochodzi z publicznego CA, więc bez dołączonego CA go nie weryfikujemy.
- */
+/** Poza lokalnym Supabase połączenie jest szyfrowane, a certyfikat serwera sprawdzany względem CA Supabase. */
 function sslFor(connectionString: string) {
   const { hostname } = new URL(connectionString);
-  return ["localhost", "127.0.0.1", "::1"].includes(hostname) ? false : { rejectUnauthorized: false };
+  return ["localhost", "127.0.0.1", "::1"].includes(hostname) ? false : { ca: SUPABASE_ROOT_CA, rejectUnauthorized: true };
 }

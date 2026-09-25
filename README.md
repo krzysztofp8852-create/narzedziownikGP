@@ -27,9 +27,9 @@ z `supabase/migrations`. Po starcie wpisz do `.env.local` wartości z `npx supab
 
 `npm run db:reset` odtwarza bazę od zera, a `npm run db:stop` zatrzymuje Supabase.
 
-### Wariant B: projekt Supabase w chmurze (bez Dockera)
+### Wariant B: projekt testowy Supabase w chmurze (bez Dockera)
 
-Wpisz do `.env.local` klucze projektu testowego (region EU Central, Frankfurt) i wgraj migracje:
+Wpisz do `.env.local` klucze projektu `narzedziownik-test` i wgraj migracje:
 
 ```bash
 npm run db:push
@@ -78,10 +78,13 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - `src/app/`: logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
   tablica „Gdzie jest co” (`/`).
 
-## Wdrożenie środowiska testowego
+## Środowiska i wdrożenie
 
-- Supabase: osobny projekt testowy w regionie EU Central (Frankfurt). Migracje: `npm run db:push`.
-- Vercel: funkcje w regionie `fra1` (`vercel.json`). Zmienne środowiskowe projektu Vercel są takie
-  same jak w `.env.example`. `DATABASE_URL` ma wskazywać pulę transakcyjną (port 6543).
-- W Supabase Auth wyłącz samodzielną rejestrację (Authentication → Sign In / Providers → „Allow new users
-  to sign up”). Konta zakłada wyłącznie serwer.
+- Supabase: jeden projekt w regionie `eu-west-1` dla Preview i Production (zob. `docs/adr/0001`,
+  `docs/adr/0002`). Klucze są w `.env.local`, a na Vercel w zmiennych środowiskowych projektu.
+- Vercel: funkcje w `fra1` (`vercel.json`). Branch `main` wdraża się na Production, pozostałe na Preview.
+- Migracje: `npm run db:push`.
+- `DATABASE_URL` wskazuje pulę transakcyjną (port 6543). Połączenie jest szyfrowane, a certyfikat
+  serwera weryfikowany głównym CA Supabase (`src/lib/supabase-root-ca.ts`).
+- W Supabase wyłącz samodzielną rejestrację (Authentication → Sign In / Providers →
+  „Allow new users to sign up”). Konta zakłada wyłącznie serwer.

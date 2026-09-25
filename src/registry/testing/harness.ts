@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createPgDb } from "../pg-db";
 import type { Db } from "../ports";
@@ -15,7 +14,6 @@ export interface RegistryTestbed {
   db: Db;
   /** Firma z bazą i właścicielem, założona tak jak robi to skrypt. */
   givenCompany(name: string, options?: { email?: string; fullName?: string; baseName?: string }): Promise<GivenCompany>;
-  givenSuperAdmin(): Promise<string>;
 }
 
 export interface GivenCompany {
@@ -77,13 +75,6 @@ export function setupRegistryTestbed(): RegistryTestbed {
         },
       });
       return { companyId: result.companyId, ownerId: result.ownerUserId, temporaryPassword: result.temporaryPassword };
-    },
-    async givenSuperAdmin() {
-      const { userId } = await auth.createUser({ email: `admin-${randomUUID()}@gp-engineering.test`, password: "x".repeat(12) });
-      await db.transaction((sql) =>
-        sql("insert into app.super_admins (user_id, created_at) values ($1, $2)", [userId, clock.now()]),
-      );
-      return userId;
     },
   };
 }

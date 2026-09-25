@@ -29,8 +29,6 @@ export interface Registry {
   system(): { createCompany(input: CreateCompanyInput): Promise<CreatedCompany> };
   /** Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. */
   as(userId: string): {
-    /** Tylko super-admin. */
-    createCompany(input: CreateCompanyInput): Promise<CreatedCompany>;
     session(): Promise<Session | null>;
     changePassword(newPassword: string): Promise<void>;
     whereIsWhat(): Promise<WhereIsWhat>;
@@ -55,7 +53,7 @@ interface Deps {
 export function createRegistry(deps: Deps): Registry {
   return {
     system: () => ({
-      createCompany: (input) => createCompany(deps, input, (fn) => deps.db.transaction(fn)),
+      createCompany: (input) => createCompany(deps, input),
     }),
     as: (userId) => {
       /** Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego. */
@@ -70,13 +68,6 @@ export function createRegistry(deps: Deps): Registry {
         });
 
       return {
-        createCompany: async (input) => {
-          const [{ is_super_admin }] = await withActor(deps.db, userId, (sql) =>
-            sql<{ is_super_admin: boolean }>("select app.is_super_admin() as is_super_admin"),
-          );
-          if (!is_super_admin) throw new RegistryError("forbidden");
-          return createCompany(deps, input, (fn) => withActor(deps.db, userId, fn));
-        },
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
         /** Zamienia hasło tymczasowe na własne. Poza tym stanem odmawia, bo nie zna obecnego hasła. */
         changePassword: async (newPassword) => {
@@ -118,11 +109,9 @@ export function withActor<T>(db: Db, userId: string, fn: (sql: Sql) => Promise<T
   });
 }
 
-type Transaction = <T>(fn: (sql: Sql) => Promise<T>) => Promise<T>;
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-async function createCompany(deps: Deps, raw: CreateCompanyInput, transaction: Transaction): Promise<CreatedCompany> {
+async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<CreatedCompany> {
   const input = {
     name: raw.name.trim(),
     baseName: raw.baseName.trim(),
@@ -140,7 +129,7 @@ async function createCompany(deps: Deps, raw: CreateCompanyInput, transaction: T
     });
   const now = deps.clock.now();
   try {
-    const companyId = await transaction(async (sql) => {
+    const companyId = await deps.db.transaction(async (sql) => {
       const [company] = await sql<{ id: string }>(
         "insert into app.companies (name, created_at) values ($1, $2) returning id",
         [input.name, now],
