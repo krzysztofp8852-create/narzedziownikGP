@@ -7,12 +7,12 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -24,9 +24,8 @@ jobs:
       - name: Testy Rejestru na PGlite
         run: npm test
 
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      # Wersja CLI z package-lock.json, ta sama co lokalnie.
+      - uses: supabase/setup-cli@v3
 
       - name: Lokalne Supabase
         run: supabase start -x realtime,storage-api,imgproxy,studio,edge-runtime,logflare,vector,supavisor,postgres-meta
@@ -51,7 +50,7 @@ jobs:
       - name: Test dymny Playwright
         run: npm run test:e2e
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
