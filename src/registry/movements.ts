@@ -105,13 +105,8 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
   if (input.kind === "wydanie" && site.status !== "aktywna") throw new RegistryError("site_finished");
   if (!canMoveTools(session, { manager: { id: site.manager_id! } })) throw new RegistryError("forbidden");
 
-  const tools = await currentTools(sql, toolIds);
-  if (tools.length !== toolIds.length) throw new RegistryError("not_found");
-  const conflicts = tools.filter(
-    (tool) => tool.location.id !== from.id || tool.state !== "w_obiegu" || tool.movedAt.getTime() > occurredAt.getTime(),
-  );
-  if (conflicts.length > 0) throw new MovementConflictError(conflicts);
-
+  // Ruch zapisujemy przed sprawdzeniem narzędzi: równoległa ponowka tej samej operacji czeka wtedy
+  // na unikalnym identyfikatorze operacji i zwraca ten ruch, zamiast zgłosić konflikt z nim samym.
   const [movement] = await sql<{ id: string }>(
     `insert into app.movements (company_id, kind, source, from_location_id, to_location_id, author_id,
                                 occurred_at, recorded_at, client_operation_id)
@@ -120,6 +115,13 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
   ).catch((error) => {
     throw isUniqueViolation(error, "movements_operation_per_company") ? new ReplayedOperationError() : error;
   });
+
+  const tools = await currentTools(sql, toolIds);
+  if (tools.length !== toolIds.length) throw new RegistryError("not_found");
+  const conflicts = tools.filter(
+    (tool) => tool.location.id !== from.id || tool.state !== "w_obiegu" || tool.movedAt.getTime() > occurredAt.getTime(),
+  );
+  if (conflicts.length > 0) throw new MovementConflictError(conflicts);
   await sql(
     `insert into app.movement_tools (movement_id, tool_id, company_id)
      select $1, tool_id, $2 from unnest($3::uuid[]) as tool_id`,
