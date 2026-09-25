@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useActionState, useState } from "react";
+import { type FormEvent, useActionState, useRef, useState } from "react";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
+import { newOperationId } from "@/lib/operation-id";
 import type { RegisteredKind } from "@/registry/registry";
-import { registerMovement } from "./actions";
+import { type ChecklistState, registerMovement } from "./actions";
 
 export interface ChecklistTool {
   id: string;
@@ -15,14 +15,18 @@ export interface ChecklistTool {
   daysInPlace: number;
 }
 
-export interface ChecklistProps {
-  kind: RegisteredKind;
+/** Co można wydać i zwrócić; to samo dla obu checklist. */
+export interface ChecklistData {
   /** Identyfikator pierwszej operacji; każda zmiana zaznaczenia albo budowy to nowa operacja. */
   operationId: string;
   base: { id: string; name: string };
   baseTools: ChecklistTool[];
   /** Budowy, na które aktor może wydawać (i z których zwracać), najpierw jego. */
   sites: { id: string; name: string; mine: boolean; tools: ChecklistTool[] }[];
+}
+
+export interface ChecklistProps extends ChecklistData {
+  kind: RegisteredKind;
 }
 
 /** Małe litery, bez polskich znaków i bez kresek w kodach: „s01” znajdzie S-01, „szlifierka” Szlifierkę. */
@@ -35,16 +39,6 @@ function normalize(text: string) {
     .toLowerCase();
 }
 
-/** UUID v4; crypto.randomUUID działa tylko w bezpiecznym kontekście (HTTPS, localhost). */
-function newOperationId(): string {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
 function matches(tool: ChecklistTool, query: string) {
   const wanted = normalize(query.trim());
   if (!wanted) return true;
@@ -53,13 +47,25 @@ function matches(tool: ChecklistTool, query: string) {
 }
 
 export function Checklist({ kind, operationId: firstOperationId, base, baseTools, sites }: ChecklistProps) {
-  const [state, formAction, pending] = useActionState(registerMovement, {});
   // Ponowne wysłanie tego samego wyboru (np. po zerwanym połączeniu) nie zdubluje ruchu, a zmiana
   // wyboru, także na ekranie przywróconym przyciskiem Wstecz, nie zwróci poprzedniego ruchu.
   const [operationId, setOperationId] = useState(firstOperationId);
   const [siteId, setSiteIdState] = useState(sites.length === 1 ? sites[0].id : "");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Tekst podsumowania z chwili wysłania: po zapisie zaznaczenie się czyści, a komunikat zostaje.
+  const submittedSummary = useRef("");
+  const [done, setDone] = useState<string | null>(null);
+  const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
+    const result = await registerMovement(prev, formData);
+    if (result.done) {
+      setSelectedIds([]);
+      setQuery("");
+      setOperationId(newOperationId());
+      setDone(submittedSummary.current);
+    }
+    return result;
+  }, {});
 
   const site = sites.find((candidate) => candidate.id === siteId);
   const isIssue = kind === "wydanie";
@@ -73,11 +79,18 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
   function toggle(toolId: string, checked: boolean) {
     setSelectedIds((ids) => (checked ? [...ids, toolId] : ids.filter((id) => id !== toolId)));
     setOperationId(newOperationId());
+    setDone(null);
+  }
+
+  function clear() {
+    setSelectedIds([]);
+    setOperationId(newOperationId());
   }
 
   function setSiteId(id: string) {
     setSiteIdState(id);
     setOperationId(newOperationId());
+    setDone(null);
   }
 
   if (sites.length === 0) {
@@ -151,8 +164,15 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
   );
 
   const ready = selected.length > 0 && from && to;
+  const summary = ready ? t("checklist.summary", { codes: selected.map((tool) => tool.code).join(", "), place: to.name }) : "";
+  const submit = submitKeepingValues(formAction);
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    submittedSummary.current = summary;
+    submit(event);
+  }
+
   return (
-    <form onSubmit={submitKeepingValues(formAction)} className="checklist">
+    <form onSubmit={onSubmit} className="checklist">
       <input type="hidden" name="operationId" value={operationId} />
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="fromLocationId" value={from?.id ?? ""} />
@@ -174,6 +194,11 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
       )}
 
       <div className="checklist-summary">
+        {done && !ready && (
+          <p className="checklist-done" role="status">
+            {t("checklist.done", { summary: done })}
+          </p>
+        )}
         {state.error && (
           <div className="form-error" role="alert">
             <p>{state.error}</p>
@@ -190,17 +215,17 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
           </div>
         )}
         <p className="checklist-summary-text" data-testid="checklist-summary">
-          {ready
-            ? t("checklist.summary", { codes: selected.map((tool) => tool.code).join(", "), place: to.name })
-            : t("checklist.summaryEmpty")}
+          {ready ? summary : t("checklist.summaryEmpty")}
         </p>
         <div className="form-actions">
           <button className="button" type="submit" disabled={!ready || pending}>
             {pending ? t("checklist.confirming") : t("checklist.confirm")}
           </button>
-          <Link className="button button-quiet" href="/">
-            {t("checklist.cancel")}
-          </Link>
+          {selected.length > 0 && (
+            <button className="button button-quiet" type="button" onClick={clear} disabled={pending}>
+              {t("checklist.clear")}
+            </button>
+          )}
         </div>
       </div>
     </form>

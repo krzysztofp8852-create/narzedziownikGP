@@ -50,11 +50,7 @@
     "intro": "Ustaw nowe hasło do swojego konta."
   },
   "header": {
-    "logout": "Wyloguj",
-    "navigation": "Nawigacja",
-    "board": "Tablica",
-    "team": "Zespół",
-    "locations": "Lokalizacje"
+    "logout": "Wyloguj"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -73,7 +69,15 @@
     "recentTitle": "Ostatnie ruchy",
     "recentEmpty": "Nie ma jeszcze żadnych ruchów.",
     "movementRoute": "{from} → {to}",
-    "movementBy": "{author} · {source}"
+    "movementBy": "{author} · {source}",
+    "operations": "Operacje",
+    "sidebar": "Operacje i ostatnie ruchy",
+    "statBase": "Na bazie",
+    "statSites": "Na budowach",
+    "statSiteCount": "Budowy",
+    "companyTitle": "Firma",
+    "finishedSites": "Zakończone budowy",
+    "peopleCount": "{count} aktywne"
   },
   "team": {
     "title": "Zespół",
@@ -99,7 +103,8 @@
     "deactivateConfirm": "Dezaktywować konto: {name}? Ta osoba nie zaloguje się, ale jej historia ruchów zostanie w systemie.",
     "deactivateYes": "Tak, dezaktywuj",
     "deactivating": "Dezaktywowanie…",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "manage": "Konto: hasło, dezaktywacja"
   },
   "noAccess": {
     "title": "Brak dostępu",
@@ -130,8 +135,6 @@
     "many": "{count} dni"
   },
   "tools": {
-    "newTitle": "Nowe narzędzie",
-    "editTitle": "Edycja {code}",
     "code": "Kod",
     "codeHint": "Podpowiadamy kolejny wolny kod w kategorii. Możesz wpisać własny.",
     "name": "Nazwa",
@@ -150,10 +153,12 @@
     "submitAdd": "Dodaj narzędzie",
     "submitEdit": "Zapisz zmiany",
     "submitting": "Zapisywanie…",
-    "cancel": "Anuluj",
     "invalidNumber": "Wpisz liczbę, np. 3200 albo 3200,50.",
     "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Dodaj pierwszą poniżej.",
-    "categoryOption": "{name} ({prefix})"
+    "categoryOption": "{name} ({prefix})",
+    "added": "Dodano {code} {name}.",
+    "openCard": "Otwórz kartę →",
+    "saved": "Zapisano zmiany."
   },
   "categories": {
     "newTitle": "Nowa kategoria",
@@ -201,14 +206,12 @@
     "checklista": "checklista"
   },
   "locations": {
-    "title": "Lokalizacje",
-    "addSiteTitle": "Dodaj budowę",
     "siteName": "Nazwa budowy",
     "siteNameHint": "Krótka nazwa, np. Rataje. Tak budowa będzie widoczna na tablicy.",
     "address": "Adres",
     "manager": "Kierownik",
     "managerPlaceholder": "Wybierz kierownika",
-    "noManagers": "Firma nie ma jeszcze aktywnego kierownika. Dodaj go w zakładce Zespół.",
+    "noManagers": "Firma nie ma jeszcze aktywnego kierownika. Dodaj go w sekcji Zespół.",
     "goToTeam": "Przejdź do zespołu",
     "submitSite": "Dodaj budowę",
     "siteAdded": "Dodano budowę {name}.",
@@ -218,8 +221,6 @@
     "submitService": "Dodaj serwis",
     "serviceAdded": "Dodano serwis {name}.",
     "submitting": "Dodawanie…",
-    "sites": "Budowy",
-    "noSitesYet": "Firma nie ma jeszcze żadnej budowy.",
     "services": "Serwisy",
     "noServicesYet": "Firma nie ma jeszcze żadnego serwisu.",
     "newManager": "Nowy kierownik budowy {name}",
@@ -232,8 +233,6 @@
     "zakonczona": "Zakończona"
   },
   "checklist": {
-    "issueTitle": "Wydaj z bazy",
-    "returnTitle": "Zwróć na bazę",
     "tools": "Narzędzia",
     "search": "Szukaj po nazwie lub kodzie",
     "searchPlaceholder": "np. szlifierka albo S-01",
@@ -246,15 +245,15 @@
     "mine": "moja",
     "noSites": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
     "noSitesToReturn": "Nie ma budowy, z której możesz zwracać sprzęt.",
-    "selected": "Zaznaczone: {count}",
     "summaryEmpty": "Zaznacz narzędzia i wybierz budowę.",
     "summary": "{codes} → {place}",
     "confirm": "Zatwierdź ✓",
     "confirming": "Zapisywanie…",
-    "cancel": "Anuluj",
     "conflictMoved": "{code} jest teraz: {place} (przeniósł: {author}, {when}).",
     "conflictState": "{code}: {state}.",
     "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź zaznaczenie i zatwierdź ponownie.",
-    "toolLabel": "{code} {name}"
+    "toolLabel": "{code} {name}",
+    "clear": "Wyczyść zaznaczenie",
+    "done": "Zapisano: {summary}"
   }
 }

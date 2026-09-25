@@ -11,6 +11,7 @@
   --danger: #ff5a4f;
   --radius: 6px;
   --gutter: 16px;
+  --page-width: 1480px;
 }
 
 * {
@@ -213,7 +214,7 @@ a.button {
   justify-content: space-between;
   gap: 12px;
   padding: 10px var(--gutter);
-  max-width: 1100px;
+  max-width: var(--page-width);
   margin: 0 auto;
 }
 
@@ -226,29 +227,9 @@ a.button {
   font-size: 0.85rem;
 }
 
-.app-nav {
-  display: flex;
-  gap: 4px;
-  padding: 0 var(--gutter) 8px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.app-nav a {
-  font-weight: 700;
-  text-decoration: none;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-}
-
-.app-nav a:hover,
-.app-nav a:focus-visible {
-  background: var(--surface-raised);
-}
-
 .app-main {
   padding: 20px var(--gutter) 40px;
-  max-width: 1100px;
+  max-width: var(--page-width);
   margin: 0 auto;
   display: grid;
   gap: 16px;
@@ -507,6 +488,11 @@ a.button {
   font-family: var(--font-plate), ui-monospace, monospace;
 }
 
+.history-compact li {
+  padding: 8px 10px;
+  font-size: 0.92rem;
+}
+
 /* Zespół */
 .member-list {
   list-style: none;
@@ -668,4 +654,229 @@ a.button {
 
 .checklist-summary .form-error ul {
   margin: 6px 0 6px 20px;
+}
+
+.checklist-done {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--yellow);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* Tablica: wszystko na jednym ekranie */
+.board {
+  display: grid;
+  gap: 20px;
+}
+
+/* Na telefonie operacje są na samej górze, a ostatnie ruchy pod tablicą. */
+.board-main,
+.board-side {
+  display: contents;
+}
+
+.operations {
+  order: 1;
+}
+
+.where {
+  order: 2;
+}
+
+.recent {
+  order: 3;
+}
+
+.company {
+  order: 4;
+}
+
+.where,
+.company {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+@media (min-width: 1024px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+    align-items: start;
+  }
+
+  .board-main {
+    display: grid;
+    gap: 24px;
+  }
+
+  /* Operacje zawsze pod ręką: panel stoi obok tablicy i przewija się osobno. */
+  .board-side {
+    display: grid;
+    gap: 20px;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stats div {
+  display: grid;
+  min-width: 96px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.stats dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.stats dd {
+  font-family: var(--font-plate), ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.tool-list-wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+.site-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  align-items: start;
+}
+
+.location-add {
+  border-style: dashed;
+  border-left: 1px dashed var(--border);
+  background: transparent;
+}
+
+.location-add[open] {
+  background: var(--surface);
+}
+
+.location-add .panel-summary {
+  min-height: 40px;
+  color: var(--yellow);
+}
+
+.location-more,
+.member-more {
+  display: grid;
+  gap: 10px;
+}
+
+.location-more summary,
+.member-more summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.operations {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--yellow);
+  border-radius: var(--radius);
+}
+
+.operations .section-title {
+  margin-bottom: 0;
+}
+
+.operation-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.operation-tabs .button {
+  min-height: 48px;
+  padding: 8px 10px;
+}
+
+.operation-body {
+  display: grid;
+  gap: 16px;
+}
+
+.operation-body .stack-form,
+.operation-body .checklist {
+  max-width: none;
+}
+
+.operation-body .checklist-summary {
+  margin: 0 -14px -14px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.company-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+}
+
+.company-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.company-card .section-title {
+  margin-bottom: 0;
+}
+
+.company-card .panel {
+  max-width: none;
+  background: var(--bg);
+}
+
+.company-card .member {
+  background: var(--surface-raised);
+}
+
+.company-team {
+  grid-column: 1 / -1;
+}
+
+.company-card .member-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  align-items: start;
+}
+
+.company-card .member {
+  gap: 2px;
+  padding: 10px 12px;
 }
