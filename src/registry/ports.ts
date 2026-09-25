@@ -15,6 +15,8 @@ export interface AuthAdmin {
   /** Zakłada konto z potwierdzonym e-mailem. Rzuca EmailTakenError, gdy e-mail jest zajęty. */
   createUser(input: { email: string; password: string }): Promise<{ userId: string }>;
   setPassword(userId: string, password: string): Promise<void>;
+  /** Blokuje logowanie i odświeżanie sesji tego konta (dezaktywacja). */
+  blockSignIn(userId: string): Promise<void>;
   deleteUser(userId: string): Promise<void>;
 }
 

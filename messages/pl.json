@@ -20,7 +20,9 @@
     "password": "Hasło",
     "submit": "Zaloguj się",
     "submitting": "Logowanie…",
-    "invalidCredentials": "Nieprawidłowy e-mail lub hasło."
+    "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+    "forgotPassword": "Nie pamiętasz hasła?",
+    "accountBlocked": "To konto zostało dezaktywowane. Skontaktuj się z właścicielem firmy."
   },
   "changePassword": {
     "title": "Ustaw własne hasło",
@@ -32,8 +34,26 @@
     "submitting": "Zapisywanie…",
     "mismatch": "Hasła nie są takie same."
   },
+  "resetPassword": {
+    "title": "Reset hasła",
+    "intro": "Podaj e-mail, którym się logujesz. Wyślemy na niego link do ustawienia nowego hasła.",
+    "email": "E-mail",
+    "submit": "Wyślij link",
+    "submitting": "Wysyłanie…",
+    "sent": "Jeśli ten e-mail ma konto, za chwilę dostaniesz wiadomość z linkiem. Link jest ważny godzinę.",
+    "tooManyRequests": "Za dużo prób. Spróbuj ponownie za kilka minut.",
+    "invalidLink": "Link wygasł albo został już użyty. Wyślij nowy.",
+    "backToLogin": "← Wróć do logowania"
+  },
+  "newPassword": {
+    "title": "Nowe hasło",
+    "intro": "Ustaw nowe hasło do swojego konta."
+  },
   "header": {
-    "logout": "Wyloguj"
+    "logout": "Wyloguj",
+    "navigation": "Nawigacja",
+    "board": "Tablica",
+    "team": "Zespół"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -41,6 +61,32 @@
     "toolCount": "{count} szt.",
     "baseEmpty": "Na bazie nie ma jeszcze żadnych narzędzi.",
     "addTool": "Dodaj narzędzie"
+  },
+  "team": {
+    "title": "Zespół",
+    "addTitle": "Dodaj osobę",
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "email": "E-mail",
+    "role": "Rola",
+    "submitAdd": "Dodaj osobę",
+    "submitting": "Dodawanie…",
+    "added": "Dodano: {name} ({email}).",
+    "temporaryPassword": "Hasło tymczasowe",
+    "passwordHint": "Przekaż je osobiście. Nie zobaczysz go ponownie. Przy pierwszym logowaniu ta osoba ustawi własne hasło.",
+    "newPasswordFor": "Nowe hasło tymczasowe dla: {name}",
+    "members": "Osoby w firmie",
+    "statusActive": "Aktywne konto",
+    "statusPending": "Czeka na pierwsze logowanie",
+    "statusInactive": "Dezaktywowane",
+    "you": "to Ty",
+    "resetPassword": "Nowe hasło tymczasowe",
+    "resetting": "Generowanie…",
+    "deactivate": "Dezaktywuj",
+    "deactivateConfirm": "Dezaktywować konto: {name}? Ta osoba nie zaloguje się, ale jej historia ruchów zostanie w systemie.",
+    "deactivateYes": "Tak, dezaktywuj",
+    "deactivating": "Dezaktywowanie…",
+    "cancel": "Anuluj"
   },
   "noAccess": {
     "title": "Brak dostępu",
@@ -52,6 +98,8 @@
     "no_access": "To konto nie ma dostępu do żadnej firmy.",
     "password_change_required": "Najpierw ustaw własne hasło.",
     "password_too_short": "Hasło musi mieć co najmniej {min} znaków.",
+    "stale_session": "Hasło tymczasowe zmieniono po Twoim zalogowaniu. Zaloguj się ponownie nowym hasłem tymczasowym od właściciela.",
+    "recovery_expired": "Link do resetu hasła wygasł. Wyślij nowy z ekranu logowania.",
     "invalid_input": "Sprawdź wpisane dane.",
     "email_taken": "Ten e-mail ma już konto.",
     "not_found": "Nie znaleziono.",

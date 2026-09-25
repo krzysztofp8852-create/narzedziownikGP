@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createPgDb } from "../pg-db";
 import type { Db } from "../ports";
-import { createRegistry, type Registry, type Role } from "../registry";
+import { createRegistry, type MemberRole, type Registry } from "../registry";
 import { FakeAuthAdmin, FakePhotoStore, FixedClock } from "./fakes";
 import { createPgliteDb } from "./pglite-db";
 
@@ -16,9 +16,11 @@ export interface RegistryTestbed {
   /** Firma z bazą i właścicielem, założona tak jak robi to skrypt. */
   givenCompany(name: string, options?: { email?: string; fullName?: string; baseName?: string }): Promise<GivenCompany>;
   /** Jak givenCompany, ale właściciel ma już własne hasło. */
-  givenActiveCompany(name: string, options?: { baseName?: string }): Promise<GivenCompany>;
-  /** Osoba z rolą w firmie, z własnym hasłem. */
-  givenMember(company: GivenCompany, role: Role, fullName?: string): Promise<string>;
+  givenActiveCompany(name: string, options?: { email?: string; baseName?: string }): Promise<GivenCompany>;
+  /** Logowanie „teraz” według zegara testu, do zmiany hasła tymczasowego. */
+  signedInNow(): { signedInAt: Date };
+  /** Kierownik lub magazynier dodany przez właściciela (z własnym hasłem) do firmy z givenActiveCompany. */
+  givenMember(company: GivenCompany, role: MemberRole, fullName?: string): Promise<string>;
 }
 
 export interface GivenCompany {
@@ -86,23 +88,22 @@ export function setupRegistryTestbed(): RegistryTestbed {
     clock,
     photos,
     givenCompany,
+    signedInNow: () => ({ signedInAt: clock.now() }),
     async givenActiveCompany(name, options = {}) {
       const company = await givenCompany(name, options);
-      await registry.as(company.ownerId).changePassword(`${name}-haslo-1`);
+      await registry.as(company.ownerId).changePassword(`${name}-haslo-1`, { signedInAt: clock.now() });
       return company;
     },
-    // Dopóki właściciel nie umie dodawać osób (#4), zakładamy je bezpośrednio w bazie.
     async givenMember(company, role, fullName = `${role} ${counter}`) {
       counter += 1;
-      const email = `${role}${counter}@${company.companyId}.test`;
-      const { userId } = await auth.createUser({ email, password: `${role}-haslo-${counter}` });
-      await db.transaction((sql) =>
-        sql(
-          `insert into app.users (user_id, company_id, role, full_name, email, must_change_password, created_at)
-           values ($1, $2, $3, $4, $5, false, $6)`,
-          [userId, company.companyId, role, fullName, email, clock.now()],
-        ),
-      );
+      const [firstName, ...lastName] = fullName.split(" ");
+      const { userId } = await registry.as(company.ownerId).addMember({
+        firstName,
+        lastName: lastName.join(" "),
+        email: `${role}${counter}@${company.companyId}.test`,
+        role,
+      });
+      await registry.as(userId).changePassword(`${role}-haslo-${counter}`, { signedInAt: clock.now() });
       return userId;
     },
   };

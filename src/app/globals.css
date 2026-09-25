@@ -145,6 +145,12 @@ a.button {
   padding: 8px 14px;
 }
 
+.button-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--yellow-ink);
+}
+
 .form-error {
   color: var(--danger);
   font-weight: 600;
@@ -218,6 +224,26 @@ a.button {
 
 .app-header-user {
   font-size: 0.85rem;
+}
+
+.app-nav {
+  display: flex;
+  gap: 4px;
+  padding: 0 var(--gutter) 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.app-nav a {
+  font-weight: 700;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+}
+
+.app-nav a:hover,
+.app-nav a:focus-visible {
+  background: var(--surface-raised);
 }
 
 .app-main {
@@ -451,4 +477,63 @@ a.button {
 
 .history time {
   font-family: var(--font-plate), ui-monospace, monospace;
+}
+
+/* Zespół */
+.member-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.member {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.member-inactive {
+  opacity: 0.6;
+}
+
+.member-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.member-email {
+  overflow-wrap: anywhere;
+}
+
+.member-status {
+  font-size: 0.9rem;
+}
+
+.member-actions,
+.member-confirm {
+  display: grid;
+  gap: 10px;
+}
+
+.temporary-password {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 2px solid var(--yellow);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.temporary-password .plate {
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.auth-links {
+  text-align: center;
 }

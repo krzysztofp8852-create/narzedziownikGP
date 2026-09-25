@@ -17,6 +17,11 @@ export function createSupabaseAuthAdmin(url: string, serviceRoleKey: string): Au
       const { error } = await auth.admin.updateUserById(userId, { password });
       if (error) throw error;
     },
+    async blockSignIn(userId) {
+      // Supabase nie ma blokady bezterminowej; sto lat wystarcza.
+      const { error } = await auth.admin.updateUserById(userId, { ban_duration: "876000h" });
+      if (error) throw error;
+    },
     async deleteUser(userId) {
       const { error } = await auth.admin.deleteUser(userId);
       if (error) throw error;

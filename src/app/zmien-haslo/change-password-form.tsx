@@ -2,10 +2,16 @@
 
 import { useActionState } from "react";
 import { t } from "@/i18n/t";
-import { changePassword } from "./actions";
+import type { ChangePasswordState } from "./actions";
 
-export function ChangePasswordForm({ minLength }: { minLength: number }) {
-  const [state, action, pending] = useActionState(changePassword, {});
+interface ChangePasswordFormProps {
+  minLength: number;
+  action: (prev: ChangePasswordState, formData: FormData) => Promise<ChangePasswordState>;
+}
+
+/** Nowe hasło z powtórzeniem: zamiana hasła tymczasowego albo ustawienie hasła po linku z e-maila. */
+export function ChangePasswordForm({ minLength, action: submit }: ChangePasswordFormProps) {
+  const [state, action, pending] = useActionState(submit, {});
   return (
     <form action={action}>
       <div className="field">

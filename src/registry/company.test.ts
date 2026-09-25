@@ -52,7 +52,7 @@ describe("zmiana hasła tymczasowego", () => {
   it("po zmianie hasła właściciel loguje się nowym hasłem i nie musi go już zmieniać", async () => {
     const { ownerId } = await testbed.givenCompany("Zawbud");
 
-    await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7");
+    await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7", testbed.signedInNow());
 
     expect(testbed.auth.passwordOf(ownerId)).toBe("MojeNoweHaslo7");
     expect(await testbed.registry.as(ownerId).session()).toMatchObject({ mustChangePassword: false });
@@ -61,7 +61,7 @@ describe("zmiana hasła tymczasowego", () => {
   it("hasło krótsze niż 8 znaków jest odrzucane, a hasło tymczasowe zostaje", async () => {
     const { ownerId, temporaryPassword } = await testbed.givenCompany("Zawbud");
 
-    await expect(testbed.registry.as(ownerId).changePassword("krotkie")).rejects.toMatchObject({ code: "password_too_short" });
+    await expect(testbed.registry.as(ownerId).changePassword("krotkie", testbed.signedInNow())).rejects.toMatchObject({ code: "password_too_short" });
 
     expect(testbed.auth.passwordOf(ownerId)).toBe(temporaryPassword);
     expect(await testbed.registry.as(ownerId).session()).toMatchObject({ mustChangePassword: true });
@@ -69,9 +69,9 @@ describe("zmiana hasła tymczasowego", () => {
 
   it("po ustawieniu własnego hasła tej ścieżki nie da się użyć ponownie, np. ze skradzionej sesji", async () => {
     const { ownerId } = await testbed.givenCompany("Zawbud");
-    await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7");
+    await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7", testbed.signedInNow());
 
-    await expect(testbed.registry.as(ownerId).changePassword("PrzejeteHaslo8")).rejects.toMatchObject({ code: "forbidden" });
+    await expect(testbed.registry.as(ownerId).changePassword("PrzejeteHaslo8", testbed.signedInNow())).rejects.toMatchObject({ code: "forbidden" });
     expect(testbed.auth.passwordOf(ownerId)).toBe("MojeNoweHaslo7");
   });
 });
@@ -79,7 +79,7 @@ describe("zmiana hasła tymczasowego", () => {
 describe("tablica „Gdzie jest co”", () => {
   it("nowa firma ma na tablicy tylko swoją bazę, bez narzędzi", async () => {
     const { ownerId } = await testbed.givenCompany("Zawbud");
-    await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7");
+    await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7", testbed.signedInNow());
 
     expect(await testbed.registry.as(ownerId).whereIsWhat()).toEqual({
       base: { id: expect.any(String), name: "Baza", tools: [] },
@@ -99,6 +99,6 @@ describe("dostęp przed zmianą hasła i bez konta w firmie", () => {
 
     expect(await testbed.registry.as(userId).session()).toBeNull();
     await expect(testbed.registry.as(userId).whereIsWhat()).rejects.toMatchObject({ code: "no_access" });
-    await expect(testbed.registry.as(userId).changePassword("DowolneHaslo2")).rejects.toMatchObject({ code: "no_access" });
+    await expect(testbed.registry.as(userId).changePassword("DowolneHaslo2", testbed.signedInNow())).rejects.toMatchObject({ code: "no_access" });
   });
 });
