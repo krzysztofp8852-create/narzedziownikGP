@@ -14,7 +14,8 @@ export type RegistryErrorCode =
   | "prefix_taken"
   | "invalid_photo"
   | "invalid_manager"
-  | "site_finished";
+  | "site_finished"
+  | "movement_conflict";
 
 export class RegistryError extends Error {
   constructor(

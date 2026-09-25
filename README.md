@@ -85,7 +85,15 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   reset hasła przez e-mail (`/reset-hasla` → link → `/auth/confirm` → `/nowe-haslo`),
   tablica „Gdzie jest co” (`/`), dodawanie narzędzia (`/narzedzia/nowe`), karta narzędzia
   (`/narzedzia/<id>`) i jej edycja (`/narzedzia/<id>/edycja`), zespół właściciela (`/zespol`),
-  budowy i serwisy właściciela (`/lokalizacje`).
+  budowy i serwisy właściciela (`/lokalizacje`), checklisty „Wydaj z bazy” (`/ruch/wydanie`)
+  i „Zwróć na bazę” (`/ruch/zwrot`).
+- Ruchy: polecenie Rejestru `registerMovement` (wydanie, zwrot) niesie identyfikator operacji klienta
+  (ponowne wysłanie zwraca pierwotny ruch) i oczekiwaną lokalizację źródłową narzędzi. Gdy któreś
+  narzędzie jest gdzie indziej, cały ruch jest odrzucany (`MovementConflictError`: gdzie jest i kto je
+  przeniósł). Kierownik wydaje tylko na swoją budowę i zwraca tylko ze swojej, czego pilnuje też RLS.
+  Bieżącą lokalizację przesuwa wyzwalacz przy dopisaniu narzędzia do ruchu; jeśli narzędzia nie ma
+  w lokalizacji źródłowej, cała transakcja się wycofuje. „Od X dni” liczy się od czasu zdarzenia
+  ostatniego ruchu.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu

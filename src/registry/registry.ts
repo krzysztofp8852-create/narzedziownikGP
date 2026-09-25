@@ -2,6 +2,8 @@ import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type PhotoStore, type Sql } from "./ports";
 import * as locations from "./locations";
 import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
+import * as movements from "./movements";
+import type { Movement, RegisterMovementInput } from "./movements";
 import { generateTemporaryPassword } from "./temporary-password";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
@@ -15,6 +17,8 @@ export type { AddToolInput, Category, EditToolInput, HistoryEntry, ToolCard, Too
 export { canManageTools, canSeeValues, MAX_PHOTO_BYTES, PHOTO_CONTENT_TYPES } from "./tools";
 export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
 export { canManageLocations } from "./locations";
+export type { Movement, MovementConflict, MovementKind, MovementSource, RegisteredKind, RegisterMovementInput } from "./movements";
+export { canMoveTools, MovementConflictError } from "./movements";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 
@@ -78,13 +82,20 @@ export interface Registry {
     changeSiteManager(siteId: string, managerId: string): Promise<void>;
     /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
     addService(input: { name: string }): Promise<{ locationId: string }>;
+    /**
+     * Wydanie z bazy albo zwrot na bazę jednego lub wielu narzędzi. Gdy któreś narzędzie nie jest
+     * w lokalizacji źródłowej, odrzuca cały ruch błędem MovementConflictError.
+     */
+    registerMovement(input: RegisterMovementInput): Promise<Movement>;
+    /** Ostatnie ruchy w firmie, od najnowszego. */
+    recentMovements(options?: { limit?: number }): Promise<Movement[]>;
   };
 }
 
 export interface WhereIsWhat {
   base: { id: string; name: string; tools: ToolOnBoard[] };
-  /** Aktywne budowy; narzędzia na budowach pojawią się razem z ruchami. */
-  sites: Site[];
+  /** Aktywne budowy z narzędziami, które na nich są. */
+  sites: (Site & { tools: ToolOnBoard[] })[];
 }
 
 export const MIN_PASSWORD_LENGTH = 8;
@@ -154,9 +165,11 @@ export function createRegistry(deps: Deps): Registry {
         whereIsWhat: () =>
           asMember(async (sql, session) => {
             const base = await tools.baseLocation(sql, session);
+            const toolsAt = await tools.toolsByLocation(sql, deps.clock.now());
+            const sites = await locations.sites(sql, { activeOnly: true });
             return {
-              base: { ...base, tools: await tools.toolsAt(sql, base.id, deps.clock.now()) },
-              sites: await locations.sites(sql, { activeOnly: true }),
+              base: { ...base, tools: toolsAt.get(base.id) ?? [] },
+              sites: sites.map((site) => ({ ...site, tools: toolsAt.get(site.id) ?? [] })),
             };
           }),
         categories: () => asMember((sql) => tools.listCategories(sql)),
@@ -261,6 +274,17 @@ export function createRegistry(deps: Deps): Registry {
             locations.requireLocationManager(session);
             return locations.addService(sql, session, input, deps.clock.now());
           }),
+        registerMovement: async (input) => {
+          const attempt = () => asMember((sql, session) => movements.registerMovement(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległa transakcja zapisała tę operację albo ruszyła te narzędzia; drugie podejście to pokaże.
+            if (error instanceof tools.ReplayedOperationError) return attempt();
+            throw error;
+          }
+        },
+        recentMovements: ({ limit = 20 } = {}) => asMember((sql) => movements.recentMovements(sql, limit)),
       };
     },
   };
