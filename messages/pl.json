@@ -195,7 +195,8 @@
     "lostResponsible": "Odpowiadał: {name}",
     "lostNoResponsible": "Bez odpowiedzialnego kierownika",
     "ownerActions": "Korekta, zaginięcie, wycofanie",
-    "ownerActionsHint": "Historia się nie zmienia: każda zmiana to nowy wpis w historii."
+    "ownerActionsHint": "Historia się nie zmienia: każda zmiana to nowy wpis w historii.",
+    "outOfCirculation": "{state}, ostatnio: {place}"
   },
   "toolState": {
     "w_obiegu": "W obiegu",
@@ -299,6 +300,8 @@
     "retireConfirm": "Wycofać {code} z obiegu?",
     "retireYes": "Tak, wycofaj",
     "cancel": "Anuluj",
-    "submitting": "Zapisywanie…"
+    "submitting": "Zapisywanie…",
+    "lostReasonPlaceholder": "np. nie ma go na budowie ani na bazie",
+    "retireReasonPlaceholder": "np. sprzedane, nie do naprawy"
   }
 }

@@ -52,7 +52,11 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
       <section className="location" aria-label={t("toolCard.location")}>
         <p>
           <span className="muted">{t("toolCard.location")}: </span>
-          <strong>{t("toolCard.inPlace", { place: card.location.name, days: formatDays(card.daysInPlace) })}</strong>
+          <strong>
+            {card.state === "w_obiegu"
+              ? t("toolCard.inPlace", { place: card.location.name, days: formatDays(card.daysInPlace) })
+              : t("toolCard.outOfCirculation", { state: t(`toolState.${card.state}`), place: card.location.name })}
+          </strong>
         </p>
       </section>
 

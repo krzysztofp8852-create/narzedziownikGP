@@ -59,14 +59,14 @@ export function ToolCorrections({ tool, places, operationIds }: ToolCorrectionsP
             ))}
           </select>
         </div>
-        <ReasonField id="correct-reason" required />
+        <ReasonField id="correct-reason" placeholder={t("corrections.reasonPlaceholder")} required />
       </CorrectionForm>
 
       {tool.state === "w_obiegu" && (
         <CorrectionForm command="lost" tool={tool} operationId={operationIds.lost}>
           <h3 className="display">{t("corrections.lostTitle")}</h3>
           <p className="muted">{t("corrections.lostHint")}</p>
-          <ReasonField id="lost-reason" required />
+          <ReasonField id="lost-reason" placeholder={t("corrections.lostReasonPlaceholder")} required />
         </CorrectionForm>
       )}
 
@@ -74,7 +74,7 @@ export function ToolCorrections({ tool, places, operationIds }: ToolCorrectionsP
         <CorrectionForm command="retire" tool={tool} operationId={operationIds.retire} confirm>
           <h3 className="display">{t("corrections.retireTitle")}</h3>
           <p className="muted">{t("corrections.retireHint")}</p>
-          <ReasonField id="retire-reason" />
+          <ReasonField id="retire-reason" placeholder={t("corrections.retireReasonPlaceholder")} />
         </CorrectionForm>
       )}
     </div>
@@ -144,11 +144,11 @@ function CorrectionForm({
   );
 }
 
-function ReasonField({ id, required = false }: { id: string; required?: boolean }) {
+function ReasonField({ id, placeholder, required = false }: { id: string; placeholder: string; required?: boolean }) {
   return (
     <div className="field">
       <label htmlFor={id}>{required ? t("corrections.reason") : t("corrections.reasonOptional")}</label>
-      <input id={id} name="reason" autoComplete="off" required={required} placeholder={t("corrections.reasonPlaceholder")} />
+      <input id={id} name="reason" autoComplete="off" required={required} placeholder={placeholder} />
     </div>
   );
 }
