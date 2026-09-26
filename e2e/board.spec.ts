@@ -39,6 +39,8 @@ test("właściciel widzi na tablicy kwotę poza bazą i sumy lokalizacji, a kier
   await expect(page.getByRole("region", { name: "Zaginione" })).toBeVisible();
 
   await page.getByRole("button", { name: "Wyloguj" }).click();
+  // Wylogowanie kończy się przekierowaniem; wcześniej /logowanie odesłałoby na tablicę starej sesji.
+  await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.manager);
   await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /H-01/ })).toBeVisible();
   await expect(page.getByTestId("off-base-value")).toHaveCount(0);
