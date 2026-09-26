@@ -135,6 +135,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
                 {t("toolCard.movementBy", { author: entry.author, source: t(`movementSource.${entry.source}`) })}
               </span>
               {entry.reason && <span className="history-reason">{t("toolCard.reason", { reason: entry.reason })}</span>}
+              {entry.transcript && <span className="history-reason">{t("toolCard.transcript", { text: entry.transcript })}</span>}
             </li>
           ))}
         </ol>

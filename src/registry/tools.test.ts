@@ -55,6 +55,7 @@ describe("dodawanie narzędzia", () => {
           from: null,
           to: "Magazyn Swarzędz",
           reason: null,
+          transcript: null,
           stateChange: null,
           undone: false,
         },

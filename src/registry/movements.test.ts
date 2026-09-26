@@ -57,6 +57,7 @@ describe("wydanie z bazy", () => {
       from: "Magazyn Swarzędz",
       to: "Rataje",
       reason: null,
+      transcript: null,
       stateChange: null,
       undone: false,
     });
@@ -444,6 +445,7 @@ describe("ostatnie ruchy", () => {
           { id: z.s02, code: "S-02", name: "Szlifierka mała" },
         ],
         reason: null,
+        transcript: null,
         stateChange: null,
         undoes: null,
         undoneBy: null,
@@ -517,5 +519,28 @@ describe("dane ruchu", () => {
     const movement = await issue(z, z.nowakId, [z.s01, z.s01]);
 
     expect(movement.tools.map((tool) => tool.code)).toEqual(["S-01"]);
+  });
+});
+
+describe("ruch z propozycji po wpisie tekstem", () => {
+  it("tekst propozycji przychodzi tylko ze źródłem głos: bez niego albo przy innym źródle Rejestr odrzuca ruch", async () => {
+    const z = await givenZawbud();
+    const register = (source: "glos" | "checklista", transcript?: string) =>
+      testbed.registry.as(z.nowakId).registerMovement({
+        operationId: randomUUID(),
+        kind: "wydanie",
+        fromLocationId: z.baseId,
+        toLocationId: z.ratajeId,
+        toolIds: [z.s01],
+        source,
+        transcript,
+      });
+
+    await expect(register("glos")).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(register("checklista", "biorę szlifierkę")).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(register("glos", "x".repeat(2001))).rejects.toMatchObject({ code: "invalid_input" });
+    expect(await whereIs(z, z.s01)).toBe("Magazyn Swarzędz");
+
+    await expect(register("glos", "  biorę szlifierkę  ")).resolves.toMatchObject({ source: "glos", transcript: "biorę szlifierkę" });
   });
 });

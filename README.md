@@ -128,6 +128,14 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   historia zostaje). Osobne polityki RLS pozwalają kierownikowi dopisać tylko zgłoszone narzędzie na własną
   budowę, przyjęcie obejmuje tylko narzędzie dopisane w tej samej transakcji, a status ewidencji zmienia
   tylko właściciel.
+- Wpis tekstem (przycisk „Wpisz tekstem” w operacjach): moduł **Interpretacja** (`src/interpretation/`) zamienia
+  zdanie kierownika w Propozycję ruchu. Port interpretacji (Claude Haiku 4.5 ze strukturalnym wyjściem, zob.
+  `docs/adr/0005`) dostaje tekst, narzędzia firmy z zapytania Rejestru `toolCatalog` (kod, nazwa, kategoria,
+  lokalizacja, bez wartości) i aktywne budowy, a zwraca rodzaj ruchu, budowę i wspomniane narzędzia z kodami
+  wszystkich pasujących. Moduł sam wybiera egzemplarze dostępne tam, skąd ruch zabiera sprzęt: liczebnik bierze
+  tyle, ile trzeba, nadmiar kandydatów to pytanie z przyciskami, a brak to nierozpoznana fraza. Propozycję
+  kierownik poprawia (rodzaj, budowa, narzędzia) i zatwierdza ✓; moduł nigdy nie zapisuje, a ✓ to zwykłe
+  `registerMovement` ze źródłem `glos` i tekstem wpisu, który widać w historii i eksporcie.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu
@@ -160,5 +168,8 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Powiadomienia e-mail (np. „Adam Nowak zabiera S-01 z budowy Rataje” dla kierownika, któremu przeniesienie
   zabrało sprzęt) wysyła Resend: `RESEND_API_KEY` i `NOTIFICATIONS_FROM` (adres w domenie zweryfikowanej
   w Resend) w zmiennych Vercel. Bez klucza powiadomienia trafiają tylko do logu serwera.
+- Wpis tekstem wymaga `ANTHROPIC_API_KEY` (komercyjne Anthropic API, bez trenowania na danych, zob. `docs/adr/0005`)
+  w zmiennych Vercel. Bez klucza przycisk „Wpisz tekstem” się nie pokazuje. Lokalnie i w teście dymnym
+  `TEXT_ENTRY_INTERPRETER=slowa` włącza interpretację słowami kluczowymi bez AI.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.

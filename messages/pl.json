@@ -66,6 +66,7 @@
     "noSites": "Nie ma aktywnych budów.",
     "addSite": "Dodaj budowę",
     "scan": "Skanuj QR",
+    "textEntry": "Wpisz tekstem",
     "issue": "Wydaj z bazy",
     "return": "Zwróć na bazę",
     "transfer": "Przenieś",
@@ -232,6 +233,7 @@
     "movementBy": "{author} · {source}",
     "undone": "cofnięty",
     "reason": "Powód: {reason}",
+    "transcript": "Wpisano: „{text}”",
     "stateChange": "{from} → {to}",
     "lostTitle": "Zaginione",
     "lostSince": "Od {when}",
@@ -267,7 +269,8 @@
     "panel": "panel",
     "checklista": "checklista",
     "qr": "skaner QR",
-    "import": "import"
+    "import": "import",
+    "glos": "wpis z AI"
   },
   "locations": {
     "siteName": "Nazwa budowy",
@@ -359,6 +362,31 @@
         "summaryEmpty": "Wybierz serwis i zaznacz narzędzia."
       }
     }
+  },
+  "textEntry": {
+    "label": "Co zabierasz albo oddajesz?",
+    "placeholder": "np. biorę dwie szlifierki i młot na Rataje",
+    "hint": "Napisz zwykłym zdaniem. Pokażę, co zrozumiałem, a nic się nie zapisze, dopóki nie zatwierdzisz ✓.",
+    "send": "Pokaż, co zrozumiałem",
+    "sending": "Czytam…",
+    "you": "Ty",
+    "system": "Narzędziownik",
+    "understood": "Zrozumiałem tak:",
+    "proposalLabel": "Propozycja ruchu",
+    "site": "Budowa",
+    "siteNotAllowed": "Zrozumiałem budowę „{site}”, ale tego ruchu nie możesz na niej zarejestrować. Wybierz budowę.",
+    "chooseSite": "wybierz budowę",
+    "question": "Które: „{phrase}”? Wybierz {count}.",
+    "questionOne": "Które: „{phrase}”?",
+    "unknown": "Nie znam narzędzia „{phrase}”.",
+    "unavailable": "„{phrase}”: brakuje {missing} szt. tam, skąd zabierasz.",
+    "misplaced": "{code} jest gdzie indziej. Usuń je z listy albo zmień rodzaj ruchu lub budowę.",
+    "noTools": "Dodaj co najmniej jedno narzędzie.",
+    "answerQuestions": "Najpierw odpowiedz na pytania powyżej.",
+    "add": "Dodaj narzędzie",
+    "addTool": "Dodaj {code}",
+    "failed": "Nie udało się zrozumieć wpisu. Spróbuj jeszcze raz albo użyj checklisty.",
+    "restart": "Nowy wpis"
   },
   "scanner": {
     "cameraPreview": "Podgląd aparatu",
@@ -463,6 +491,7 @@
     "author": "Osoba",
     "source": "Źródło",
     "reason": "Powód",
+    "transcript": "Wpisany tekst",
     "stateChange": "Zmiana stanu",
     "undone": "Cofnięty",
     "undoneYes": "tak",

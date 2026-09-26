@@ -51,7 +51,7 @@ async function sheetsOf(file: Buffer) {
 }
 
 const STATE_HEADER = ["Lokalizacja", "Rodzaj lokalizacji", "Kierownik", "Kod", "Nazwa", "Stan", "Od ilu dni", "Alarm"];
-const HISTORY_HEADER = ["Czas zdarzenia", "Rodzaj", "Narzędzia", "Skąd", "Dokąd", "Osoba", "Źródło", "Powód", "Zmiana stanu", "Cofnięty", "Czas zapisu"];
+const HISTORY_HEADER = ["Czas zdarzenia", "Rodzaj", "Narzędzia", "Skąd", "Dokąd", "Osoba", "Źródło", "Powód", "Wpisany tekst", "Zmiana stanu", "Cofnięty", "Czas zapisu"];
 
 /** Czas polski jako data w Excelu (bez strefy): 3 marca 7:00 w Polsce to 3 marca 7:00 w arkuszu. */
 function wallClock(text: string) {
@@ -85,6 +85,7 @@ describe("eksport do Excela", () => {
         null,
         null,
         null,
+        null,
         wallClock("2026-03-03T07:00:00"),
       ],
       [
@@ -98,12 +99,13 @@ describe("eksport do Excela", () => {
         null,
         null,
         null,
+        null,
         wallClock("2026-03-02T07:00:00"),
       ],
     ]);
   });
 
-  it("zaginięcie, powód i cofnięcie trafiają do historii w eksporcie", async () => {
+  it("zaginięcie, powód, wpisany tekst i cofnięcie trafiają do historii w eksporcie", async () => {
     const z = await givenZawbud();
     const issued = await testbed.registry.as(z.nowakId).registerMovement({
       operationId: randomUUID(),
@@ -111,16 +113,17 @@ describe("eksport do Excela", () => {
       fromLocationId: z.ratajeId,
       toLocationId: (await z.owner.whereIsWhat()).base.id,
       toolIds: [z.h01],
-      source: "checklista",
+      source: "glos",
+      transcript: "oddaję młot",
     });
     await testbed.registry.as(z.nowakId).undoMovement({ operationId: randomUUID(), movementId: issued.id });
 
     const history = (await sheetsOf(await exportWorkbook(await z.owner.exportData({ from: "2026-03-10" }))))["Historia"];
 
-    expect(history.slice(1).map((row) => [row[1], row[2], row[7], row[8], row[9]])).toEqual([
-      ["Cofnięcie", "H-01 Młot Hilti", null, null, null],
-      ["Zwrot", "H-01 Młot Hilti", null, null, "tak"],
-      ["Zaginięcie", "A-01 Agregat", "nie ma go na bazie", "W obiegu → Zaginione", null],
+    expect(history.slice(1).map((row) => [row[1], row[2], row[6], row[7], row[8], row[9], row[10]])).toEqual([
+      ["Cofnięcie", "H-01 Młot Hilti", "panel", null, null, null, null],
+      ["Zwrot", "H-01 Młot Hilti", "wpis z AI", null, "oddaję młot", null, "tak"],
+      ["Zaginięcie", "A-01 Agregat", "panel", "nie ma go na bazie", null, "W obiegu → Zaginione", null],
     ]);
   });
 

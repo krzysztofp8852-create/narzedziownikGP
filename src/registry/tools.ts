@@ -71,6 +71,8 @@ export interface HistoryEntry {
   to: string | null;
   /** Powód korekty, zaginięcia albo wycofania. */
   reason: string | null;
+  /** Tekst, z którego powstał ruch ze źródła `glos`. */
+  transcript: string | null;
   /** Zmiana stanu przy korekcie, zaginięciu i wycofaniu. */
   stateChange: { from: ToolState; to: ToolState } | null;
   /** Ruch został cofnięty; zostaje w historii z tym oznaczeniem. */
@@ -340,12 +342,13 @@ export async function toolCard(
     from_name: string | null;
     to_name: string | null;
     reason: string | null;
+    transcript: string | null;
     from_state: ToolState | null;
     to_state: ToolState | null;
     undone: boolean;
   }>(
     `select m.kind, m.source, m.occurred_at, u.full_name as author, lf.name as from_name, lt.name as to_name,
-            m.reason, m.from_state, m.to_state,
+            m.reason, m.transcript, m.from_state, m.to_state,
             exists (select 1 from app.movements r where r.reverses_movement_id = m.id) as undone
      from app.movement_tools mt
      join app.movements m on m.id = mt.movement_id
@@ -399,6 +402,7 @@ export async function toolCard(
       from: entry.from_name,
       to: entry.to_name,
       reason: entry.reason,
+      transcript: entry.transcript,
       stateChange: entry.from_state && entry.to_state ? { from: entry.from_state, to: entry.to_state } : null,
       undone: entry.undone,
     })),

@@ -15,9 +15,9 @@ export type MovementKind =
   | "korekta"
   | "zaginiecie"
   | "wycofanie";
-export type MovementSource = "panel" | "checklista" | "qr" | "import";
-/** Skąd przychodzi polecenie „zarejestruj ruch”: checklista albo skaner naklejek QR. */
-export const REGISTER_SOURCES = ["checklista", "qr"] as const;
+export type MovementSource = "panel" | "checklista" | "qr" | "import" | "glos";
+/** Skąd przychodzi polecenie „zarejestruj ruch”: checklista, skaner naklejek QR albo zatwierdzona propozycja z tekstu. */
+export const REGISTER_SOURCES = ["checklista", "qr", "glos"] as const;
 export type RegisterSource = (typeof REGISTER_SOURCES)[number];
 /** Ruchy, które rejestruje polecenie „zarejestruj ruch”. */
 export const REGISTERED_KINDS = ["wydanie", "zwrot", "przeniesienie", "do_serwisu", "z_serwisu"] as const;
@@ -50,7 +50,12 @@ export interface RegisterMovementInput {
   /** Kiedy to się stało na budowie; domyślnie teraz. Ruch z kolejki offline przychodzi później. */
   occurredAt?: Date;
   source: RegisterSource;
+  /** Tekst, z którego powstała propozycja: wymagany przy źródle `glos`, przy innych niedozwolony. */
+  transcript?: string;
 }
+
+/** Najdłuższy tekst propozycji zapisywany przy ruchu. */
+export const MAX_TRANSCRIPT_LENGTH = 2000;
 
 /** Ruch z historii firmy. */
 export interface Movement {
@@ -65,6 +70,8 @@ export interface Movement {
   tools: { id: string; code: string; name: string }[];
   /** Powód: obowiązkowy przy korekcie i zaginięciu. */
   reason: string | null;
+  /** Tekst, z którego powstał ruch ze źródła `glos`. */
+  transcript: string | null;
   /** Zmiana stanu narzędzia przy korekcie, zaginięciu i wycofaniu. */
   stateChange: { from: ToolState; to: ToolState } | null;
   /** Ruch, który ten ruch cofa. */
@@ -147,9 +154,12 @@ export interface LocationRow {
 export async function registerMovement(sql: Sql, session: Session, input: RegisterMovementInput, now: Date): Promise<Movement> {
   const occurredAt = input.occurredAt ?? now;
   const toolIds = [...new Set(input.toolIds)];
+  const transcript = input.transcript?.trim() || null;
   if (
     !REGISTERED_KINDS.includes(input.kind) ||
     !REGISTER_SOURCES.includes(input.source) ||
+    (input.source === "glos") !== (transcript !== null) ||
+    (transcript?.length ?? 0) > MAX_TRANSCRIPT_LENGTH ||
     toolIds.length === 0 ||
     toolIds.length > MAX_TOOLS ||
     !toolIds.every((id) => UUID_PATTERN.test(id)) ||
@@ -179,6 +189,7 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
     occurredAt,
     recordedAt: now,
     operationId: input.operationId,
+    transcript,
   });
 
   const tools = await currentTools(sql, toolIds);
@@ -257,6 +268,7 @@ export interface NewMovementRow {
   toState?: ToolState;
   reversesMovementId?: string;
   responsibleUserId?: string | null;
+  transcript?: string | null;
 }
 
 /** Zapisuje ruch bez narzędzi. Równoległy zapis tej samej operacji to ReplayedOperationError. */
@@ -264,8 +276,8 @@ export async function insertMovement(sql: Sql, session: Session, row: NewMovemen
   const [movement] = await sql<{ id: string }>(
     `insert into app.movements (company_id, kind, source, from_location_id, to_location_id, author_id,
                                 occurred_at, recorded_at, client_operation_id, reason, from_state, to_state,
-                                reverses_movement_id, responsible_user_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) returning id`,
+                                reverses_movement_id, responsible_user_id, transcript)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning id`,
     [
       session.company.id,
       row.kind,
@@ -281,6 +293,7 @@ export async function insertMovement(sql: Sql, session: Session, row: NewMovemen
       row.toState ?? null,
       row.reversesMovementId ?? null,
       row.responsibleUserId ?? null,
+      row.transcript ?? null,
     ],
   ).catch((error) => {
     if (isUniqueViolation(error, "movements_operation_per_company")) throw new ReplayedOperationError();
@@ -349,6 +362,7 @@ export async function movementsByIds(sql: Sql, ids: string[]): Promise<Movement[
     to_name: string | null;
     tools: { id: string; code: string; name: string }[];
     reason: string | null;
+    transcript: string | null;
     from_state: ToolState | null;
     to_state: ToolState | null;
     reverses_movement_id: string | null;
@@ -359,7 +373,7 @@ export async function movementsByIds(sql: Sql, ids: string[]): Promise<Movement[
             (select json_agg(json_build_object('id', t.id, 'code', t.code, 'name', t.name) order by t.code)
              from app.movement_tools mt join app.tools t on t.id = mt.tool_id
              where mt.movement_id = m.id) as tools,
-            m.reason, m.from_state, m.to_state, m.reverses_movement_id,
+            m.reason, m.transcript, m.from_state, m.to_state, m.reverses_movement_id,
             (select r.id from app.movements r where r.reverses_movement_id = m.id) as undone_by
      from app.movements m
      join app.users u on u.user_id = m.author_id
@@ -380,6 +394,7 @@ export async function movementsByIds(sql: Sql, ids: string[]): Promise<Movement[
     to: row.to_id ? { id: row.to_id, name: row.to_name! } : null,
     tools: row.tools ?? [],
     reason: row.reason,
+    transcript: row.transcript,
     stateChange: row.from_state && row.to_state ? { from: row.from_state, to: row.to_state } : null,
     undoes: row.reverses_movement_id,
     undoneBy: row.undone_by,

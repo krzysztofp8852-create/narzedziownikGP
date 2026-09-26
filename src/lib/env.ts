@@ -17,6 +17,16 @@ export const serverEnv = {
    * adres, z którego otwarto aplikację; na produkcji ustaw go, żeby naklejki nie wskazywały podglądu.
    */
   appUrl: () => process.env.APP_URL || null,
+  /**
+   * Interpretacja wpisu tekstem: klucz Anthropic API (Claude Haiku 4.5), a lokalnie i w teście dymnym
+   * `TEXT_ENTRY_INTERPRETER=slowa` (słowa kluczowe bez AI). Bez żadnego z nich wpis tekstem jest wyłączony.
+   */
+  interpreter: (): { anthropicApiKey: string } | "slowa" | null =>
+    process.env.ANTHROPIC_API_KEY
+      ? { anthropicApiKey: process.env.ANTHROPIC_API_KEY }
+      : process.env.TEXT_ENTRY_INTERPRETER === "slowa"
+        ? "slowa"
+        : null,
   /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
   resend: () =>
     process.env.RESEND_API_KEY

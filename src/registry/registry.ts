@@ -1,4 +1,6 @@
 import * as board from "./board";
+import * as catalog from "./catalog";
+import type { CatalogTool } from "./catalog";
 import type { WhereIsWhat } from "./board";
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type Sql } from "./ports";
@@ -30,6 +32,7 @@ import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
+export type { CatalogTool } from "./catalog";
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
 export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
@@ -53,7 +56,7 @@ export type {
   RegisterSource,
   UndoMovementInput,
 } from "./movements";
-export { canMoveEverywhere, canMoveTools, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
+export { canMoveEverywhere, canMoveTools, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
 export type { Notification, ToolsTakenNotification } from "./notifications";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
@@ -116,6 +119,8 @@ export interface Registry {
      * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
      */
     whereIsWhat(): Promise<WhereIsWhat>;
+    /** Narzędzia w obiegu z kategorią i lokalizacją, bez wartości (dla interpretacji tekstu). */
+    toolCatalog(): Promise<CatalogTool[]>;
     categories(): Promise<Category[]>;
     addCategory(input: { name: string; prefix: string }): Promise<Category>;
     /** Kolejny wolny kod w kategorii, np. S-05. */
@@ -323,6 +328,7 @@ export function createRegistry(deps: Deps): Registry {
           );
         },
         whereIsWhat: () => asMember((sql, session) => board.whereIsWhat(sql, session, deps.clock.now())),
+        toolCatalog: () => asMember((sql) => catalog.toolCatalog(sql)),
         categories: () => asMember((sql) => tools.listCategories(sql)),
         addCategory: (input) =>
           asMember((sql, session) => {

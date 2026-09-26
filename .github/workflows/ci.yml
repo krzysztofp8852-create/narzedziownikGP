@@ -49,6 +49,9 @@ jobs:
 
       - name: Test dymny Playwright
         run: npm run test:e2e
+        env:
+          # Wpis tekstem bez Anthropic API: interpretacja słowami kluczowymi.
+          TEXT_ENTRY_INTERPRETER: slowa
 
       - uses: actions/upload-artifact@v7
         if: failure()

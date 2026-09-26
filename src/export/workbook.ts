@@ -63,6 +63,7 @@ export async function exportWorkbook({ board, movements }: ExportData): Promise<
       t("export.author"),
       t("export.source"),
       t("export.reason"),
+      t("export.transcript"),
       t("export.stateChange"),
       t("export.undone"),
       t("export.recordedAt"),
@@ -76,6 +77,7 @@ export async function exportWorkbook({ board, movements }: ExportData): Promise<
       movement.author,
       t(`movementSource.${movement.source}`),
       movement.reason,
+      movement.transcript,
       stateChangeText(movement.stateChange),
       movement.undoneBy ? t("export.undoneYes") : null,
       dateTime(movement.recordedAt),
@@ -93,7 +95,7 @@ export async function exportWorkbook({ board, movements }: ExportData): Promise<
       sheet: t("export.historySheet"),
       data: history,
       stickyRowsCount: 1,
-      columns: [{ width: 17 }, { width: 12 }, { width: 40 }, { width: 22 }, { width: 22 }, { width: 20 }, { width: 11 }, { width: 30 }, { width: 22 }, { width: 10 }, { width: 17 }],
+      columns: [{ width: 17 }, { width: 12 }, { width: 40 }, { width: 22 }, { width: 22 }, { width: 20 }, { width: 11 }, { width: 30 }, { width: 40 }, { width: 22 }, { width: 10 }, { width: 17 }],
     },
   ]).toBuffer();
 }

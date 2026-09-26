@@ -5,7 +5,7 @@ import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { t } from "@/i18n/t";
 import type { Movement } from "@/registry/registry";
 
-/** Ruch na liście: rodzaj, trasa, narzędzia (z odnośnikami do kart), powód, czas, osoba i źródło. */
+/** Ruch na liście: rodzaj, trasa, narzędzia (z odnośnikami do kart), powód albo wpisany tekst, czas, osoba i źródło. */
 export function MovementEntry({ movement, children }: { movement: Movement; children?: ReactNode }) {
   return (
     <li className={movement.undoneBy ? "movement movement-undone" : "movement"}>
@@ -26,6 +26,7 @@ export function MovementEntry({ movement, children }: { movement: Movement; chil
         ))}
       </p>
       {movement.reason && <p className="history-reason">{t("toolCard.reason", { reason: movement.reason })}</p>}
+      {movement.transcript && <p className="history-reason">{t("toolCard.transcript", { text: movement.transcript })}</p>}
       <p className="muted movement-meta">
         <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
         {" · "}
