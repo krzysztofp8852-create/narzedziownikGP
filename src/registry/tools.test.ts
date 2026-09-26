@@ -25,7 +25,6 @@ describe("dodawanie narzędzia", () => {
       model: "TE 30",
       serialNumber: "SN-123",
       value: 3200,
-      purchaseDate: "2025-04-15",
     });
     testbed.clock.advance(3 * DAY);
 
@@ -42,10 +41,6 @@ describe("dodawanie narzędzia", () => {
       model: "TE 30",
       serialNumber: "SN-123",
       value: 3200,
-      purchaseDate: "2025-04-15",
-      photoUrl: null,
-      alarmThresholdDays: null,
-      companyAlarmThresholdDays: 30,
       state: "w_obiegu",
       registration: "zaakceptowane",
       location: { id: base.id, name: "Magazyn Swarzędz", kind: "baza" },
@@ -132,7 +127,7 @@ describe("kategorie", () => {
 });
 
 describe("dane karty narzędzia", () => {
-  it("odrzuca brak nazwy, zły kod, ujemną wartość, nieistniejącą datę, zerowy próg i obcą kategorię", async () => {
+  it("odrzuca brak nazwy, zły kod, ujemną wartość i obcą kategorię", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const budrex = await testbed.givenActiveCompany("Budrex");
     const hammers = await givenCategory(zawbud, "Młoty", "H");
@@ -146,10 +141,6 @@ describe("dane karty narzędzia", () => {
       { code: "H_03" },
       { value: -1 },
       { value: Number.NaN },
-      { purchaseDate: "2025-02-30" },
-      { purchaseDate: "15.04.2025" },
-      { alarmThresholdDays: 0 },
-      { alarmThresholdDays: 2.5 },
       { categoryId: foreignCategory.id },
     ]) {
       await expect(owner.addTool({ operationId: randomUUID(), ...valid, ...invalid }), JSON.stringify(invalid)).rejects.toMatchObject({
@@ -178,7 +169,7 @@ describe("uprawnienia", () => {
     expect(await owner.toolCard(valued.toolId)).toMatchObject({ value: 3217.5 });
   });
 
-  it("magazynier nie może ustawić wartości ani progu dni, nawet wysyłając je z pominięciem formularza", async () => {
+  it("magazynier nie może ustawić wartości, nawet wysyłając ją z pominięciem formularza", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const hammers = await givenCategory(zawbud, "Młoty", "H");
     const storekeeper = testbed.registry.as(await testbed.givenMember(zawbud, "magazynier"));
@@ -186,7 +177,6 @@ describe("uprawnienia", () => {
 
     await expect(storekeeper.addTool({ ...tool, value: 100 })).rejects.toMatchObject({ code: "forbidden" });
     await expect(storekeeper.addTool({ ...tool, value: null })).rejects.toMatchObject({ code: "forbidden" });
-    await expect(storekeeper.addTool({ ...tool, alarmThresholdDays: 60 })).rejects.toMatchObject({ code: "forbidden" });
 
     expect((await storekeeper.whereIsWhat()).base.tools).toEqual([]);
   });
@@ -278,51 +268,8 @@ describe("idempotencja", () => {
   });
 });
 
-describe("zdjęcie narzędzia", () => {
-  const jpeg = (size = 3) => ({ bytes: new Uint8Array(size).fill(7), contentType: "image/jpeg" });
-
-  it("zdjęcie dodane z narzędziem jest dostępne z karty narzędzia", async () => {
-    const zawbud = await testbed.givenActiveCompany("Zawbud");
-    const hammers = await givenCategory(zawbud, "Młoty", "H");
-    const owner = testbed.registry.as(zawbud.ownerId);
-    const photo = jpeg();
-
-    const { toolId } = await owner.addTool({ operationId: randomUUID(), name: "Młot", categoryId: hammers.id, photo });
-
-    const { photoUrl } = (await owner.toolCard(toolId))!;
-    expect(testbed.photos.photoAt(photoUrl!)).toEqual(photo);
-  });
-
-  it("odrzuca plik, który nie jest zdjęciem JPEG, PNG lub WebP albo ma ponad 3 MB, i nic nie zapisuje", async () => {
-    const zawbud = await testbed.givenActiveCompany("Zawbud");
-    const hammers = await givenCategory(zawbud, "Młoty", "H");
-    const owner = testbed.registry.as(zawbud.ownerId);
-    const tool = { name: "Młot", categoryId: hammers.id };
-
-    for (const photo of [{ bytes: new Uint8Array(3), contentType: "application/pdf" }, jpeg(3 * 1024 * 1024 + 1), jpeg(0)]) {
-      await expect(owner.addTool({ operationId: randomUUID(), ...tool, photo })).rejects.toMatchObject({ code: "invalid_photo" });
-    }
-
-    expect(testbed.photos.paths()).toEqual([]);
-    expect((await owner.whereIsWhat()).base.tools).toEqual([]);
-  });
-
-  it("gdy narzędzia nie da się zapisać, przesłane zdjęcie nie zostaje w magazynie", async () => {
-    const zawbud = await testbed.givenActiveCompany("Zawbud");
-    const hammers = await givenCategory(zawbud, "Młoty", "H");
-    const owner = testbed.registry.as(zawbud.ownerId);
-    await owner.addTool({ operationId: randomUUID(), name: "Młot", categoryId: hammers.id, code: "H-01" });
-
-    await expect(
-      owner.addTool({ operationId: randomUUID(), name: "Młot", categoryId: hammers.id, code: "H-01", photo: jpeg() }),
-    ).rejects.toMatchObject({ code: "code_taken" });
-
-    expect(testbed.photos.paths()).toEqual([]);
-  });
-});
-
 describe("edycja karty narzędzia", () => {
-  it("właściciel poprawia dane, wartość i próg dni, a lokalizacja i historia zostają bez zmian", async () => {
+  it("właściciel poprawia dane i wartość, a lokalizacja i historia zostają bez zmian", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const hammers = await givenCategory(zawbud, "Młoty", "H");
     const generators = await givenCategory(zawbud, "Agregaty", "A");
@@ -338,8 +285,6 @@ describe("edycja karty narzędzia", () => {
       model: "EU 22i",
       serialNumber: "X1",
       value: 5400,
-      purchaseDate: "2024-06-01",
-      alarmThresholdDays: 60,
     });
 
     expect(await owner.toolCard(toolId)).toEqual({
@@ -351,15 +296,13 @@ describe("edycja karty narzędzia", () => {
       model: "EU 22i",
       serialNumber: "X1",
       value: 5400,
-      purchaseDate: "2024-06-01",
-      alarmThresholdDays: 60,
     });
 
-    await owner.editTool(toolId, { value: null, alarmThresholdDays: null });
-    expect(await owner.toolCard(toolId)).toMatchObject({ value: null, alarmThresholdDays: null, companyAlarmThresholdDays: 30 });
+    await owner.editTool(toolId, { value: null, serialNumber: null });
+    expect(await owner.toolCard(toolId)).toMatchObject({ value: null, serialNumber: null });
   });
 
-  it("magazynier edytuje dane karty, ale nie wartość ani próg, a wartość wpisana przez właściciela zostaje", async () => {
+  it("magazynier edytuje dane karty, ale nie wartość, a wartość wpisana przez właściciela zostaje", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const hammers = await givenCategory(zawbud, "Młoty", "H");
     const owner = testbed.registry.as(zawbud.ownerId);
@@ -368,9 +311,8 @@ describe("edycja karty narzędzia", () => {
 
     await storekeeper.editTool(toolId, { name: "Młot udarowy", serialNumber: "SN-9" });
     await expect(storekeeper.editTool(toolId, { value: 1 })).rejects.toMatchObject({ code: "forbidden" });
-    await expect(storekeeper.editTool(toolId, { alarmThresholdDays: 90 })).rejects.toMatchObject({ code: "forbidden" });
 
-    expect(await owner.toolCard(toolId)).toMatchObject({ name: "Młot udarowy", serialNumber: "SN-9", value: 3200, alarmThresholdDays: null });
+    expect(await owner.toolCard(toolId)).toMatchObject({ name: "Młot udarowy", serialNumber: "SN-9", value: 3200 });
   });
 
   it("odmawia zajętego kodu, kierownikowi i narzędziu innej firmy", async () => {
@@ -390,24 +332,6 @@ describe("edycja karty narzędzia", () => {
     });
 
     expect(await owner.toolCard(toolId)).toMatchObject({ code: "H-02", name: "Młot" });
-  });
-
-  it("nowe zdjęcie zastępuje stare, które znika z magazynu, a zdjęcie można też usunąć", async () => {
-    const zawbud = await testbed.givenActiveCompany("Zawbud");
-    const hammers = await givenCategory(zawbud, "Młoty", "H");
-    const owner = testbed.registry.as(zawbud.ownerId);
-    const first = { bytes: new Uint8Array([1]), contentType: "image/jpeg" };
-    const second = { bytes: new Uint8Array([2]), contentType: "image/png" };
-    const { toolId } = await owner.addTool({ operationId: randomUUID(), name: "Młot", categoryId: hammers.id, photo: first });
-
-    await owner.editTool(toolId, { photo: second });
-    const { photoUrl } = (await owner.toolCard(toolId))!;
-    expect(testbed.photos.photoAt(photoUrl!)).toEqual(second);
-    expect(testbed.photos.paths()).toHaveLength(1);
-
-    await owner.editTool(toolId, { photo: null });
-    expect(await owner.toolCard(toolId)).toMatchObject({ photoUrl: null });
-    expect(testbed.photos.paths()).toEqual([]);
   });
 });
 

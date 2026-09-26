@@ -9,7 +9,7 @@ import { addTool, type ToolFormState } from "./actions";
 import { ToolForm } from "./tool-form";
 
 /** Dodawanie narzędzi z tablicy: po zapisie pusty formularz pod następne, z linkiem do karty dodanego. */
-export function NewToolForm(props: { categories: Category[]; showOwnerFields: boolean; maxPhotoBytes: number; operationId: string }) {
+export function NewToolForm(props: { categories: Category[]; showValue: boolean; operationId: string }) {
   const [operationId, setOperationId] = useState(props.operationId);
   const [added, setAdded] = useState<ToolFormState["added"]>();
 
@@ -34,8 +34,7 @@ export function NewToolForm(props: { categories: Category[]; showOwnerFields: bo
         key={operationId}
         action={action}
         categories={props.categories}
-        showOwnerFields={props.showOwnerFields}
-        maxPhotoBytes={props.maxPhotoBytes}
+        showValue={props.showValue}
         operationId={operationId}
         submitLabel={t("tools.submitAdd")}
       />

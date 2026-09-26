@@ -124,7 +124,6 @@
     "code_taken": "Ten kod ma już inne narzędzie w firmie.",
     "category_taken": "Kategoria o tej nazwie już istnieje.",
     "prefix_taken": "Ten prefiks ma już inna kategoria.",
-    "invalid_photo": "Zdjęcie musi być plikiem JPEG, PNG lub WebP do 3 MB.",
     "invalid_manager": "Kierownikiem budowy może być tylko aktywny kierownik z Twojej firmy.",
     "site_finished": "Ta budowa jest zakończona.",
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
@@ -136,7 +135,7 @@
   },
   "tools": {
     "code": "Kod",
-    "codeHint": "Podpowiadamy kolejny wolny kod w kategorii. Możesz wpisać własny.",
+    "codeAssigned": "Kod nadamy automatycznie:",
     "name": "Nazwa",
     "category": "Kategoria",
     "categoryPlaceholder": "Wybierz kategorię",
@@ -144,12 +143,7 @@
     "model": "Model",
     "serialNumber": "Numer seryjny",
     "value": "Wartość (zł)",
-    "purchaseDate": "Data zakupu",
-    "photo": "Zdjęcie",
-    "photoHint": "JPEG, PNG lub WebP. Duże zdjęcia zmniejszamy przed wysłaniem.",
-    "removePhoto": "Usuń obecne zdjęcie",
-    "threshold": "Próg dni na budowie",
-    "thresholdHint": "Puste: obowiązuje próg firmy.",
+    "optional": "{field} (opcjonalnie)",
     "submitAdd": "Dodaj narzędzie",
     "submitEdit": "Zapisz zmiany",
     "submitting": "Zapisywanie…",
@@ -176,11 +170,6 @@
     "inPlace": "{place}, od {days}",
     "details": "Dane",
     "none": "—",
-    "noPhoto": "Brak zdjęcia",
-    "photoAlt": "Zdjęcie: {name}",
-    "threshold": "Próg dni na budowie",
-    "thresholdCompany": "{days} dni (próg firmy)",
-    "thresholdOwn": "{days} dni",
     "history": "Historia",
     "movementTo": "→ {place}",
     "state": "Stan",
@@ -255,5 +244,14 @@
     "toolLabel": "{code} {name}",
     "clear": "Wyczyść zaznaczenie",
     "done": "Zapisano: {summary}"
+  },
+  "settings": {
+    "title": "Alarm na budowie",
+    "alarmThreshold": "Po ilu dniach",
+    "alarmThresholdHint": "Narzędzie stojące na budowie dłużej niż tyle dni (od wydania na budowę) oznaczymy alarmem. Od 1 do {max} dni.",
+    "submit": "Zapisz",
+    "submitting": "Zapisywanie…",
+    "saved": "Zapisano.",
+    "invalidDays": "Wpisz liczbę dni od 1 do {max}."
   }
 }

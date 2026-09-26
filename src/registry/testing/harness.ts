@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createPgDb } from "../pg-db";
 import type { Db } from "../ports";
 import { createRegistry, type MemberRole, type Registry } from "../registry";
-import { FakeAuthAdmin, FakePhotoStore, FixedClock } from "./fakes";
+import { FakeAuthAdmin, FixedClock } from "./fakes";
 import { createPgliteDb } from "./pglite-db";
 
 export const START = new Date("2026-03-02T07:00:00+01:00");
@@ -11,7 +11,6 @@ export interface RegistryTestbed {
   registry: Registry;
   clock: FixedClock;
   auth: FakeAuthAdmin;
-  photos: FakePhotoStore;
   db: Db;
   /** Firma z bazą i właścicielem, założona tak jak robi to skrypt. */
   givenCompany(name: string, options?: { email?: string; fullName?: string; baseName?: string }): Promise<GivenCompany>;
@@ -41,19 +40,17 @@ export function setupRegistryTestbed(): RegistryTestbed {
   const clock = new FixedClock(START);
   let db: Db & { close(): Promise<void> };
   let auth: FakeAuthAdmin;
-  const photos = new FakePhotoStore();
   let registry: Registry;
 
   beforeAll(async () => {
     db = await openTestDb();
     auth = new FakeAuthAdmin(db);
-    registry = createRegistry({ db, clock, authAdmin: auth, photos });
+    registry = createRegistry({ db, clock, authAdmin: auth });
   });
 
   beforeEach(async () => {
     await resetDb(db);
     auth.clear();
-    photos.clear();
     clock.set(START);
   });
 
@@ -86,7 +83,6 @@ export function setupRegistryTestbed(): RegistryTestbed {
       return auth;
     },
     clock,
-    photos,
     givenCompany,
     signedInNow: () => ({ signedInAt: clock.now() }),
     async givenActiveCompany(name, options = {}) {

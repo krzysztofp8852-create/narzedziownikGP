@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import type { Category } from "@/registry/registry";
@@ -14,30 +14,24 @@ export interface ToolFormValues {
   model: string;
   serialNumber: string;
   value: string;
-  purchaseDate: string;
-  alarmThresholdDays: string;
-  hasPhoto: boolean;
 }
 
 interface ToolFormProps {
   action: (prev: ToolFormState, formData: FormData) => Promise<ToolFormState>;
   categories: Category[];
-  /** Wartość i próg dni: pola tylko dla właściciela. */
-  showOwnerFields: boolean;
-  maxPhotoBytes: number;
+  /** Wartość: pole tylko dla właściciela. */
+  showValue: boolean;
+  /** Karta do edycji; bez niej formularz dodaje nowe narzędzie z kodem nadanym przez system. */
   initial?: ToolFormValues;
   /** Tylko przy dodawaniu: identyfikator operacji, dzięki któremu ponowne wysłanie nie tworzy duplikatu. */
   operationId?: string;
   submitLabel: string;
 }
 
-const MAX_PHOTO_SIDE = 1600;
-
 export function ToolForm({
   action,
   categories: initialCategories,
-  showOwnerFields,
-  maxPhotoBytes,
+  showValue,
   initial,
   operationId,
   submitLabel,
@@ -46,15 +40,14 @@ export function ToolForm({
   const [categories, setCategories] = useState(initialCategories);
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
   const [code, setCode] = useState(initial?.code ?? "");
-  const codeTouched = useRef(Boolean(initial));
+  const [suggestedCode, setSuggestedCode] = useState<string | null>(null);
   const [, startSuggesting] = useTransition();
 
   function chooseCategory(id: string) {
     setCategoryId(id);
-    if (codeTouched.current || !id) return;
+    if (initial || !id) return;
     startSuggesting(async () => {
-      const suggestion = await suggestCode(id);
-      if (suggestion && !codeTouched.current) setCode(suggestion);
+      setSuggestedCode(await suggestCode(id));
     });
   }
 
@@ -76,46 +69,34 @@ export function ToolForm({
             ))}
           </select>
         </div>
-        <div className="field">
-          <label htmlFor="code">{t("tools.code")}</label>
-          <input
-            id="code"
-            name="code"
-            className="plate-input"
-            value={code}
-            onChange={(event) => {
-              codeTouched.current = true;
-              setCode(event.target.value.toUpperCase());
-            }}
-            autoCapitalize="characters"
-            maxLength={20}
-            aria-describedby="code-hint"
-            required={Boolean(initial)}
-          />
-          <small id="code-hint">{t("tools.codeHint")}</small>
-        </div>
+        {initial ? (
+          <div className="field">
+            <label htmlFor="code">{t("tools.code")}</label>
+            <input
+              id="code"
+              name="code"
+              className="plate-input"
+              value={code}
+              onChange={(event) => setCode(event.target.value.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={20}
+              required
+            />
+          </div>
+        ) : (
+          suggestedCode && (
+            <p className="muted" role="status">
+              {t("tools.codeAssigned")} <span className="plate">{suggestedCode}</span>
+            </p>
+          )
+        )}
         <TextField name="name" label={t("tools.name")} defaultValue={initial?.name} required />
         <div className="field-row">
-          <TextField name="brand" label={t("tools.brand")} defaultValue={initial?.brand} />
-          <TextField name="model" label={t("tools.model")} defaultValue={initial?.model} />
+          <TextField name="brand" label={optional("tools.brand")} defaultValue={initial?.brand} />
+          <TextField name="model" label={optional("tools.model")} defaultValue={initial?.model} />
         </div>
-        <TextField name="serialNumber" label={t("tools.serialNumber")} defaultValue={initial?.serialNumber} />
-        <div className="field-row">
-          {showOwnerFields && <TextField name="value" label={t("tools.value")} defaultValue={initial?.value} inputMode="decimal" />}
-          <TextField name="purchaseDate" label={t("tools.purchaseDate")} defaultValue={initial?.purchaseDate} type="date" />
-        </div>
-        {showOwnerFields && (
-          <TextField
-            name="alarmThresholdDays"
-            label={t("tools.threshold")}
-            defaultValue={initial?.alarmThresholdDays}
-            type="number"
-            min={1}
-            step={1}
-            hint={t("tools.thresholdHint")}
-          />
-        )}
-        <PhotoField hasPhoto={initial?.hasPhoto ?? false} maxBytes={maxPhotoBytes} />
+        <TextField name="serialNumber" label={optional("tools.serialNumber")} defaultValue={initial?.serialNumber} />
+        {showValue && <TextField name="value" label={optional("tools.value")} defaultValue={initial?.value} inputMode="decimal" />}
         {state.error && (
           <p className="form-error" role="alert">
             {state.error}
@@ -138,6 +119,10 @@ export function ToolForm({
   );
 }
 
+function optional(key: "tools.brand" | "tools.model" | "tools.serialNumber" | "tools.value") {
+  return t("tools.optional", { field: t(key) });
+}
+
 function TextField({
   name,
   label,
@@ -151,57 +136,6 @@ function TextField({
       {hint && <small id={`${name}-hint`}>{hint}</small>}
     </div>
   );
-}
-
-function PhotoField({ hasPhoto, maxBytes }: { hasPhoto: boolean; maxBytes: number }) {
-  // Zdjęcie z telefonu zmniejszamy w przeglądarce: szybciej wysyła się ze słabym zasięgiem.
-  async function shrink(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.setCustomValidity("");
-    if (!file) return;
-    try {
-      const smaller = await downscale(file);
-      if (smaller) {
-        const transfer = new DataTransfer();
-        transfer.items.add(smaller);
-        input.files = transfer.files;
-      }
-    } catch {
-      // Przeglądarka nie umie odczytać pliku; wysyłamy oryginał, a serwer oceni, czy to dobre zdjęcie.
-    }
-    // Za duży plik odrzuciłaby platforma, zanim dotrze do serwera, więc mówimy o tym od razu.
-    if ((input.files?.[0]?.size ?? 0) > maxBytes) {
-      input.setCustomValidity(t("errors.invalid_photo"));
-      input.reportValidity();
-    }
-  }
-
-  return (
-    <div className="field">
-      <label htmlFor="photo">{t("tools.photo")}</label>
-      <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={shrink} aria-describedby="photo-hint" />
-      <small id="photo-hint">{t("tools.photoHint")}</small>
-      {hasPhoto && (
-        <label className="checkbox">
-          <input type="checkbox" name="removePhoto" />
-          {t("tools.removePhoto")}
-        </label>
-      )}
-    </div>
-  );
-}
-
-async function downscale(file: File): Promise<File | null> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height));
-  if (scale === 1 && file.type === "image/jpeg" && file.size < 1024 * 1024) return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-  return blob ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : null;
 }
 
 /** Osobny formularz (formularzy nie można zagnieżdżać), który po dodaniu wybiera nową kategorię. */
