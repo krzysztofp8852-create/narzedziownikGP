@@ -1223,3 +1223,47 @@ a.tool-row:hover .tool-row-name {
 .movement-tools a:hover {
   color: var(--accent);
 }
+
+/* Zgłoszenia narzędzi: zgłoszone narzędzie jeździ jak każde, ale czeka na akceptację właściciela. */
+.tag-reported {
+  background: var(--warning-soft);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.location-reports {
+  border-color: var(--warning);
+}
+
+.tool-reports {
+  list-style: none;
+  display: grid;
+}
+
+.tool-report {
+  display: grid;
+  gap: 12px;
+  padding: 8px 0 12px;
+  border-top: 1px solid var(--border);
+}
+
+.tool-report-head {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
+  align-items: center;
+}
+
+.tool-report-head .tool-row {
+  grid-template-columns: auto 1fr;
+}
+
+.tool-report-head .operation-tabs .button {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .tool-report-head {
+    grid-template-columns: 1fr;
+  }
+}

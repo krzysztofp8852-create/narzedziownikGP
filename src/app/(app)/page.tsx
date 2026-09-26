@@ -11,14 +11,19 @@ import { getRegistry } from "@/lib/registry-instance";
 import {
   canManageLocations,
   canManageTools,
+  canReportTools,
+  canReviewToolReports,
   canSeeValues,
+  type Category,
   type RecentMovement,
   type SiteManagerCandidate,
   type ToolOnBoard,
+  type ToolReport,
   type WhereIsWhat,
 } from "@/registry/registry";
 import { changeSiteManager } from "./lokalizacje/actions";
 import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
+import { ToolReportReview } from "./narzedzia/tool-report-review";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
@@ -39,6 +44,7 @@ function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?: boolea
             <span className="plate">{tool.code}</span>
             <span className="tool-row-name">
               {tool.name}
+              {tool.registration === "zgloszone" && <span className="tag tag-reported">{t("board.reported")}</span>}
               {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
             </span>
             <span className="tool-row-meta">
@@ -129,6 +135,27 @@ function Lost({ lost, lostValue }: Pick<WhereIsWhat, "lost" | "lostValue">) {
   );
 }
 
+/** Zgłoszenia narzędzi czekające na decyzję właściciela; bez zgłoszeń sekcji nie ma. */
+function ToolReports({ reports, categories }: { reports: ToolReport[]; categories: Category[] }) {
+  if (reports.length === 0) return null;
+  return (
+    <section className="location location-reports" aria-labelledby="tool-reports">
+      <div className="location-head">
+        <h2 id="tool-reports" className="display section-title">
+          {t("toolReports.title")}
+        </h2>
+        <span className="location-count">{t("board.toolCount", { count: reports.length })}</span>
+      </div>
+      <p className="muted">{t("toolReports.intro")}</p>
+      <ul className="tool-reports">
+        {reports.map((report) => (
+          <ToolReportReview key={report.id} report={report} categories={categories} operationId={randomUUID()} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   return (
     <section className="recent" aria-labelledby="recent-movements">
@@ -202,11 +229,12 @@ function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
 export default async function BoardPage() {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
-  const [board, movements, managers, categories] = await Promise.all([
+  const [board, movements, managers, categories, reports] = await Promise.all([
     registry.whereIsWhat(),
     registry.recentMovements(),
     canManageLocations(session) ? registry.siteManagerCandidates() : null,
-    canManageTools(session) ? registry.categories() : null,
+    canManageTools(session) || canReportTools(session) ? registry.categories() : null,
+    canReviewToolReports(session) ? registry.toolReports() : [],
   ]);
   const { base, sites } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
@@ -217,9 +245,18 @@ export default async function BoardPage() {
         <OperationsPanel
           checklist={checklistData(session, board)}
           newTool={
-            categories && {
+            categories &&
+            canManageTools(session) && {
               categories,
               showValue: canSeeValues(session),
+              operationId: randomUUID(),
+            }
+          }
+          reportTool={
+            categories &&
+            canReportTools(session) && {
+              categories,
+              sites: sites.filter((site) => site.manager.id === session.userId).map((site) => ({ id: site.id, name: site.name })),
               operationId: randomUUID(),
             }
           }
@@ -258,6 +295,8 @@ export default async function BoardPage() {
               </div>
             </dl>
           </div>
+
+          <ToolReports reports={reports} categories={categories ?? []} />
 
           <section className="location" aria-labelledby="location-base">
             <div className="location-head">

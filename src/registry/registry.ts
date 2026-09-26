@@ -15,6 +15,8 @@ import type { CompanySettings } from "./settings";
 import { generateTemporaryPassword } from "./temporary-password";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
+import * as toolReports from "./tool-reports";
+import type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
@@ -45,6 +47,8 @@ export type {
 export { canMoveTools, MovementConflictError, UNDO_WINDOW_MS } from "./movements";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
+export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
+export { canReportTools, canReviewToolReports } from "./tool-reports";
 
 export interface Session {
   userId: string;
@@ -102,6 +106,17 @@ export interface Registry {
     editTool(toolId: string, input: EditToolInput): Promise<void>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
+    /**
+     * Zgłoszenie narzędzia kupionego na budowę. Tylko kierownik, na swoją aktywną budowę: narzędzie
+     * od razu jest tam jako zgłoszone, z kodem nadanym jak przy dodawaniu, i uczestniczy w ruchach.
+     */
+    reportTool(input: ReportToolInput): Promise<{ toolId: string; code: string }>;
+    /** Zgłoszenia narzędzi czekające na decyzję, od najstarszego. Tylko właściciel. */
+    toolReports(): Promise<ToolReport[]>;
+    /** Akceptuje zgłoszenie, uzupełniając kod i wartość. Tylko właściciel. */
+    acceptToolReport(input: AcceptToolReportInput): Promise<void>;
+    /** Odrzuca zgłoszenie z komentarzem: narzędzie jest wycofane, historia zostaje. Tylko właściciel. */
+    rejectToolReport(input: RejectToolReportInput): Promise<Movement>;
     /** Wszystkie osoby w firmie, także dezaktywowane. Tylko właściciel. */
     team(): Promise<TeamMember[]>;
     /** Zakłada konto kierownika lub magazyniera z hasłem tymczasowym do przekazania osobiście. */
@@ -276,6 +291,23 @@ export function createRegistry(deps: Deps): Registry {
             return tools.editTool(sql, session, toolId, input);
           }),
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
+        reportTool: async (input) => {
+          const attempt = () => asMember((sql, session) => toolReports.reportTool(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
+            if (error instanceof tools.ReplayedOperationError) return attempt();
+            throw error;
+          }
+        },
+        toolReports: () =>
+          asMember((sql, session) => {
+            toolReports.requireToolReviewer(session);
+            return toolReports.toolReports(sql);
+          }),
+        acceptToolReport: (input) => asMember((sql, session) => toolReports.acceptToolReport(sql, session, input)),
+        rejectToolReport: movementCommand(toolReports.rejectToolReport),
         team: () =>
           asMember((sql, session) => {
             team.requireTeamManager(session);

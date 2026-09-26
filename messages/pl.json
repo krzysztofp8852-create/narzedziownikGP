@@ -88,7 +88,9 @@
     "serviceKind": "Serwis",
     "lostTitle": "Zaginione",
     "lostEmpty": "Nie ma zaginionych narzędzi.",
-    "lostFor": "zaginione od {days}"
+    "lostFor": "zaginione od {days}",
+    "reportTool": "Zgłoś narzędzie",
+    "reported": "zgłoszone"
   },
   "settingsPage": {
     "title": "Ustawienia",
@@ -148,7 +150,8 @@
     "undo_expired": "Minęło 15 minut od zapisu ruchu. Ewidencję ustawi właściciel korektą.",
     "undo_blocked": "Tego ruchu nie da się już cofnąć: jego narzędzia ruszyły się później.",
     "reason_required": "Podaj powód.",
-    "invalid_tool_state": "Narzędzie jest już w tym stanie."
+    "invalid_tool_state": "Narzędzie jest już w tym stanie.",
+    "not_reported": "To zgłoszenie jest już rozpatrzone."
   },
   "days": {
     "one": "{count} dzień",
@@ -174,6 +177,30 @@
     "added": "Dodano {code} {name}.",
     "openCard": "Otwórz kartę →",
     "saved": "Zapisano zmiany."
+  },
+  "toolReports": {
+    "title": "Zgłoszone narzędzia",
+    "intro": "Kierownicy zgłosili sprzęt kupiony na budowę. Już jest na tablicy i może jeździć; zaakceptuj go z kodem i wartością albo odrzuć, np. gdy jest już w ewidencji.",
+    "reportedBy": "Zgłosił: {name}, {when}",
+    "now": "Teraz: {place}",
+    "accept": "Akceptuj",
+    "code": "Kod",
+    "category": "Kategoria",
+    "value": "Wartość (zł)",
+    "submitAccept": "Akceptuj ✓",
+    "reject": "Odrzuć",
+    "comment": "Komentarz",
+    "commentPlaceholder": "np. to jest W-01 z bazy",
+    "rejectHint": "Narzędzie zostanie wycofane z obiegu, a jego karta i historia zostaną.",
+    "submitReject": "Odrzuć zgłoszenie",
+    "submitting": "Zapisywanie…",
+    "site": "Na budowę",
+    "sitePlaceholder": "Wybierz budowę",
+    "noSites": "Nie masz aktywnej budowy, na którą możesz zgłosić narzędzie.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "reportHint": "Narzędzie od razu będzie na Twojej budowie jako „zgłoszone”. Właściciel uzupełni wartość i zaakceptuje zgłoszenie.",
+    "submitReport": "Zgłoś narzędzie",
+    "reported": "Zgłoszono {code} {name} na {place}."
   },
   "categories": {
     "newTitle": "Nowa kategoria",

@@ -107,6 +107,14 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   zaginięcie (`markToolLost`: data, ostatnia lokalizacja i kierownik budowy) i wycofuje narzędzie
   (`retireTool`). Zaginione i wycofane znikają z tablicy i checklist, karta z historią zostaje;
   odnalezienie to korekta. Ruchów nie da się zmienić ani usunąć, także z pominięciem Rejestru.
+- Zgłoszenia narzędzi: kierownik zgłasza sprzęt kupiony na swoją budowę (`reportTool`: nazwa i kategoria,
+  kod nadaje Rejestr). Narzędzie od razu jest na tej budowie ze statusem ewidencji `zgloszone` i ruchem
+  „przyjęcie” autorstwa kierownika, a na tablicy ma znacznik „zgłoszone” i jeździ jak każde inne. Właściciel
+  widzi listę zgłoszeń na tablicy (`toolReports`) i akceptuje je z ostatecznym kodem, kategorią i wartością
+  (`acceptToolReport`) albo odrzuca z komentarzem (`rejectToolReport`: wycofanie z komentarzem jako powodem,
+  historia zostaje). Osobne polityki RLS pozwalają kierownikowi dopisać tylko zgłoszone narzędzie na własną
+  budowę, przyjęcie obejmuje tylko narzędzie dopisane w tej samej transakcji, a status ewidencji zmienia
+  tylko właściciel.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu

@@ -146,3 +146,66 @@ export async function changeToolRecord(_prev: CorrectionFormState, formData: For
   revalidatePath(`/narzedzia/${common.toolId}`);
   return {};
 }
+
+export interface ToolReportFormState {
+  error?: string;
+  /** Zgłoszone narzędzie; formularz czyści się wtedy pod następne. */
+  reported?: { id: string; code: string; name: string; place: string };
+  /** Decyzja zapisana; zgłoszenie znika z listy. */
+  done?: boolean;
+}
+
+/** Kierownik zgłasza narzędzie kupione na swoją budowę. */
+export async function reportTool(_prev: ToolReportFormState, formData: FormData): Promise<ToolReportFormState> {
+  const session = await requireSession();
+  const name = formText(formData, "name");
+  try {
+    const { toolId, code } = await getRegistry()
+      .as(session.userId)
+      .reportTool({
+        operationId: formText(formData, "operationId"),
+        siteId: formText(formData, "siteId"),
+        name,
+        categoryId: formText(formData, "categoryId"),
+      });
+    revalidatePath("/");
+    return { reported: { id: toolId, code, name: name.trim(), place: formText(formData, "siteName") } };
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+}
+
+/** Właściciel akceptuje zgłoszenie z kodem, kategorią i wartością. */
+export async function acceptToolReport(toolId: string, _prev: ToolReportFormState, formData: FormData): Promise<ToolReportFormState> {
+  const session = await requireSession();
+  try {
+    await getRegistry()
+      .as(session.userId)
+      .acceptToolReport({
+        toolId,
+        code: formText(formData, "code"),
+        categoryId: text(formData, "categoryId"),
+        value: number(formData, "value") ?? Number.NaN,
+      });
+  } catch (error) {
+    return { error: formError(error) };
+  }
+  revalidatePath("/");
+  revalidatePath(`/narzedzia/${toolId}`);
+  return { done: true };
+}
+
+/** Właściciel odrzuca zgłoszenie z komentarzem; narzędzie jest wycofane. */
+export async function rejectToolReport(toolId: string, _prev: ToolReportFormState, formData: FormData): Promise<ToolReportFormState> {
+  const session = await requireSession();
+  try {
+    await getRegistry()
+      .as(session.userId)
+      .rejectToolReport({ operationId: formText(formData, "operationId"), toolId, comment: formText(formData, "comment") });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/");
+  revalidatePath(`/narzedzia/${toolId}`);
+  return { done: true };
+}
