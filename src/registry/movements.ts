@@ -4,19 +4,44 @@ import type { Session } from "./registry";
 import { isUniqueViolation, type LocationKind, ReplayedOperationError, type ToolState } from "./tools";
 import { UUID_PATTERN } from "./validation";
 
-export type MovementKind = "przyjecie" | "wydanie" | "zwrot" | "cofniecie" | "korekta" | "zaginiecie" | "wycofanie";
+export type MovementKind =
+  | "przyjecie"
+  | "wydanie"
+  | "zwrot"
+  | "przeniesienie"
+  | "do_serwisu"
+  | "z_serwisu"
+  | "cofniecie"
+  | "korekta"
+  | "zaginiecie"
+  | "wycofanie";
 export type MovementSource = "panel" | "checklista" | "import";
 /** Ruchy, które rejestruje polecenie „zarejestruj ruch”. */
-export type RegisteredKind = "wydanie" | "zwrot";
-export const REGISTERED_KINDS: readonly RegisteredKind[] = ["wydanie", "zwrot"];
+export const REGISTERED_KINDS = ["wydanie", "zwrot", "przeniesienie", "do_serwisu", "z_serwisu"] as const;
+export type RegisteredKind = (typeof REGISTERED_KINDS)[number];
+
+/**
+ * Skąd i dokąd prowadzi każdy rodzaj rejestrowanego ruchu, i czyja budowa daje kierownikowi prawo do
+ * niego: docelowa (`to`), źródłowa (`from`) albo żadna (ruch tylko dla magazyniera i właściciela).
+ */
+const ROUTES: Record<RegisteredKind, { from: readonly LocationKind[]; to: readonly LocationKind[]; managerOf: "from" | "to" | null }> = {
+  wydanie: { from: ["baza"], to: ["budowa"], managerOf: "to" },
+  zwrot: { from: ["budowa"], to: ["baza"], managerOf: "from" },
+  przeniesienie: { from: ["budowa"], to: ["budowa"], managerOf: "to" },
+  do_serwisu: { from: ["baza", "budowa"], to: ["serwis"], managerOf: "from" },
+  z_serwisu: { from: ["serwis"], to: ["baza"], managerOf: null },
+};
 
 export interface RegisterMovementInput {
   /** Identyfikator operacji klienta: ponowne wysłanie zwraca pierwotny wynik. */
   operationId: string;
   kind: RegisteredKind;
-  /** Gdzie według klienta są teraz wszystkie narzędzia: baza przy wydaniu, budowa przy zwrocie. */
+  /**
+   * Gdzie według klienta są teraz wszystkie narzędzia: baza przy wydaniu, budowa przy zwrocie
+   * i przeniesieniu, budowa lub baza przy wysłaniu do serwisu, serwis przy przyjęciu z serwisu.
+   */
   fromLocationId: string;
-  /** Budowa przy wydaniu, baza przy zwrocie. */
+  /** Budowa przy wydaniu i przeniesieniu, serwis przy wysłaniu do serwisu, baza przy zwrocie i z serwisu. */
   toLocationId: string;
   toolIds: string[];
   /** Kiedy to się stało na budowie; domyślnie teraz. Ruch z kolejki offline przychodzi później. */
@@ -79,9 +104,25 @@ export class MovementConflictError extends RegistryError {
 /** Równoległy ruch przeniósł narzędzie po naszym sprawdzeniu; ponowienie pokaże, kto i dokąd. */
 export class ConcurrentMoveError extends Error {}
 
+/** Magazynier i właściciel ruszają sprzęt wszystkich lokalizacji, także bazy do serwisu i z serwisu na bazę. */
+export function canMoveEverywhere(session: Session) {
+  return session.role !== "kierownik";
+}
+
 /** Kierownik rusza tylko sprzęt swoich budów; magazynier i właściciel wszystkich. */
 export function canMoveTools(session: Session, site: { manager: { id: string } }) {
-  return session.role !== "kierownik" || site.manager.id === session.userId;
+  return canMoveEverywhere(session) || site.manager.id === session.userId;
+}
+
+/**
+ * Kierownik rejestruje ruch, gdy jego jest budowa docelowa (wydanie, przeniesienie) albo źródłowa
+ * (zwrot, do serwisu). Z bazy do serwisu i z serwisu na bazę ruszają sprzęt magazynier i właściciel.
+ */
+function canRegister(session: Session, kind: RegisteredKind, locations: { from: LocationRow; to: LocationRow }) {
+  if (canMoveEverywhere(session)) return true;
+  const { managerOf } = ROUTES[kind];
+  const site = managerOf && locations[managerOf];
+  return site?.kind === "budowa" && site.manager_id === session.userId;
 }
 
 /** Cofnąć można tylko ruch zapisany najwyżej tyle temu. */
@@ -99,11 +140,8 @@ export interface LocationRow {
   manager_id: string | null;
 }
 
+/** Zapisuje nową operację; ponowienia zapisanej operacji obsługuje Rejestr, zanim dojdzie tutaj. */
 export async function registerMovement(sql: Sql, session: Session, input: RegisterMovementInput, now: Date): Promise<Movement> {
-  if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
-  const done = await movementByOperation(sql, session, input.operationId);
-  if (done) return done;
-
   const occurredAt = input.occurredAt ?? now;
   const toolIds = [...new Set(input.toolIds)];
   if (
@@ -121,12 +159,12 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
 
   const from = await location(sql, input.fromLocationId);
   const to = await location(sql, input.toLocationId);
-  if (!from || !to) throw new RegistryError("invalid_input");
-  const site = input.kind === "wydanie" ? to : from;
-  const base = input.kind === "wydanie" ? from : to;
-  if (site.kind !== "budowa" || base.kind !== "baza") throw new RegistryError("invalid_input");
-  if (input.kind === "wydanie" && site.status !== "aktywna") throw new RegistryError("site_finished");
-  if (!canMoveTools(session, { manager: { id: site.manager_id! } })) throw new RegistryError("forbidden");
+  const route = ROUTES[input.kind];
+  if (!from || !to || from.id === to.id || !route.from.includes(from.kind) || !route.to.includes(to.kind)) {
+    throw new RegistryError("invalid_input");
+  }
+  if (to.kind === "budowa" && to.status !== "aktywna") throw new RegistryError("site_finished");
+  if (!canRegister(session, input.kind, { from, to })) throw new RegistryError("forbidden");
 
   // Ruch zapisujemy przed sprawdzeniem narzędzi: równoległa ponowka tej samej operacji czeka wtedy
   // na unikalnym identyfikatorze operacji i zwraca ten ruch, zamiast zgłosić konflikt z nim samym.
@@ -155,9 +193,7 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
  * się nie ruszyło. Nowy ruch prowadzi w odwrotną stronę, a oryginał zostaje w historii jako cofnięty.
  */
 export async function undoMovement(sql: Sql, session: Session, input: UndoMovementInput, now: Date): Promise<Movement> {
-  if (!UUID_PATTERN.test(input.operationId) || !UUID_PATTERN.test(input.movementId)) throw new RegistryError("invalid_input");
-  const done = await movementByOperation(sql, session, input.operationId);
-  if (done) return done;
+  if (!UUID_PATTERN.test(input.movementId)) throw new RegistryError("invalid_input");
 
   const [original] = await sql<{
     kind: MovementKind;

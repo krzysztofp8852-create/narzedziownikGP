@@ -13,15 +13,16 @@ export interface ChecklistState {
   error?: string;
   /** Przy odrzuceniu z powodu zmienionego stanu: co i gdzie jest teraz. */
   conflicts?: string[];
-  /** Zapisany ruch: operacja, którą checklista właśnie zatwierdziła. */
-  done?: { operationId: string };
+  /** Zapisany ruch: operacja, którą checklista właśnie zatwierdziła, i kogo o nim powiadomiono. */
+  done?: { operationId: string; notified: string[] };
 }
 
 export async function registerMovement(_prev: ChecklistState, formData: FormData): Promise<ChecklistState> {
   const session = await requireSession();
   const operationId = formText(formData, "operationId");
+  let notified: string[];
   try {
-    await getRegistry()
+    const movement = await getRegistry()
       .as(session.userId)
       .registerMovement({
         operationId,
@@ -31,6 +32,7 @@ export async function registerMovement(_prev: ChecklistState, formData: FormData
         toolIds: formData.getAll("toolId").filter((id): id is string => typeof id === "string"),
         source: "checklista",
       });
+    notified = movement.notifications.map((notification) => notification.recipient.fullName);
   } catch (error) {
     if (!(error instanceof MovementConflictError)) return { error: errorMessage(error) };
     // Checklista pokaże od razu bieżący stan narzędzi.
@@ -50,7 +52,7 @@ export async function registerMovement(_prev: ChecklistState, formData: FormData
     };
   }
   revalidatePath("/");
-  return { done: { operationId } };
+  return { done: { operationId, notified } };
 }
 
 export async function undoMovement(movementId: string, operationId: string): Promise<{ error?: string }> {

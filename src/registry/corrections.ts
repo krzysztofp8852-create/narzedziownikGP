@@ -1,5 +1,5 @@
 import { RegistryError } from "./errors";
-import { attachTools, insertMovement, location, type Movement, movementById, movementByOperation } from "./movements";
+import { attachTools, insertMovement, location, type Movement, movementById } from "./movements";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import type { ToolState } from "./tools";
@@ -42,9 +42,6 @@ export function canCorrectTools(session: Session) {
  */
 export async function correctTool(sql: Sql, session: Session, input: CorrectToolInput, now: Date): Promise<Movement> {
   if (!canCorrectTools(session)) throw new RegistryError("forbidden");
-  if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
-  const done = await movementByOperation(sql, session, input.operationId);
-  if (done) return done;
 
   const reason = requireReason(input.reason);
   const tool = await currentTool(sql, input.toolId);
@@ -95,9 +92,6 @@ async function leaveCirculation(
   now: Date,
 ): Promise<Movement> {
   if (!canCorrectTools(session)) throw new RegistryError("forbidden");
-  if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
-  const done = await movementByOperation(sql, session, input.operationId);
-  if (done) return done;
 
   const lost = input.kind === "zaginiecie";
   // Powód jest obowiązkowy przy zaginięciu, przy wycofaniu opcjonalny.

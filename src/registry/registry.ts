@@ -1,7 +1,7 @@
 import * as board from "./board";
 import type { WhereIsWhat } from "./board";
 import { RegistryError } from "./errors";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Sql } from "./ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type Sql } from "./ports";
 import * as corrections from "./corrections";
 import * as history from "./history";
 import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
@@ -10,6 +10,8 @@ import * as locations from "./locations";
 import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
 import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
+import * as notifications from "./notifications";
+import type { Notification } from "./notifications";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import { generateTemporaryPassword } from "./temporary-password";
@@ -17,6 +19,8 @@ import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
+import * as toolReports from "./tool-reports";
+import type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
@@ -24,7 +28,7 @@ import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
-export type { AddToolInput, Category, EditToolInput, HistoryEntry, LostTool, ToolCard, ToolState } from "./tools";
+export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
 export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
@@ -46,9 +50,12 @@ export type {
   RegisterMovementInput,
   UndoMovementInput,
 } from "./movements";
-export { canMoveTools, MovementConflictError, UNDO_WINDOW_MS } from "./movements";
+export { canMoveEverywhere, canMoveTools, MovementConflictError, UNDO_WINDOW_MS } from "./movements";
+export type { Notification, ToolsTakenNotification } from "./notifications";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
+export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
+export { canReportTools, canReviewToolReports } from "./tool-reports";
 
 export interface Session {
   userId: string;
@@ -78,6 +85,12 @@ export interface ExportData {
   board: WhereIsWhat;
   /** Wszystkie ruchy pasujące do filtrów, od najnowszego. */
   movements: Movement[];
+}
+
+/** Zapisany ruch z powiadomieniami, które z niego wynikły. */
+export interface RegisteredMovement extends Movement {
+  /** Np. dla kierownika, któremu przeniesienie zabrało sprzęt. Wysyła je port powiadomień. */
+  notifications: Notification[];
 }
 
 export interface Registry {
@@ -118,6 +131,17 @@ export interface Registry {
     importTools(input: ImportToolsInput): Promise<{ imported: number }>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
+    /**
+     * Zgłoszenie narzędzia kupionego na budowę. Tylko kierownik, na swoją aktywną budowę: narzędzie
+     * od razu jest tam jako zgłoszone, z kodem nadanym jak przy dodawaniu, i uczestniczy w ruchach.
+     */
+    reportTool(input: ReportToolInput): Promise<{ toolId: string; code: string }>;
+    /** Zgłoszenia narzędzi czekające na decyzję, od najstarszego. Tylko właściciel. */
+    toolReports(): Promise<ToolReport[]>;
+    /** Akceptuje zgłoszenie, uzupełniając kod i wartość. Tylko właściciel. */
+    acceptToolReport(input: AcceptToolReportInput): Promise<void>;
+    /** Odrzuca zgłoszenie z komentarzem: narzędzie jest wycofane, historia zostaje. Tylko właściciel. */
+    rejectToolReport(input: RejectToolReportInput): Promise<Movement>;
     /** Wszystkie osoby w firmie, także dezaktywowane. Tylko właściciel. */
     team(): Promise<TeamMember[]>;
     /** Zakłada konto kierownika lub magazyniera z hasłem tymczasowym do przekazania osobiście. */
@@ -137,12 +161,13 @@ export interface Registry {
     /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
     addService(input: { name: string }): Promise<{ locationId: string }>;
     /**
-     * Wydanie z bazy albo zwrot na bazę jednego lub wielu narzędzi. Gdy któreś narzędzie nie jest
-     * w lokalizacji źródłowej, odrzuca cały ruch błędem MovementConflictError.
+     * Wydanie, zwrot, przeniesienie, wysłanie do serwisu albo przyjęcie z serwisu jednego lub wielu
+     * narzędzi. Gdy któreś narzędzie nie jest w lokalizacji źródłowej, odrzuca cały ruch błędem
+     * MovementConflictError. Powiadomienia z wyniku wysyła port powiadomień, tylko przy pierwszym zapisie.
      */
-    registerMovement(input: RegisterMovementInput): Promise<Movement>;
+    registerMovement(input: RegisterMovementInput): Promise<RegisteredMovement>;
     /**
-     * Cofa własne wydanie lub zwrot zapisany najwyżej 15 minut temu, o ile od tamtej pory żadne
+     * Cofa własny ruch (wydanie, zwrot, przeniesienie, serwis) zapisany najwyżej 15 minut temu, o ile od tamtej pory żadne
      * z jego narzędzi się nie ruszyło. Oryginał zostaje w historii jako cofnięty.
      */
     undoMovement(input: UndoMovementInput): Promise<Movement>;
@@ -183,6 +208,7 @@ interface Deps {
   db: Db;
   clock: Clock;
   authAdmin: AuthAdmin;
+  notifier: Notifier;
 }
 
 export function createRegistry(deps: Deps): Registry {
@@ -204,12 +230,28 @@ export function createRegistry(deps: Deps): Registry {
 
       /**
        * Polecenie zapisujące ruch, z jednym ponowieniem: równoległa transakcja mogła zapisać tę samą
-       * operację albo ruszyć te narzędzia, a drugie podejście to zobaczy.
+       * operację albo ruszyć te narzędzia, a drugie podejście to zobaczy. Ponowne wysłanie zapisanej
+       * operacji zwraca jej ruch (`replayed`), zanim polecenie cokolwiek sprawdzi. `result` buduje
+       * wynik z ruchu w tej samej transakcji.
        */
       const movementCommand =
-        <I extends { operationId: string }>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>) =>
-        async (input: I) => {
-          const attempt = () => asMember((sql, session) => command(sql, session, input, deps.clock.now()));
+        <I extends { operationId: string }, R>(
+          command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>,
+          result: (sql: Sql, movement: Movement) => Promise<R>,
+        ) =>
+        async (input: I): Promise<{ result: R; replayed: boolean }> => {
+          const replay = (sql: Sql, session: Session) =>
+            movements.movementByOperation(sql, session, input.operationId).then(async (movement) =>
+              movement ? { result: await result(sql, movement), replayed: true } : null,
+            );
+          const attempt = () =>
+            asMember(async (sql, session) => {
+              if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
+              const replayed = await replay(sql, session);
+              if (replayed) return replayed;
+              const movement = await command(sql, session, input, deps.clock.now());
+              return { result: await result(sql, movement), replayed: false };
+            });
           try {
             return await attempt();
           } catch (error) {
@@ -218,14 +260,17 @@ export function createRegistry(deps: Deps): Registry {
             // mogła zapisać ruch już po naszym sprawdzeniu identyfikatora, a przed sprawdzeniem stanu,
             // który ten ruch zmienił. Wtedy zwracamy jej ruch zamiast odmowy.
             if (error instanceof RegistryError && UUID_PATTERN.test(input.operationId)) {
-              const replayed = await asMember((sql, session) => movements.movementByOperation(sql, session, input.operationId)).catch(
-                () => null,
-              );
+              const replayed = await asMember(replay).catch(() => null);
               if (replayed) return replayed;
             }
             throw error;
           }
         };
+      /** Polecenie ruchu, którego wynikiem jest sam ruch (bez powiadomień). */
+      const movementOnlyCommand =
+        <I extends { operationId: string }>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>) =>
+        async (input: I) =>
+          (await movementCommand(command, async (_sql, movement) => movement)(input)).result;
 
       return {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
@@ -307,6 +352,23 @@ export function createRegistry(deps: Deps): Registry {
           }
         },
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
+        reportTool: async (input) => {
+          const attempt = () => asMember((sql, session) => toolReports.reportTool(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
+            if (error instanceof tools.ReplayedOperationError) return attempt();
+            throw error;
+          }
+        },
+        toolReports: () =>
+          asMember((sql, session) => {
+            toolReports.requireToolReviewer(session);
+            return toolReports.toolReports(sql);
+          }),
+        acceptToolReport: (input) => asMember((sql, session) => toolReports.acceptToolReport(sql, session, input)),
+        rejectToolReport: movementOnlyCommand(toolReports.rejectToolReport),
         team: () =>
           asMember((sql, session) => {
             team.requireTeamManager(session);
@@ -375,11 +437,18 @@ export function createRegistry(deps: Deps): Registry {
             locations.requireLocationManager(session);
             return locations.addService(sql, session, input, deps.clock.now());
           }),
-        registerMovement: movementCommand(movements.registerMovement),
-        undoMovement: movementCommand(movements.undoMovement),
-        correctTool: movementCommand(corrections.correctTool),
-        markToolLost: movementCommand(corrections.markToolLost),
-        retireTool: movementCommand(corrections.retireTool),
+        registerMovement: async (input) => {
+          const { result, replayed } = await movementCommand(movements.registerMovement, async (sql, movement) => ({
+            ...movement,
+            notifications: await notifications.notificationsFor(sql, movement),
+          }))(input);
+          if (!replayed) await sendNotifications(deps.notifier, result.notifications);
+          return result;
+        },
+        undoMovement: movementOnlyCommand(movements.undoMovement),
+        correctTool: movementOnlyCommand(corrections.correctTool),
+        markToolLost: movementOnlyCommand(corrections.markToolLost),
+        retireTool: movementOnlyCommand(corrections.retireTool),
         recentMovements: ({ limit = 20 } = {}) =>
           asMember((sql, session) => movements.recentMovements(sql, session, limit, deps.clock.now())),
         movementHistory: (filters = {}, options = {}) => asMember((sql) => history.movementHistory(sql, filters, options)),
@@ -406,6 +475,17 @@ export function createRegistry(deps: Deps): Registry {
       };
     },
   };
+}
+
+/**
+ * Wysyła powiadomienia już zapisanego ruchu. Ruch się nie cofnie, więc błąd wysyłki tylko odnotowujemy.
+ */
+async function sendNotifications(notifier: Notifier, list: Notification[]) {
+  await Promise.all(
+    list.map((notification) =>
+      notifier.send(notification).catch((error) => console.error("Nie wysłano powiadomienia", notification.kind, error)),
+    ),
+  );
 }
 
 /**

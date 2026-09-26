@@ -1,3 +1,5 @@
+import type { Notification } from "./notifications";
+
 /** Parametryzowane zapytanie SQL w ramach jednej transakcji. */
 export type Sql = <Row = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<Row[]>;
 
@@ -18,6 +20,11 @@ export interface AuthAdmin {
   /** Blokuje logowanie i odświeżanie sesji tego konta (dezaktywacja). */
   blockSignIn(userId: string): Promise<void>;
   deleteUser(userId: string): Promise<void>;
+}
+
+/** Port powiadomień: dostarcza powiadomienie adresatowi (na razie e-mailem). */
+export interface Notifier {
+  send(notification: Notification): Promise<void>;
 }
 
 export class EmailTakenError extends Error {

@@ -67,6 +67,9 @@
     "addSite": "Dodaj budowę",
     "issue": "Wydaj z bazy",
     "return": "Zwróć na bazę",
+    "transfer": "Przenieś",
+    "toService": "Do serwisu",
+    "fromService": "Z serwisu",
     "recentTitle": "Ostatnie ruchy",
     "recentEmpty": "Nie ma jeszcze żadnych ruchów.",
     "movementRoute": "{from} → {to}",
@@ -88,7 +91,9 @@
     "serviceKind": "Serwis",
     "lostTitle": "Zaginione",
     "lostEmpty": "Nie ma zaginionych narzędzi.",
-    "lostFor": "zaginione od {days}"
+    "lostFor": "zaginione od {days}",
+    "reportTool": "Zgłoś narzędzie",
+    "reported": "zgłoszone"
   },
   "settingsPage": {
     "title": "Ustawienia",
@@ -149,7 +154,8 @@
     "undo_blocked": "Tego ruchu nie da się już cofnąć: jego narzędzia ruszyły się później.",
     "reason_required": "Podaj powód.",
     "invalid_tool_state": "Narzędzie jest już w tym stanie.",
-    "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane."
+    "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane.",
+    "not_reported": "To zgłoszenie jest już rozpatrzone."
   },
   "days": {
     "one": "{count} dzień",
@@ -176,6 +182,30 @@
     "openCard": "Otwórz kartę →",
     "saved": "Zapisano zmiany.",
     "importLink": "Masz listę narzędzi w Excelu? Importuj z pliku →"
+  },
+  "toolReports": {
+    "title": "Zgłoszone narzędzia",
+    "intro": "Kierownicy zgłosili sprzęt kupiony na budowę. Już jest na tablicy i może jeździć; zaakceptuj go z kodem i wartością albo odrzuć, np. gdy jest już w ewidencji.",
+    "reportedBy": "Zgłosił: {name}, {when}",
+    "now": "Teraz: {place}",
+    "accept": "Akceptuj",
+    "code": "Kod",
+    "category": "Kategoria",
+    "value": "Wartość (zł)",
+    "submitAccept": "Akceptuj ✓",
+    "reject": "Odrzuć",
+    "comment": "Komentarz",
+    "commentPlaceholder": "np. to jest W-01 z bazy",
+    "rejectHint": "Narzędzie zostanie wycofane z obiegu, a jego karta i historia zostaną.",
+    "submitReject": "Odrzuć zgłoszenie",
+    "submitting": "Zapisywanie…",
+    "site": "Na budowę",
+    "sitePlaceholder": "Wybierz budowę",
+    "noSites": "Nie masz aktywnej budowy, na którą możesz zgłosić narzędzie.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "reportHint": "Narzędzie od razu będzie na Twojej budowie jako „zgłoszone”. Właściciel uzupełni wartość i zaakceptuje zgłoszenie.",
+    "submitReport": "Zgłoś narzędzie",
+    "reported": "Zgłoszono {code} {name} na {place}."
   },
   "categories": {
     "newTitle": "Nowa kategoria",
@@ -223,6 +253,9 @@
     "przyjecie": "Przyjęcie",
     "wydanie": "Wydanie",
     "zwrot": "Zwrot",
+    "przeniesienie": "Przeniesienie",
+    "do_serwisu": "Do serwisu",
+    "z_serwisu": "Z serwisu",
     "cofniecie": "Cofnięcie",
     "korekta": "Korekta",
     "zaginiecie": "Zaginięcie",
@@ -264,16 +297,13 @@
     "tools": "Narzędzia",
     "search": "Szukaj po nazwie lub kodzie",
     "searchPlaceholder": "np. szlifierka albo S-01",
-    "noToolsAtBase": "Na bazie nie ma narzędzi do wydania.",
-    "noToolsAtSite": "Na tej budowie nie ma narzędzi.",
     "noMatches": "Żadne narzędzie nie pasuje do wyszukiwania.",
-    "chooseSiteFirst": "Najpierw wybierz budowę.",
-    "siteTo": "Na budowę",
-    "siteFrom": "Z budowy",
+    "noToolsAt": {
+      "baza": "Na bazie nie ma narzędzi.",
+      "budowa": "Na tej budowie nie ma narzędzi.",
+      "serwis": "W tym serwisie nie ma narzędzi."
+    },
     "mine": "moja",
-    "noSites": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
-    "noSitesToReturn": "Nie ma budowy, z której możesz zwracać sprzęt.",
-    "summaryEmpty": "Zaznacz narzędzia i wybierz budowę.",
     "summary": "{codes} → {place}",
     "confirm": "Zatwierdź ✓",
     "confirming": "Zapisywanie…",
@@ -282,7 +312,50 @@
     "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź zaznaczenie i zatwierdź ponownie.",
     "toolLabel": "{code} {name}",
     "clear": "Wyczyść zaznaczenie",
-    "done": "Zapisano: {summary}"
+    "done": "Zapisano: {summary}",
+    "notified": "Powiadomienie e-mail: {names}.",
+    "kinds": {
+      "wydanie": {
+        "from": "Z bazy",
+        "to": "Na budowę",
+        "noFrom": "Nie ma bazy.",
+        "noTo": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
+        "chooseFrom": "Najpierw wybierz budowę.",
+        "summaryEmpty": "Zaznacz narzędzia i wybierz budowę."
+      },
+      "zwrot": {
+        "from": "Z budowy",
+        "to": "Na bazę",
+        "noFrom": "Nie ma budowy, z której możesz zwracać sprzęt.",
+        "noTo": "Nie ma bazy.",
+        "chooseFrom": "Najpierw wybierz budowę.",
+        "summaryEmpty": "Wybierz budowę i zaznacz narzędzia."
+      },
+      "przeniesienie": {
+        "from": "Z budowy",
+        "to": "Na budowę",
+        "noFrom": "Nie ma innej aktywnej budowy, z której można zabrać sprzęt.",
+        "noTo": "Nie ma aktywnej budowy, na którą możesz zabierać sprzęt.",
+        "chooseFrom": "Najpierw wybierz budowę, z której zabierasz sprzęt.",
+        "summaryEmpty": "Wybierz budowy i zaznacz narzędzia."
+      },
+      "do_serwisu": {
+        "from": "Skąd",
+        "to": "Do serwisu",
+        "noFrom": "Nie ma budowy, z której możesz wysłać sprzęt do serwisu.",
+        "noTo": "Firma nie ma jeszcze serwisu. Dodaje go właściciel w ustawieniach.",
+        "chooseFrom": "Najpierw wybierz, skąd wysyłasz sprzęt.",
+        "summaryEmpty": "Zaznacz narzędzia i wybierz serwis."
+      },
+      "z_serwisu": {
+        "from": "Z serwisu",
+        "to": "Na bazę",
+        "noFrom": "Firma nie ma jeszcze serwisu. Dodaje go właściciel w ustawieniach.",
+        "noTo": "Nie ma bazy.",
+        "chooseFrom": "Najpierw wybierz serwis.",
+        "summaryEmpty": "Wybierz serwis i zaznacz narzędzia."
+      }
+    }
   },
   "settings": {
     "title": "Alarm na budowie",
@@ -412,6 +485,15 @@
       "location_unknown": "Nieznana lokalizacja „{value}”.",
       "location_ambiguous": "Nazwę „{value}” ma kilka lokalizacji firmy.",
       "site_finished": "Budowa „{value}” jest zakończona."
+    }
+  },
+  "notifications": {
+    "greeting": "Dzień dobry, {name}!",
+    "signature": "NarzędziownikGP",
+    "toolsTaken": {
+      "subject": "{author} zabiera {codes} z budowy {from}",
+      "lead": "Sprzęt z budowy {from} jest teraz na budowie {to} (przeniósł: {author}, {when}):",
+      "responsibility": "Nie odpowiadasz już za ten sprzęt. Kto go ma i gdzie jest, zobaczysz na tablicy „Gdzie jest co”."
     }
   }
 }

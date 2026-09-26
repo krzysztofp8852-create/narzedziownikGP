@@ -120,10 +120,26 @@ export function nextCodes(prefix: string, taken: Iterable<string>, count: number
   return Array.from({ length: count }, (_, i) => `${prefix}-${String(highest + 1 + i).padStart(2, "0")}`);
 }
 
+/** Narzędzie dodane przez właściciela lub magazyniera: zaakceptowane, na bazie. */
 export async function addTool(
   sql: Sql,
   session: Session,
   input: AddToolInput,
+  now: Date,
+): Promise<{ toolId: string; code: string }> {
+  const base = await baseLocation(sql, session);
+  return intake(sql, session, input, { locationId: base.id, registration: "zaakceptowane" }, now);
+}
+
+/**
+ * Pierwsze pojawienie się narzędzia w ewidencji: nowe narzędzie w podanej lokalizacji z ruchem
+ * „przyjęcie” autorstwa aktora. Ponowne wysłanie tej samej operacji zwraca pierwotny wynik.
+ */
+export async function intake(
+  sql: Sql,
+  session: Session,
+  input: AddToolInput,
+  target: { locationId: string; registration: ToolRegistration },
   now: Date,
 ): Promise<{ toolId: string; code: string }> {
   if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
@@ -140,20 +156,20 @@ export async function addTool(
   const fields = normalizeFields(input);
   await requireCategory(sql, fields.categoryId);
   const code = fields.code ?? (await suggestCode(sql, fields.categoryId));
-  const base = await baseLocation(sql, session);
   // Ruch zapisujemy przed narzędziem: równoległa ponowka tej samej operacji czeka wtedy
   // na unikalnym identyfikatorze operacji, zanim cokolwiek zapisze.
   const [movement] = await sql<{ id: string }>(
     `insert into app.movements (company_id, kind, source, to_location_id, author_id, occurred_at, recorded_at, client_operation_id)
      values ($1, 'przyjecie', 'panel', $2, $3, $4, $4, $5) returning id`,
-    [session.company.id, base.id, session.userId, now, input.operationId],
+    [session.company.id, target.locationId, session.userId, now, input.operationId],
   ).catch((error) => {
     throw isUniqueViolation(error, "movements_operation_per_company") ? new ReplayedOperationError() : error;
   });
   const [tool] = await uniqueOr(
     sql<{ id: string }>(
-      `insert into app.tools (company_id, code, name, category_id, brand, model, serial_number, location_id, located_since, created_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9) returning id`,
+      `insert into app.tools (company_id, code, name, category_id, brand, model, serial_number, registration,
+                              location_id, located_since, created_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10) returning id`,
       [
         session.company.id,
         code,
@@ -162,7 +178,8 @@ export async function addTool(
         fields.brand ?? null,
         fields.model ?? null,
         fields.serialNumber ?? null,
-        base.id,
+        target.registration,
+        target.locationId,
         now,
       ],
     ),

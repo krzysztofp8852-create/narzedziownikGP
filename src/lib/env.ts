@@ -12,4 +12,9 @@ export const publicEnv = {
 export const serverEnv = {
   databaseUrl: () => required("DATABASE_URL", process.env.DATABASE_URL),
   supabaseServiceRoleKey: () => required("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY),
+  /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
+  resend: () =>
+    process.env.RESEND_API_KEY
+      ? { apiKey: process.env.RESEND_API_KEY, from: required("NOTIFICATIONS_FROM", process.env.NOTIFICATIONS_FROM) }
+      : null,
 };
