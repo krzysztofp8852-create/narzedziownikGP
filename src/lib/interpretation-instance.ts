@@ -1,13 +1,13 @@
 import "server-only";
-import { createClaudeInterpreter } from "@/interpretation/claude-interpreter";
 import { createInterpretation, InterpretationFailedError, type Interpreter } from "@/interpretation/interpretation";
 import { keywordInterpreter } from "@/interpretation/keyword-interpreter";
+import { createOpenAIInterpreter, DEFAULT_OPENAI_MODEL } from "@/interpretation/openai-interpreter";
 import { serverEnv } from "./env";
 import { getRegistry } from "./registry-instance";
 
 let interpretation: ReturnType<typeof createInterpretation> | undefined;
 
-/** Czy wpis tekstem jest włączony (jest klucz Anthropic API albo lokalna interpretacja słów kluczowych). */
+/** Czy wpis tekstem jest włączony (jest klucz OpenAI API albo lokalna interpretacja słów kluczowych). */
 export function textEntryEnabled() {
   return serverEnv.interpreter() !== null;
 }
@@ -21,10 +21,10 @@ export function getInterpretation() {
 function interpreter(): Interpreter {
   const config = serverEnv.interpreter();
   if (config === "slowa") return keywordInterpreter;
-  if (config) return createClaudeInterpreter({ apiKey: config.anthropicApiKey });
+  if (config) return createOpenAIInterpreter({ apiKey: config.openaiApiKey, model: config.model ?? DEFAULT_OPENAI_MODEL });
   return {
     interpret: async () => {
-      throw new InterpretationFailedError("Wpis tekstem jest wyłączony: brak ANTHROPIC_API_KEY");
+      throw new InterpretationFailedError("Wpis tekstem jest wyłączony: brak OPENAI_API_KEY");
     },
   };
 }

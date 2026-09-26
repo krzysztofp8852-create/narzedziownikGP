@@ -1,10 +1,10 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { type Interpretation, InterpretationFailedError, type InterpretRequest, type Interpreter, type Mention } from "./interpretation";
 import { PROPOSAL_KINDS, type ProposalKind } from "./proposal";
 
-/** Model interpretacji ze specyfikacji: szybki i tani, ze strukturalnym wyjściem. */
-const MODEL = "claude-haiku-4-5";
+/** Domyślny model interpretacji: szybki i tani, ze strukturalnym wyjściem. Zmienia go `OPENAI_MODEL`. */
+export const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 
 const SYSTEM = `Jesteś częścią aplikacji do ewidencji narzędzi małej firmy budowlanej w Polsce.
 Kierownik budowy albo magazynier pisze jedno zdanie o tym, co zabiera lub oddaje, np. „biorę dwie szlifierki i młot na Rataje”.
@@ -61,11 +61,12 @@ interface ModelAnswer {
 }
 
 /**
- * Port interpretacji na Claude Haiku 4.5 (Anthropic API). Budowy dostaje pod krótkimi oznaczeniami
- * (B1, B2…), a narzędzia pod kodami, więc identyfikatory z bazy nie wychodzą poza serwer.
+ * Port interpretacji na OpenAI (Responses API ze strukturalnym wyjściem). Budowy dostaje pod krótkimi
+ * oznaczeniami (B1, B2…), a narzędzia pod kodami, więc identyfikatory z bazy nie wychodzą poza serwer.
+ * Odpowiedzi nie są przechowywane u dostawcy (`store: false`).
  */
-export function createClaudeInterpreter({ apiKey }: { apiKey: string }): Interpreter {
-  const client = new Anthropic({ apiKey, timeout: 20_000, maxRetries: 1 });
+export function createOpenAIInterpreter({ apiKey, model }: { apiKey: string; model: string }): Interpreter {
+  const client = new OpenAI({ apiKey, timeout: 20_000, maxRetries: 1 });
   return {
     async interpret(request: InterpretRequest): Promise<Interpretation> {
       const refs = request.sites.map((site, index) => ({ ref: `B${index + 1}`, site }));
@@ -77,24 +78,31 @@ export function createClaudeInterpreter({ apiKey }: { apiKey: string }): Interpr
         ...request.tools.map((tool) => `${tool.code} | ${tool.name} | ${tool.category} | ${tool.location.name}`),
       ].join("\n");
 
-      let response: Anthropic.Message;
+      let response: OpenAI.Responses.Response;
       try {
-        response = await client.messages.create({
-          model: MODEL,
-          max_tokens: 2048,
-          system: SYSTEM,
-          messages: [{ role: "user", content: `${catalog}\n\nZdanie: ${request.text}` }],
-          output_config: { format: { type: "json_schema", schema: SCHEMA } },
+        response = await client.responses.create({
+          model,
+          instructions: SYSTEM,
+          input: `${catalog}\n\nZdanie: ${request.text}`,
+          text: { format: { type: "json_schema", name: "propozycja_ruchu", schema: SCHEMA, strict: true } },
+          // Modele z rozumowaniem: dopasowanie fraz nie wymaga długiego namysłu, a kierownik czeka.
+          ...(model.startsWith("gpt-5") && { reasoning: { effort: "low" as const } }),
+          max_output_tokens: 4096,
+          store: false,
         });
       } catch (error) {
-        throw new InterpretationFailedError("Anthropic API", { cause: error });
+        throw new InterpretationFailedError("OpenAI API", { cause: error });
       }
-      const text = response.content.find((block) => block.type === "text")?.text;
-      if (response.stop_reason !== "end_turn" || !text) {
-        throw new InterpretationFailedError(`Brak odpowiedzi modelu (${response.stop_reason})`);
+      const refused = response.output.some(
+        (item) => item.type === "message" && item.content.some((content) => content.type === "refusal"),
+      );
+      if (response.status !== "completed" || refused || !response.output_text) {
+        throw new InterpretationFailedError(
+          `Brak odpowiedzi modelu (${refused ? "odmowa" : (response.incomplete_details?.reason ?? response.status)})`,
+        );
       }
 
-      const answer = JSON.parse(text) as ModelAnswer;
+      const answer = JSON.parse(response.output_text) as ModelAnswer;
       const siteId = (ref: string | null) => refs.find((entry) => entry.ref === ref)?.site.id ?? null;
       return {
         kind: PROPOSAL_KINDS.includes(answer.kind) ? answer.kind : "wydanie",

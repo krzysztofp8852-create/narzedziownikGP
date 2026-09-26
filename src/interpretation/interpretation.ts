@@ -42,7 +42,7 @@ export class InterpretationFailedError extends Error {
   }
 }
 
-/** Port interpretacji (Claude Haiku 4.5 ze strukturalnym wyjściem). */
+/** Port interpretacji (model OpenAI ze strukturalnym wyjściem). */
 export interface Interpreter {
   interpret(request: InterpretRequest): Promise<Interpretation>;
 }

@@ -18,12 +18,13 @@ export const serverEnv = {
    */
   appUrl: () => process.env.APP_URL || null,
   /**
-   * Interpretacja wpisu tekstem: klucz Anthropic API (Claude Haiku 4.5), a lokalnie i w teście dymnym
-   * `TEXT_ENTRY_INTERPRETER=slowa` (słowa kluczowe bez AI). Bez żadnego z nich wpis tekstem jest wyłączony.
+   * Interpretacja wpisu tekstem: klucz OpenAI API (model z `OPENAI_MODEL`, domyślnie gpt-5.4-mini), a lokalnie
+   * i w teście dymnym `TEXT_ENTRY_INTERPRETER=slowa` (słowa kluczowe bez AI). Bez żadnego z nich wpis tekstem
+   * jest wyłączony.
    */
-  interpreter: (): { anthropicApiKey: string } | "slowa" | null =>
-    process.env.ANTHROPIC_API_KEY
-      ? { anthropicApiKey: process.env.ANTHROPIC_API_KEY }
+  interpreter: (): { openaiApiKey: string; model: string | null } | "slowa" | null =>
+    process.env.OPENAI_API_KEY
+      ? { openaiApiKey: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL || null }
       : process.env.TEXT_ENTRY_INTERPRETER === "slowa"
         ? "slowa"
         : null,

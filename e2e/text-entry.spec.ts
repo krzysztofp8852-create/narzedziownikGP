@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 
-// Bez klucza Anthropic API aplikacja interpretuje wpis słowami kluczowymi (TEXT_ENTRY_INTERPRETER=slowa).
-test.skip(!process.env.ANTHROPIC_API_KEY && process.env.TEXT_ENTRY_INTERPRETER !== "slowa", "wpis tekstem wyłączony");
+// Bez klucza OpenAI API aplikacja interpretuje wpis słowami kluczowymi (TEXT_ENTRY_INTERPRETER=slowa).
+test.skip(!process.env.OPENAI_API_KEY && process.env.TEXT_ENTRY_INTERPRETER !== "slowa", "wpis tekstem wyłączony");
 
 function seedCompany() {
   const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-checklist.mts"], {

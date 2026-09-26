@@ -15,7 +15,7 @@ function words(text: string) {
 
 /**
  * Port interpretacji bez AI: słowa kluczowe, kody i liczebniki. Do pracy lokalnej i testu dymnego,
- * gdy nie ma klucza Anthropic API; slangu ani składni nie rozumie.
+ * gdy nie ma klucza OpenAI API; slangu ani składni nie rozumie.
  */
 export const keywordInterpreter: Interpreter = {
   async interpret({ text, tools, sites }: InterpretRequest): Promise<Interpretation> {
