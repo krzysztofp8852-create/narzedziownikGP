@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
+import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { getRegistry } from "@/lib/registry-instance";
 import { canCorrectTools, canManageTools, canSeeValues } from "@/registry/registry";
@@ -13,7 +14,6 @@ import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
 import { ToolCorrections } from "./tool-corrections";
 
-const money = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Promise<Metadata> {
   const { card } = await loadToolCard((await props.params).id);
   return { title: card ? `${card.code} ${card.name}` : undefined };
@@ -32,7 +32,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
     [t("tools.brand"), card.brand ?? none],
     [t("tools.model"), card.model ?? none],
     [t("tools.serialNumber"), card.serialNumber ?? none],
-    ...("value" in card ? [[t("tools.value"), card.value == null ? none : money.format(card.value)] as [string, string]] : []),
+    ...("value" in card ? [[t("tools.value"), card.value == null ? none : formatMoney(card.value)] as [string, string]] : []),
     [t("toolCard.state"), t("toolCard.stateValue", { state: t(`toolState.${card.state}`), registration: t(`toolRegistration.${card.registration}`) })],
   ];
 

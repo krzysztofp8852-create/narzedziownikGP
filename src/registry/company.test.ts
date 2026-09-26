@@ -82,8 +82,13 @@ describe("tablica „Gdzie jest co”", () => {
     await testbed.registry.as(ownerId).changePassword("MojeNoweHaslo7", testbed.signedInNow());
 
     expect(await testbed.registry.as(ownerId).whereIsWhat()).toEqual({
-      base: { id: expect.any(String), name: "Baza", tools: [] },
+      offBaseValue: 0,
+      alarmCount: 0,
+      base: { id: expect.any(String), name: "Baza", totalValue: 0, tools: [] },
       sites: [],
+      services: [],
+      lost: [],
+      lostValue: 0,
     });
   });
 });

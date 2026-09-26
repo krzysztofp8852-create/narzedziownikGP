@@ -76,9 +76,19 @@
     "statBase": "Na bazie",
     "statSites": "Na budowach",
     "statSiteCount": "Budowy",
+    "statOffBase": "Poza bazą",
+    "statAlarms": "Alarmy",
     "peopleCount": "{count} aktywne",
     "undo": "Cofnij",
-    "undoing": "Cofanie…"
+    "undoing": "Cofanie…",
+    "overThreshold": "po progu",
+    "unused": "nieużywane {days}",
+    "servicesTitle": "W serwisie",
+    "servicesEmpty": "W serwisie nie ma żadnego sprzętu.",
+    "serviceKind": "Serwis",
+    "lostTitle": "Zaginione",
+    "lostEmpty": "Nie ma zaginionych narzędzi.",
+    "lostFor": "zaginione od {days}"
   },
   "settingsPage": {
     "title": "Ustawienia",
