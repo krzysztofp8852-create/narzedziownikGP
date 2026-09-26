@@ -3,6 +3,8 @@ import type { WhereIsWhat } from "./board";
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Sql } from "./ports";
 import * as corrections from "./corrections";
+import * as history from "./history";
+import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 import type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 import * as locations from "./locations";
 import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
@@ -22,8 +24,10 @@ export type Role = "wlasciciel" | "magazynier" | "kierownik";
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, LostTool, ToolCard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
+export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings } from "./settings";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
+export { isCalendarDay, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 export { canCorrectTools, TOOL_STATES } from "./corrections";
 export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
@@ -60,6 +64,16 @@ export interface CreatedCompany {
   companyId: string;
   ownerUserId: string;
   temporaryPassword: string;
+}
+
+/** Dane do eksportu z jednej chwili. */
+export interface ExportData {
+  /** Kiedy je odczytano (zegar Rejestru). */
+  generatedAt: Date;
+  /** Tablica „Gdzie jest co”; wartości w zł tylko dla właściciela. */
+  board: WhereIsWhat;
+  /** Wszystkie ruchy pasujące do filtrów, od najnowszego. */
+  movements: Movement[];
 }
 
 export interface Registry {
@@ -130,6 +144,15 @@ export interface Registry {
     retireTool(input: RetireToolInput): Promise<Movement>;
     /** Ostatnie ruchy w firmie, od najnowszego, z informacją, które aktor może cofnąć. */
     recentMovements(options?: { limit?: number }): Promise<RecentMovement[]>;
+    /**
+     * Historia ruchów firmy od najnowszego, zawężona filtrami (lokalizacja, osoba, narzędzie, dni
+     * czasu polskiego). Bez limitu wszystkie pasujące ruchy. Widzi ją każda rola.
+     */
+    movementHistory(filters?: HistoryFilters, options?: { limit?: number }): Promise<MovementHistory>;
+    /** Lokalizacje, osoby i narzędzia, po których można filtrować historię. */
+    historyFilterOptions(): Promise<HistoryFilterOptions>;
+    /** Stan „Gdzie jest co” i historia z filtrami do eksportu, w jednej transakcji. */
+    exportData(filters?: HistoryFilters): Promise<ExportData>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
     /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
@@ -328,6 +351,17 @@ export function createRegistry(deps: Deps): Registry {
         retireTool: movementCommand(corrections.retireTool),
         recentMovements: ({ limit = 20 } = {}) =>
           asMember((sql, session) => movements.recentMovements(sql, session, limit, deps.clock.now())),
+        movementHistory: (filters = {}, options = {}) => asMember((sql) => history.movementHistory(sql, filters, options)),
+        historyFilterOptions: () => asMember((sql, session) => history.historyFilterOptions(sql, session)),
+        exportData: (filters = {}) =>
+          asMember(async (sql, session) => {
+            const now = deps.clock.now();
+            return {
+              generatedAt: now,
+              board: await board.whereIsWhat(sql, session, now),
+              movements: (await history.movementHistory(sql, filters, {})).movements,
+            };
+          }),
         settings: () =>
           asMember((sql, session) => {
             settings.requireSettingsManager(session);

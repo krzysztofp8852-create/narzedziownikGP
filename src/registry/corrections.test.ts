@@ -488,7 +488,12 @@ describe("historia tylko się dopisuje", () => {
 
     const commands = Object.keys(testbed.registry.as(z.zawbud.ownerId));
 
-    expect(commands.filter((name) => /movement/i.test(name)).sort()).toEqual(["recentMovements", "registerMovement", "undoMovement"]);
+    expect(commands.filter((name) => /movement/i.test(name)).sort()).toEqual([
+      "movementHistory",
+      "recentMovements",
+      "registerMovement",
+      "undoMovement",
+    ]);
   });
 
   it("nawet właściciel z pominięciem Rejestru nie zmieni ani nie usunie ruchu", async () => {

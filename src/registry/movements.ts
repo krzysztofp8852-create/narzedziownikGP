@@ -295,7 +295,7 @@ export async function movementById(sql: Sql, id: string): Promise<Movement | nul
   return movement ?? null;
 }
 
-async function movementsByIds(sql: Sql, ids: string[]): Promise<Movement[]> {
+export async function movementsByIds(sql: Sql, ids: string[]): Promise<Movement[]> {
   if (ids.length === 0) return [];
   const rows = await sql<{
     id: string;
