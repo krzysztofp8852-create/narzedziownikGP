@@ -74,6 +74,9 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Dane domeny są w schemacie `app`, którego PostgREST nie wystawia. Rejestr łączy się z bazą
   bezpośrednio (`DATABASE_URL`) i na czas transakcji przyjmuje rolę `authenticated` z JWT aktora,
   więc izolację firm wymusza RLS w bazie, a nie filtr w aplikacji.
+- `src/stickers/`: PDF z naklejkami QR (arkusze A4, czcionki OFL w `fonts/`). Kod QR zawiera adres
+  `APP_URL/narzedzia/<id>` z losowym identyfikatorem narzędzia; na produkcji ustaw `APP_URL`, żeby naklejki nie
+  wskazywały adresu podglądu.
 - `messages/pl.json`: wszystkie teksty interfejsu (`t()` z `src/i18n/t.ts`).
 - Bieżąca lokalizacja narzędzia to projekcja historii ruchów, zapisywana w tej samej transakcji co ruch.
   Historia (`app.movements`) tylko się dopisuje, czego pilnuje też wyzwalacz w bazie. Wartość narzędzia
@@ -87,8 +90,12 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   (`/ustawienia`, kółko zębate w nagłówku). Tablica to codzienna praca: panel operacji (checklisty
   „Wydaj z bazy” i „Zwróć na bazę”, dodawanie narzędzia), baza i budowy z listą narzędzi, ostatnie ruchy,
   a dla właściciela także dodawanie budowy i zmiana kierownika. Na komputerze panel operacji i ostatnie
-  ruchy stoją po lewej, na telefonie operacje są nad tablicą. W ustawieniach są próg alarmu, serwisy,
-  zespół i zakończone budowy.
+  ruchy stoją po lewej, na telefonie operacje są nad tablicą. W ustawieniach są próg alarmu, naklejki QR,
+  serwisy, zespół i zakończone budowy.
+- Naklejki QR (`/naklejki`, tylko właściciel): PDF dla wszystkich nieoklejonych albo wybranych narzędzi
+  na jednym z arkuszy A4, od wskazanej wolnej naklejki; dodruk jednej naklejki jest na karcie narzędzia.
+  Druk zapisuje się w Rejestrze w tej samej transakcji, w której powstaje plik, a zmiana kodu narzędzia
+  unieważnia jego naklejkę.
 - Import z Excela lub CSV (`/narzedzia/import`, tylko właściciel): moduł `src/import/` czyta w przeglądarce
   pierwszy arkusz XLSX albo CSV (UTF-8 lub Windows-1250) i podpowiada mapowanie kolumn na pola karty po
   nagłówkach. Rejestr robi podgląd (`previewToolImport`: błędy każdego wiersza, kody nadane wierszom bez kodu

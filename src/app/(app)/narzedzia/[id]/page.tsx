@@ -9,7 +9,8 @@ import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
-import { canCorrectTools, canManageTools, canSeeValues } from "@/registry/registry";
+import { canCorrectTools, canManageTools, canPrintStickers, canSeeValues } from "@/registry/registry";
+import { StickerReprintForm } from "../../naklejki/sticker-forms";
 import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
@@ -105,6 +106,13 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
             }}
             submitLabel={t("tools.submitEdit")}
           />
+        </details>
+      )}
+
+      {canPrintStickers(session) && card.state === "w_obiegu" && card.registration === "zaakceptowane" && (
+        <details className="panel">
+          <summary className="panel-summary">{t("stickers.reprintTitle")}</summary>
+          <StickerReprintForm toolId={card.id} />
         </details>
       )}
 

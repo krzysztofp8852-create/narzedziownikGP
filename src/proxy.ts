@@ -30,6 +30,9 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/logowanie";
     url.search = "";
+    // Po zalogowaniu wracamy na otwartą stronę, np. kartę narzędzia zeskanowaną z naklejki QR.
+    const { pathname, search } = request.nextUrl;
+    if (request.method === "GET" && pathname !== "/") url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
   return response;

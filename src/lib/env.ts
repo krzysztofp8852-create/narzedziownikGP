@@ -12,6 +12,11 @@ export const publicEnv = {
 export const serverEnv = {
   databaseUrl: () => required("DATABASE_URL", process.env.DATABASE_URL),
   supabaseServiceRoleKey: () => required("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY),
+  /**
+   * Adres aplikacji w kodach QR na naklejkach, np. https://narzedziownik.gp-engineering.pl. Bez niego
+   * adres, z którego otwarto aplikację; na produkcji ustaw go, żeby naklejki nie wskazywały podglądu.
+   */
+  appUrl: () => process.env.APP_URL || null,
   /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
   resend: () =>
     process.env.RESEND_API_KEY

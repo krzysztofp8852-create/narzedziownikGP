@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { t } from "@/i18n/t";
+import { safeNextPath } from "@/lib/next-path";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface LoginState {
@@ -20,5 +21,5 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
     console.error(error);
     return { error: t("errors.unexpected"), email };
   }
-  redirect("/");
+  redirect(safeNextPath(formData.get("next")?.toString()));
 }

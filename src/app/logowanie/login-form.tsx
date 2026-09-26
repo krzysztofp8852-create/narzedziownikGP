@@ -5,10 +5,12 @@ import { useActionState } from "react";
 import { t } from "@/i18n/t";
 import { signIn } from "./actions";
 
-export function LoginForm() {
+/** `nextPath`: dokąd wrócić po zalogowaniu (ścieżka aplikacji). */
+export function LoginForm({ nextPath }: { nextPath: string }) {
   const [state, action, pending] = useActionState(signIn, {});
   return (
     <form action={action}>
+      <input type="hidden" name="next" value={nextPath} />
       <div className="field">
         <label htmlFor="email">{t("login.email")}</label>
         <input id="email" name="email" type="email" autoComplete="username" defaultValue={state.email} required />

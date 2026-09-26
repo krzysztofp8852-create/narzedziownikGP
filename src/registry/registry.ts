@@ -19,6 +19,8 @@ import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
+import * as stickers from "./stickers";
+import type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
 import * as toolReports from "./tool-reports";
 import type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 import * as tools from "./tools";
@@ -56,6 +58,8 @@ export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
+export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
+export { canPrintStickers } from "./stickers";
 
 export interface Session {
   userId: string;
@@ -131,6 +135,14 @@ export interface Registry {
     importTools(input: ImportToolsInput): Promise<{ imported: number }>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
+    /**
+     * Druk naklejek QR: wybrane narzędzia albo wszystkie jeszcze nieoklejone. `print` robi z nich plik
+     * w tej samej transakcji, więc datę druku (wydrukowane przestają być nieoklejone) zapisujemy tylko
+     * wtedy, gdy plik powstał. Tylko właściciel.
+     */
+    printStickers<T>(selection: StickerSelection, print: (batch: StickerBatch) => Promise<T>): Promise<T>;
+    /** Narzędzia, którym można wydrukować naklejkę (zaakceptowane, w obiegu), po kodzie. Tylko właściciel. */
+    stickerCandidates(): Promise<StickerCandidate[]>;
     /**
      * Zgłoszenie narzędzia kupionego na budowę. Tylko kierownik, na swoją aktywną budowę: narzędzie
      * od razu jest tam jako zgłoszone, z kodem nadanym jak przy dodawaniu, i uczestniczy w ruchach.
@@ -352,6 +364,16 @@ export function createRegistry(deps: Deps): Registry {
           }
         },
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
+        printStickers: (selection, print) =>
+          asMember(async (sql, session) => {
+            stickers.requireStickerPrinter(session);
+            return print(await stickers.printStickers(sql, session, selection, deps.clock.now()));
+          }),
+        stickerCandidates: () =>
+          asMember((sql, session) => {
+            stickers.requireStickerPrinter(session);
+            return stickers.stickerCandidates(sql);
+          }),
         reportTool: async (input) => {
           const attempt = () => asMember((sql, session) => toolReports.reportTool(sql, session, input, deps.clock.now()));
           try {

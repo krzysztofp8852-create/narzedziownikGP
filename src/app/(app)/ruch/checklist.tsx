@@ -5,6 +5,7 @@ import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { newOperationId } from "@/lib/operation-id";
+import { matchesTool } from "@/lib/tool-search";
 import type { LocationKind, RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
 
@@ -61,23 +62,6 @@ const STEPS: Record<RegisteredKind, Step[]> = {
   z_serwisu: ["from", "tools"],
 };
 
-/** Małe litery, bez polskich znaków i bez kresek w kodach: „s01” znajdzie S-01, „szlifierka” Szlifierkę. */
-function normalize(text: string) {
-  return text
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/ł/g, "l")
-    .replace(/Ł/g, "l")
-    .toLowerCase();
-}
-
-function matches(tool: ChecklistTool, query: string) {
-  const wanted = normalize(query.trim());
-  if (!wanted) return true;
-  const bare = (text: string) => text.replace(/[^a-z0-9]/g, "");
-  return normalize(tool.name).includes(wanted) || bare(normalize(tool.code)).includes(bare(wanted));
-}
-
 export function Checklist({ kind, operationId: firstOperationId, places, route }: ChecklistProps) {
   // Ponowne wysłanie tego samego wyboru (np. po zerwanym połączeniu) nie zdubluje ruchu, a zmiana
   // wyboru, także na ekranie przywróconym przyciskiem Wstecz, nie zwróci poprzedniego ruchu.
@@ -111,7 +95,7 @@ export function Checklist({ kind, operationId: firstOperationId, places, route }
   const available = from?.tools ?? [];
   // Po odświeżeniu stanu zaznaczenie zostaje tylko przy narzędziach, które nadal tu są.
   const selected = available.filter((tool) => selectedIds.includes(tool.id));
-  const visible = available.filter((tool) => matches(tool, query));
+  const visible = available.filter((tool) => matchesTool(tool, query));
 
   function toggle(toolId: string, checked: boolean) {
     setSelectedIds((ids) => (checked ? [...ids, toolId] : ids.filter((id) => id !== toolId)));

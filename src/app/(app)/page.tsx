@@ -12,6 +12,7 @@ import {
   canImportTools,
   canManageLocations,
   canManageTools,
+  canPrintStickers,
   canReportTools,
   canReviewToolReports,
   canSeeValues,
@@ -252,6 +253,7 @@ export default async function BoardPage() {
               showValue: canSeeValues(session),
               operationId: randomUUID(),
               canImport: canImportTools(session),
+              canPrintStickers: canPrintStickers(session),
             }
           }
           reportTool={

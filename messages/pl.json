@@ -155,7 +155,8 @@
     "reason_required": "Podaj powód.",
     "invalid_tool_state": "Narzędzie jest już w tym stanie.",
     "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane.",
-    "not_reported": "To zgłoszenie jest już rozpatrzone."
+    "not_reported": "To zgłoszenie jest już rozpatrzone.",
+    "no_stickers": "Nie ma narzędzi do oklejenia: każde w obiegu ma już wydrukowaną naklejkę."
   },
   "days": {
     "one": "{count} dzień",
@@ -495,5 +496,34 @@
       "lead": "Sprzęt z budowy {from} jest teraz na budowie {to} (przeniósł: {author}, {when}):",
       "responsibility": "Nie odpowiadasz już za ten sprzęt. Kto go ma i gdzie jest, zobaczysz na tablicy „Gdzie jest co”."
     }
+  },
+  "stickers": {
+    "title": "Naklejki QR",
+    "back": "← Wróć do ustawień",
+    "intro": "Wybierz arkusz naklejek A4, który masz, i pobierz PDF do wydruku. Na każdej naklejce jest kod QR, duży kod narzędzia i nazwa firmy. Zeskanowany aparatem telefonu kod QR otwiera kartę narzędzia, ale tylko po zalogowaniu do Twojej firmy.",
+    "layout": "Arkusz A4",
+    "layoutOption": "{count} szt. na arkuszu, {width} × {height} mm",
+    "firstPosition": "Pierwsza wolna naklejka na arkuszu",
+    "firstPositionHint": "Na napoczętym arkuszu wpisz numer pierwszej wolnej naklejki, licząc wierszami od lewego górnego rogu.",
+    "unlabeledTitle": "Nieoklejone",
+    "unlabeledHint": "Narzędzia, którym jeszcze nie drukowano naklejki.",
+    "printUnlabeled": "Pobierz PDF: wszystkie nieoklejone ({count} szt.)",
+    "noUnlabeled": "Wszystkie narzędzia w obiegu mają już wydrukowane naklejki.",
+    "selectedTitle": "Wybrane narzędzia",
+    "selectedHint": "Zaznacz narzędzia, którym chcesz wydrukować naklejki, także ponownie.",
+    "search": "Szukaj po kodzie lub nazwie",
+    "printSelected": "Pobierz PDF: zaznaczone ({count} szt.)",
+    "noCandidates": "Nie ma narzędzi w obiegu. Naklejki drukujemy tylko dla zaakceptowanych narzędzi w obiegu.",
+    "notPrinted": "nieoklejone",
+    "printedAt": "naklejka {when}",
+    "preparing": "Przygotowanie PDF…",
+    "downloaded": "Pobrano PDF z naklejkami: {count} szt. Wydrukuj go w skali 100% („Rzeczywisty rozmiar”), bez dopasowania do strony.",
+    "fileName": "naklejki-{day}.pdf",
+    "reprintTitle": "Naklejka QR",
+    "reprintHint": "Zniszczona naklejka? Pobierz PDF z jedną naklejką i wydrukuj ją na wolnym miejscu arkusza.",
+    "reprint": "Pobierz PDF z naklejką",
+    "settingsHint": "Naklejki z kodem QR do oklejenia sprzętu. Nieoklejone: {count} szt.",
+    "settingsLink": "Drukuj naklejki →",
+    "toolsLink": "Naklejki QR do wydruku →"
   }
 }

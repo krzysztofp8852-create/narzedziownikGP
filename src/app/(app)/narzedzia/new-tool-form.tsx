@@ -10,9 +10,15 @@ import { ToolForm } from "./tool-form";
 
 /**
  * Dodawanie narzędzi z tablicy: po zapisie pusty formularz pod następne, z linkiem do karty dodanego.
- * `canImport`: odnośnik do importu listy z pliku (tylko właściciel).
+ * `canImport`: odnośnik do importu listy z pliku, `canPrintStickers`: do naklejek QR (tylko właściciel).
  */
-export function NewToolForm(props: { categories: Category[]; showValue: boolean; operationId: string; canImport: boolean }) {
+export function NewToolForm(props: {
+  categories: Category[];
+  showValue: boolean;
+  operationId: string;
+  canImport: boolean;
+  canPrintStickers: boolean;
+}) {
   const [operationId, setOperationId] = useState(props.operationId);
   const [added, setAdded] = useState<ToolFormState["added"]>();
 
@@ -30,6 +36,11 @@ export function NewToolForm(props: { categories: Category[]; showValue: boolean;
       {props.canImport && (
         <p>
           <Link href="/narzedzia/import">{t("tools.importLink")}</Link>
+        </p>
+      )}
+      {props.canPrintStickers && (
+        <p>
+          <Link href="/naklejki">{t("stickers.toolsLink")}</Link>
         </p>
       )}
       {added && (

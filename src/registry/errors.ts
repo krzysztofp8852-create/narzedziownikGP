@@ -21,7 +21,8 @@ export type RegistryErrorCode =
   | "reason_required"
   | "invalid_tool_state"
   | "import_invalid"
-  | "not_reported";
+  | "not_reported"
+  | "no_stickers";
 
 export class RegistryError extends Error {
   constructor(

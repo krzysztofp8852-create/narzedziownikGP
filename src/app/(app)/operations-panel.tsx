@@ -20,7 +20,7 @@ const MOVEMENT_BUTTONS: [RegisteredKind, MessageKey][] = [
 export interface OperationsPanelProps {
   checklist: ChecklistData;
   /** Dodawanie narzędzi: tylko dla tych, którzy mogą zarządzać narzędziami. */
-  newTool: { categories: Category[]; showValue: boolean; operationId: string; canImport: boolean } | false | null;
+  newTool: { categories: Category[]; showValue: boolean; operationId: string; canImport: boolean; canPrintStickers: boolean } | false | null;
   /** Zgłaszanie narzędzi kupionych na budowę: tylko dla kierownika. */
   reportTool: ReportToolFormProps | false | null;
 }
