@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { randomUUID } from "node:crypto";
+import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
@@ -11,7 +12,7 @@ import {
   canManageLocations,
   canManageTools,
   canSeeValues,
-  type Movement,
+  type RecentMovement,
   type Site,
   type SiteManagerCandidate,
   type ToolOnBoard,
@@ -20,6 +21,7 @@ import { changeSiteManager } from "./lokalizacje/actions";
 import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
+import { UndoButton } from "./ruch/undo-button";
 
 export const metadata: Metadata = { title: t("board.title") };
 
@@ -39,7 +41,7 @@ function ToolList({ tools, wide }: { tools: ToolOnBoard[]; wide?: boolean }) {
   );
 }
 
-function RecentMovements({ movements }: { movements: Movement[] }) {
+function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   return (
     <section className="recent" aria-labelledby="recent-movements">
       <h2 id="recent-movements" className="display section-title">
@@ -50,21 +52,21 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
       ) : (
         <ol className="movements">
           {movements.map((movement) => (
-            <li key={movement.id} className="movement">
+            <li key={movement.id} className={movement.undoneBy ? "movement movement-undone" : "movement"}>
               <div className="movement-head">
                 <span className={`movement-kind movement-kind-${movement.kind}`}>{t(`movementKind.${movement.kind}`)}</span>
-                <span>
-                  {movement.from
-                    ? t("board.movementRoute", { from: movement.from.name, to: movement.to?.name ?? "" })
-                    : movement.to && t("toolCard.movementTo", { place: movement.to.name })}
-                </span>
+                {movement.undoneBy && <span className="tag">{t("toolCard.undone")}</span>}
+                <span>{movementRoute(movement.from?.name ?? null, movement.to?.name ?? null)}</span>
+                {stateChangeText(movement.stateChange) && <span>{stateChangeText(movement.stateChange)}</span>}
               </div>
               <p className="movement-tools">{movement.tools.map((tool) => tool.code).join(", ")}</p>
+              {movement.reason && <p className="history-reason">{t("toolCard.reason", { reason: movement.reason })}</p>}
               <p className="muted movement-meta">
                 <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
                 {" · "}
                 {t("board.movementBy", { author: movement.author, source: t(`movementSource.${movement.source}`) })}
               </p>
+              {movement.undoable && <UndoButton movementId={movement.id} operationId={randomUUID()} />}
             </li>
           ))}
         </ol>

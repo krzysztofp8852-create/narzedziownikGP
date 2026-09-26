@@ -1,9 +1,11 @@
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Sql } from "./ports";
+import * as corrections from "./corrections";
+import type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 import * as locations from "./locations";
 import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
 import * as movements from "./movements";
-import type { Movement, RegisterMovementInput } from "./movements";
+import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import { generateTemporaryPassword } from "./temporary-password";
@@ -15,14 +17,25 @@ import { EMAIL_PATTERN } from "./validation";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
-export type { AddToolInput, Category, EditToolInput, HistoryEntry, ToolCard, ToolOnBoard } from "./tools";
+export type { AddToolInput, Category, EditToolInput, HistoryEntry, LostTool, ToolCard, ToolOnBoard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
 export type { CompanySettings } from "./settings";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
+export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
+export { canCorrectTools, TOOL_STATES } from "./corrections";
 export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
 export { canManageLocations } from "./locations";
-export type { Movement, MovementConflict, MovementKind, MovementSource, RegisteredKind, RegisterMovementInput } from "./movements";
-export { canMoveTools, MovementConflictError } from "./movements";
+export type {
+  Movement,
+  MovementConflict,
+  MovementKind,
+  MovementSource,
+  RecentMovement,
+  RegisteredKind,
+  RegisterMovementInput,
+  UndoMovementInput,
+} from "./movements";
+export { canMoveTools, MovementConflictError, UNDO_WINDOW_MS } from "./movements";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 
@@ -76,8 +89,8 @@ export interface Registry {
     resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
     /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
     deactivateMember(memberId: string): Promise<void>;
-    /** Budowy (także zakończone) i serwisy firmy. */
-    locations(): Promise<{ sites: Site[]; services: Service[] }>;
+    /** Baza, budowy (także zakończone) i serwisy firmy. */
+    locations(): Promise<{ base: { id: string; name: string }; sites: Site[]; services: Service[] }>;
     /** Aktywni kierownicy, którym można przypisać budowę. Tylko właściciel. */
     siteManagerCandidates(): Promise<SiteManagerCandidate[]>;
     /** Nowa aktywna budowa z kierownikiem. Tylko właściciel. */
@@ -91,8 +104,25 @@ export interface Registry {
      * w lokalizacji źródłowej, odrzuca cały ruch błędem MovementConflictError.
      */
     registerMovement(input: RegisterMovementInput): Promise<Movement>;
-    /** Ostatnie ruchy w firmie, od najnowszego. */
-    recentMovements(options?: { limit?: number }): Promise<Movement[]>;
+    /**
+     * Cofa własne wydanie lub zwrot zapisany najwyżej 15 minut temu, o ile od tamtej pory żadne
+     * z jego narzędzi się nie ruszyło. Oryginał zostaje w historii jako cofnięty.
+     */
+    undoMovement(input: UndoMovementInput): Promise<Movement>;
+    /**
+     * Korekta: faktyczna lokalizacja i stan narzędzia, z obowiązkowym powodem. Tylko właściciel.
+     * Poprzednie ruchy zostają w historii.
+     */
+    correctTool(input: CorrectToolInput): Promise<Movement>;
+    /**
+     * Zaginięcie narzędzia w obiegu, z obowiązkowym powodem. Tylko właściciel. Karta pamięta datę,
+     * ostatnią lokalizację i kierownika budowy; odnalezienie to korekta.
+     */
+    markToolLost(input: MarkToolLostInput): Promise<Movement>;
+    /** Wycofanie z obiegu (zepsute, sprzedane): narzędzie znika z list, historia zostaje. Tylko właściciel. */
+    retireTool(input: RetireToolInput): Promise<Movement>;
+    /** Ostatnie ruchy w firmie, od najnowszego, z informacją, które aktor może cofnąć. */
+    recentMovements(options?: { limit?: number }): Promise<RecentMovement[]>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
     /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
@@ -131,6 +161,22 @@ export function createRegistry(deps: Deps): Registry {
           }
           return fn(sql, session);
         });
+
+      /**
+       * Polecenie zapisujące ruch, z jednym ponowieniem: równoległa transakcja mogła zapisać tę samą
+       * operację albo ruszyć te narzędzia, a drugie podejście to zobaczy.
+       */
+      const movementCommand =
+        <I>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>) =>
+        async (input: I) => {
+          const attempt = () => asMember((sql, session) => command(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            if (error instanceof tools.ReplayedOperationError || error instanceof movements.ConcurrentMoveError) return attempt();
+            throw error;
+          }
+        };
 
       return {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
@@ -249,7 +295,8 @@ export function createRegistry(deps: Deps): Registry {
             await deps.authAdmin.blockSignIn(memberId);
           }),
         locations: () =>
-          asMember(async (sql) => ({
+          asMember(async (sql, session) => ({
+            base: await tools.baseLocation(sql, session),
             sites: await locations.sites(sql, { activeOnly: false }),
             services: await locations.services(sql),
           })),
@@ -273,19 +320,13 @@ export function createRegistry(deps: Deps): Registry {
             locations.requireLocationManager(session);
             return locations.addService(sql, session, input, deps.clock.now());
           }),
-        registerMovement: async (input) => {
-          const attempt = () => asMember((sql, session) => movements.registerMovement(sql, session, input, deps.clock.now()));
-          try {
-            return await attempt();
-          } catch (error) {
-            // Równoległa transakcja zapisała tę operację albo ruszyła te narzędzia; drugie podejście to pokaże.
-            if (error instanceof tools.ReplayedOperationError || error instanceof movements.ConcurrentMoveError) {
-              return attempt();
-            }
-            throw error;
-          }
-        },
-        recentMovements: ({ limit = 20 } = {}) => asMember((sql) => movements.recentMovements(sql, limit)),
+        registerMovement: movementCommand(movements.registerMovement),
+        undoMovement: movementCommand(movements.undoMovement),
+        correctTool: movementCommand(corrections.correctTool),
+        markToolLost: movementCommand(corrections.markToolLost),
+        retireTool: movementCommand(corrections.retireTool),
+        recentMovements: ({ limit = 20 } = {}) =>
+          asMember((sql, session) => movements.recentMovements(sql, session, limit, deps.clock.now())),
         settings: () =>
           asMember((sql, session) => {
             settings.requireSettingsManager(session);

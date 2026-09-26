@@ -153,6 +153,7 @@ describe("serwisy", () => {
     const { locationId: serviceId } = await owner.addService({ name: " Serwis Hilti Poznań " });
 
     expect(await owner.locations()).toEqual({
+      base: { id: expect.any(String), name: "Baza" },
       sites: [expect.objectContaining({ id: siteId, name: "Rataje", status: "aktywna" })],
       services: [{ id: serviceId, name: "Serwis Hilti Poznań" }],
     });
@@ -184,7 +185,11 @@ describe("tylko właściciel zarządza lokalizacjami", () => {
       await expect(actor.addService({ name: "Serwis Makita" })).rejects.toMatchObject({ code: "forbidden" });
       await expect(actor.changeSiteManager(locationId, nowakId)).rejects.toMatchObject({ code: "forbidden" });
     }
-    expect(await owner.locations()).toEqual({ sites: [expect.objectContaining({ id: locationId })], services: [] });
+    expect(await owner.locations()).toEqual({
+      base: { id: expect.any(String), name: "Baza" },
+      sites: [expect.objectContaining({ id: locationId })],
+      services: [],
+    });
   });
 
   it("kierownik i magazynier widzą aktywne budowy z kierownikiem na tablicy", async () => {
@@ -263,7 +268,8 @@ describe("izolacja firm w lokalizacjach", () => {
     const stranger = testbed.registry.as(budrex.ownerId);
 
     expect((await stranger.whereIsWhat()).sites).toEqual([]);
-    expect(await stranger.locations()).toEqual({ sites: [], services: [] });
+    const zawbudBase = (await owner.whereIsWhat()).base;
+    expect(await stranger.locations()).toEqual({ base: { id: expect.not.stringMatching(zawbudBase.id), name: "Baza" }, sites: [], services: [] });
     await expect(stranger.changeSiteManager(locationId, budrexManagerId)).rejects.toMatchObject({ code: "not_found" });
     await expect(stranger.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: nowakId })).rejects.toMatchObject({
       code: "invalid_manager",

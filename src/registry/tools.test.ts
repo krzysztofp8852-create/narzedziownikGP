@@ -45,6 +45,7 @@ describe("dodawanie narzędzia", () => {
       registration: "zaakceptowane",
       location: { id: base.id, name: "Magazyn Swarzędz", kind: "baza" },
       daysInPlace: 3,
+      lost: null,
       history: [
         {
           kind: "przyjecie",
@@ -53,6 +54,9 @@ describe("dodawanie narzędzia", () => {
           author: "Właściciel Zawbud",
           from: null,
           to: "Magazyn Swarzędz",
+          reason: null,
+          stateChange: null,
+          undone: false,
         },
       ],
     });

@@ -14,7 +14,12 @@ export type RegistryErrorCode =
   | "prefix_taken"
   | "invalid_manager"
   | "site_finished"
-  | "movement_conflict";
+  | "movement_conflict"
+  | "not_undoable"
+  | "undo_expired"
+  | "undo_blocked"
+  | "reason_required"
+  | "invalid_tool_state";
 
 export class RegistryError extends Error {
   constructor(

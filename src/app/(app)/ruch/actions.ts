@@ -52,3 +52,14 @@ export async function registerMovement(_prev: ChecklistState, formData: FormData
   revalidatePath("/");
   return { done: { operationId } };
 }
+
+export async function undoMovement(movementId: string, operationId: string): Promise<{ error?: string }> {
+  const session = await requireSession();
+  try {
+    await getRegistry().as(session.userId).undoMovement({ operationId, movementId });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/");
+  return {};
+}

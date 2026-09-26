@@ -96,6 +96,13 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   Bieżącą lokalizację przesuwa wyzwalacz przy dopisaniu narzędzia do ruchu; jeśli narzędzia nie ma
   w lokalizacji źródłowej, cała transakcja się wycofuje. „Od X dni” liczy się od czasu zdarzenia
   ostatniego ruchu.
+- Cofnięcie i korekta bez edycji historii: autor cofa własne wydanie lub zwrot (`undoMovement`) w ciągu 15 minut
+  od czasu zapisu, jeśli żadne z narzędzi nie ruszyło się później. Cofnięcie to nowy ruch z odnośnikiem
+  do oryginału, który przez to jest „cofnięty”; narzędzia wracają z „od X dni” sprzed cofniętego ruchu.
+  Właściciel robi korektę (`correctTool`: faktyczna lokalizacja i stan, powód obowiązkowy), oznacza
+  zaginięcie (`markToolLost`: data, ostatnia lokalizacja i kierownik budowy) i wycofuje narzędzie
+  (`retireTool`). Zaginione i wycofane znikają z tablicy i checklist, karta z historią zostaje;
+  odnalezienie to korekta. Ruchów nie da się zmienić ani usunąć, także z pominięciem Rejestru.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu
