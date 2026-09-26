@@ -9,6 +9,7 @@ import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import {
+  canImportTools,
   canManageLocations,
   canManageTools,
   canSeeValues,
@@ -221,6 +222,7 @@ export default async function BoardPage() {
               categories,
               showValue: canSeeValues(session),
               operationId: randomUUID(),
+              canImport: canImportTools(session),
             }
           }
         />

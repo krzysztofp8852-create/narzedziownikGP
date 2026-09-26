@@ -19,7 +19,8 @@ export type RegistryErrorCode =
   | "undo_expired"
   | "undo_blocked"
   | "reason_required"
-  | "invalid_tool_state";
+  | "invalid_tool_state"
+  | "import_invalid";
 
 export class RegistryError extends Error {
   constructor(
