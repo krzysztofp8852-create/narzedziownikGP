@@ -110,9 +110,14 @@ export async function suggestCode(sql: Sql, categoryId: string): Promise<string>
     : [];
   if (!category) throw new RegistryError("not_found");
   const codes = await sql<{ code: string }>("select code from app.tools where starts_with(code, $1)", [`${category.prefix}-`]);
-  const pattern = new RegExp(`^${category.prefix}-(\\d+)$`);
-  const highest = Math.max(0, ...codes.map(({ code }) => Number(pattern.exec(code)?.[1] ?? 0)));
-  return `${category.prefix}-${String(highest + 1).padStart(2, "0")}`;
+  return nextCodes(category.prefix, codes.map(({ code }) => code), 1)[0];
+}
+
+/** `count` kolejnych kodów w kategorii o tym prefiksie, za najwyższym numerem wśród zajętych kodów. */
+export function nextCodes(prefix: string, taken: Iterable<string>, count: number): string[] {
+  const pattern = new RegExp(`^${prefix}-(\\d+)$`);
+  const highest = Math.max(0, ...[...taken].map((code) => Number(pattern.exec(code)?.[1] ?? 0)));
+  return Array.from({ length: count }, (_, i) => `${prefix}-${String(highest + 1 + i).padStart(2, "0")}`);
 }
 
 export async function addTool(
@@ -244,16 +249,23 @@ async function requireCategory(sql: Sql, categoryId: string) {
 }
 
 const CODE_PATTERN = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
-const MAX_VALUE = 9_999_999_999.99;
+const MAX_CODE_LENGTH = 20;
+export const MAX_VALUE = 9_999_999_999.99;
+
+/** Kod po uporządkowaniu (wielkie litery, bez spacji na brzegach) albo null, gdy ma zły kształt. */
+export function normalizeCode(raw: string): string | null {
+  const code = raw.trim().toUpperCase();
+  return CODE_PATTERN.test(code) && code.length <= MAX_CODE_LENGTH ? code : null;
+}
 
 /** Sprawdza i porządkuje podane pola karty; pól nieobecnych (undefined) nie dotyka. */
 function normalizeFields<T extends Partial<ToolFields>>(raw: T): T {
   const fields: Partial<ToolFields> = { ...raw };
   const invalid = () => new RegistryError("invalid_input");
   if (raw.code !== undefined) {
-    const code = raw.code.trim().toUpperCase();
-    if (code && (!CODE_PATTERN.test(code) || code.length > 20)) throw invalid();
-    fields.code = code || undefined;
+    const code = raw.code.trim() ? normalizeCode(raw.code) : undefined;
+    if (code === null) throw invalid();
+    fields.code = code;
   }
   if (raw.name !== undefined) {
     fields.name = raw.name.trim();
@@ -383,7 +395,7 @@ const UNIQUE_CONSTRAINT_ERRORS: Record<string, RegistryErrorCode> = {
 };
 
 /** Zamienia naruszenie unikalności (także przy wyścigu dwóch zapisów) na błąd Rejestru. */
-async function uniqueOr<T>(query: Promise<T>): Promise<T> {
+export async function uniqueOr<T>(query: Promise<T>): Promise<T> {
   try {
     return await query;
   } catch (error) {

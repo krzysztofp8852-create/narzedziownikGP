@@ -1223,3 +1223,89 @@ a.tool-row:hover .tool-row-name {
 .movement-tools a:hover {
   color: var(--accent);
 }
+
+/* Import narzędzi z pliku */
+.import,
+.import-steps {
+  display: grid;
+  gap: 16px;
+}
+
+.import-rules {
+  display: grid;
+  gap: 8px;
+  max-width: 900px;
+}
+
+.import-steps > .company-card {
+  display: grid;
+  gap: 12px;
+}
+
+.import-steps .field input[type="file"] {
+  max-width: 480px;
+}
+
+.import-mapping {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+}
+
+.import-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.import-table th,
+.import-table td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+.import-table th {
+  background: var(--surface-raised);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.import-table td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.import-table .tag {
+  margin-left: 6px;
+}
+
+.import-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.import-number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.import-table th.import-number {
+  text-align: right;
+}
+
+.import-row-invalid td {
+  background: var(--danger-soft);
+}
+
+.import-errors {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  color: var(--danger);
+  font-weight: 600;
+  min-width: 220px;
+}

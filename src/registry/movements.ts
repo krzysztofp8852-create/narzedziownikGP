@@ -5,7 +5,7 @@ import { isUniqueViolation, type LocationKind, ReplayedOperationError, type Tool
 import { UUID_PATTERN } from "./validation";
 
 export type MovementKind = "przyjecie" | "wydanie" | "zwrot" | "cofniecie" | "korekta" | "zaginiecie" | "wycofanie";
-export type MovementSource = "panel" | "checklista";
+export type MovementSource = "panel" | "checklista" | "import";
 /** Ruchy, które rejestruje polecenie „zarejestruj ruch”. */
 export type RegisteredKind = "wydanie" | "zwrot";
 export const REGISTERED_KINDS: readonly RegisteredKind[] = ["wydanie", "zwrot"];

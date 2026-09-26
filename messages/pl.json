@@ -148,7 +148,8 @@
     "undo_expired": "Minęło 15 minut od zapisu ruchu. Ewidencję ustawi właściciel korektą.",
     "undo_blocked": "Tego ruchu nie da się już cofnąć: jego narzędzia ruszyły się później.",
     "reason_required": "Podaj powód.",
-    "invalid_tool_state": "Narzędzie jest już w tym stanie."
+    "invalid_tool_state": "Narzędzie jest już w tym stanie.",
+    "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane."
   },
   "days": {
     "one": "{count} dzień",
@@ -173,7 +174,8 @@
     "categoryOption": "{name} ({prefix})",
     "added": "Dodano {code} {name}.",
     "openCard": "Otwórz kartę →",
-    "saved": "Zapisano zmiany."
+    "saved": "Zapisano zmiany.",
+    "importLink": "Masz listę narzędzi w Excelu? Importuj z pliku →"
   },
   "categories": {
     "newTitle": "Nowa kategoria",
@@ -228,7 +230,8 @@
   },
   "movementSource": {
     "panel": "panel",
-    "checklista": "checklista"
+    "checklista": "checklista",
+    "import": "import"
   },
   "locations": {
     "siteName": "Nazwa budowy",
@@ -362,5 +365,53 @@
     "recordedAt": "Czas zapisu",
     "fileName": "narzedziownik-{day}.xlsx",
     "moneyFormat": "#,##0.00 \"zł\""
+  },
+  "import": {
+    "title": "Import narzędzi z pliku",
+    "back": "← Wróć do tablicy",
+    "intro": "Wgraj plik XLSX albo CSV z listą narzędzi: pierwszy wiersz to nagłówki kolumn, a każdy następny to jedno narzędzie. Przed zatwierdzeniem zobaczysz podgląd z błędami; bez zatwierdzenia nic się nie zapisze.",
+    "rules": "Każdy wiersz potrzebuje nazwy i kategorii (nazwy albo prefiksu, np. „Młoty” albo „H”). Wiersze bez kodu dostaną kolejny wolny kod w kategorii. Narzędzia bez lokalizacji trafią na bazę.",
+    "categories": "Kategorie firmy",
+    "noCategories": "Firma nie ma jeszcze kategorii. Dodaj je na tablicy przy dodawaniu narzędzia, zanim wgrasz plik.",
+    "locations": "Lokalizacje",
+    "file": "Plik XLSX lub CSV",
+    "reading": "Wczytywanie pliku…",
+    "fileErrors": {
+      "unsupported": "Wgraj plik .xlsx albo .csv.",
+      "unreadable": "Nie udało się odczytać pliku. Zapisz go w Excelu jako .xlsx albo .csv i spróbuj ponownie.",
+      "empty": "Plik nie ma wierszy z danymi pod nagłówkami.",
+      "tooMany": "Plik ma {count} wierszy z danymi, a jednorazowo można zaimportować najwyżej {max}. Podziel go na kilka plików."
+    },
+    "mappingTitle": "Kolumny pliku",
+    "mappingHint": "Sprawdź, z której kolumny pliku bierzemy każde pole karty narzędzia.",
+    "location": "Lokalizacja",
+    "noColumn": "— bez kolumny —",
+    "columnOption": "{letter}: {header}",
+    "previewTitle": "Podgląd",
+    "checking": "Sprawdzanie…",
+    "summary": "Wiersze: {count}",
+    "summaryErrors": "z błędami: {count}",
+    "allValid": "Wszystkie wiersze są poprawne. Zatwierdź import, żeby zapisać narzędzia.",
+    "fixFile": "Popraw plik i wgraj go ponownie. Import zapisze się dopiero wtedy, gdy żaden wiersz nie będzie miał błędu.",
+    "onlyErrors": "Pokaż tylko wiersze z błędami",
+    "line": "Wiersz",
+    "problems": "Błędy",
+    "assigned": "nadany",
+    "submit": "Zatwierdź import ({count} szt.)",
+    "submitting": "Zapisywanie…",
+    "done": "Zaimportowano narzędzia: {count}.",
+    "openBoard": "Zobacz je na tablicy →",
+    "rowErrors": {
+      "name_missing": "Brak nazwy.",
+      "category_missing": "Brak kategorii.",
+      "category_unknown": "Nieznana kategoria „{value}”.",
+      "code_invalid": "Zły kod „{value}”: tylko litery, cyfry i myślniki, najwyżej 20 znaków.",
+      "code_repeated": "Kod {value} powtarza się w pliku.",
+      "code_taken": "Kod {value} ma już inne narzędzie w firmie.",
+      "value_invalid": "Zła wartość „{value}”: wpisz kwotę w zł, np. 3200 albo 3200,50.",
+      "location_unknown": "Nieznana lokalizacja „{value}”.",
+      "location_ambiguous": "Nazwę „{value}” ma kilka lokalizacji firmy.",
+      "site_finished": "Budowa „{value}” jest zakończona."
+    }
   }
 }

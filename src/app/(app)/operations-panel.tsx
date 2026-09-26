@@ -11,7 +11,7 @@ type Operation = "wydanie" | "zwrot" | "narzedzie";
 export interface OperationsPanelProps {
   checklist: ChecklistData;
   /** Dodawanie narzędzi: tylko dla tych, którzy mogą zarządzać narzędziami. */
-  newTool: { categories: Category[]; showValue: boolean; operationId: string } | null;
+  newTool: { categories: Category[]; showValue: boolean; operationId: string; canImport: boolean } | null;
 }
 
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
