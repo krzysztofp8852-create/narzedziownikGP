@@ -20,6 +20,7 @@ describe("dodawanie budowy", () => {
         address: "ul. Piłsudskiego 12, Poznań",
         status: "aktywna",
         manager: { id: nowakId, fullName: "Adam Nowak", active: true },
+        totalValue: 0,
         tools: [],
       },
     ]);

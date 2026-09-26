@@ -1,3 +1,5 @@
+import * as board from "./board";
+import type { WhereIsWhat } from "./board";
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Sql } from "./ports";
 import * as corrections from "./corrections";
@@ -12,12 +14,13 @@ import { generateTemporaryPassword } from "./temporary-password";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
 import * as tools from "./tools";
-import type { AddToolInput, Category, EditToolInput, ToolCard, ToolOnBoard } from "./tools";
+import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
-export type { AddToolInput, Category, EditToolInput, HistoryEntry, LostTool, ToolCard, ToolOnBoard, ToolState } from "./tools";
+export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
+export type { AddToolInput, Category, EditToolInput, HistoryEntry, LostTool, ToolCard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
 export type { CompanySettings } from "./settings";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
@@ -72,6 +75,10 @@ export interface Registry {
     changePassword(newPassword: string, signIn: { signedInAt: Date }): Promise<void>;
     /** Nowe hasło w sesji z linku resetu hasła, otwartego (`recoveredAt`, z JWT) najwyżej godzinę temu. */
     setPasswordFromRecoveryLink(newPassword: string, recovery: { recoveredAt: Date | null }): Promise<void>;
+    /**
+     * Tablica „Gdzie jest co”: baza, aktywne budowy, serwisy i zaginione, z alarmami. Wartości
+     * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
+     */
     whereIsWhat(): Promise<WhereIsWhat>;
     categories(): Promise<Category[]>;
     addCategory(input: { name: string; prefix: string }): Promise<Category>;
@@ -128,12 +135,6 @@ export interface Registry {
     /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
     updateSettings(input: CompanySettings): Promise<void>;
   };
-}
-
-export interface WhereIsWhat {
-  base: { id: string; name: string; tools: ToolOnBoard[] };
-  /** Aktywne budowy z narzędziami, które na nich są. */
-  sites: (Site & { tools: ToolOnBoard[] })[];
 }
 
 export const MIN_PASSWORD_LENGTH = 8;
@@ -224,16 +225,7 @@ export function createRegistry(deps: Deps): Registry {
             { allowPendingPasswordChange: true },
           );
         },
-        whereIsWhat: () =>
-          asMember(async (sql, session) => {
-            const base = await tools.baseLocation(sql, session);
-            const toolsAt = await tools.toolsByLocation(sql, deps.clock.now());
-            const sites = await locations.sites(sql, { activeOnly: true });
-            return {
-              base: { ...base, tools: toolsAt.get(base.id) ?? [] },
-              sites: sites.map((site) => ({ ...site, tools: toolsAt.get(site.id) ?? [] })),
-            };
-          }),
+        whereIsWhat: () => asMember((sql, session) => board.whereIsWhat(sql, session, deps.clock.now())),
         categories: () => asMember((sql) => tools.listCategories(sql)),
         addCategory: (input) =>
           asMember((sql, session) => {

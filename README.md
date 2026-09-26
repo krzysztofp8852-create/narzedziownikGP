@@ -89,6 +89,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   a dla właściciela także dodawanie budowy i zmiana kierownika. Na komputerze panel operacji i ostatnie
   ruchy stoją po lewej, na telefonie operacje są nad tablicą. W ustawieniach są próg alarmu, serwisy,
   zespół i zakończone budowy.
+- Tablica (`whereIsWhat`): baza z „nieużywane X dni”, aktywne budowy z alarmem po progu dni firmy,
+  sekcje „W serwisie” i „Zaginione” oraz liczba alarmów. Wartości narzędzi, sumy lokalizacji, kwotę
+  poza bazą (tylko budowy) i sumę zaginionych dostaje wyłącznie właściciel: dla innych ról zapytanie
+  nie czyta tabeli wartości.
 - Ruchy: polecenie Rejestru `registerMovement` (wydanie, zwrot) niesie identyfikator operacji klienta
   (ponowne wysłanie zwraca pierwotny ruch) i oczekiwaną lokalizację źródłową narzędzi. Gdy któreś
   narzędzie jest gdzie indziej, cały ruch jest odrzucany (`MovementConflictError`: gdzie jest i kto je

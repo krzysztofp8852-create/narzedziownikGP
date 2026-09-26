@@ -35,15 +35,6 @@ export interface AddToolInput extends ToolFields {
 /** Zmiany karty: pominięte pola zostają bez zmian, null czyści pole. */
 export type EditToolInput = Partial<ToolFields>;
 
-/** Narzędzie widoczne na tablicy. */
-export interface ToolOnBoard {
-  id: string;
-  code: string;
-  name: string;
-  registration: ToolRegistration;
-  daysInPlace: number;
-}
-
 export interface ToolCard {
   id: string;
   code: string;
@@ -275,34 +266,6 @@ function normalizeFields<T extends Partial<ToolFields>>(raw: T): T {
   return fields as T;
 }
 
-/** Narzędzia w obiegu według lokalizacji, po kodzie. */
-export async function toolsByLocation(sql: Sql, now: Date): Promise<Map<string, ToolOnBoard[]>> {
-  const rows = await sql<{
-    id: string;
-    code: string;
-    name: string;
-    registration: ToolRegistration;
-    location_id: string;
-    located_since: Date;
-  }>(
-    `select id, code, name, registration, location_id, located_since from app.tools
-     where state = 'w_obiegu' order by code`,
-  );
-  const byLocation = new Map<string, ToolOnBoard[]>();
-  for (const row of rows) {
-    const tools = byLocation.get(row.location_id) ?? [];
-    tools.push({
-      id: row.id,
-      code: row.code,
-      name: row.name,
-      registration: row.registration,
-      daysInPlace: daysSince(row.located_since, now),
-    });
-    byLocation.set(row.location_id, tools);
-  }
-  return byLocation;
-}
-
 export async function toolCard(
   sql: Sql,
   session: Session,
@@ -434,7 +397,7 @@ export function isUniqueViolation(error: unknown, constraint: string) {
   return code === "23505" && violated === constraint;
 }
 
-function daysSince(since: Date, now: Date) {
+export function daysSince(since: Date, now: Date) {
   return Math.max(0, Math.floor((now.getTime() - new Date(since).getTime()) / DAY_MS));
 }
 

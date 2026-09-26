@@ -389,6 +389,25 @@ a.button {
   white-space: nowrap;
 }
 
+.location-totals {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.location-value {
+  font-weight: 700;
+}
+
+.location-lost {
+  border-color: var(--danger);
+}
+
+.board-section {
+  display: grid;
+  gap: 12px;
+}
+
 .location-details {
   display: grid;
   gap: 2px;
@@ -435,6 +454,46 @@ a.tool-row:hover .tool-row-name {
   color: var(--text-muted);
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+.tool-row-name .tag {
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.tool-row-sub {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.tool-row-meta {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.tool-row-value,
+.location-value {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Narzędzie na budowie dłużej niż próg dni: czerwone tło i pasek, do tego napis „po progu”. */
+.tool-row-alarm {
+  background: var(--danger-soft);
+  box-shadow: inset 4px 0 0 var(--danger);
+}
+
+.tool-row-alarm .tool-row-days,
+.tag-alarm {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.tag-alarm {
+  border-color: var(--danger);
 }
 
 .tool-list-wide {
@@ -891,15 +950,15 @@ a.tool-row:hover .tool-row-name {
 
 /* Liczby na górze tablicy: duża liczba, pod nią podpis */
 .stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 110px));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .stats div {
   display: flex;
   flex-direction: column-reverse;
-  min-width: 0;
+  min-width: 110px;
   padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -917,6 +976,17 @@ a.tool-row:hover .tool-row-name {
   font-size: 1.6rem;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Narzędzia po progu dni na budowie */
+.stats .stat-alarm {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.stats .stat-alarm dd {
+  color: var(--danger);
 }
 
 .site-grid {
