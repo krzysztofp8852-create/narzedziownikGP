@@ -250,6 +250,29 @@ a.button {
   margin: 0 auto;
 }
 
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-button {
+  gap: 8px;
+  min-width: 40px;
+  padding: 8px 10px;
+}
+
+/* Na telefonie samo kółko; podpis od szerszych ekranów. */
+.icon-button-label {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .icon-button-label {
+    display: inline;
+  }
+}
+
 .app-header-company {
   font-size: 1.2rem;
   overflow-wrap: anywhere;
@@ -280,8 +303,7 @@ a.button {
 .location .section-title,
 .company-card .section-title,
 .operations .section-title,
-.recent .section-title,
-.company > .section-title {
+.recent .section-title {
   margin-bottom: 0;
 }
 
@@ -837,28 +859,15 @@ a.tool-row:hover .tool-row-name {
   order: 3;
 }
 
-.company {
-  order: 4;
-}
-
-.where,
-.company {
+.where {
   display: grid;
   gap: 16px;
   align-content: start;
 }
 
-.company {
-  padding-top: 8px;
-}
-
-.company > .section-title {
-  font-size: 1.35rem;
-}
-
 @media (min-width: 1024px) {
   .board {
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 400px);
+    grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
     align-items: start;
   }
 
@@ -1003,7 +1012,7 @@ a.tool-row:hover .tool-row-name {
   border-radius: 0 0 var(--radius) var(--radius);
 }
 
-/* Sekcja Firma */
+/* Strona Ustawienia */
 .company-grid {
   display: grid;
   gap: 16px;

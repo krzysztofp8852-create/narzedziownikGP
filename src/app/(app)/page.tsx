@@ -9,8 +9,6 @@ import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import {
   canManageLocations,
-  canManageSettings,
-  canManageTeam,
   canManageTools,
   canSeeValues,
   type Movement,
@@ -20,11 +18,8 @@ import {
 } from "@/registry/registry";
 import { changeSiteManager } from "./lokalizacje/actions";
 import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
-import { ServicesSection } from "./lokalizacje/services-section";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
-import { SettingsSection } from "./ustawienia/settings-section";
-import { TeamSection } from "./zespol/team-section";
 
 export const metadata: Metadata = { title: t("board.title") };
 
@@ -112,9 +107,9 @@ function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
         <div className="stack-form">
           <p className="empty">{t("locations.noManagers")}</p>
           <p>
-            <a className="button button-quiet" href="#zespol">
+            <Link className="button button-quiet" href="/ustawienia#zespol">
               {t("locations.goToTeam")}
-            </a>
+            </Link>
           </p>
         </div>
       ) : (
@@ -127,22 +122,31 @@ function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
 export default async function BoardPage() {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
-  const ownsLocations = canManageLocations(session);
-  const [board, movements, locations, managers, members, categories, settings] = await Promise.all([
+  const [board, movements, managers, categories] = await Promise.all([
     registry.whereIsWhat(),
     registry.recentMovements(),
-    ownsLocations ? registry.locations() : null,
-    ownsLocations ? registry.siteManagerCandidates() : null,
-    canManageTeam(session) ? registry.team() : null,
+    canManageLocations(session) ? registry.siteManagerCandidates() : null,
     canManageTools(session) ? registry.categories() : null,
-    canManageSettings(session) ? registry.settings() : null,
   ]);
   const { base, sites } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
-  const finishedSites = locations?.sites.filter((site) => site.status === "zakonczona") ?? [];
 
   return (
     <div className="board">
+      <aside className="board-side" aria-label={t("board.sidebar")}>
+        <OperationsPanel
+          checklist={checklistData(session, board)}
+          newTool={
+            categories && {
+              categories,
+              showValue: canSeeValues(session),
+              operationId: randomUUID(),
+            }
+          }
+        />
+        <RecentMovements movements={movements} />
+      </aside>
+
       <div className="board-main">
         <section className="where" aria-labelledby="board-title">
           <div className="page-head">
@@ -187,49 +191,7 @@ export default async function BoardPage() {
             {managers && <AddSiteTile managers={managers} />}
           </div>
         </section>
-
-        {(locations || members || settings) && (
-          <section className="company" aria-labelledby="company-title">
-            <h2 id="company-title" className="display section-title">
-              {t("board.companyTitle")}
-            </h2>
-            <div className="company-grid">
-              {members && <TeamSection session={session} members={members} />}
-              {locations && <ServicesSection services={locations.services} />}
-              {settings && <SettingsSection settings={settings} />}
-              {finishedSites.length > 0 && (
-                <section className="company-card" aria-labelledby="finished-sites">
-                  <h3 id="finished-sites" className="display section-title">
-                    {t("board.finishedSites")}
-                  </h3>
-                  <ul className="member-list">
-                    {finishedSites.map((site) => (
-                      <li key={site.id} className="member member-inactive">
-                        <strong>{site.name}</strong>
-                        <p className="muted member-email">{site.address}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-            </div>
-          </section>
-        )}
       </div>
-
-      <aside className="board-side" aria-label={t("board.sidebar")}>
-        <OperationsPanel
-          checklist={checklistData(session, board)}
-          newTool={
-            categories && {
-              categories,
-              showValue: canSeeValues(session),
-              operationId: randomUUID(),
-            }
-          }
-        />
-        <RecentMovements movements={movements} />
-      </aside>
     </div>
   );
 }

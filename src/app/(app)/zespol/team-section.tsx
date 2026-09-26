@@ -3,14 +3,14 @@ import { MEMBER_ROLES, type Session, type TeamMember } from "@/registry/registry
 import { AddMemberForm } from "./add-member-form";
 import { MemberActions } from "./member-actions";
 
-/** Zespół na tablicy właściciela: lista osób, a dodawanie i działania na koncie rozwijane na żądanie. */
+/** Zespół w ustawieniach właściciela: lista osób, a dodawanie i działania na koncie rozwijane na żądanie. */
 export function TeamSection({ session, members }: { session: Session; members: TeamMember[] }) {
   return (
     <section id="zespol" className="company-card company-team" aria-labelledby="members">
       <div className="location-head">
-        <h3 id="members" className="display section-title">
+        <h2 id="members" className="display section-title">
           {t("team.title")}
-        </h3>
+        </h2>
         <span className="location-count">{t("board.peopleCount", { count: members.filter((member) => member.active).length })}</span>
       </div>
       <details className="panel">

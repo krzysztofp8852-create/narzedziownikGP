@@ -36,7 +36,7 @@ export async function addService(_prev: LocationFormState, formData: FormData): 
   try {
     const name = formText(formData, "name");
     const { locationId } = await getRegistry().as(session.userId).addService({ name });
-    revalidatePath("/");
+    revalidatePath("/ustawienia");
     return { added: { id: locationId, name: name.trim() } };
   } catch (error) {
     return { error: errorMessage(error) };

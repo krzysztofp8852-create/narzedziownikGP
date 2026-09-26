@@ -80,13 +80,15 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   leży w osobnej tabeli `app.tool_values`, którą RLS pokazuje tylko właścicielowi.
 - Kod narzędzia przy dodawaniu nadaje Rejestr: prefiks kategorii i kolejny wolny numer (np. `H-05`).
   Alarm „za długo na budowie” liczy dni od ostatniego ruchu względem jednego progu firmy, który
-  właściciel ustawia w sekcji Firma na tablicy.
+  właściciel ustawia w Ustawieniach (`/ustawienia`).
 - `src/app/`: logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
   reset hasła przez e-mail (`/reset-hasla` → link → `/auth/confirm` → `/nowe-haslo`),
-  tablica „Gdzie jest co” (`/`) i karta narzędzia z edycją (`/narzedzia/<id>`). Tablica to jeden
-  ekran na wszystko: panel operacji (checklisty „Wydaj z bazy” i „Zwróć na bazę”, dodawanie narzędzia),
-  baza i budowy z listą narzędzi, ostatnie ruchy, a dla właściciela także dodawanie budowy, zmiana
-  kierownika, serwisy, zespół i próg alarmu. Na komputerze panel operacji stoi obok tablicy, na telefonie nad nią.
+  tablica „Gdzie jest co” (`/`), karta narzędzia z edycją (`/narzedzia/<id>`) i ustawienia właściciela
+  (`/ustawienia`, kółko zębate w nagłówku). Tablica to codzienna praca: panel operacji (checklisty
+  „Wydaj z bazy” i „Zwróć na bazę”, dodawanie narzędzia), baza i budowy z listą narzędzi, ostatnie ruchy,
+  a dla właściciela także dodawanie budowy i zmiana kierownika. Na komputerze panel operacji i ostatnie
+  ruchy stoją po lewej, na telefonie operacje są nad tablicą. W ustawieniach są próg alarmu, serwisy,
+  zespół i zakończone budowy.
 - Ruchy: polecenie Rejestru `registerMovement` (wydanie, zwrot) niesie identyfikator operacji klienta
   (ponowne wysłanie zwraca pierwotny ruch) i oczekiwaną lokalizację źródłową narzędzi. Gdy któreś
   narzędzie jest gdzie indziej, cały ruch jest odrzucany (`MovementConflictError`: gdzie jest i kto je

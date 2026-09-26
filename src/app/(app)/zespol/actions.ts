@@ -30,6 +30,7 @@ export async function addMember(_prev: AddMemberState, formData: FormData): Prom
         role: formText(formData, "role") as MemberRole,
       });
     revalidatePath("/");
+    revalidatePath("/ustawienia");
     return { added };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -41,6 +42,7 @@ export async function resetMemberPassword(memberId: string): Promise<MemberActio
   try {
     const { temporaryPassword } = await getRegistry().as(session.userId).resetMemberPassword(memberId);
     revalidatePath("/");
+    revalidatePath("/ustawienia");
     return { temporaryPassword };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -52,6 +54,7 @@ export async function deactivateMember(memberId: string): Promise<MemberActionSt
   try {
     await getRegistry().as(session.userId).deactivateMember(memberId);
     revalidatePath("/");
+    revalidatePath("/ustawienia");
     return {};
   } catch (error) {
     return { error: errorMessage(error) };

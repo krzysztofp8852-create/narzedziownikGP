@@ -23,5 +23,6 @@ export async function updateSettings(_prev: SettingsFormState, formData: FormDat
     return { error: errorMessage(error) };
   }
   revalidatePath("/");
+  revalidatePath("/ustawienia");
   return { saved: true };
 }

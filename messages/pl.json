@@ -50,7 +50,8 @@
     "intro": "Ustaw nowe hasło do swojego konta."
   },
   "header": {
-    "logout": "Wyloguj"
+    "logout": "Wyloguj",
+    "settings": "Ustawienia"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -75,9 +76,12 @@
     "statBase": "Na bazie",
     "statSites": "Na budowach",
     "statSiteCount": "Budowy",
-    "companyTitle": "Firma",
-    "finishedSites": "Zakończone budowy",
     "peopleCount": "{count} aktywne"
+  },
+  "settingsPage": {
+    "title": "Ustawienia",
+    "back": "← Wróć do tablicy",
+    "finishedSites": "Zakończone budowy"
   },
   "team": {
     "title": "Zespół",
