@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { movementRoute, stateChangeText } from "@/i18n/movement-text";
+import { MovementEntry } from "@/components/movement-entry";
 import { SiteManagerLabel } from "@/components/site-manager-label";
-import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -133,30 +132,20 @@ function Lost({ lost, lostValue }: Pick<WhereIsWhat, "lost" | "lostValue">) {
 function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   return (
     <section className="recent" aria-labelledby="recent-movements">
-      <h2 id="recent-movements" className="display section-title">
-        {t("board.recentTitle")}
-      </h2>
+      <div className="section-head">
+        <h2 id="recent-movements" className="display section-title">
+          {t("board.recentTitle")}
+        </h2>
+        <Link href="/historia">{t("history.fullHistory")}</Link>
+      </div>
       {movements.length === 0 ? (
         <p className="empty">{t("board.recentEmpty")}</p>
       ) : (
         <ol className="movements">
           {movements.map((movement) => (
-            <li key={movement.id} className={movement.undoneBy ? "movement movement-undone" : "movement"}>
-              <div className="movement-head">
-                <span className={`movement-kind movement-kind-${movement.kind}`}>{t(`movementKind.${movement.kind}`)}</span>
-                {movement.undoneBy && <span className="tag">{t("toolCard.undone")}</span>}
-                <span>{movementRoute(movement.from?.name ?? null, movement.to?.name ?? null)}</span>
-                {stateChangeText(movement.stateChange) && <span>{stateChangeText(movement.stateChange)}</span>}
-              </div>
-              <p className="movement-tools">{movement.tools.map((tool) => tool.code).join(", ")}</p>
-              {movement.reason && <p className="history-reason">{t("toolCard.reason", { reason: movement.reason })}</p>}
-              <p className="muted movement-meta">
-                <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
-                {" · "}
-                {t("board.movementBy", { author: movement.author, source: t(`movementSource.${movement.source}`) })}
-              </p>
+            <MovementEntry key={movement.id} movement={movement}>
               {movement.undoable && <UndoButton movementId={movement.id} operationId={randomUUID()} />}
-            </li>
+            </MovementEntry>
           ))}
         </ol>
       )}

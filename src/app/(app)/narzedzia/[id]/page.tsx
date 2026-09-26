@@ -7,6 +7,7 @@ import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
 import { canCorrectTools, canManageTools, canSeeValues } from "@/registry/registry";
 import { editTool } from "../actions";
@@ -108,9 +109,12 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
       )}
 
       <section aria-labelledby="history">
-        <h2 id="history" className="display section-title">
-          {t("toolCard.history")}
-        </h2>
+        <div className="section-head">
+          <h2 id="history" className="display section-title">
+            {t("toolCard.history")}
+          </h2>
+          <Link href={`/historia${historySearch({ toolId: card.id })}`}>{t("history.toolHistory")}</Link>
+        </div>
         <ol className="history">
           {card.history.map((entry, index) => (
             <li key={index} className={entry.undone ? "history-undone" : undefined}>
