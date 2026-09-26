@@ -897,6 +897,87 @@ a.tool-row:hover .tool-row-name {
   overflow-wrap: anywhere;
 }
 
+/* Skaner naklejek QR */
+.scanner {
+  display: grid;
+  gap: 16px;
+}
+
+.scanner-input {
+  display: grid;
+  gap: 10px;
+}
+
+.camera {
+  display: grid;
+  gap: 6px;
+}
+
+.camera-video {
+  width: 100%;
+  max-height: 50vh;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--text);
+  border-radius: var(--radius);
+}
+
+.scanner-manual {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.scanner-feedback {
+  min-height: 1.5em;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.scanner-feedback-error {
+  color: var(--danger);
+}
+
+.scan-group {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.scan-group-from {
+  font-size: 1rem;
+}
+
+.scan-tools {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.scan-tool {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.scan-remove {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.scan-legend {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
 /* Tablica: wszystko na jednym ekranie */
 .board {
   display: grid;

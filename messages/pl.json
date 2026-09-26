@@ -65,6 +65,7 @@
     "siteEmpty": "Na tej budowie nie ma jeszcze narzędzi.",
     "noSites": "Nie ma aktywnych budów.",
     "addSite": "Dodaj budowę",
+    "scan": "Skanuj QR",
     "issue": "Wydaj z bazy",
     "return": "Zwróć na bazę",
     "transfer": "Przenieś",
@@ -265,6 +266,7 @@
   "movementSource": {
     "panel": "panel",
     "checklista": "checklista",
+    "qr": "skaner QR",
     "import": "import"
   },
   "locations": {
@@ -357,6 +359,34 @@
         "summaryEmpty": "Wybierz serwis i zaznacz narzędzia."
       }
     }
+  },
+  "scanner": {
+    "cameraPreview": "Podgląd aparatu",
+    "cameraStarting": "Uruchamianie aparatu…",
+    "cameraHint": "Nakieruj aparat na naklejkę. Możesz skanować kilka naklejek pod rząd.",
+    "cameraDenied": "Brak zgody na użycie aparatu. Zezwól na nie w ustawieniach przeglądarki albo wpisz kod ręcznie.",
+    "cameraUnavailable": "Aparat jest niedostępny. Wpisz kod z naklejki ręcznie.",
+    "cameraInsecure": "Aparat działa tylko na stronie otwartej przez HTTPS. Wpisz kod z naklejki ręcznie.",
+    "cameraOn": "Włącz aparat",
+    "cameraOff": "Wyłącz aparat",
+    "manualCode": "Kod z naklejki",
+    "manualPlaceholder": "np. H-03",
+    "manualAdd": "Dodaj",
+    "added": "Dodano {code}.",
+    "alreadyAdded": "{code} już jest na liście.",
+    "notSticker": "To nie jest naklejka narzędzia.",
+    "unknownSticker": "Tego narzędzia nie ma na tablicy firmy.",
+    "unknownCode": "Nie ma na tablicy narzędzia o kodzie {code}.",
+    "empty": "Zeskanuj naklejki albo wpisz kody. Rodzaj ruchu podpowiemy na podstawie tego, gdzie sprzęt jest teraz.",
+    "groupLabel": "Ruch z: {place}",
+    "from": "Teraz: {place}",
+    "remove": "Usuń {code} z listy",
+    "kind": "Rodzaj ruchu",
+    "suggested": "podpowiedź",
+    "chooseTo": "wybierz, dokąd",
+    "cannotMove": "Tego sprzętu nie możesz ruszyć. Usuń go z listy.",
+    "clear": "Wyczyść listę",
+    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź ruchy i zatwierdź ponownie."
   },
   "settings": {
     "title": "Alarm na budowie",

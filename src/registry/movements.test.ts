@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { withActor } from "./registry";
+import { type RegisteredKind, withActor } from "./registry";
 import { type GivenCompany, setupRegistryTestbed } from "./testing/harness";
 
 const testbed = setupRegistryTestbed();
@@ -261,6 +261,61 @@ describe("idempotencja ruchu", () => {
 
     expect(budrexMovement).toMatchObject({ author: "Piotr Kaczmarek", to: { name: "Łazarz" }, tools: [{ code: "H-01" }] });
     expect(await whereIs(z, z.s01)).toBe("Rataje");
+  });
+});
+
+describe("ruch ze skanera QR", () => {
+  it("kierownik wydaje zeskanowane S-01 na swoją budowę: w historii jest wydanie ze źródłem qr", async () => {
+    const z = await givenZawbud();
+
+    const movement = await testbed.registry.as(z.nowakId).registerMovement({
+      operationId: randomUUID(),
+      kind: "wydanie",
+      fromLocationId: z.baseId,
+      toLocationId: z.ratajeId,
+      toolIds: [z.s01],
+      source: "qr",
+    });
+
+    expect(movement).toMatchObject({ kind: "wydanie", source: "qr", author: "Adam Nowak", to: { name: "Rataje" } });
+    expect((await z.owner.toolCard(z.s01))!.history[0]).toMatchObject({ kind: "wydanie", source: "qr", to: "Rataje" });
+  });
+
+  it("obowiązują te same uprawnienia i sprawdzenie lokalizacji źródłowej co przy checkliście", async () => {
+    const z = await givenZawbud();
+    const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik", "Jan Kowalski");
+    const { locationId: winogradyId } = await z.owner.addSite({ name: "Winogrady", address: "os. Wichrowe 3", managerId: kowalskiId });
+    await issue(z, kowalskiId, [z.s02], { siteId: winogradyId });
+    const scan = (kind: RegisteredKind, from: string, to: string, toolIds: string[]) =>
+      testbed.registry
+        .as(z.nowakId)
+        .registerMovement({ operationId: randomUUID(), kind, fromLocationId: from, toLocationId: to, toolIds, source: "qr" });
+
+    await expect(scan("wydanie", z.baseId, winogradyId, [z.s01])).rejects.toMatchObject({ code: "forbidden" });
+    await expect(scan("zwrot", winogradyId, z.baseId, [z.s02])).rejects.toMatchObject({ code: "forbidden" });
+    await expect(scan("wydanie", z.baseId, z.ratajeId, [z.s01, z.s02])).rejects.toMatchObject({
+      code: "movement_conflict",
+      conflicts: [expect.objectContaining({ code: "S-02", location: { id: winogradyId, name: "Winogrady" } })],
+    });
+
+    expect(await whereIs(z, z.s01)).toBe("Magazyn Swarzędz");
+    expect(await whereIs(z, z.s02)).toBe("Winogrady");
+  });
+
+  it("nie przyjmuje nieznanego źródła ruchu", async () => {
+    const z = await givenZawbud();
+
+    await expect(
+      testbed.registry.as(z.nowakId).registerMovement({
+        operationId: randomUUID(),
+        kind: "wydanie",
+        fromLocationId: z.baseId,
+        toLocationId: z.ratajeId,
+        toolIds: [z.s01],
+        source: "import" as never,
+      }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(await whereIs(z, z.s01)).toBe("Magazyn Swarzędz");
   });
 });
 

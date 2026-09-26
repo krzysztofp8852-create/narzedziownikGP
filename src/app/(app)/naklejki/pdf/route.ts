@@ -9,7 +9,8 @@ import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import type { StickerSelection } from "@/registry/registry";
 import { isStickerLayout, isStickerPosition } from "@/stickers/layouts";
-import { stickerSheetPdf, stickerUrl } from "@/stickers/sheet";
+import { stickerSheetPdf } from "@/stickers/sheet";
+import { stickerUrl } from "@/stickers/url";
 
 /**
  * PDF z naklejkami QR do wydruku: wszystkie nieoklejone (`selection=unlabeled`) albo zaznaczone

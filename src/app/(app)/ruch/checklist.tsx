@@ -8,6 +8,7 @@ import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import type { LocationKind, RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
+import { type DoneMovement, MovementResult } from "./movement-result";
 
 export interface ChecklistTool {
   id: string;
@@ -37,6 +38,8 @@ export interface ChecklistData {
   /** Identyfikator pierwszej operacji; każda zmiana zaznaczenia albo lokalizacji to nowa operacja. */
   operationId: string;
   places: ChecklistPlace[];
+  /** Magazynier i właściciel: ruszają sprzęt wszystkich lokalizacji. */
+  everywhere: boolean;
   /** Tylko rodzaje ruchu, które aktor może rejestrować. */
   routes: Partial<Record<RegisteredKind, Route>>;
 }
@@ -71,7 +74,7 @@ export function Checklist({ kind, operationId: firstOperationId, places, route }
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // Tekst podsumowania z chwili wysłania: po zapisie zaznaczenie się czyści, a komunikat zostaje.
   const submittedSummary = useRef("");
-  const [done, setDone] = useState<{ summary: string; notified: string[] } | null>(null);
+  const [done, setDone] = useState<DoneMovement | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
     const result = await registerMovement(prev, formData);
     if (result.done) {
@@ -199,6 +202,7 @@ export function Checklist({ kind, operationId: firstOperationId, places, route }
     <form onSubmit={onSubmit} className="checklist">
       <input type="hidden" name="operationId" value={operationId} />
       <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="source" value="checklista" />
       <input type="hidden" name="fromLocationId" value={from?.id ?? ""} />
       <input type="hidden" name="toLocationId" value={to?.id ?? ""} />
       {selected.map((tool) => (
@@ -210,27 +214,7 @@ export function Checklist({ kind, operationId: firstOperationId, places, route }
       )}
 
       <div className="checklist-summary">
-        {done && !ready && (
-          <p className="checklist-done" role="status">
-            {t("checklist.done", { summary: done.summary })}
-            {done.notified.length > 0 && ` ${t("checklist.notified", { names: done.notified.join(", ") })}`}
-          </p>
-        )}
-        {state.error && (
-          <div className="form-error" role="alert">
-            <p>{state.error}</p>
-            {state.conflicts && (
-              <>
-                <ul>
-                  {state.conflicts.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-                <p>{t("checklist.conflictRefreshed")}</p>
-              </>
-            )}
-          </div>
-        )}
+        <MovementResult done={ready ? null : done} state={state} refreshedHint={t("checklist.conflictRefreshed")} />
         <p className="checklist-summary-text" data-testid="checklist-summary">
           {ready ? summary : t(`checklist.kinds.${kind}.summaryEmpty`)}
         </p>

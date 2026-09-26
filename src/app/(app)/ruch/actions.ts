@@ -7,13 +7,13 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
-import { MovementConflictError, type RegisteredKind } from "@/registry/registry";
+import { MovementConflictError, type RegisteredKind, type RegisterSource } from "@/registry/registry";
 
 export interface ChecklistState {
   error?: string;
   /** Przy odrzuceniu z powodu zmienionego stanu: co i gdzie jest teraz. */
   conflicts?: string[];
-  /** Zapisany ruch: operacja, którą checklista właśnie zatwierdziła, i kogo o nim powiadomiono. */
+  /** Zapisany ruch: operacja, którą checklista albo skaner właśnie zatwierdziły, i kogo o nim powiadomiono. */
   done?: { operationId: string; notified: string[] };
 }
 
@@ -30,12 +30,12 @@ export async function registerMovement(_prev: ChecklistState, formData: FormData
         fromLocationId: formText(formData, "fromLocationId"),
         toLocationId: formText(formData, "toLocationId"),
         toolIds: formData.getAll("toolId").filter((id): id is string => typeof id === "string"),
-        source: "checklista",
+        source: formText(formData, "source") as RegisterSource,
       });
     notified = movement.notifications.map((notification) => notification.recipient.fullName);
   } catch (error) {
     if (!(error instanceof MovementConflictError)) return { error: errorMessage(error) };
-    // Checklista pokaże od razu bieżący stan narzędzi.
+    // Checklista i skaner pokażą od razu bieżący stan narzędzi.
     refresh();
     return {
       error: errorMessage(error),

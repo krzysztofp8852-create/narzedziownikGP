@@ -23,14 +23,6 @@ const INK = rgb(0, 0, 0);
 
 const FONTS_DIR = join(process.cwd(), "src/stickers/fonts");
 
-/**
- * Adres w kodzie QR: karta narzędzia po jego losowym identyfikatorze, a nie po kodzie, więc z jednej
- * naklejki nie da się odgadnąć adresów innych narzędzi. Kartę pokaże tylko zalogowany z tej firmy.
- */
-export function stickerUrl(appUrl: string, toolId: string) {
-  return new URL(`/narzedzia/${encodeURIComponent(toolId)}`, appUrl).toString();
-}
-
 /** PDF z naklejkami QR: kod QR z adresem, duży kod narzędzia i nazwa firmy. */
 export async function stickerSheetPdf(input: StickerSheetInput): Promise<Uint8Array> {
   const firstPosition = input.firstPosition ?? 1;

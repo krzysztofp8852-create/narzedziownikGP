@@ -1,6 +1,6 @@
 import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { stickerSheetPdf, stickerUrl } from "./sheet";
+import { stickerSheetPdf } from "./sheet";
 
 const A4 = { width: 595.28, height: 841.89 };
 
@@ -38,16 +38,5 @@ describe("arkusz naklejek", () => {
     await expect(stickerSheetPdf({ companyName: "Zawbud", stickers: stickers(1), layout: "a4-8", firstPosition: 9 })).rejects.toThrow();
     await expect(stickerSheetPdf({ companyName: "Zawbud", stickers: stickers(1), layout: "a4-8", firstPosition: 0 })).rejects.toThrow();
     await expect(stickerSheetPdf({ companyName: "Zawbud", stickers: [], layout: "a4-8" })).rejects.toThrow();
-  });
-
-  it("adres w kodzie QR prowadzi do karty narzędzia po jego identyfikatorze, a nie po kodzie", () => {
-    const toolId = "3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102";
-
-    expect(stickerUrl("https://narzedziownik.gp-engineering.pl", toolId)).toBe(
-      "https://narzedziownik.gp-engineering.pl/narzedzia/3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102",
-    );
-    expect(stickerUrl("https://narzedziownik.gp-engineering.pl/", toolId)).toBe(
-      "https://narzedziownik.gp-engineering.pl/narzedzia/3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102",
-    );
   });
 });

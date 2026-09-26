@@ -50,9 +50,10 @@ export type {
   RecentMovement,
   RegisteredKind,
   RegisterMovementInput,
+  RegisterSource,
   UndoMovementInput,
 } from "./movements";
-export { canMoveEverywhere, canMoveTools, MovementConflictError, UNDO_WINDOW_MS } from "./movements";
+export { canMoveEverywhere, canMoveTools, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
 export type { Notification, ToolsTakenNotification } from "./notifications";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";

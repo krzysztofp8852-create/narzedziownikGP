@@ -6,8 +6,9 @@ import type { Category, RegisteredKind } from "@/registry/registry";
 import { NewToolForm } from "./narzedzia/new-tool-form";
 import { ReportToolForm, type ReportToolFormProps } from "./narzedzia/report-tool-form";
 import { Checklist, type ChecklistData } from "./ruch/checklist";
+import { Scanner } from "./ruch/scanner";
 
-type Operation = RegisteredKind | "narzedzie" | "zgloszenie";
+type Operation = RegisteredKind | "skaner" | "narzedzie" | "zgloszenie";
 
 const MOVEMENT_BUTTONS: [RegisteredKind, MessageKey][] = [
   ["wydanie", "board.issue"],
@@ -28,8 +29,11 @@ export interface OperationsPanelProps {
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
 export function OperationsPanel({ checklist, newTool, reportTool }: OperationsPanelProps) {
   const [open, setOpen] = useState<Operation | null>(null);
+  const movements = MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]);
   const operations: [Operation, string][] = [
-    ...MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]),
+    // Skaner podpowiada te same ruchy, więc jest tam, gdzie choć jeden z nich.
+    ...(movements.length > 0 ? [["skaner", t("board.scan")] as [Operation, string]] : []),
+    ...movements,
     ...(newTool ? [["narzedzie", t("board.addTool")] as [Operation, string]] : []),
     ...(reportTool ? [["zgloszenie", t("board.reportTool")] as [Operation, string]] : []),
   ];
@@ -62,7 +66,8 @@ export function OperationsPanel({ checklist, newTool, reportTool }: OperationsPa
         <div id="operation-body" className="operation-body">
           {open === "narzedzie" && newTool && <NewToolForm {...newTool} />}
           {open === "zgloszenie" && reportTool && <ReportToolForm {...reportTool} />}
-          {open !== "narzedzie" && open !== "zgloszenie" && checklist.routes[open] && (
+          {open === "skaner" && <Scanner data={checklist} />}
+          {open !== "skaner" && open !== "narzedzie" && open !== "zgloszenie" && checklist.routes[open] && (
             <Checklist
               key={open}
               kind={open}

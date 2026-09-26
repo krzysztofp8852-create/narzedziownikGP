@@ -33,7 +33,7 @@ export function checklistData(session: Session, { base, sites, services }: Where
     do_serwisu: { from: everywhere ? [base.id, ...movable] : movable, to: ids(services) },
     ...(everywhere && { z_serwisu: { from: ids(services), to: [base.id] } satisfies Route }),
   };
-  return { operationId: randomUUID(), places, routes };
+  return { operationId: randomUUID(), places, everywhere, routes };
 }
 
 function toChecklistTool(tool: ToolOnBoard): ChecklistTool {

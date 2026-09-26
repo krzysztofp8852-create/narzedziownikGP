@@ -15,7 +15,10 @@ export type MovementKind =
   | "korekta"
   | "zaginiecie"
   | "wycofanie";
-export type MovementSource = "panel" | "checklista" | "import";
+export type MovementSource = "panel" | "checklista" | "qr" | "import";
+/** Skąd przychodzi polecenie „zarejestruj ruch”: checklista albo skaner naklejek QR. */
+export const REGISTER_SOURCES = ["checklista", "qr"] as const;
+export type RegisterSource = (typeof REGISTER_SOURCES)[number];
 /** Ruchy, które rejestruje polecenie „zarejestruj ruch”. */
 export const REGISTERED_KINDS = ["wydanie", "zwrot", "przeniesienie", "do_serwisu", "z_serwisu"] as const;
 export type RegisteredKind = (typeof REGISTERED_KINDS)[number];
@@ -46,7 +49,7 @@ export interface RegisterMovementInput {
   toolIds: string[];
   /** Kiedy to się stało na budowie; domyślnie teraz. Ruch z kolejki offline przychodzi później. */
   occurredAt?: Date;
-  source: "checklista";
+  source: RegisterSource;
 }
 
 /** Ruch z historii firmy. */
@@ -146,7 +149,7 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
   const toolIds = [...new Set(input.toolIds)];
   if (
     !REGISTERED_KINDS.includes(input.kind) ||
-    input.source !== "checklista" ||
+    !REGISTER_SOURCES.includes(input.source) ||
     toolIds.length === 0 ||
     toolIds.length > MAX_TOOLS ||
     !toolIds.every((id) => UUID_PATTERN.test(id)) ||
