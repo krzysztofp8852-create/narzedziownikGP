@@ -136,6 +136,12 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   tyle, ile trzeba, nadmiar kandydatów to pytanie z przyciskami, a brak to nierozpoznana fraza. Propozycję
   kierownik poprawia (rodzaj, budowa, narzędzia) i zatwierdza ✓; moduł nigdy nie zapisuje, a ✓ to zwykłe
   `registerMovement` ze źródłem `glos` i tekstem wpisu, który widać w historii i eksporcie.
+- Głos (przycisk „Powiedz lub wpisz”, gdy jest dostawca transkrypcji): kierownik przytrzymuje „Przytrzymaj i mów”
+  (MediaRecorder: webm/Opus na Androidzie, mp4 na iPhonie, najwyżej minuta), a nagranie idzie do akcji serwera.
+  `proposeFromRecording` modułu Interpretacja kładzie je do prywatnego kubełka Supabase Storage `nagrania`
+  (port kubełka nagrań), przekazuje portowi transkrypcji (gpt-4o-transcribe albo ElevenLabs Scribe, zob.
+  `docs/adr/0006`) i w `finally` usuwa, więc nagranie znika także po nieudanej transkrypcji. Rozpoznany tekst
+  przechodzi dalej tą samą ścieżką co wpis tekstem.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu
@@ -171,5 +177,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Wpis tekstem wymaga `OPENAI_API_KEY` (OpenAI API bez trenowania na danych i bez przechowywania odpowiedzi,
   zob. `docs/adr/0005`) w zmiennych Vercel; model domyślnie `gpt-5.4-mini`, inny w `OPENAI_MODEL`. Bez klucza przycisk „Wpisz tekstem” się nie pokazuje. Lokalnie i w teście dymnym
   `TEXT_ENTRY_INTERPRETER=slowa` włącza interpretację słowami kluczowymi bez AI.
+- Nagrywanie głosu wymaga wpisu tekstem i dostawcy transkrypcji: przy `OPENAI_API_KEY` domyślnie OpenAI
+  (`gpt-4o-transcribe`, inny w `OPENAI_TRANSCRIPTION_MODEL`), a z `TRANSCRIPTION_PROVIDER=elevenlabs` ElevenLabs
+  Scribe (`ELEVENLABS_API_KEY`, model `scribe_v2`, inny w `ELEVENLABS_MODEL`). Kubełek `nagrania` zakłada
+  migracja. Lokalnie i w teście dymnym `TRANSCRIPTION_PROVIDER=staly` z `TRANSCRIPTION_FIXED_TEXT` udaje
+  transkrypcję stałym tekstem.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.

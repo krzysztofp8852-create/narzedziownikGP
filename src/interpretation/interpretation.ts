@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { RegistryError } from "@/registry/errors";
 import {
   type CatalogTool,
@@ -8,6 +9,7 @@ import {
   type Registry,
 } from "@/registry/registry";
 import { PROPOSAL_KINDS, type Proposal, type ProposalKind, type ProposedTool } from "./proposal";
+import { MAX_RECORDING_BYTES, type RecordingStore, recordingType, type Transcriber, TranscriptionFailedError } from "./transcription";
 
 /** Co port interpretacji dostaje: tekst, narzędzia firmy (bez wartości) i aktywne budowy. */
 export interface InterpretRequest {
@@ -34,11 +36,17 @@ export interface Interpretation {
   mentions: Mention[];
 }
 
-/** Port interpretacji nie odpowiedział (awaria dostawcy AI, przekroczony czas); można spróbować ponownie. */
+/**
+ * Port interpretacji nie odpowiedział (awaria dostawcy AI, przekroczony czas); można spróbować ponownie.
+ * Przy nagraniu `text` to rozpoznany tekst, żeby kierownik nie musiał mówić jeszcze raz.
+ */
 export class InterpretationFailedError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
+  readonly text?: string;
+
+  constructor(message: string, options?: ErrorOptions & { text?: string }) {
     super(message, options);
     this.name = "InterpretationFailedError";
+    this.text = options?.text;
   }
 }
 
@@ -59,17 +67,46 @@ const MAX_QUANTITY = 50;
 interface Deps {
   registry: Registry;
   interpreter: Interpreter;
+  transcriber: Transcriber;
+  recordings: RecordingStore;
 }
 
 /**
- * Moduł Interpretacja: zamienia zdanie kierownika w Propozycję ruchu. Nigdy nie zapisuje; zapis to
- * zwykłe polecenie Rejestru po zatwierdzeniu.
+ * Moduł Interpretacja: zamienia zdanie kierownika, wpisane albo nagrane, w Propozycję ruchu. Nigdy nie
+ * zapisuje ruchu; zapis to zwykłe polecenie Rejestru po zatwierdzeniu.
  */
-export function createInterpretation({ registry, interpreter }: Deps) {
+export function createInterpretation({ registry, interpreter, transcriber, recordings }: Deps) {
   return {
     as: (userId: string) => {
       const actor = registry.as(userId);
-      return {
+      const self = {
+        /**
+         * Nagranie → tekst → Propozycja. Nagranie leży w kubełku nagrań tylko na czas transkrypcji
+         * i jest z niego usuwane także wtedy, gdy zapis albo transkrypcja się nie powiedzie.
+         */
+        async proposeFromRecording(audio: Blob): Promise<Proposal> {
+          if (audio.size === 0 || audio.size > MAX_RECORDING_BYTES || !recordingType(audio)) throw new RegistryError("invalid_input");
+          const session = await actor.session();
+          if (!session) throw new RegistryError("no_access");
+          const key = `${session.company.id}/${randomUUID()}`;
+          let heard: string;
+          try {
+            // Zapis może trafić do kubełka mimo błędu (np. zgubiona odpowiedź), więc i wtedy usuwamy.
+            await recordings.save(key, audio);
+            heard = await transcriber.transcribe(audio);
+          } finally {
+            await removeRecording(recordings, key);
+          }
+          const text = heard.trim();
+          if (!text) throw new TranscriptionFailedError("silence", "W nagraniu nie słychać mowy");
+          try {
+            return await self.propose(text);
+          } catch (error) {
+            if (!(error instanceof InterpretationFailedError)) throw error;
+            throw new InterpretationFailedError(error.message, { cause: error, text });
+          }
+        },
+
         async propose(raw: string): Promise<Proposal> {
           const text = raw.trim();
           if (!text || text.length > MAX_TRANSCRIPT_LENGTH) throw new RegistryError("invalid_input");
@@ -122,8 +159,25 @@ export function createInterpretation({ registry, interpreter }: Deps) {
           return actor.registerMovement({ ...movement, source: "glos", transcript: text });
         },
       };
+      return self;
     },
   };
+}
+
+/**
+ * Usuwa nagranie z kubełka, przy chwilowej awarii za drugim razem. Gdy i to zawiedzie, zostawia ślad
+ * w logu serwera z kluczem nagrania do ręcznego usunięcia, ale nie przykrywa wyniku transkrypcji:
+ * kierownik i tak nie usunie nagrania sam, a straciłby rozpoznany tekst.
+ */
+async function removeRecording(recordings: RecordingStore, key: string) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await recordings.remove(key);
+      return;
+    } catch (error) {
+      if (attempt === 2) console.error(`Nie udało się usunąć nagrania ${key} z kubełka nagrań`, error);
+    }
+  }
 }
 
 /**

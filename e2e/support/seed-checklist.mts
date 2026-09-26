@@ -35,5 +35,5 @@ for (const [code, name] of [
   await owner.addTool({ operationId: randomUUID(), code, name, categoryId: grinders.id });
 }
 
-console.log(JSON.stringify({ companyName, email: managerEmail, password: managerPassword }));
+console.log(JSON.stringify({ companyId: company.companyId, companyName, email: managerEmail, password: managerPassword }));
 process.exit(0);

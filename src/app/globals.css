@@ -995,6 +995,54 @@ a.tool-row:hover .tool-row-name {
   resize: vertical;
 }
 
+/* Przytrzymaj i mów: duży przycisk pod kciuk, także w rękawicach */
+.voice {
+  display: grid;
+  gap: 6px;
+}
+
+.voice small {
+  color: var(--text-muted);
+}
+
+.voice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 72px;
+  font-size: 1.1rem;
+  /* Przytrzymanie nie zaznacza tekstu, nie otwiera menu i nie przewija strony. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.voice-icon {
+  font-size: 1.5rem;
+}
+
+.voice-button[data-recording],
+.voice-button[data-recording]:hover:not(:disabled) {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  50% {
+    box-shadow: 0 0 0 8px var(--danger-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-button[data-recording] {
+    animation: none;
+  }
+}
+
 .bubble {
   display: grid;
   gap: 8px;

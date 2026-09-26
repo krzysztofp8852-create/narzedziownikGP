@@ -28,6 +28,30 @@ export const serverEnv = {
       : process.env.TEXT_ENTRY_INTERPRETER === "slowa"
         ? "slowa"
         : null,
+  /**
+   * Transkrypcja nagrań głosowych: `TRANSCRIPTION_PROVIDER` wybiera dostawcę. `openai` (domyślny, gdy jest
+   * `OPENAI_API_KEY`): model z `OPENAI_TRANSCRIPTION_MODEL`, domyślnie gpt-4o-transcribe. `elevenlabs`: klucz
+   * `ELEVENLABS_API_KEY`, model z `ELEVENLABS_MODEL`, domyślnie scribe_v2. Lokalnie i w teście dymnym `staly`:
+   * każde nagranie to tekst z `TRANSCRIPTION_FIXED_TEXT`, bez AI. Bez dostawcy (albo bez jego klucza) nagrywanie
+   * jest wyłączone; błędna konfiguracja nie może położyć tablicy ani wpisu tekstem.
+   */
+  transcription: ():
+    | { provider: "openai"; apiKey: string; model: string | null }
+    | { provider: "elevenlabs"; apiKey: string; model: string | null }
+    | { provider: "staly"; text: string }
+    | null => {
+    const { OPENAI_API_KEY, ELEVENLABS_API_KEY, TRANSCRIPTION_FIXED_TEXT } = process.env;
+    switch (process.env.TRANSCRIPTION_PROVIDER || "openai") {
+      case "openai":
+        return OPENAI_API_KEY ? { provider: "openai", apiKey: OPENAI_API_KEY, model: process.env.OPENAI_TRANSCRIPTION_MODEL || null } : null;
+      case "elevenlabs":
+        return ELEVENLABS_API_KEY ? { provider: "elevenlabs", apiKey: ELEVENLABS_API_KEY, model: process.env.ELEVENLABS_MODEL || null } : null;
+      case "staly":
+        return TRANSCRIPTION_FIXED_TEXT ? { provider: "staly", text: TRANSCRIPTION_FIXED_TEXT } : null;
+      default:
+        return null;
+    }
+  },
   /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
   resend: () =>
     process.env.RESEND_API_KEY

@@ -122,7 +122,7 @@ describe("eksport do Excela", () => {
 
     expect(history.slice(1).map((row) => [row[1], row[2], row[6], row[7], row[8], row[9], row[10]])).toEqual([
       ["Cofnięcie", "H-01 Młot Hilti", "panel", null, null, null, null],
-      ["Zwrot", "H-01 Młot Hilti", "wpis z AI", null, "oddaję młot", null, "tak"],
+      ["Zwrot", "H-01 Młot Hilti", "głosem lub tekstem", null, "oddaję młot", null, "tak"],
       ["Zaginięcie", "A-01 Agregat", "panel", "nie ma go na bazie", null, "W obiegu → Zaginione", null],
     ]);
   });

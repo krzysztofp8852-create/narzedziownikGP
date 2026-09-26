@@ -20,7 +20,7 @@ test("kierownik wpisuje „biorę dwie szlifierki na Rataje”, wybiera które i
   await page.getByRole("button", { name: "Zaloguj się" }).click();
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 
-  await page.getByRole("button", { name: "Wpisz tekstem" }).click();
+  await page.getByRole("button", { name: /^(Wpisz tekstem|Powiedz lub wpisz)$/ }).click();
   await page.getByLabel("Co zabierasz albo oddajesz?").fill("biorę dwie szlifierki na Rataje");
   await page.getByRole("button", { name: "Pokaż, co zrozumiałem" }).click();
 
@@ -41,6 +41,6 @@ test("kierownik wpisuje „biorę dwie szlifierki na Rataje”, wybiera które i
   const rataje = page.getByRole("region", { name: "Budowa Rataje" });
   await expect(rataje.getByRole("link", { name: /S-01/ })).toBeVisible();
   const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
-  await expect(recent.getByRole("listitem").first()).toContainText("Wpisano: „biorę dwie szlifierki na Rataje”");
-  await expect(recent.getByRole("listitem").first()).toContainText("Adam Nowak · wpis z AI");
+  await expect(recent.getByRole("listitem").first()).toContainText("Słowami: „biorę dwie szlifierki na Rataje”");
+  await expect(recent.getByRole("listitem").first()).toContainText("Adam Nowak · głosem lub tekstem");
 });

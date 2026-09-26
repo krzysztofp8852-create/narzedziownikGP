@@ -7,7 +7,7 @@ import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
-import { textEntryEnabled } from "@/lib/interpretation-instance";
+import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
 import {
   canImportTools,
@@ -258,6 +258,7 @@ export default async function BoardPage() {
             }
           }
           textEntry={textEntryEnabled()}
+          voiceEntry={voiceEntryEnabled()}
           reportTool={
             categories &&
             canReportTools(session) && {

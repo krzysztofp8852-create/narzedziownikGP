@@ -5,23 +5,40 @@ import { t } from "@/i18n/t";
 import type { Proposal } from "@/interpretation/proposal";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
-import { type ChecklistState, confirmProposal, proposeMovement } from "./actions";
+import { type ChecklistState, confirmProposal, proposeFromRecording, proposeMovement } from "./actions";
 import type { ChecklistData } from "./checklist";
 import { type DoneMovement, MovementResult } from "./movement-result";
 import { type Draft, planDraft, startDraft } from "./proposal-draft";
+import { canRecord, VoiceRecorder } from "./voice-recorder";
 
 /** Ile narzędzi do dodania pokazujemy naraz; resztę zawęża wyszukiwanie. */
 const ADDABLE_LIMIT = 8;
 
+interface Reply {
+  /** Co kierownik napisał albo co rozpoznano w nagraniu. */
+  asked: string;
+  spoken: boolean;
+  proposal?: Proposal;
+  error?: string;
+  round: number;
+}
+
 /**
- * Wpis tekstem: kierownik pisze zdanie, a system odpowiada propozycją ruchu (rodzaj, budowa, narzędzia
- * z kodami), pyta o niejednoznaczne narzędzia i daje ją poprawić. Nic się nie zapisuje przed ✓.
+ * Głos i wpis tekstem: kierownik mówi (przytrzymując przycisk) albo pisze zdanie, a system odpowiada
+ * propozycją ruchu (rodzaj, budowa, narzędzia z kodami), pyta o niejednoznaczne narzędzia i daje ją
+ * poprawić. Nic się nie zapisuje przed ✓.
  */
-export function TextEntry({ data }: { data: ChecklistData }) {
+export function TextEntry({ data, voice }: { data: ChecklistData; voice: boolean }) {
   const [text, setText] = useState("");
-  const [reply, setReply] = useState<{ asked: string; proposal?: Proposal; error?: string; round: number } | null>(null);
+  const [reply, setReply] = useState<Reply | null>(null);
   const [done, setDone] = useState<DoneMovement | null>(null);
   const [asking, startAsking] = useTransition();
+  // Formularz otwiera się po kliknięciu, więc nie ma go w HTML z serwera.
+  const [voiceAvailable] = useState(() => voice && canRecord());
+
+  function answer(next: Omit<Reply, "round">) {
+    setReply((previous) => ({ ...next, round: (previous?.round ?? 0) + 1 }));
+  }
 
   function ask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,12 +47,25 @@ export function TextEntry({ data }: { data: ChecklistData }) {
     setDone(null);
     startAsking(async () => {
       const result = await proposeMovement(asked);
-      setReply((previous) => ({ asked, ...result, round: (previous?.round ?? 0) + 1 }));
+      answer({ asked, spoken: false, ...result });
+    });
+  }
+
+  function hear(audio: Blob) {
+    setDone(null);
+    startAsking(async () => {
+      const formData = new FormData();
+      formData.set("audio", audio);
+      const { text: heard, ...result } = await proposeFromRecording(formData);
+      // Gdy nie udało się zrozumieć rozpoznanego tekstu, można go poprawić i wysłać bez mówienia od nowa.
+      if (heard && !result.proposal) setText(heard);
+      answer({ asked: heard ?? t("voice.yourRecording"), spoken: true, ...result });
     });
   }
 
   return (
     <div className="text-entry">
+      {voiceAvailable && <VoiceRecorder busy={asking} onRecorded={hear} />}
       <form className="text-entry-ask" onSubmit={ask}>
         <div className="field">
           <label htmlFor="text-entry-text">{t("textEntry.label")}</label>
@@ -67,7 +97,7 @@ export function TextEntry({ data }: { data: ChecklistData }) {
       {reply && (
         <div className="chat">
           <p className="bubble bubble-you">
-            <span className="bubble-who">{t("textEntry.you")}</span>
+            <span className="bubble-who">{reply.spoken ? t("voice.you") : t("textEntry.you")}</span>
             {reply.asked}
           </p>
           <div className="bubble bubble-system">

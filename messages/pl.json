@@ -67,6 +67,7 @@
     "addSite": "Dodaj budowę",
     "scan": "Skanuj QR",
     "textEntry": "Wpisz tekstem",
+    "voiceEntry": "Powiedz lub wpisz",
     "issue": "Wydaj z bazy",
     "return": "Zwróć na bazę",
     "transfer": "Przenieś",
@@ -233,7 +234,7 @@
     "movementBy": "{author} · {source}",
     "undone": "cofnięty",
     "reason": "Powód: {reason}",
-    "transcript": "Wpisano: „{text}”",
+    "transcript": "Słowami: „{text}”",
     "stateChange": "{from} → {to}",
     "lostTitle": "Zaginione",
     "lostSince": "Od {when}",
@@ -270,7 +271,7 @@
     "checklista": "checklista",
     "qr": "skaner QR",
     "import": "import",
-    "glos": "wpis z AI"
+    "glos": "głosem lub tekstem"
   },
   "locations": {
     "siteName": "Nazwa budowy",
@@ -387,6 +388,21 @@
     "addTool": "Dodaj {code}",
     "failed": "Nie udało się zrozumieć wpisu. Spróbuj jeszcze raz albo użyj checklisty.",
     "restart": "Nowy wpis"
+  },
+  "voice": {
+    "hold": "Przytrzymaj i mów",
+    "recording": "Mów… puść, gdy skończysz ({time})",
+    "listening": "Słucham nagrania…",
+    "hint": "Trzymaj przycisk przez cały czas mówienia. Nagranie usuwamy zaraz po rozpoznaniu tekstu.",
+    "ready": "Mikrofon gotowy. Przytrzymaj przycisk i mów.",
+    "tooShort": "Za krótko. Przytrzymaj przycisk przez cały czas mówienia.",
+    "noPermission": "Brak dostępu do mikrofonu. Zezwól na mikrofon w ustawieniach przeglądarki albo wpisz tekstem.",
+    "noMicrophone": "Nie udało się włączyć mikrofonu. Wpisz tekstem albo spróbuj ponownie.",
+    "you": "Ty, głosem",
+    "yourRecording": "🎙 Nagranie",
+    "silence": "Nic nie usłyszałem. Przytrzymaj przycisk i powiedz, co zabierasz albo oddajesz.",
+    "failed": "Nie udało się rozpoznać nagrania. Spróbuj jeszcze raz albo wpisz tekstem.",
+    "invalid": "Nie mogę odczytać tego nagrania (za długie albo w nieznanym formacie). Nagraj krócej albo wpisz tekstem."
   },
   "scanner": {
     "cameraPreview": "Podgląd aparatu",

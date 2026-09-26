@@ -18,7 +18,10 @@ class StubInterpreter implements Interpreter {
 }
 
 const interpreter = new StubInterpreter();
-const interpretation = () => createInterpretation({ registry: testbed.registry, interpreter });
+// Nagrania sprawdza voice.test.ts; tu tylko wpis tekstem.
+const transcriber = { transcribe: async () => "" };
+const recordings = { save: async () => {}, remove: async () => {} };
+const interpretation = () => createInterpretation({ registry: testbed.registry, interpreter, transcriber, recordings });
 
 beforeEach(() => {
   interpreter.requests = [];

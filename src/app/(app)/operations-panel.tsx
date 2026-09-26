@@ -27,18 +27,20 @@ export interface OperationsPanelProps {
   reportTool: ReportToolFormProps | false | null;
   /** Wpis tekstem z AI: gdy skonfigurowano dostawcę interpretacji. */
   textEntry: boolean;
+  /** Nagrywanie głosu: gdy skonfigurowano także dostawcę transkrypcji. */
+  voiceEntry: boolean;
 }
 
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
-export function OperationsPanel({ checklist, newTool, reportTool, textEntry }: OperationsPanelProps) {
+export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voiceEntry }: OperationsPanelProps) {
   const [open, setOpen] = useState<Operation | null>(null);
   const movements = MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]);
   const operations: [Operation, string][] = [
     // Skaner podpowiada te same ruchy, więc jest tam, gdzie choć jeden z nich.
     ...(movements.length > 0 ? [["skaner", t("board.scan")] as [Operation, string]] : []),
-    // Wpis tekstem proponuje wydanie, zwrot albo przeniesienie.
+    // Głos i wpis tekstem proponują wydanie, zwrot albo przeniesienie.
     ...(textEntry && (checklist.routes.wydanie || checklist.routes.zwrot || checklist.routes.przeniesienie)
-      ? [["tekst", t("board.textEntry")] as [Operation, string]]
+      ? [["tekst", t(voiceEntry ? "board.voiceEntry" : "board.textEntry")] as [Operation, string]]
       : []),
     ...movements,
     ...(newTool ? [["narzedzie", t("board.addTool")] as [Operation, string]] : []),
@@ -74,7 +76,7 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry }: O
           {open === "narzedzie" && newTool && <NewToolForm {...newTool} />}
           {open === "zgloszenie" && reportTool && <ReportToolForm {...reportTool} />}
           {open === "skaner" && <Scanner data={checklist} />}
-          {open === "tekst" && <TextEntry data={checklist} />}
+          {open === "tekst" && <TextEntry data={checklist} voice={voiceEntry} />}
           {open !== "skaner" && open !== "tekst" && open !== "narzedzie" && open !== "zgloszenie" && checklist.routes[open] && (
             <Checklist
               key={open}

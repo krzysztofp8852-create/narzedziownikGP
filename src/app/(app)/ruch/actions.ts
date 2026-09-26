@@ -5,11 +5,13 @@ import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { InterpretationFailedError } from "@/interpretation/interpretation";
 import type { Proposal, ProposalKind } from "@/interpretation/proposal";
+import { TranscriptionFailedError } from "@/interpretation/transcription";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getInterpretation } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
+import { isRegistryError } from "@/registry/errors";
 import { MovementConflictError, type RegisteredKind, type RegisteredMovement, type RegisterSource } from "@/registry/registry";
 
 export interface ChecklistState {
@@ -89,6 +91,35 @@ export async function proposeMovement(text: string): Promise<{ proposal?: Propos
     if (!(error instanceof InterpretationFailedError)) return { error: errorMessage(error) };
     console.error(error);
     return { error: t("textEntry.failed") };
+  }
+}
+
+/**
+ * Propozycja ruchu z nagrania: transkrypcja, a potem ta sama interpretacja co przy wpisie tekstem. Nic
+ * nie zapisuje; nagranie znika z kubełka nagrań zaraz po transkrypcji. `text`: rozpoznany tekst, także gdy
+ * interpretacja się nie udała, żeby kierownik mógł go poprawić i wysłać bez mówienia od nowa.
+ */
+export async function proposeFromRecording(formData: FormData): Promise<{ text?: string; proposal?: Proposal; error?: string }> {
+  const session = await requireSession();
+  const audio = formData.get("audio");
+  if (!(audio instanceof Blob)) return { error: t("voice.invalid") };
+  try {
+    const proposal = await getInterpretation().as(session.userId).proposeFromRecording(audio);
+    return { text: proposal.text, proposal };
+  } catch (error) {
+    if (error instanceof TranscriptionFailedError) {
+      if (error.reason === "silence") return { error: t("voice.silence") };
+      console.error(error);
+      return { error: t("voice.failed") };
+    }
+    if (error instanceof InterpretationFailedError) {
+      console.error(error);
+      return { text: error.text, error: t("textEntry.failed") };
+    }
+    if (isRegistryError(error)) return { error: error.code === "invalid_input" ? t("voice.invalid") : errorMessage(error) };
+    // Kubełek nagrań albo nieoczekiwana awaria: nagranie można powtórzyć.
+    console.error(error);
+    return { error: t("voice.failed") };
   }
 }
 
