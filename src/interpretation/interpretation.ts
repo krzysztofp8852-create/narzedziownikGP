@@ -64,8 +64,11 @@ export interface ConfirmProposalInput extends Omit<RegisterMovementInput, "sourc
 /** Więcej sztuk z jednej frazy nie bierzemy; to raczej pomyłka niż ruch. */
 const MAX_QUANTITY = 50;
 
+/** Tyle Rejestru potrzebuje moduł: ewidencja aktora do propozycji i polecenie zapisu ruchu po zatwierdzeniu. */
+export type InterpretationActor = Pick<ReturnType<Registry["as"]>, "session" | "toolCatalog" | "locations" | "registerMovement">;
+
 interface Deps {
-  registry: Registry;
+  registry: { as(userId: string): InterpretationActor };
   interpreter: Interpreter;
   transcriber: Transcriber;
   recordings: RecordingStore;

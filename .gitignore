@@ -45,3 +45,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# wyniki zestawu ewaluacyjnego interpretacji (--json)
+/src/interpretation/eval/wyniki/

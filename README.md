@@ -52,6 +52,7 @@ npm test            # testy Rejestru
 npm run test:e2e    # test dymny Playwright (potrzebuje .env.local i działającego Supabase)
 npm run typecheck
 npm run lint
+npm run eval:interpretation   # zestaw ewaluacyjny interpretacji na prawdziwym OpenAI, ręcznie, nie w CI
 ```
 
 **Testy Rejestru** (`src/registry/*.test.ts`) wywołują Rejestr „jako użytkownik X z firmy Y w chwili T”
@@ -63,6 +64,10 @@ Harness jest w `src/registry/testing/harness.ts`.
 - Z `REGISTRY_TEST_DATABASE_URL` te same testy idą na wskazany Postgres z Supabase. Harness **czyści
   wszystkie tabele** przed każdym testem, więc wskazuj tu tylko lokalne Supabase
   (`postgresql://postgres:postgres@127.0.0.1:54322/postgres`), nigdy projekt w chmurze.
+
+**Zestaw ewaluacyjny interpretacji** (`src/interpretation/eval/`) sprawdza, jak prawdziwy model rozumie
+budowlaną polszczyznę (slang, liczebniki, przeniesienia, serwis). Uruchamiaj go przy zmianie modelu albo promptu;
+opis i dokładanie przypadków z nagraniami: `src/interpretation/eval/README.md`.
 
 CI (`.github/workflows/ci.yml`) uruchamia lint, typecheck, testy Rejestru na PGlite i na lokalnym
 Supabase oraz test dymny na zbudowanej aplikacji.

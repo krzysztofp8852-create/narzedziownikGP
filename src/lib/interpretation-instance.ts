@@ -27,13 +27,14 @@ export function getInterpretation() {
   interpretation ??= createInterpretation({
     registry: getRegistry(),
     interpreter: interpreter(),
-    transcriber: transcriber(),
+    transcriber: configuredTranscriber(),
     recordings: createSupabaseRecordingStore(publicEnv.supabaseUrl(), serverEnv.supabaseServiceRoleKey()),
   });
   return interpretation;
 }
 
-function transcriber(): Transcriber {
+/** Port transkrypcji z konfiguracji (zob. `serverEnv.transcription`); bez dostawcy każde nagranie kończy się błędem. */
+export function configuredTranscriber(): Transcriber {
   const config = serverEnv.transcription();
   switch (config?.provider) {
     case "openai":
