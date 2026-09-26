@@ -13,7 +13,7 @@ import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
 import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard, ToolOnBoard } from "./tools";
-import { EMAIL_PATTERN } from "./validation";
+import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
@@ -167,13 +167,22 @@ export function createRegistry(deps: Deps): Registry {
        * operację albo ruszyć te narzędzia, a drugie podejście to zobaczy.
        */
       const movementCommand =
-        <I>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>) =>
+        <I extends { operationId: string }>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>) =>
         async (input: I) => {
           const attempt = () => asMember((sql, session) => command(sql, session, input, deps.clock.now()));
           try {
             return await attempt();
           } catch (error) {
             if (error instanceof tools.ReplayedOperationError || error instanceof movements.ConcurrentMoveError) return attempt();
+            // Każde zapytanie widzi to, co zatwierdzono przed nim: równoległa ponowka tej samej operacji
+            // mogła zapisać ruch już po naszym sprawdzeniu identyfikatora, a przed sprawdzeniem stanu,
+            // który ten ruch zmienił. Wtedy zwracamy jej ruch zamiast odmowy.
+            if (error instanceof RegistryError && UUID_PATTERN.test(input.operationId)) {
+              const replayed = await asMember((sql, session) => movements.movementByOperation(sql, session, input.operationId)).catch(
+                () => null,
+              );
+              if (replayed) return replayed;
+            }
             throw error;
           }
         };
