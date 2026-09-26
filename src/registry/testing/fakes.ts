@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Photo, type PhotoStore } from "../ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError } from "../ports";
 
 /** Zegar ustawiany ręcznie. */
 export class FixedClock implements Clock {
@@ -71,36 +71,5 @@ export class FakeAuthAdmin implements AuthAdmin {
     this.passwords.clear();
     this.emails.clear();
     this.blocked.clear();
-  }
-}
-
-/** Magazyn zdjęć w pamięci. Adres zdjęcia to `fake-photo://<ścieżka>`. */
-export class FakePhotoStore implements PhotoStore {
-  private files = new Map<string, Photo>();
-
-  async put(path: string, photo: Photo) {
-    this.files.set(path, photo);
-  }
-
-  async remove(path: string) {
-    this.files.delete(path);
-  }
-
-  async url(path: string) {
-    if (!this.files.has(path)) throw new Error(`Brak zdjęcia ${path}`);
-    return `fake-photo://${path}`;
-  }
-
-  /** Zdjęcie spod adresu, który Rejestr podał użytkownikowi. */
-  photoAt(url: string) {
-    return this.files.get(url.replace("fake-photo://", ""));
-  }
-
-  paths() {
-    return [...this.files.keys()];
-  }
-
-  clear() {
-    this.files.clear();
   }
 }

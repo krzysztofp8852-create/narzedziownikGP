@@ -9,10 +9,10 @@ import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import {
   canManageLocations,
+  canManageSettings,
   canManageTeam,
   canManageTools,
   canSeeValues,
-  MAX_PHOTO_BYTES,
   type Movement,
   type Site,
   type SiteManagerCandidate,
@@ -23,6 +23,7 @@ import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
 import { ServicesSection } from "./lokalizacje/services-section";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
+import { SettingsSection } from "./ustawienia/settings-section";
 import { TeamSection } from "./zespol/team-section";
 
 export const metadata: Metadata = { title: t("board.title") };
@@ -125,13 +126,14 @@ export default async function BoardPage() {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
   const ownsLocations = canManageLocations(session);
-  const [board, movements, locations, managers, members, categories] = await Promise.all([
+  const [board, movements, locations, managers, members, categories, settings] = await Promise.all([
     registry.whereIsWhat(),
     registry.recentMovements(),
     ownsLocations ? registry.locations() : null,
     ownsLocations ? registry.siteManagerCandidates() : null,
     canManageTeam(session) ? registry.team() : null,
     canManageTools(session) ? registry.categories() : null,
+    canManageSettings(session) ? registry.settings() : null,
   ]);
   const { base, sites } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
@@ -185,7 +187,7 @@ export default async function BoardPage() {
           </div>
         </section>
 
-        {(locations || members) && (
+        {(locations || members || settings) && (
           <section className="company" aria-labelledby="company-title">
             <h2 id="company-title" className="display section-title">
               {t("board.companyTitle")}
@@ -193,6 +195,7 @@ export default async function BoardPage() {
             <div className="company-grid">
               {members && <TeamSection session={session} members={members} />}
               {locations && <ServicesSection services={locations.services} />}
+              {settings && <SettingsSection settings={settings} />}
               {finishedSites.length > 0 && (
                 <section className="company-card" aria-labelledby="finished-sites">
                   <h3 id="finished-sites" className="display section-title">
@@ -219,8 +222,7 @@ export default async function BoardPage() {
           newTool={
             categories && {
               categories,
-              showOwnerFields: canSeeValues(session),
-              maxPhotoBytes: MAX_PHOTO_BYTES,
+              showValue: canSeeValues(session),
               operationId: randomUUID(),
             }
           }

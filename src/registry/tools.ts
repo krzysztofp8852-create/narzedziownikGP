@@ -1,7 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { RegistryError, type RegistryErrorCode } from "./errors";
 import type { MovementKind, MovementSource } from "./movements";
-import type { Photo, PhotoStore, Sql } from "./ports";
+import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
@@ -26,23 +25,15 @@ export interface ToolFields {
   serialNumber?: string | null;
   /** Wartość w zł. Tylko właściciel. */
   value?: number | null;
-  /** RRRR-MM-DD */
-  purchaseDate?: string | null;
-  /** Próg dni na budowie nadpisujący próg firmy. Tylko właściciel. */
-  alarmThresholdDays?: number | null;
 }
 
 export interface AddToolInput extends ToolFields {
   /** Identyfikator operacji klienta: ponowne wysłanie zwraca pierwotny wynik. */
   operationId: string;
-  photo?: Photo;
 }
 
-/** Zmiany karty: pominięte pola zostają bez zmian, null czyści pole (photo: null usuwa zdjęcie). */
-export type EditToolInput = Partial<Omit<ToolFields, "code">> & { code?: string; photo?: Photo | null };
-
-/** Zapisuje zdjęcie w magazynie tak, żeby zniknęło, jeśli transakcja się nie powiedzie. */
-export type PutPhoto = (path: string, photo: Photo) => Promise<void>;
+/** Zmiany karty: pominięte pola zostają bez zmian, null czyści pole. */
+export type EditToolInput = Partial<ToolFields>;
 
 /** Narzędzie widoczne na tablicy. */
 export interface ToolOnBoard {
@@ -63,10 +54,6 @@ export interface ToolCard {
   serialNumber: string | null;
   /** Wartość w zł; klucz istnieje tylko dla właściciela. */
   value?: number | null;
-  purchaseDate: string | null;
-  photoUrl: string | null;
-  alarmThresholdDays: number | null;
-  companyAlarmThresholdDays: number;
   state: ToolState;
   registration: ToolRegistration;
   location: { id: string; name: string; kind: LocationKind };
@@ -126,7 +113,6 @@ export async function addTool(
   session: Session,
   input: AddToolInput,
   now: Date,
-  putPhoto: PutPhoto,
 ): Promise<{ toolId: string; code: string }> {
   if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
   const [done] = await sql<{ toolId: string; code: string }>(
@@ -138,14 +124,13 @@ export async function addTool(
   );
   if (done) return done;
 
-  requireOwnerForOwnerFields(session, input);
+  requireOwnerForValue(session, input);
   const fields = normalizeFields(input);
-  if (input.photo) validatePhoto(input.photo);
   await requireCategory(sql, fields.categoryId);
   const code = fields.code ?? (await suggestCode(sql, fields.categoryId));
   const base = await baseLocation(sql, session);
   // Ruch zapisujemy przed narzędziem: równoległa ponowka tej samej operacji czeka wtedy
-  // na unikalnym identyfikatorze operacji, zanim cokolwiek prześle lub zapisze.
+  // na unikalnym identyfikatorze operacji, zanim cokolwiek zapisze.
   const [movement] = await sql<{ id: string }>(
     `insert into app.movements (company_id, kind, source, to_location_id, author_id, occurred_at, recorded_at, client_operation_id)
      values ($1, 'przyjecie', 'panel', $2, $3, $4, $4, $5) returning id`,
@@ -153,16 +138,11 @@ export async function addTool(
   ).catch((error) => {
     throw isUniqueViolation(error, "movements_operation_per_company") ? new ReplayedOperationError() : error;
   });
-  const toolId = randomUUID();
-  const photoPath = input.photo ? photoPathFor(session, toolId, input.photo) : null;
-  if (photoPath) await putPhoto(photoPath, input.photo!);
   const [tool] = await uniqueOr(
     sql<{ id: string }>(
-      `insert into app.tools (id, company_id, code, name, category_id, brand, model, serial_number, purchase_date,
-                              alarm_threshold_days, photo_path, location_id, located_since, created_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13) returning id`,
+      `insert into app.tools (company_id, code, name, category_id, brand, model, serial_number, location_id, located_since, created_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9) returning id`,
       [
-        toolId,
         session.company.id,
         code,
         fields.name,
@@ -170,9 +150,6 @@ export async function addTool(
         fields.brand ?? null,
         fields.model ?? null,
         fields.serialNumber ?? null,
-        fields.purchaseDate ?? null,
-        fields.alarmThresholdDays ?? null,
-        photoPath,
         base.id,
         now,
       ],
@@ -204,25 +181,9 @@ export async function baseLocation(sql: Sql, session: Session): Promise<{ id: st
   return base;
 }
 
-const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
-export const PHOTO_CONTENT_TYPES = Object.keys(PHOTO_TYPES);
-/** Z zapasem poniżej limitu żądania na Vercel (4,5 MB), bo zdjęcie jedzie w formularzu razem z polami. */
-export const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
-
-function validatePhoto(photo: Photo) {
-  if (!PHOTO_TYPES[photo.contentType] || photo.bytes.length === 0 || photo.bytes.length > MAX_PHOTO_BYTES) {
-    throw new RegistryError("invalid_photo");
-  }
-}
-
-/** Zdjęcia leżą w katalogu firmy; nazwa pliku jest nowa przy każdej zmianie zdjęcia. */
-function photoPathFor(session: Session, toolId: string, photo: Photo) {
-  return `${session.company.id}/${toolId}/${randomUUID()}.${PHOTO_TYPES[photo.contentType]}`;
-}
-
-/** Wartość i próg dni ustawia tylko właściciel; samo podanie tych pól przez inną rolę jest odmową. */
-function requireOwnerForOwnerFields(session: Session, fields: Partial<ToolFields>) {
-  if (!canSeeValues(session) && (fields.value !== undefined || fields.alarmThresholdDays !== undefined)) {
+/** Wartość ustawia tylko właściciel; samo podanie tego pola przez inną rolę jest odmową. */
+function requireOwnerForValue(session: Session, fields: Partial<ToolFields>) {
+  if (!canSeeValues(session) && fields.value !== undefined) {
     throw new RegistryError("forbidden");
   }
 }
@@ -234,38 +195,19 @@ const EDITABLE_COLUMNS = {
   brand: "brand",
   model: "model",
   serialNumber: "serial_number",
-  purchaseDate: "purchase_date",
-  alarmThresholdDays: "alarm_threshold_days",
 } as const;
 
-/** Zmienia kartę narzędzia. Zwraca ścieżkę zastąpionego zdjęcia do usunięcia po zatwierdzeniu zmian. */
-export async function editTool(
-  sql: Sql,
-  session: Session,
-  toolId: string,
-  input: EditToolInput,
-  putPhoto: PutPhoto,
-): Promise<{ replacedPhotoPath: string | null }> {
-  requireOwnerForOwnerFields(session, input);
+export async function editTool(sql: Sql, session: Session, toolId: string, input: EditToolInput): Promise<void> {
+  requireOwnerForValue(session, input);
   const fields = normalizeFields(input);
   if (input.code !== undefined && !fields.code) throw new RegistryError("invalid_input");
-  if (input.photo) validatePhoto(input.photo);
-  const [tool] = UUID_PATTERN.test(toolId)
-    ? await sql<{ photo_path: string | null }>("select photo_path from app.tools where id = $1", [toolId])
-    : [];
+  const [tool] = UUID_PATTERN.test(toolId) ? await sql("select 1 from app.tools where id = $1", [toolId]) : [];
   if (!tool) throw new RegistryError("not_found");
   if (fields.categoryId !== undefined) await requireCategory(sql, fields.categoryId);
 
   const changes: [column: string, value: unknown][] = [];
   for (const [key, column] of Object.entries(EDITABLE_COLUMNS) as [keyof typeof EDITABLE_COLUMNS, string][]) {
     if (fields[key] !== undefined) changes.push([column, fields[key]]);
-  }
-  let replacedPhotoPath: string | null = null;
-  if (input.photo !== undefined) {
-    const photoPath = input.photo ? photoPathFor(session, toolId, input.photo) : null;
-    if (input.photo && photoPath) await putPhoto(photoPath, input.photo);
-    changes.push(["photo_path", photoPath]);
-    replacedPhotoPath = tool.photo_path;
   }
   if (changes.length > 0) {
     await uniqueOr(
@@ -285,7 +227,6 @@ export async function editTool(
       [toolId, session.company.id, fields.value],
     );
   }
-  return { replacedPhotoPath };
 }
 
 async function requireCategory(sql: Sql, categoryId: string) {
@@ -296,7 +237,6 @@ async function requireCategory(sql: Sql, categoryId: string) {
 }
 
 const CODE_PATTERN = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
-const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MAX_VALUE = 9_999_999_999.99;
 
 /** Sprawdza i porządkuje podane pola karty; pól nieobecnych (undefined) nie dotyka. */
@@ -316,18 +256,7 @@ function normalizeFields<T extends Partial<ToolFields>>(raw: T): T {
     if (raw[key] !== undefined) fields[key] = raw[key]?.trim() || null;
   }
   if (raw.value != null && !(Number.isFinite(raw.value) && raw.value >= 0 && raw.value <= MAX_VALUE)) throw invalid();
-  if (raw.purchaseDate != null && !isCalendarDate(raw.purchaseDate)) throw invalid();
-  if (raw.alarmThresholdDays != null && !(Number.isInteger(raw.alarmThresholdDays) && raw.alarmThresholdDays > 0)) {
-    throw invalid();
-  }
   return fields as T;
-}
-
-function isCalendarDate(text: string) {
-  const match = DATE_PATTERN.exec(text);
-  if (!match) return false;
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-  return date.toISOString().slice(0, 10) === text;
 }
 
 /** Narzędzia w obiegu według lokalizacji, po kodzie. */
@@ -363,7 +292,6 @@ export async function toolCard(
   session: Session,
   toolId: string,
   now: Date,
-  photos: PhotoStore,
 ): Promise<ToolCard | null> {
   if (!UUID_PATTERN.test(toolId)) return null;
   const [row] = await sql<{
@@ -377,10 +305,6 @@ export async function toolCard(
     model: string | null;
     serial_number: string | null;
     value: string | null;
-    purchase_date: string | null;
-    photo_path: string | null;
-    alarm_threshold_days: number | null;
-    company_alarm_threshold_days: number;
     state: ToolState;
     registration: ToolRegistration;
     location_id: string;
@@ -389,14 +313,11 @@ export async function toolCard(
     located_since: Date;
   }>(
     `select t.id, t.code, t.name, c.id as category_id, c.name as category_name, c.prefix as category_prefix,
-            t.brand, t.model, t.serial_number, v.value::text as value, t.purchase_date::text as purchase_date,
-            t.photo_path, t.alarm_threshold_days, co.alarm_threshold_days as company_alarm_threshold_days,
-            t.state, t.registration, l.id as location_id, l.name as location_name, l.kind as location_kind,
+            t.brand, t.model, t.serial_number, v.value::text as value, t.state, t.registration, l.id as location_id, l.name as location_name, l.kind as location_kind,
             t.located_since
      from app.tools t
      join app.categories c on c.id = t.category_id
      join app.locations l on l.id = t.location_id
-     join app.companies co on co.id = t.company_id
      left join app.tool_values v on v.tool_id = t.id
      where t.id = $1`,
     [toolId],
@@ -424,10 +345,6 @@ export async function toolCard(
     model: row.model,
     serialNumber: row.serial_number,
     ...(canSeeValues(session) && { value: row.value === null ? null : Number(row.value) }),
-    purchaseDate: row.purchase_date,
-    photoUrl: row.photo_path ? await photos.url(row.photo_path) : null,
-    alarmThresholdDays: row.alarm_threshold_days,
-    companyAlarmThresholdDays: row.company_alarm_threshold_days,
     state: row.state,
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },

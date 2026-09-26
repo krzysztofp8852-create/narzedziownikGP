@@ -5,7 +5,6 @@ import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { getRegistry } from "@/lib/registry-instance";
-import type { Photo } from "@/registry/ports";
 import type { Category, EditToolInput } from "@/registry/registry";
 
 export interface ToolFormState {
@@ -34,7 +33,6 @@ export async function addTool(_prev: ToolFormState, formData: FormData): Promise
         operationId: text(formData, "operationId") ?? "",
         name: fields.name ?? "",
         categoryId: fields.categoryId ?? "",
-        photo: await readPhoto(formData),
       });
     revalidatePath("/");
     return { added: { id: toolId, code, name: fields.name ?? "" } };
@@ -46,11 +44,7 @@ export async function addTool(_prev: ToolFormState, formData: FormData): Promise
 export async function editTool(toolId: string, _prev: ToolFormState, formData: FormData): Promise<ToolFormState> {
   const session = await requireSession();
   try {
-    const photo = await readPhoto(formData);
-    const input: EditToolInput = { ...readToolFields(formData, "edit") };
-    if (photo) input.photo = photo;
-    else if (formData.get("removePhoto") === "on") input.photo = null;
-    await getRegistry().as(session.userId).editTool(toolId, input);
+    await getRegistry().as(session.userId).editTool(toolId, readToolFields(formData, "edit"));
   } catch (error) {
     return { error: formError(error) };
   }
@@ -81,22 +75,21 @@ export async function suggestCode(categoryId: string): Promise<string | null> {
 }
 
 /**
- * Pola karty z formularza. Wartość i próg trafiają do Rejestru tylko wtedy, gdy formularz
- * je zawiera (dostaje je tylko właściciel). Przy edycji puste pole czyści dane.
+ * Pola karty z formularza. Wartość trafia do Rejestru tylko wtedy, gdy formularz ją zawiera
+ * (dostaje ją tylko właściciel). Kod jest tylko w edycji; przy dodawaniu nadaje go Rejestr.
+ * Przy edycji puste pole czyści dane.
  */
 function readToolFields(formData: FormData, mode: "add" | "edit"): EditToolInput {
   const empty = mode === "add" ? undefined : null;
   const fields: EditToolInput = {
-    code: text(formData, "code") ?? "",
     name: text(formData, "name") ?? "",
     categoryId: text(formData, "categoryId") ?? "",
     brand: text(formData, "brand") ?? empty,
     model: text(formData, "model") ?? empty,
     serialNumber: text(formData, "serialNumber") ?? empty,
-    purchaseDate: text(formData, "purchaseDate") ?? empty,
   };
+  if (mode === "edit") fields.code = text(formData, "code") ?? "";
   if (formData.has("value")) fields.value = number(formData, "value") ?? empty;
-  if (formData.has("alarmThresholdDays")) fields.alarmThresholdDays = number(formData, "alarmThresholdDays") ?? empty;
   return fields;
 }
 
@@ -112,12 +105,6 @@ function number(formData: FormData, name: string): number | undefined {
   const normalized = raw.replace(/[\s ]/g, "").replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(normalized)) throw new InvalidNumberError();
   return Number(normalized);
-}
-
-async function readPhoto(formData: FormData): Promise<Photo | undefined> {
-  const file = formData.get("photo");
-  if (!(file instanceof File) || file.size === 0) return undefined;
-  return { bytes: new Uint8Array(await file.arrayBuffer()), contentType: file.type };
 }
 
 function formError(error: unknown) {

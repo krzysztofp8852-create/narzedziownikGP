@@ -5,13 +5,12 @@ import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageTools, canSeeValues, MAX_PHOTO_BYTES } from "@/registry/registry";
+import { canManageTools, canSeeValues } from "@/registry/registry";
 import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
 
 const money = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
-const date = new Intl.DateTimeFormat("pl-PL", { dateStyle: "long", timeZone: "Europe/Warsaw" });
 export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Promise<Metadata> {
   const { card } = await loadToolCard((await props.params).id);
   return { title: card ? `${card.code} ${card.name}` : undefined };
@@ -29,13 +28,6 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
     [t("tools.model"), card.model ?? none],
     [t("tools.serialNumber"), card.serialNumber ?? none],
     ...("value" in card ? [[t("tools.value"), card.value == null ? none : money.format(card.value)] as [string, string]] : []),
-    [t("tools.purchaseDate"), card.purchaseDate ? date.format(new Date(`${card.purchaseDate}T12:00:00Z`)) : none],
-    [
-      t("toolCard.threshold"),
-      card.alarmThresholdDays == null
-        ? t("toolCard.thresholdCompany", { days: card.companyAlarmThresholdDays })
-        : t("toolCard.thresholdOwn", { days: card.alarmThresholdDays }),
-    ],
     [t("toolCard.state"), t("toolCard.stateValue", { state: t(`toolState.${card.state}`), registration: t(`toolRegistration.${card.registration}`) })],
   ];
 
@@ -59,30 +51,19 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
         </p>
       </section>
 
-      <div className="tool-card-body">
-        <figure className="tool-photo">
-          {card.photoUrl ? (
-            // Krótko ważny adres z prywatnego magazynu: bez optymalizacji next/image, która by go buforowała.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={card.photoUrl} alt={t("toolCard.photoAlt", { name: card.name })} />
-          ) : (
-            <figcaption className="empty">{t("toolCard.noPhoto")}</figcaption>
-          )}
-        </figure>
-        <section aria-labelledby="details">
-          <h2 id="details" className="display section-title">
-            {t("toolCard.details")}
-          </h2>
-          <dl className="details">
-            {details.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </div>
+      <section aria-labelledby="details">
+        <h2 id="details" className="display section-title">
+          {t("toolCard.details")}
+        </h2>
+        <dl className="details">
+          {details.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       {canManageTools(session) && (
         <details className="panel">
@@ -90,8 +71,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
           <ToolForm
             action={editTool.bind(null, card.id)}
             categories={categories}
-            showOwnerFields={canSeeValues(session)}
-            maxPhotoBytes={MAX_PHOTO_BYTES}
+            showValue={canSeeValues(session)}
             initial={{
               code: card.code,
               name: card.name,
@@ -100,9 +80,6 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
               model: card.model ?? "",
               serialNumber: card.serialNumber ?? "",
               value: card.value == null ? "" : String(card.value).replace(".", ","),
-              purchaseDate: card.purchaseDate ?? "",
-              alarmThresholdDays: card.alarmThresholdDays == null ? "" : String(card.alarmThresholdDays),
-              hasPhoto: card.photoUrl !== null,
             }}
             submitLabel={t("tools.submitEdit")}
           />

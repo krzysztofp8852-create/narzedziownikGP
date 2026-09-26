@@ -420,29 +420,6 @@ a.button {
   vertical-align: middle;
 }
 
-.tool-card-body {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-@media (min-width: 760px) {
-  .tool-card-body {
-    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
-    align-items: start;
-  }
-}
-
-.tool-photo img {
-  display: block;
-  width: 100%;
-  max-height: 360px;
-  object-fit: contain;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
 .details {
   display: grid;
   gap: 1px;

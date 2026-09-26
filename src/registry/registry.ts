@@ -1,9 +1,11 @@
 import { RegistryError } from "./errors";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type PhotoStore, type Sql } from "./ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Sql } from "./ports";
 import * as locations from "./locations";
 import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
 import * as movements from "./movements";
 import type { Movement, RegisterMovementInput } from "./movements";
+import * as settings from "./settings";
+import type { CompanySettings } from "./settings";
 import { generateTemporaryPassword } from "./temporary-password";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
@@ -14,7 +16,9 @@ import { EMAIL_PATTERN } from "./validation";
 export type Role = "wlasciciel" | "magazynier" | "kierownik";
 
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, ToolCard, ToolOnBoard } from "./tools";
-export { canManageTools, canSeeValues, MAX_PHOTO_BYTES, PHOTO_CONTENT_TYPES } from "./tools";
+export { canManageTools, canSeeValues } from "./tools";
+export type { CompanySettings } from "./settings";
+export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
 export { canManageLocations } from "./locations";
 export type { Movement, MovementConflict, MovementKind, MovementSource, RegisteredKind, RegisterMovementInput } from "./movements";
@@ -89,6 +93,10 @@ export interface Registry {
     registerMovement(input: RegisterMovementInput): Promise<Movement>;
     /** Ostatnie ruchy w firmie, od najnowszego. */
     recentMovements(options?: { limit?: number }): Promise<Movement[]>;
+    /** Ustawienia firmy. Tylko właściciel. */
+    settings(): Promise<CompanySettings>;
+    /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
+    updateSettings(input: CompanySettings): Promise<void>;
   };
 }
 
@@ -105,7 +113,6 @@ interface Deps {
   db: Db;
   clock: Clock;
   authAdmin: AuthAdmin;
-  photos: PhotoStore;
 }
 
 export function createRegistry(deps: Deps): Registry {
@@ -181,12 +188,10 @@ export function createRegistry(deps: Deps): Registry {
         suggestCode: (categoryId) => asMember((sql) => tools.suggestCode(sql, categoryId)),
         addTool: async (input) => {
           const attempt = () =>
-            withPhotoCleanup(deps.photos, (putPhoto) =>
-              asMember((sql, session) => {
-                tools.requireToolManager(session);
-                return tools.addTool(sql, session, input, deps.clock.now(), putPhoto);
-              }),
-            );
+            asMember((sql, session) => {
+              tools.requireToolManager(session);
+              return tools.addTool(sql, session, input, deps.clock.now());
+            });
           try {
             return await attempt();
           } catch (error) {
@@ -195,18 +200,12 @@ export function createRegistry(deps: Deps): Registry {
             throw error;
           }
         },
-        editTool: async (toolId, input) => {
-          const { replacedPhotoPath } = await withPhotoCleanup(deps.photos, (putPhoto) =>
-            asMember((sql, session) => {
-              tools.requireToolManager(session);
-              return tools.editTool(sql, session, toolId, input, putPhoto);
-            }),
-          );
-          // Stare zdjęcie usuwamy dopiero po zatwierdzeniu zmian; nieudane usunięcie niczego nie psuje.
-          if (replacedPhotoPath) await deps.photos.remove(replacedPhotoPath).catch((error) => console.error(error));
-        },
-        toolCard: (toolId) =>
-          asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now(), deps.photos)),
+        editTool: (toolId, input) =>
+          asMember((sql, session) => {
+            tools.requireToolManager(session);
+            return tools.editTool(sql, session, toolId, input);
+          }),
+        toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
         team: () =>
           asMember((sql, session) => {
             team.requireTeamManager(session);
@@ -287,6 +286,16 @@ export function createRegistry(deps: Deps): Registry {
           }
         },
         recentMovements: ({ limit = 20 } = {}) => asMember((sql) => movements.recentMovements(sql, limit)),
+        settings: () =>
+          asMember((sql, session) => {
+            settings.requireSettingsManager(session);
+            return settings.companySettings(sql, session);
+          }),
+        updateSettings: (input) =>
+          asMember((sql, session) => {
+            settings.requireSettingsManager(session);
+            return settings.updateSettings(sql, session, input);
+          }),
       };
     },
   };
@@ -304,20 +313,6 @@ export function withActor<T>(db: Db, userId: string, fn: (sql: Sql) => Promise<T
     await sql("set local role authenticated");
     return fn(sql);
   });
-}
-
-/** Zdjęcia zapisane w trakcie nieudanej transakcji usuwamy, żeby w magazynie nie zostały sieroty. */
-async function withPhotoCleanup<T>(photos: PhotoStore, fn: (putPhoto: tools.PutPhoto) => Promise<T>): Promise<T> {
-  const uploaded: string[] = [];
-  try {
-    return await fn(async (path, photo) => {
-      await photos.put(path, photo);
-      uploaded.push(path);
-    });
-  } catch (error) {
-    await Promise.all(uploaded.map((path) => photos.remove(path).catch((cleanupError) => console.error(cleanupError))));
-    throw error;
-  }
 }
 
 async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<CreatedCompany> {
