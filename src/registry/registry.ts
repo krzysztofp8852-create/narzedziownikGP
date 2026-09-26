@@ -15,6 +15,8 @@ import type { Notification } from "./notifications";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import { generateTemporaryPassword } from "./temporary-password";
+import * as toolImport from "./tool-import";
+import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as team from "./team";
 import type { NewMemberInput, TeamMember } from "./team";
 import * as toolReports from "./tool-reports";
@@ -28,6 +30,8 @@ export type Role = "wlasciciel" | "magazynier" | "kierownik";
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
+export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
+export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings } from "./settings";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
@@ -113,6 +117,18 @@ export interface Registry {
     suggestCode(categoryId: string): Promise<string>;
     addTool(input: AddToolInput): Promise<{ toolId: string; code: string }>;
     editTool(toolId: string, input: EditToolInput): Promise<void>;
+    /**
+     * Podgląd importu narzędzi z pliku: błędy każdego wiersza (brak nazwy, powtórzony lub zajęty kod,
+     * zła wartość, nieznana kategoria lub lokalizacja) i kody nadane wierszom bez kodu. Nic nie
+     * zapisuje. Tylko właściciel.
+     */
+    previewToolImport(rows: ToolImportRow[]): Promise<ToolImportPreview>;
+    /**
+     * Zatwierdza import w całości albo wcale: każde narzędzie dostaje ruch „przyjęcie” (źródło
+     * `import`) do lokalizacji z pliku, a bez niej na bazę. Wiersz z błędem odrzuca cały import
+     * (`import_invalid`). Tylko właściciel.
+     */
+    importTools(input: ImportToolsInput): Promise<{ imported: number }>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
     /**
@@ -320,6 +336,21 @@ export function createRegistry(deps: Deps): Registry {
             tools.requireToolManager(session);
             return tools.editTool(sql, session, toolId, input);
           }),
+        previewToolImport: (rows) =>
+          asMember((sql, session) => {
+            toolImport.requireImporter(session);
+            return toolImport.previewToolImport(sql, session, rows);
+          }),
+        importTools: async (input) => {
+          const attempt = () => asMember((sql, session) => toolImport.importTools(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległa ponowka już zapisała ten import; drugie podejście odczyta jej wynik.
+            if (error instanceof tools.ReplayedOperationError) return attempt();
+            throw error;
+          }
+        },
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
         reportTool: async (input) => {
           const attempt = () => asMember((sql, session) => toolReports.reportTool(sql, session, input, deps.clock.now()));

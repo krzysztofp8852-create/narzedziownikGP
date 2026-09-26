@@ -8,8 +8,11 @@ import type { Category } from "@/registry/registry";
 import { addTool, type ToolFormState } from "./actions";
 import { ToolForm } from "./tool-form";
 
-/** Dodawanie narzędzi z tablicy: po zapisie pusty formularz pod następne, z linkiem do karty dodanego. */
-export function NewToolForm(props: { categories: Category[]; showValue: boolean; operationId: string }) {
+/**
+ * Dodawanie narzędzi z tablicy: po zapisie pusty formularz pod następne, z linkiem do karty dodanego.
+ * `canImport`: odnośnik do importu listy z pliku (tylko właściciel).
+ */
+export function NewToolForm(props: { categories: Category[]; showValue: boolean; operationId: string; canImport: boolean }) {
   const [operationId, setOperationId] = useState(props.operationId);
   const [added, setAdded] = useState<ToolFormState["added"]>();
 
@@ -24,6 +27,11 @@ export function NewToolForm(props: { categories: Category[]; showValue: boolean;
 
   return (
     <div className="stack-form">
+      {props.canImport && (
+        <p>
+          <Link href="/narzedzia/import">{t("tools.importLink")}</Link>
+        </p>
+      )}
       {added && (
         <p role="status" className="checklist-done">
           {t("tools.added", { code: added.code, name: added.name })}{" "}

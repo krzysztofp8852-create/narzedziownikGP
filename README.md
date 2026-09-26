@@ -89,6 +89,12 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   a dla właściciela także dodawanie budowy i zmiana kierownika. Na komputerze panel operacji i ostatnie
   ruchy stoją po lewej, na telefonie operacje są nad tablicą. W ustawieniach są próg alarmu, serwisy,
   zespół i zakończone budowy.
+- Import z Excela lub CSV (`/narzedzia/import`, tylko właściciel): moduł `src/import/` czyta w przeglądarce
+  pierwszy arkusz XLSX albo CSV (UTF-8 lub Windows-1250) i podpowiada mapowanie kolumn na pola karty po
+  nagłówkach. Rejestr robi podgląd (`previewToolImport`: błędy każdego wiersza, kody nadane wierszom bez kodu
+  według kategorii, nic nie zapisuje) i zatwierdzenie (`importTools`): jedna transakcja, wszystko albo nic,
+  z identyfikatorem operacji klienta (`app.tool_imports`). Każde narzędzie dostaje ruch `przyjecie` ze źródłem
+  `import` do lokalizacji z pliku (baza, aktywna budowa, serwis), a bez niej na bazę.
 - Tablica (`whereIsWhat`): baza z „nieużywane X dni”, aktywne budowy z alarmem po progu dni firmy,
   sekcje „W serwisie” i „Zaginione” oraz liczba alarmów. Wartości narzędzi, sumy lokalizacji, kwotę
   poza bazą (tylko budowy) i sumę zaginionych dostaje wyłącznie właściciel: dla innych ról zapytanie

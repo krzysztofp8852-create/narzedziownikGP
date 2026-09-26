@@ -15,7 +15,7 @@ export type MovementKind =
   | "korekta"
   | "zaginiecie"
   | "wycofanie";
-export type MovementSource = "panel" | "checklista";
+export type MovementSource = "panel" | "checklista" | "import";
 /** Ruchy, które rejestruje polecenie „zarejestruj ruch”. */
 export const REGISTERED_KINDS = ["wydanie", "zwrot", "przeniesienie", "do_serwisu", "z_serwisu"] as const;
 export type RegisteredKind = (typeof REGISTERED_KINDS)[number];

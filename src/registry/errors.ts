@@ -20,6 +20,7 @@ export type RegistryErrorCode =
   | "undo_blocked"
   | "reason_required"
   | "invalid_tool_state"
+  | "import_invalid"
   | "not_reported";
 
 export class RegistryError extends Error {
