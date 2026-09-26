@@ -1,14 +1,17 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageTools, canSeeValues } from "@/registry/registry";
+import { canCorrectTools, canManageTools, canSeeValues } from "@/registry/registry";
 import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
+import { ToolCorrections } from "./tool-corrections";
 
 const money = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Promise<Metadata> {
@@ -19,7 +22,9 @@ export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Pro
 export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) {
   const { session, card } = await loadToolCard((await props.params).id);
   if (!card) notFound();
-  const categories = canManageTools(session) ? await getRegistry().as(session.userId).categories() : [];
+  const registry = getRegistry().as(session.userId);
+  const categories = canManageTools(session) ? await registry.categories() : [];
+  const places = canCorrectTools(session) ? await registry.locations() : null;
 
   const none = t("toolCard.none");
   const details: [label: string, value: string][] = [
@@ -47,9 +52,25 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
       <section className="location" aria-label={t("toolCard.location")}>
         <p>
           <span className="muted">{t("toolCard.location")}: </span>
-          <strong>{t("toolCard.inPlace", { place: card.location.name, days: formatDays(card.daysInPlace) })}</strong>
+          <strong>
+            {card.state === "w_obiegu"
+              ? t("toolCard.inPlace", { place: card.location.name, days: formatDays(card.daysInPlace) })
+              : t("toolCard.outOfCirculation", { state: t(`toolState.${card.state}`), place: card.location.name })}
+          </strong>
         </p>
       </section>
+
+      {card.lost && (
+        <section className="lost" aria-labelledby="lost">
+          <h2 id="lost" className="display section-title">
+            {t("toolCard.lostTitle")}
+          </h2>
+          <p>{t("toolCard.lostSince", { when: formatDateTime(card.lost.since) })}</p>
+          <p>{t("toolCard.lostLastLocation", { place: card.lost.lastLocation.name })}</p>
+          <p>{card.lost.responsible ? t("toolCard.lostResponsible", { name: card.lost.responsible }) : t("toolCard.lostNoResponsible")}</p>
+          {card.lost.reason && <p className="muted">{t("toolCard.reason", { reason: card.lost.reason })}</p>}
+        </section>
+      )}
 
       <section aria-labelledby="details">
         <h2 id="details" className="display section-title">
@@ -92,17 +113,36 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
         </h2>
         <ol className="history">
           {card.history.map((entry, index) => (
-            <li key={index}>
+            <li key={index} className={entry.undone ? "history-undone" : undefined}>
               <time dateTime={entry.occurredAt.toISOString()}>{formatDateTime(entry.occurredAt)}</time>
               <strong>{t(`movementKind.${entry.kind}`)}</strong>
-              {entry.to && <span>{t("toolCard.movementTo", { place: entry.to })}</span>}
+              {entry.undone && <span className="tag">{t("toolCard.undone")}</span>}
+              <span>{movementRoute(entry.from, entry.to)}</span>
+              {stateChangeText(entry.stateChange) && <span>{stateChangeText(entry.stateChange)}</span>}
               <span className="muted">
                 {t("toolCard.movementBy", { author: entry.author, source: t(`movementSource.${entry.source}`) })}
               </span>
+              {entry.reason && <span className="history-reason">{t("toolCard.reason", { reason: entry.reason })}</span>}
             </li>
           ))}
         </ol>
       </section>
+
+      {places && (
+        <details className="panel">
+          <summary className="panel-summary">{t("toolCard.ownerActions")}</summary>
+          <p className="muted">{t("toolCard.ownerActionsHint")}</p>
+          <ToolCorrections
+            tool={{ id: card.id, code: card.code, state: card.state, locationId: card.location.id }}
+            places={{
+              base: places.base,
+              sites: places.sites.filter((site) => site.status === "aktywna" || site.id === card.location.id),
+              services: places.services,
+            }}
+            operationIds={{ correct: randomUUID(), lost: randomUUID(), retire: randomUUID() }}
+          />
+        </details>
+      )}
     </>
   );
 }

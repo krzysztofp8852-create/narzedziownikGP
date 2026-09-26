@@ -58,7 +58,17 @@ export interface ToolCard {
   registration: ToolRegistration;
   location: { id: string; name: string; kind: LocationKind };
   daysInPlace: number;
+  /** Przy zaginionym narzędziu: kiedy zaginęło, gdzie było ostatnio i kto za nie odpowiadał. */
+  lost: LostTool | null;
   history: HistoryEntry[];
+}
+
+export interface LostTool {
+  since: Date;
+  lastLocation: { id: string; name: string };
+  /** Kierownik budowy, na której narzędzie było; na bazie i w serwisie nikt. */
+  responsible: string | null;
+  reason: string | null;
 }
 
 export interface HistoryEntry {
@@ -68,6 +78,12 @@ export interface HistoryEntry {
   author: string;
   from: string | null;
   to: string | null;
+  /** Powód korekty, zaginięcia albo wycofania. */
+  reason: string | null;
+  /** Zmiana stanu przy korekcie, zaginięciu i wycofaniu. */
+  stateChange: { from: ToolState; to: ToolState } | null;
+  /** Ruch został cofnięty; zostaje w historii z tym oznaczeniem. */
+  undone: boolean;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -324,8 +340,21 @@ export async function toolCard(
   );
   if (!row) return null;
 
-  const history = await sql<{ kind: MovementKind; source: MovementSource; occurred_at: Date; author: string; from_name: string | null; to_name: string | null }>(
-    `select m.kind, m.source, m.occurred_at, u.full_name as author, lf.name as from_name, lt.name as to_name
+  const history = await sql<{
+    kind: MovementKind;
+    source: MovementSource;
+    occurred_at: Date;
+    author: string;
+    from_name: string | null;
+    to_name: string | null;
+    reason: string | null;
+    from_state: ToolState | null;
+    to_state: ToolState | null;
+    undone: boolean;
+  }>(
+    `select m.kind, m.source, m.occurred_at, u.full_name as author, lf.name as from_name, lt.name as to_name,
+            m.reason, m.from_state, m.to_state,
+            exists (select 1 from app.movements r where r.reverses_movement_id = m.id) as undone
      from app.movement_tools mt
      join app.movements m on m.id = mt.movement_id
      join app.users u on u.user_id = m.author_id
@@ -335,6 +364,19 @@ export async function toolCard(
      order by m.occurred_at desc, m.recorded_at desc, m.sequence_number desc`,
     [toolId],
   );
+
+  const [lost] =
+    row.state === "zaginione"
+      ? await sql<{ occurred_at: Date; reason: string | null; responsible: string | null }>(
+          `select m.occurred_at, m.reason, u.full_name as responsible
+           from app.movement_tools mt
+           join app.movements m on m.id = mt.movement_id
+           left join app.users u on u.user_id = m.responsible_user_id
+           where mt.tool_id = $1 and m.to_state = 'zaginione'
+           order by m.sequence_number desc limit 1`,
+          [toolId],
+        )
+      : [];
 
   return {
     id: row.id,
@@ -349,6 +391,14 @@ export async function toolCard(
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },
     daysInPlace: daysSince(row.located_since, now),
+    lost: lost
+      ? {
+          since: new Date(lost.occurred_at),
+          lastLocation: { id: row.location_id, name: row.location_name },
+          responsible: lost.responsible,
+          reason: lost.reason,
+        }
+      : null,
     history: history.map((entry) => ({
       kind: entry.kind,
       source: entry.source,
@@ -356,6 +406,9 @@ export async function toolCard(
       author: entry.author,
       from: entry.from_name,
       to: entry.to_name,
+      reason: entry.reason,
+      stateChange: entry.from_state && entry.to_state ? { from: entry.from_state, to: entry.to_state } : null,
+      undone: entry.undone,
     })),
   };
 }

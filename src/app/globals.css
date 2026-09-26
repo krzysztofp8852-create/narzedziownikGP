@@ -1039,3 +1039,72 @@ a.tool-row:hover .tool-row-name {
 .company-team .member + .member {
   border-top: 1px solid var(--border);
 }
+
+/* Cofnięcia, korekty, zaginięcia i wycofania */
+.movement-kind-korekta {
+  background: var(--warning-soft);
+  border-color: var(--warning-soft);
+  color: var(--warning);
+}
+
+.movement-kind-zaginiecie {
+  background: var(--danger-soft);
+  border-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.movement-undone .movement-kind,
+.movement-undone .movement-tools,
+.history-undone > time,
+.history-undone > strong {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.history-reason {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
+}
+
+.button-small {
+  min-height: 32px;
+  padding: 4px 12px;
+}
+
+.undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+
+.lost {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
+
+.corrections {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.correction {
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
+}
+

@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
+import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
-import type { Category, EditToolInput } from "@/registry/registry";
+import type { Category, EditToolInput, ToolState } from "@/registry/registry";
 
 export interface ToolFormState {
   error?: string;
@@ -109,4 +110,39 @@ function number(formData: FormData, name: string): number | undefined {
 
 function formError(error: unknown) {
   return error instanceof InvalidNumberError ? t("tools.invalidNumber") : errorMessage(error);
+}
+
+export interface CorrectionFormState {
+  error?: string;
+}
+
+/** Korekta, zaginięcie albo wycofanie z karty narzędzia; który, mówi pole `command`. */
+export async function changeToolRecord(_prev: CorrectionFormState, formData: FormData): Promise<CorrectionFormState> {
+  const session = await requireSession();
+  const registry = getRegistry().as(session.userId);
+  const common = { operationId: formText(formData, "operationId"), toolId: formText(formData, "toolId"), reason: formText(formData, "reason") };
+  try {
+    switch (formText(formData, "command")) {
+      case "correct":
+        await registry.correctTool({
+          ...common,
+          locationId: formText(formData, "locationId"),
+          state: formText(formData, "state") as ToolState,
+        });
+        break;
+      case "lost":
+        await registry.markToolLost(common);
+        break;
+      case "retire":
+        await registry.retireTool(common);
+        break;
+      default:
+        return { error: t("errors.invalid_input") };
+    }
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/");
+  revalidatePath(`/narzedzia/${common.toolId}`);
+  return {};
 }

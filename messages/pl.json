@@ -76,7 +76,9 @@
     "statBase": "Na bazie",
     "statSites": "Na budowach",
     "statSiteCount": "Budowy",
-    "peopleCount": "{count} aktywne"
+    "peopleCount": "{count} aktywne",
+    "undo": "Cofnij",
+    "undoing": "Cofanie…"
   },
   "settingsPage": {
     "title": "Ustawienia",
@@ -131,7 +133,12 @@
     "invalid_manager": "Kierownikiem budowy może być tylko aktywny kierownik z Twojej firmy.",
     "site_finished": "Ta budowa jest zakończona.",
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
-    "movement_conflict": "Ruch odrzucony: stan narzędzi zmienił się w międzyczasie. Nic nie zostało zapisane."
+    "movement_conflict": "Ruch odrzucony: stan narzędzi zmienił się w międzyczasie. Nic nie zostało zapisane.",
+    "not_undoable": "Tego ruchu nie da się cofnąć. Ewidencję ustawi właściciel korektą.",
+    "undo_expired": "Minęło 15 minut od zapisu ruchu. Ewidencję ustawi właściciel korektą.",
+    "undo_blocked": "Tego ruchu nie da się już cofnąć: jego narzędzia ruszyły się później.",
+    "reason_required": "Podaj powód.",
+    "invalid_tool_state": "Narzędzie jest już w tym stanie."
   },
   "days": {
     "one": "{count} dzień",
@@ -178,7 +185,18 @@
     "movementTo": "→ {place}",
     "state": "Stan",
     "stateValue": "{state} · {registration}",
-    "movementBy": "{author} · {source}"
+    "movementBy": "{author} · {source}",
+    "undone": "cofnięty",
+    "reason": "Powód: {reason}",
+    "stateChange": "{from} → {to}",
+    "lostTitle": "Zaginione",
+    "lostSince": "Od {when}",
+    "lostLastLocation": "Ostatnio: {place}",
+    "lostResponsible": "Odpowiadał: {name}",
+    "lostNoResponsible": "Bez odpowiedzialnego kierownika",
+    "ownerActions": "Korekta, zaginięcie, wycofanie",
+    "ownerActionsHint": "Historia się nie zmienia: każda zmiana to nowy wpis w historii.",
+    "outOfCirculation": "{state}, ostatnio: {place}"
   },
   "toolState": {
     "w_obiegu": "W obiegu",
@@ -192,7 +210,11 @@
   "movementKind": {
     "przyjecie": "Przyjęcie",
     "wydanie": "Wydanie",
-    "zwrot": "Zwrot"
+    "zwrot": "Zwrot",
+    "cofniecie": "Cofnięcie",
+    "korekta": "Korekta",
+    "zaginiecie": "Zaginięcie",
+    "wycofanie": "Wycofanie"
   },
   "movementSource": {
     "panel": "panel",
@@ -257,5 +279,29 @@
     "submitting": "Zapisywanie…",
     "saved": "Zapisano.",
     "invalidDays": "Wpisz liczbę dni od 1 do {max}."
+  },
+  "corrections": {
+    "correctTitle": "Korekta",
+    "correctHint": "Ustaw, gdzie narzędzie naprawdę jest i w jakim jest stanie. Odnalezione zaginione ustaw jako „W obiegu”.",
+    "location": "Gdzie jest naprawdę",
+    "baseGroup": "Baza",
+    "sitesGroup": "Budowy",
+    "servicesGroup": "Serwisy",
+    "reason": "Powód",
+    "reasonOptional": "Powód (opcjonalnie)",
+    "reasonPlaceholder": "np. nie wyjechało, stoi w magazynie",
+    "submitCorrect": "Zapisz korektę",
+    "lostTitle": "Oznacz jako zaginione",
+    "lostHint": "System zapamięta datę, ostatnią lokalizację i kierownika budowy.",
+    "submitLost": "Oznacz jako zaginione",
+    "retireTitle": "Wycofaj z obiegu",
+    "retireHint": "Zepsute, sprzedane: narzędzie zniknie z list, a karta i historia zostaną.",
+    "submitRetire": "Wycofaj",
+    "retireConfirm": "Wycofać {code} z obiegu?",
+    "retireYes": "Tak, wycofaj",
+    "cancel": "Anuluj",
+    "submitting": "Zapisywanie…",
+    "lostReasonPlaceholder": "np. nie ma go na budowie ani na bazie",
+    "retireReasonPlaceholder": "np. sprzedane, nie do naprawy"
   }
 }

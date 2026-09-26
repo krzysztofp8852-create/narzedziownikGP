@@ -56,6 +56,9 @@ describe("wydanie z bazy", () => {
       author: "Adam Nowak",
       from: "Magazyn Swarzędz",
       to: "Rataje",
+      reason: null,
+      stateChange: null,
+      undone: false,
     });
   });
 });
@@ -385,6 +388,12 @@ describe("ostatnie ruchy", () => {
           { id: z.s01, code: "S-01", name: "Szlifierka kątowa" },
           { id: z.s02, code: "S-02", name: "Szlifierka mała" },
         ],
+        reason: null,
+        stateChange: null,
+        undoes: null,
+        undoneBy: null,
+        // Zwrot S-02 ruszył jedno z jego narzędzi.
+        undoable: false,
       },
     ]);
     expect((await z.owner.recentMovements()).map((movement) => movement.kind)).toEqual(["zwrot", "wydanie", "przyjecie", "przyjecie"]);
