@@ -28,7 +28,7 @@ export function TeamSection({ session, members }: { session: Session; members: T
               </span>
             </div>
             <p className="muted member-email">{member.email}</p>
-            <p className="member-status">{status(member)}</p>
+            <Status member={member} />
             {member.active && member.role !== "wlasciciel" && (
               <details className="member-more">
                 <summary>{t("team.manage")}</summary>
@@ -42,7 +42,11 @@ export function TeamSection({ session, members }: { session: Session; members: T
   );
 }
 
-function status(member: TeamMember) {
-  if (!member.active) return t("team.statusInactive");
-  return member.mustChangePassword ? t("team.statusPending") : t("team.statusActive");
+function Status({ member }: { member: TeamMember }) {
+  const [status, label] = !member.active
+    ? ["inactive", t("team.statusInactive")]
+    : member.mustChangePassword
+      ? ["pending", t("team.statusPending")]
+      : ["active", t("team.statusActive")];
+  return <p className={`member-status member-status-${status}`}>{label}</p>;
 }

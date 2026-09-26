@@ -53,20 +53,23 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
       {movements.length === 0 ? (
         <p className="empty">{t("board.recentEmpty")}</p>
       ) : (
-        <ol className="history history-compact">
+        <ol className="movements">
           {movements.map((movement) => (
-            <li key={movement.id}>
-              <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
-              <strong>{t(`movementKind.${movement.kind}`)}</strong>
-              <span>{movement.tools.map((tool) => tool.code).join(", ")}</span>
-              <span>
-                {movement.from
-                  ? t("board.movementRoute", { from: movement.from.name, to: movement.to?.name ?? "" })
-                  : movement.to && t("toolCard.movementTo", { place: movement.to.name })}
-              </span>
-              <span className="muted">
+            <li key={movement.id} className="movement">
+              <div className="movement-head">
+                <span className={`movement-kind movement-kind-${movement.kind}`}>{t(`movementKind.${movement.kind}`)}</span>
+                <span>
+                  {movement.from
+                    ? t("board.movementRoute", { from: movement.from.name, to: movement.to?.name ?? "" })
+                    : movement.to && t("toolCard.movementTo", { place: movement.to.name })}
+                </span>
+              </div>
+              <p className="movement-tools">{movement.tools.map((tool) => tool.code).join(", ")}</p>
+              <p className="muted movement-meta">
+                <time dateTime={movement.occurredAt.toISOString()}>{formatDateTime(movement.occurredAt)}</time>
+                {" · "}
                 {t("board.movementBy", { author: movement.author, source: t(`movementSource.${movement.source}`) })}
-              </span>
+              </p>
             </li>
           ))}
         </ol>
@@ -80,8 +83,7 @@ function SiteCard({ site, managers }: { site: Site & { tools: ToolOnBoard[] }; m
     <section className="location location-site" aria-labelledby={`location-${site.id}`}>
       <div className="location-head">
         <h3 id={`location-${site.id}`} className="display location-name">
-          <span className="plate">{t("board.siteKind")}</span>
-          {site.name}
+          <span className="location-kind">{t("board.siteKind")}</span> <span>{site.name}</span>
         </h3>
         <span className="location-count">{t("board.toolCount", { count: site.tools.length })}</span>
       </div>
@@ -166,8 +168,7 @@ export default async function BoardPage() {
           <section className="location" aria-labelledby="location-base">
             <div className="location-head">
               <h2 id="location-base" className="display location-name">
-                <span className="plate">{t("board.baseKind")}</span>
-                {base.name}
+                <span className="location-kind location-kind-base">{t("board.baseKind")}</span> <span>{base.name}</span>
               </h2>
               <span className="location-count">{t("board.toolCount", { count: base.tools.length })}</span>
             </div>
