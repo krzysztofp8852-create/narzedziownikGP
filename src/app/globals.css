@@ -660,13 +660,16 @@ a.tool-row:hover .tool-row-name {
   border: 1px solid var(--border);
 }
 
-.movement-kind-wydanie {
+/* Na budowę: wydanie i przeniesienie; na bazę: zwrot i przyjęcie z serwisu. */
+.movement-kind-wydanie,
+.movement-kind-przeniesienie {
   background: var(--accent-soft);
   border-color: var(--accent-soft);
   color: var(--accent);
 }
 
-.movement-kind-zwrot {
+.movement-kind-zwrot,
+.movement-kind-z_serwisu {
   background: var(--success-soft);
   border-color: var(--success-soft);
   color: var(--success);
@@ -1060,8 +1063,8 @@ a.tool-row:hover .tool-row-name {
   border-color: var(--accent);
 }
 
-/* „Dodaj narzędzie” to rzadsza operacja: pełna szerokość pod dwiema głównymi. */
-.operation-tabs .button:nth-child(3) {
+/* Ostatni przycisk bez pary zajmuje cały wiersz. */
+.operation-tabs .operation-tab-wide {
   grid-column: 1 / -1;
   min-height: 44px;
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError } from "../ports";
+import type { Notification } from "../notifications";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier } from "../ports";
 
 /** Zegar ustawiany ręcznie. */
 export class FixedClock implements Clock {
@@ -71,5 +72,22 @@ export class FakeAuthAdmin implements AuthAdmin {
     this.passwords.clear();
     this.emails.clear();
     this.blocked.clear();
+  }
+}
+
+/** Port powiadomień, który zapisuje, co i do kogo zostało wysłane. */
+export class RecordingNotifier implements Notifier {
+  readonly sent: Notification[] = [];
+  /** Kolejne wysyłki kończą się tym błędem, np. gdy dostawca e-maili nie działa. */
+  failWith: Error | null = null;
+
+  async send(notification: Notification) {
+    if (this.failWith) throw this.failWith;
+    this.sent.push(notification);
+  }
+
+  clear() {
+    this.sent.length = 0;
+    this.failWith = null;
   }
 }

@@ -67,6 +67,9 @@
     "addSite": "Dodaj budowę",
     "issue": "Wydaj z bazy",
     "return": "Zwróć na bazę",
+    "transfer": "Przenieś",
+    "toService": "Do serwisu",
+    "fromService": "Z serwisu",
     "recentTitle": "Ostatnie ruchy",
     "recentEmpty": "Nie ma jeszcze żadnych ruchów.",
     "movementRoute": "{from} → {to}",
@@ -248,6 +251,9 @@
     "przyjecie": "Przyjęcie",
     "wydanie": "Wydanie",
     "zwrot": "Zwrot",
+    "przeniesienie": "Przeniesienie",
+    "do_serwisu": "Do serwisu",
+    "z_serwisu": "Z serwisu",
     "cofniecie": "Cofnięcie",
     "korekta": "Korekta",
     "zaginiecie": "Zaginięcie",
@@ -288,16 +294,13 @@
     "tools": "Narzędzia",
     "search": "Szukaj po nazwie lub kodzie",
     "searchPlaceholder": "np. szlifierka albo S-01",
-    "noToolsAtBase": "Na bazie nie ma narzędzi do wydania.",
-    "noToolsAtSite": "Na tej budowie nie ma narzędzi.",
     "noMatches": "Żadne narzędzie nie pasuje do wyszukiwania.",
-    "chooseSiteFirst": "Najpierw wybierz budowę.",
-    "siteTo": "Na budowę",
-    "siteFrom": "Z budowy",
+    "noToolsAt": {
+      "baza": "Na bazie nie ma narzędzi.",
+      "budowa": "Na tej budowie nie ma narzędzi.",
+      "serwis": "W tym serwisie nie ma narzędzi."
+    },
     "mine": "moja",
-    "noSites": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
-    "noSitesToReturn": "Nie ma budowy, z której możesz zwracać sprzęt.",
-    "summaryEmpty": "Zaznacz narzędzia i wybierz budowę.",
     "summary": "{codes} → {place}",
     "confirm": "Zatwierdź ✓",
     "confirming": "Zapisywanie…",
@@ -306,7 +309,50 @@
     "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź zaznaczenie i zatwierdź ponownie.",
     "toolLabel": "{code} {name}",
     "clear": "Wyczyść zaznaczenie",
-    "done": "Zapisano: {summary}"
+    "done": "Zapisano: {summary}",
+    "notified": "Powiadomienie e-mail: {names}.",
+    "kinds": {
+      "wydanie": {
+        "from": "Z bazy",
+        "to": "Na budowę",
+        "noFrom": "Nie ma bazy.",
+        "noTo": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
+        "chooseFrom": "Najpierw wybierz budowę.",
+        "summaryEmpty": "Zaznacz narzędzia i wybierz budowę."
+      },
+      "zwrot": {
+        "from": "Z budowy",
+        "to": "Na bazę",
+        "noFrom": "Nie ma budowy, z której możesz zwracać sprzęt.",
+        "noTo": "Nie ma bazy.",
+        "chooseFrom": "Najpierw wybierz budowę.",
+        "summaryEmpty": "Wybierz budowę i zaznacz narzędzia."
+      },
+      "przeniesienie": {
+        "from": "Z budowy",
+        "to": "Na budowę",
+        "noFrom": "Nie ma innej aktywnej budowy, z której można zabrać sprzęt.",
+        "noTo": "Nie ma aktywnej budowy, na którą możesz zabierać sprzęt.",
+        "chooseFrom": "Najpierw wybierz budowę, z której zabierasz sprzęt.",
+        "summaryEmpty": "Wybierz budowy i zaznacz narzędzia."
+      },
+      "do_serwisu": {
+        "from": "Skąd",
+        "to": "Do serwisu",
+        "noFrom": "Nie ma budowy, z której możesz wysłać sprzęt do serwisu.",
+        "noTo": "Firma nie ma jeszcze serwisu. Dodaje go właściciel w ustawieniach.",
+        "chooseFrom": "Najpierw wybierz, skąd wysyłasz sprzęt.",
+        "summaryEmpty": "Zaznacz narzędzia i wybierz serwis."
+      },
+      "z_serwisu": {
+        "from": "Z serwisu",
+        "to": "Na bazę",
+        "noFrom": "Firma nie ma jeszcze serwisu. Dodaje go właściciel w ustawieniach.",
+        "noTo": "Nie ma bazy.",
+        "chooseFrom": "Najpierw wybierz serwis.",
+        "summaryEmpty": "Wybierz serwis i zaznacz narzędzia."
+      }
+    }
   },
   "settings": {
     "title": "Alarm na budowie",
@@ -389,5 +435,14 @@
     "recordedAt": "Czas zapisu",
     "fileName": "narzedziownik-{day}.xlsx",
     "moneyFormat": "#,##0.00 \"zł\""
+  },
+  "notifications": {
+    "greeting": "Dzień dobry, {name}!",
+    "signature": "NarzędziownikGP",
+    "toolsTaken": {
+      "subject": "{author} zabiera {codes} z budowy {from}",
+      "lead": "Sprzęt z budowy {from} jest teraz na budowie {to} (przeniósł: {author}, {when}):",
+      "responsibility": "Nie odpowiadasz już za ten sprzęt. Kto go ma i gdzie jest, zobaczysz na tablicy „Gdzie jest co”."
+    }
   }
 }

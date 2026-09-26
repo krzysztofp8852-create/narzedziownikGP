@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { t } from "@/i18n/t";
-import type { Category } from "@/registry/registry";
+import { type MessageKey, t } from "@/i18n/t";
+import type { Category, RegisteredKind } from "@/registry/registry";
 import { NewToolForm } from "./narzedzia/new-tool-form";
 import { ReportToolForm, type ReportToolFormProps } from "./narzedzia/report-tool-form";
 import { Checklist, type ChecklistData } from "./ruch/checklist";
 
-type Operation = "wydanie" | "zwrot" | "narzedzie" | "zgloszenie";
+type Operation = RegisteredKind | "narzedzie" | "zgloszenie";
+
+const MOVEMENT_BUTTONS: [RegisteredKind, MessageKey][] = [
+  ["wydanie", "board.issue"],
+  ["zwrot", "board.return"],
+  ["przeniesienie", "board.transfer"],
+  ["do_serwisu", "board.toService"],
+  ["z_serwisu", "board.fromService"],
+];
 
 export interface OperationsPanelProps {
   checklist: ChecklistData;
@@ -21,8 +29,7 @@ export interface OperationsPanelProps {
 export function OperationsPanel({ checklist, newTool, reportTool }: OperationsPanelProps) {
   const [open, setOpen] = useState<Operation | null>(null);
   const operations: [Operation, string][] = [
-    ["wydanie", t("board.issue")],
-    ["zwrot", t("board.return")],
+    ...MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]),
     ...(newTool ? [["narzedzie", t("board.addTool")] as [Operation, string]] : []),
     ...(reportTool ? [["zgloszenie", t("board.reportTool")] as [Operation, string]] : []),
   ];
@@ -33,11 +40,17 @@ export function OperationsPanel({ checklist, newTool, reportTool }: OperationsPa
         {t("board.operations")}
       </h2>
       <div className="operation-tabs">
-        {operations.map(([operation, label]) => (
+        {operations.map(([operation, label], index) => (
           <button
             key={operation}
             type="button"
-            className={open === operation ? "button" : "button button-quiet"}
+            // Nieparzysta liczba przycisków: ostatni zajmuje cały wiersz.
+            className={[
+              open === operation ? "button" : "button button-quiet",
+              index === operations.length - 1 && operations.length % 2 === 1 && "operation-tab-wide",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             aria-expanded={open === operation}
             onClick={() => setOpen((current) => (current === operation ? null : operation))}
           >
@@ -49,7 +62,15 @@ export function OperationsPanel({ checklist, newTool, reportTool }: OperationsPa
         <div id="operation-body" className="operation-body">
           {open === "narzedzie" && newTool && <NewToolForm {...newTool} />}
           {open === "zgloszenie" && reportTool && <ReportToolForm {...reportTool} />}
-          {(open === "wydanie" || open === "zwrot") && <Checklist key={open} kind={open} {...checklist} />}
+          {open !== "narzedzie" && open !== "zgloszenie" && checklist.routes[open] && (
+            <Checklist
+              key={open}
+              kind={open}
+              operationId={checklist.operationId}
+              places={checklist.places}
+              route={checklist.routes[open]}
+            />
+          )}
         </div>
       )}
     </section>

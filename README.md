@@ -144,5 +144,8 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   - adresu aplikacji w Authentication → URL Configuration (Site URL, a w Redirect URLs `<adres>/auth/confirm`),
   - własnego SMTP (np. Resend) w Authentication → Emails → SMTP Settings: wbudowana poczta Supabase
     wysyła tylko do członków zespołu projektu i kilka wiadomości na godzinę.
+- Powiadomienia e-mail (np. „Adam Nowak zabiera S-01 z budowy Rataje” dla kierownika, któremu przeniesienie
+  zabrało sprzęt) wysyła Resend: `RESEND_API_KEY` i `NOTIFICATIONS_FROM` (adres w domenie zweryfikowanej
+  w Resend) w zmiennych Vercel. Bez klucza powiadomienia trafiają tylko do logu serwera.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.

@@ -5,7 +5,7 @@ import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { newOperationId } from "@/lib/operation-id";
-import type { RegisteredKind } from "@/registry/registry";
+import type { LocationKind, RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
 
 export interface ChecklistTool {
@@ -15,19 +15,51 @@ export interface ChecklistTool {
   daysInPlace: number;
 }
 
-/** Co można wydać i zwrócić; to samo dla obu checklist. */
-export interface ChecklistData {
-  /** Identyfikator pierwszej operacji; każda zmiana zaznaczenia albo budowy to nowa operacja. */
-  operationId: string;
-  base: { id: string; name: string };
-  baseTools: ChecklistTool[];
-  /** Budowy, na które aktor może wydawać (i z których zwracać), najpierw jego. */
-  sites: { id: string; name: string; mine: boolean; tools: ChecklistTool[] }[];
+/** Lokalizacja z narzędziami, które w niej są. */
+export interface ChecklistPlace {
+  id: string;
+  name: string;
+  kind: LocationKind;
+  /** Budowa, którą prowadzi aktor. */
+  mine: boolean;
+  tools: ChecklistTool[];
 }
 
-export interface ChecklistProps extends ChecklistData {
-  kind: RegisteredKind;
+/** Skąd i dokąd aktor może ruszać sprzęt danym rodzajem ruchu (identyfikatory lokalizacji, najpierw jego). */
+export interface Route {
+  from: string[];
+  to: string[];
 }
+
+/** Co można ruszać; te same dane dla wszystkich checklist. */
+export interface ChecklistData {
+  /** Identyfikator pierwszej operacji; każda zmiana zaznaczenia albo lokalizacji to nowa operacja. */
+  operationId: string;
+  places: ChecklistPlace[];
+  /** Tylko rodzaje ruchu, które aktor może rejestrować. */
+  routes: Partial<Record<RegisteredKind, Route>>;
+}
+
+export interface ChecklistProps {
+  kind: RegisteredKind;
+  operationId: string;
+  places: ChecklistPlace[];
+  route: Route;
+}
+
+type Step = "from" | "to" | "tools";
+
+/**
+ * Kolejność kroków. Lokalizacji bez kroku (baza przy wydaniu, zwrocie i przyjęciu z serwisu) nie trzeba
+ * wybierać, bo jest tylko jedna. Przy przeniesieniu najpierw własna budowa, potem ta, z której się zabiera.
+ */
+const STEPS: Record<RegisteredKind, Step[]> = {
+  wydanie: ["tools", "to"],
+  zwrot: ["from", "tools"],
+  przeniesienie: ["to", "from", "tools"],
+  do_serwisu: ["from", "tools", "to"],
+  z_serwisu: ["from", "tools"],
+};
 
 /** Małe litery, bez polskich znaków i bez kresek w kodach: „s01” znajdzie S-01, „szlifierka” Szlifierkę. */
 function normalize(text: string) {
@@ -46,35 +78,40 @@ function matches(tool: ChecklistTool, query: string) {
   return normalize(tool.name).includes(wanted) || bare(normalize(tool.code)).includes(bare(wanted));
 }
 
-export function Checklist({ kind, operationId: firstOperationId, base, baseTools, sites }: ChecklistProps) {
+export function Checklist({ kind, operationId: firstOperationId, places, route }: ChecklistProps) {
   // Ponowne wysłanie tego samego wyboru (np. po zerwanym połączeniu) nie zdubluje ruchu, a zmiana
   // wyboru, także na ekranie przywróconym przyciskiem Wstecz, nie zwróci poprzedniego ruchu.
   const [operationId, setOperationId] = useState(firstOperationId);
-  const [siteId, setSiteIdState] = useState(sites.length === 1 ? sites[0].id : "");
+  const [chosen, setChosen] = useState<Record<"from" | "to", string>>({ from: "", to: "" });
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // Tekst podsumowania z chwili wysłania: po zapisie zaznaczenie się czyści, a komunikat zostaje.
   const submittedSummary = useRef("");
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<{ summary: string; notified: string[] } | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
     const result = await registerMovement(prev, formData);
     if (result.done) {
       setSelectedIds([]);
       setQuery("");
       setOperationId(newOperationId());
-      setDone(submittedSummary.current);
+      setDone({ summary: submittedSummary.current, notified: result.done.notified });
     }
     return result;
   }, {});
 
-  const site = sites.find((candidate) => candidate.id === siteId);
-  const isIssue = kind === "wydanie";
-  const available = isIssue ? baseTools : (site?.tools ?? []);
+  const byId = new Map(places.map((place) => [place.id, place]));
+  const optionsOf = (ids: string[]) => ids.map((id) => byId.get(id)).filter((place) => place !== undefined);
+  // Jedyną możliwą lokalizację wybieramy od razu; wybór spoza listy (np. po odświeżeniu) przepada.
+  const pick = (options: ChecklistPlace[], id: string) =>
+    options.length === 1 ? options[0] : options.find((option) => option.id === id);
+  const toOptions = optionsOf(route.to);
+  const to = pick(toOptions, chosen.to);
+  const fromOptions = optionsOf(route.from).filter((place) => place.id !== to?.id);
+  const from = pick(fromOptions, chosen.from);
+  const available = from?.tools ?? [];
   // Po odświeżeniu stanu zaznaczenie zostaje tylko przy narzędziach, które nadal tu są.
   const selected = available.filter((tool) => selectedIds.includes(tool.id));
   const visible = available.filter((tool) => matches(tool, query));
-  const from = isIssue ? base : site;
-  const to = isIssue ? site : base;
 
   function toggle(toolId: string, checked: boolean) {
     setSelectedIds((ids) => (checked ? [...ids, toolId] : ids.filter((id) => id !== toolId)));
@@ -87,40 +124,43 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
     setOperationId(newOperationId());
   }
 
-  function setSiteId(id: string) {
-    setSiteIdState(id);
+  function choose(side: "from" | "to", id: string) {
+    setChosen((current) => ({ ...current, [side]: id }));
     setOperationId(newOperationId());
     setDone(null);
   }
 
-  if (sites.length === 0) {
-    return <p className="empty">{isIssue ? t("checklist.noSites") : t("checklist.noSitesToReturn")}</p>;
-  }
+  if (route.to.length === 0) return <p className="empty">{t(`checklist.kinds.${kind}.noTo`)}</p>;
+  if (route.from.length === 0) return <p className="empty">{t(`checklist.kinds.${kind}.noFrom`)}</p>;
 
-  const siteChoice = (
-    <fieldset className="checklist-section">
-      <legend className="display section-title">{isIssue ? t("checklist.siteTo") : t("checklist.siteFrom")}</legend>
-      <div className="choice-list">
-        {sites.map((candidate) => (
-          <label key={candidate.id} className="choice">
-            <input
-              type="radio"
-              name="site"
-              value={candidate.id}
-              checked={candidate.id === siteId}
-              onChange={() => setSiteId(candidate.id)}
-            />
-            <span className="choice-name">{candidate.name}</span>
-            {candidate.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
-          </label>
-        ))}
-      </div>
+  const placeChoice = (side: "from" | "to", options: ChecklistPlace[], current: ChecklistPlace | undefined) => (
+    <fieldset key={side} className="checklist-section">
+      <legend className="display section-title">{t(`checklist.kinds.${kind}.${side}`)}</legend>
+      {options.length === 0 ? (
+        <p className="empty">{t(`checklist.kinds.${kind}.${side === "from" ? "noFrom" : "noTo"}`)}</p>
+      ) : (
+        <div className="choice-list">
+          {options.map((place) => (
+            <label key={place.id} className="choice">
+              <input
+                type="radio"
+                name={side}
+                value={place.id}
+                checked={place.id === current?.id}
+                onChange={() => choose(side, place.id)}
+              />
+              <span className="choice-name">{place.name}</span>
+              {place.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
+            </label>
+          ))}
+        </div>
+      )}
     </fieldset>
   );
 
-  const emptyText = isIssue ? t("checklist.noToolsAtBase") : site ? t("checklist.noToolsAtSite") : t("checklist.chooseSiteFirst");
+  const emptyText = from ? t(`checklist.noToolsAt.${from.kind}`) : t(`checklist.kinds.${kind}.chooseFrom`);
   const toolChoice = (
-    <fieldset className="checklist-section">
+    <fieldset key="tools" className="checklist-section">
       <legend className="display section-title">{t("checklist.tools")}</legend>
       {available.length === 0 ? (
         <p className="empty">{emptyText}</p>
@@ -181,22 +221,15 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
         <input key={tool.id} type="hidden" name="toolId" value={tool.id} />
       ))}
 
-      {isIssue ? (
-        <>
-          {toolChoice}
-          {siteChoice}
-        </>
-      ) : (
-        <>
-          {siteChoice}
-          {toolChoice}
-        </>
+      {STEPS[kind].map((step) =>
+        step === "tools" ? toolChoice : step === "to" ? placeChoice("to", toOptions, to) : placeChoice("from", fromOptions, from),
       )}
 
       <div className="checklist-summary">
         {done && !ready && (
           <p className="checklist-done" role="status">
-            {t("checklist.done", { summary: done })}
+            {t("checklist.done", { summary: done.summary })}
+            {done.notified.length > 0 && ` ${t("checklist.notified", { names: done.notified.join(", ") })}`}
           </p>
         )}
         {state.error && (
@@ -215,7 +248,7 @@ export function Checklist({ kind, operationId: firstOperationId, base, baseTools
           </div>
         )}
         <p className="checklist-summary-text" data-testid="checklist-summary">
-          {ready ? summary : t("checklist.summaryEmpty")}
+          {ready ? summary : t(`checklist.kinds.${kind}.summaryEmpty`)}
         </p>
         <div className="form-actions">
           <button className="button" type="submit" disabled={!ready || pending}>
