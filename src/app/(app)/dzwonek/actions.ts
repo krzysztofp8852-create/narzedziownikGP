@@ -11,7 +11,7 @@ export async function openNotification(notificationId: string) {
   const session = await requireSession();
   const entry = await getRegistry().as(session.userId).markNotificationRead(notificationId);
   revalidatePath("/", "layout");
-  redirect(entry ? notificationLink(entry.notification) : "/powiadomienia");
+  redirect(entry ? notificationLink(entry.notification) : "/dzwonek");
 }
 
 export async function markNotificationRead(notificationId: string) {

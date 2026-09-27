@@ -149,7 +149,7 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   przechodzi dalej tą samą ścieżką co wpis tekstem. Nagranie bez zasięgu czeka w IndexedDB, a po powrocie sieci
   przechodzi transkrypcję i staje się propozycją do zatwierdzenia w telefonie („🎙 Do zatwierdzenia” w nagłówku),
   z czasem zdarzenia z chwili nagrania (zob. `docs/adr/0009`).
-- Dzwonek (🔔 w nagłówku, `/powiadomienia`): skrzynka powiadomień każdego użytkownika z licznikiem
+- Dzwonek (🔔 w nagłówku, `/dzwonek`): skrzynka powiadomień każdego użytkownika z licznikiem
   nieprzeczytanych (`app.notifications`, zob. `docs/adr/0007`). Rejestr zapisuje powiadomienie w transakcji
   zdarzenia, a port powiadomień wysyła po zapisie kopię e-mailem. Rodzaje: zabrany sprzęt (kierownik budowy,
   z której przeniesienie zabrało narzędzia) i przekroczenie progu dni (zadanie dzienne

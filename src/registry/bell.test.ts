@@ -115,10 +115,27 @@ describe("dzwonek: izolacja", () => {
     const budrex = await testbed.givenActiveCompany("Budrex");
 
     await expect(
-      withActor(testbed.db, z.nowakId, (sql) =>
-        sql("select app.deliver_notification($1, 'narzedzia_zabrane', '{}', null, now())", [budrex.ownerId]),
-      ),
-    ).rejects.toThrow(/foreign key/);
+      withActor(testbed.db, z.nowakId, (sql) => sql("select app.deliver_notification($1, 'progi_przekroczone', '{}', now())", [budrex.ownerId])),
+    ).rejects.toThrow();
     expect(await testbed.registry.as(budrex.ownerId).unreadNotificationCount()).toBe(0);
+  });
+
+  it("kierownik nie podrzuci koledze z firmy powiadomienia o zdarzeniu, którego nie było, ani nie zajmie miejsca prawdziwemu", async () => {
+    const z = await givenZawbud();
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+    const forge = (kind: string, content: object) =>
+      withActor(testbed.db, z.nowakId, (sql) =>
+        sql("select app.deliver_notification($1, $2, $3, now())", [z.kowalskiId, kind, JSON.stringify(content)]),
+      );
+    const [kowalskiIssue] = (await z.owner.movementHistory()).movements;
+
+    // Ruch Kowalskiego, nie Nowaka: Nowak nie zabrał z nim sprzętu.
+    await expect(forge("narzedzia_zabrane", { movementId: kowalskiIssue.id, takenBy: "Adam Nowak" })).rejects.toThrow();
+    await expect(forge("prog_przekroczony", { tool: { code: "S-01" } })).rejects.toThrow();
+    await expect(forge("ruch_odrzucony", { rejectionId: kowalskiIssue.id })).rejects.toThrow();
+    expect(await testbed.registry.as(z.kowalskiId).unreadNotificationCount()).toBe(0);
+
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
+    expect(await testbed.registry.as(z.kowalskiId).unreadNotificationCount()).toBe(1);
   });
 });

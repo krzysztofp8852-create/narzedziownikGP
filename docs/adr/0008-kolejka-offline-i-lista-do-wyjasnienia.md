@@ -20,7 +20,8 @@ dzwonka (ADR 0007). Instalowalnej PWA z pracą bez sieci od startu (#18) jeszcze
   błędzie, po którym warto ponowić, zatrzymuje się, żeby późniejszy ruch nie wyprzedził wcześniejszego.
   Wysyła tylko ruchy zalogowanej osoby.
 - Serwer przyjmuje ruch z kolejki poleceniem `registerQueuedMovement`: to samo co `registerMovement` z czasem
-  zdarzenia z telefonu. Konflikt obejmuje też narzędzie, które ruszyło się po czasie zdarzenia. Błąd Rejestru
+  zdarzenia z telefonu (z przyszłości, przy spieszącym się zegarze, przycięty do chwili dotarcia na serwer).
+  Konflikt obejmuje też narzędzie, które ruszyło się po czasie zdarzenia. Błąd Rejestru
   inny niż wymagana zmiana hasła albo brak dostępu jest ostateczny: odrzucenie zapisuje się w
   `app.rejected_movements` (powód, konflikty), autor dostaje powiadomienie w dzwonku z odnośnikiem do
   `/do-wyjasnienia`, a ponowne wysłanie tej samej operacji zwraca to samo odrzucenie. Telefon usuwa ruch z

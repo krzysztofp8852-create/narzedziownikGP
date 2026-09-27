@@ -23,19 +23,14 @@ export interface Bell {
 const MAX_ENTRIES = 100;
 
 /**
- * Wkłada powiadomienia do dzwonków adresatów w transakcji zdarzenia aktora. Powiadomienie o zdarzeniu,
- * które adresat już ma (np. ponowienie operacji), się nie dubluje.
+ * Wkłada powiadomienia do dzwonków adresatów w transakcji zdarzenia aktora. Funkcja w bazie sprawdza,
+ * że aktor naprawdę wywołał to zdarzenie, i nie dubluje powiadomienia, które adresat już ma (np. przy
+ * ponowieniu operacji).
  */
 export async function deliver(sql: Sql, notifications: Notification[], now: Date): Promise<void> {
   for (const notification of notifications) {
     const { recipient, ...content } = notification;
-    await sql("select app.deliver_notification($1, $2, $3, $4, $5)", [
-      recipient.userId,
-      notification.kind,
-      JSON.stringify(content),
-      dedupeKey(notification),
-      now,
-    ]);
+    await sql("select app.deliver_notification($1, $2, $3, $4)", [recipient.userId, notification.kind, JSON.stringify(content), now]);
   }
 }
 

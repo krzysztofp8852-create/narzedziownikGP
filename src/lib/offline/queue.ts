@@ -1,6 +1,7 @@
 // Kolejka offline w telefonie: co czeka na sieć i jak to wysłać. Bez zależności od przeglądarki,
 // więc da się to sprawdzić z kolejką w pamięci zamiast IndexedDB.
 
+import { t } from "@/i18n/t";
 import type { Proposal } from "@/interpretation/proposal";
 import type { RegisteredKind, RegisterSource } from "@/registry/registry";
 
@@ -85,7 +86,12 @@ export interface QueuedRecording {
   /** Chwila nagrania (ISO): czas zdarzenia ruchu z tej propozycji. */
   recordedAt: string;
   queuedAt: number;
+  /** Ile razy transkrypcja się nie udała z powodu, który może minąć. */
+  attempts?: number;
 }
+
+/** Po tylu nieudanych próbach nagranie znika z komunikatem; kierownik jest wtedy w sieci i może powiedzieć jeszcze raz. */
+export const MAX_TRANSCRIPTION_ATTEMPTS = 5;
 
 /**
  * Nagranie po transkrypcji, czekające na kierownika: propozycja ruchu do zatwierdzenia, rozpoznany tekst
@@ -112,7 +118,8 @@ export type TranscribeOutcome =
 
 /**
  * Wysyła nagrania osoby po kolei do transkrypcji. Wynik trafia do propozycji czekających na zatwierdzenie,
- * zanim nagranie zniknie z telefonu. Bez sieci albo przy „spróbuj później” zatrzymuje się.
+ * zanim nagranie zniknie z telefonu. Bez sieci zatrzymuje się. Nagranie, którego transkrypcja chwilowo
+ * się nie udała, czeka na kolejną próbę, nie blokując pozostałych, a po kilku próbach kończy się komunikatem.
  */
 export async function flushRecordings(
   recordings: QueueStore<QueuedRecording>,
@@ -129,7 +136,14 @@ export async function flushRecordings(
     } catch {
       break;
     }
-    if (outcome.status === "retry") break;
+    if (outcome.status === "retry") {
+      const attempts = (item.attempts ?? 0) + 1;
+      if (attempts < MAX_TRANSCRIPTION_ATTEMPTS) {
+        await recordings.put({ ...item, attempts });
+        continue;
+      }
+      outcome = { status: "discarded", error: t("voice.failed") };
+    }
     const heard = outcome.status === "transcribed" ? { text: outcome.text, proposal: outcome.proposal } : {};
     await ready.put({
       id: item.id,

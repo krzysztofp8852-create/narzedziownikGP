@@ -55,6 +55,8 @@ export function OfflineSync({ userId }: { userId: string }) {
       const movements = await flushMovements(movementQueue(), userId, sendQueuedMovement);
       // Tablica, ostatnie ruchy i dzwonek (odrzucone ruchy) pokażą to, co doszło.
       if (movements.registered + movements.rejected > 0) router.refresh();
+      // Propozycja z nagrania powstaje z bieżącego stanu, więc najpierw muszą dojść wcześniejsze ruchy.
+      if (movements.pending > 0) return;
       const recordings = await flushRecordings(recordingQueue(), readyRecordings(), userId, transcribe);
       // Wpis głosem pokaże nowe propozycje do zatwierdzenia.
       if (recordings.ready > 0) queueChanged();

@@ -16,12 +16,15 @@ a e-mail i push (#22) jego kopią. Dochodzi zadanie dzienne: powiadomienia o prz
   funkcją. Klucz zdarzenia (`dedupe_key`, np. ruch albo pobyt narzędzia) sprawia, że ponowienie operacji
   nie dubluje powiadomienia.
 - Aktor nie widzi cudzego dzwonka (RLS), a `insert … on conflict` wymaga wglądu w istniejące wiersze, więc
-  transakcja użytkownika pisze przez funkcję `app.deliver_notification` (SECURITY DEFINER), która sama
-  ustala firmę aktora. Zadania systemowe piszą do tabeli wprost.
+  transakcja użytkownika pisze przez funkcję `app.deliver_notification` (SECURITY DEFINER). Funkcja sama
+  ustala firmę aktora i klucz zdarzenia i przyjmuje tylko zdarzenia aktora (jego przeniesienie z budowy
+  adresata, jego odrzucony ruch), więc nikt nie podrzuci koledze zmyślonego powiadomienia. Zadania
+  systemowe piszą do tabeli wprost.
 - Port powiadomień (`Notifier`) wysyła po zapisie kopię e-mailem, najwyżej raz, jak w ADR 0004. Na razie
   kopię ma tylko zabrany sprzęt; przekroczenie progu jest wyłącznie w dzwonku.
 - Przekroczenie progu wykrywa codziennie o 5:00 UTC zadanie Vercel Cron (`/zadania/progi`, sekret
   `CRON_SECRET`). Narzędzie ma alarm tak jak na tablicy: dłużej niż próg dni firmy na aktywnej budowie.
+  Reguła alarmu (`hasAlarm`) jest wspólna dla tablicy i zadania. Każda firma idzie w osobnej transakcji.
   Zadanie bierze przekroczenia z ostatnich 48 godzin i zapisuje każdy pobyt (narzędzie + `located_since`)
   w `app.threshold_alerts` raz, więc następnego dnia nic się nie powtarza, a jedno pominięte uruchomienie
   niczego nie gubi. Kierownik budowy dostaje powiadomienie o każdym narzędziu, a każdy właściciel jedno

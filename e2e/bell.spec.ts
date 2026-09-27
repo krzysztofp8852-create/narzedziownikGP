@@ -16,9 +16,9 @@ test("kierownik, któremu zabrano sprzęt, widzi licznik w dzwonku, otwiera powi
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 
   await expect(page.getByTestId("bell-count")).toHaveText("1");
-  await page.getByRole("link", { name: "Powiadomienia, nieprzeczytane: 1" }).click();
+  await page.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
 
-  const bell = page.getByRole("list", { name: "Powiadomienia" });
+  const bell = page.getByRole("list", { name: "Dzwonek" });
   const entry = bell.getByRole("listitem").first();
   await expect(entry).toContainText("Adam Nowak zabiera S-01 z budowy Winogrady");
   await expect(entry).toContainText("Sprzęt jest teraz na budowie Rataje");
@@ -28,6 +28,6 @@ test("kierownik, któremu zabrano sprzęt, widzi licznik w dzwonku, otwiera powi
 
   await expect(page).toHaveURL(new RegExp(`/narzedzia/${company.toolId}$`));
   await expect(page.getByTestId("bell-count")).toHaveCount(0);
-  await page.getByRole("link", { name: "Powiadomienia" }).click();
-  await expect(page.getByRole("list", { name: "Powiadomienia" }).getByRole("listitem").first()).not.toContainText("Nowe");
+  await page.getByRole("link", { name: "Dzwonek" }).click();
+  await expect(page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem").first()).not.toContainText("Nowe");
 });

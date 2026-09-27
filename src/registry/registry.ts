@@ -294,7 +294,20 @@ export function createRegistry(deps: Deps): Registry {
   return {
     system: () => ({
       createCompany: (input) => createCompany(deps, input),
-      notifyExceededThresholds: () => deps.db.transaction((sql) => thresholds.notifyExceededThresholds(sql, deps.clock.now())),
+      notifyExceededThresholds: async () => {
+        const now = deps.clock.now();
+        const companyIds = await deps.db.transaction((sql) => thresholds.companiesWithSites(sql));
+        let tools = 0;
+        // Każda firma w osobnej transakcji: błąd jednej nie zabiera powiadomień pozostałym.
+        for (const companyId of companyIds) {
+          try {
+            tools += (await deps.db.transaction((sql) => thresholds.notifyExceededThresholds(sql, companyId, now))).tools;
+          } catch (error) {
+            console.error(`Nie sprawdzono progów dni firmy ${companyId}`, error);
+          }
+        }
+        return { tools };
+      },
     }),
     as: (userId) => {
       /** Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego. */
@@ -554,7 +567,10 @@ export function createRegistry(deps: Deps): Registry {
         forceCloseSite: movementOnlyCommand(siteClosing.forceCloseSite),
         finishedSites: () => asMember((sql) => siteClosing.finishedSites(sql)),
         registerMovement,
-        registerQueuedMovement: async (input) => {
+        registerQueuedMovement: async (queued) => {
+          // Telefon ze spieszącym się zegarem nie może odrzucić ruchu na zawsze: taki ruch zdarzył się najpóźniej teraz.
+          const now = deps.clock.now();
+          const input = queued.occurredAt && queued.occurredAt > now ? { ...queued, occurredAt: now } : queued;
           const rejected = await asMember((sql, session) => queuedMovements.rejectionByOperation(sql, session, input.operationId));
           if (rejected) return { status: "rejected", rejection: rejected };
           try {

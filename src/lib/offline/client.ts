@@ -41,9 +41,13 @@ export async function enqueueRecording(audio: Blob, userId: string, recordedAt: 
   queueChanged();
 }
 
-/** Nie dało się połączyć z serwerem: brak zasięgu albo zerwane połączenie w trakcie wysyłki. */
+/**
+ * Nie dało się połączyć z serwerem: brak zasięgu albo zerwane połączenie w trakcie wysyłki. Nieudany `fetch`
+ * to TypeError z komunikatem przeglądarki (Chrome „Failed to fetch”, Safari „Load failed”, Firefox
+ * „NetworkError…”); inny TypeError to błąd w kodzie, a nie brak sieci.
+ */
 export function isNetworkError(error: unknown) {
-  return !navigator.onLine || error instanceof TypeError;
+  return !navigator.onLine || (error instanceof TypeError && /fetch|load failed|network/i.test(error.message));
 }
 
 /**

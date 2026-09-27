@@ -33,26 +33,42 @@ create policy notifications_update on app.notifications for update to authentica
 
 -- Zapis w transakcji zdarzenia: ktoś z firmy (np. ten, kto zabrał sprzęt) dopisuje powiadomienie
 -- innej osobie z tej samej firmy. Pominięcie zdarzenia, które adresat już ma, wymagałoby wglądu
--- w jego dzwonek, więc zapis idzie przez funkcję, która sama ustala firmę aktora; klucz obcy pilnuje,
--- że adresat jest z tej firmy. Zadania systemowe (poza RLS) piszą do tabeli wprost.
+-- w jego dzwonek, więc zapis idzie przez funkcję. Funkcja sama ustala firmę aktora i klucz zdarzenia
+-- i przyjmuje tylko zdarzenia, które aktor naprawdę wywołał, więc nikt nie podrzuci koledze
+-- zmyślonego powiadomienia ani nie zajmie klucza prawdziwemu. Zadania systemowe (poza RLS) piszą
+-- do tabeli wprost.
 create function app.deliver_notification(
-  p_recipient_id uuid, p_kind text, p_content jsonb, p_dedupe_key text, p_created_at timestamptz
+  p_recipient_id uuid, p_kind text, p_content jsonb, p_created_at timestamptz
 ) returns void
 language plpgsql security definer set search_path = ''
 as $$
 declare
   v_company_id uuid := app.current_company_id();
+  v_dedupe_key text;
 begin
   if v_company_id is null then
     raise exception 'Powiadomienie zapisuje tylko aktywny użytkownik firmy';
   end if;
+  if p_kind = 'narzedzia_zabrane' then
+    -- Przeniesienie aktora z budowy, którą prowadzi adresat.
+    if not exists (
+      select 1 from app.movements m join app.locations l on l.id = m.from_location_id
+      where m.id = (p_content ->> 'movementId')::uuid and m.kind = 'przeniesienie'
+        and m.author_id = auth.uid() and l.manager_id = p_recipient_id
+    ) then
+      raise exception 'Powiadomienie o zabranym sprzęcie tylko z własnego przeniesienia';
+    end if;
+    v_dedupe_key := 'ruch:' || (p_content ->> 'movementId');
+  else
+    raise exception 'Rodzaj powiadomienia % nie powstaje w transakcji użytkownika', p_kind;
+  end if;
   insert into app.notifications (company_id, recipient_id, kind, content, dedupe_key, created_at)
-  values (v_company_id, p_recipient_id, p_kind, p_content, p_dedupe_key, p_created_at)
+  values (v_company_id, p_recipient_id, p_kind, p_content, v_dedupe_key, p_created_at)
   on conflict (recipient_id, dedupe_key) where dedupe_key is not null do nothing;
 end
 $$;
-revoke execute on function app.deliver_notification(uuid, text, jsonb, text, timestamptz) from public;
-grant execute on function app.deliver_notification(uuid, text, jsonb, text, timestamptz) to authenticated;
+revoke execute on function app.deliver_notification(uuid, text, jsonb, timestamptz) from public;
+grant execute on function app.deliver_notification(uuid, text, jsonb, timestamptz) to authenticated;
 
 -- Przekroczenia progu dni wykryte przez zadanie dzienne: pobyt narzędzia w lokalizacji (od
 -- located_since) przekracza próg najwyżej raz, więc następnego dnia powiadomienie się nie powtarza.

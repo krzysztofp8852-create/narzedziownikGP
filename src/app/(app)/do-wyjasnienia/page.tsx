@@ -19,7 +19,7 @@ export default async function ToClarifyPage() {
     <>
       <p>
         <Link href="/" className="muted">
-          {t("bell.back")}
+          {t("toClarify.back")}
         </Link>
       </p>
       <h1 className="display page-title">{t("toClarify.title")}</h1>

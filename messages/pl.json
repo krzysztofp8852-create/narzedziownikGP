@@ -52,8 +52,8 @@
   "header": {
     "logout": "Wyloguj",
     "settings": "Ustawienia",
-    "bell": "Powiadomienia",
-    "bellUnread": "Powiadomienia, nieprzeczytane: {count}"
+    "bell": "Dzwonek",
+    "bellUnread": "Dzwonek, nieprzeczytane: {count}"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -635,7 +635,7 @@
     "history": "Historia budowy →"
   },
   "bell": {
-    "title": "Powiadomienia",
+    "title": "Dzwonek",
     "back": "← Wróć do tablicy",
     "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo narzędzie, które stoi za długo.",
     "unread": "Nowe",
@@ -673,6 +673,7 @@
     "intro": "Ruchy zapisane w telefonie bez zasięgu, których serwer nie przyjął, bo stan zmienił się w międzyczasie. Nic z nich nie trafiło do historii. Sprawdź, gdzie jest sprzęt, zarejestruj ruch jeszcze raz, jeśli trzeba, i oznacz go jako wyjaśniony.",
     "empty": "Nie ma ruchów do wyjaśnienia.",
     "when": "Zapisany w telefonie {recorded}, odrzucony {rejected}",
-    "resolve": "Wyjaśnione"
+    "resolve": "Wyjaśnione",
+    "back": "← Wróć do tablicy"
   }
 }

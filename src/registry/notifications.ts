@@ -105,6 +105,7 @@ export async function notificationsFor(sql: Sql, movement: Movement): Promise<To
 /**
  * Klucz zdarzenia: to samo zdarzenie daje adresatowi najwyżej jedno powiadomienie w dzwonku. Zbiorcze
  * nie ma klucza, bo każde narzędzie wchodzi do niego raz, gdy zadanie dzienne wykryje przekroczenie.
+ * W transakcji użytkownika ten sam klucz składa funkcja `app.deliver_notification`.
  */
 export function dedupeKey(notification: Notification): string | null {
   switch (notification.kind) {

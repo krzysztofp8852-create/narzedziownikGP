@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Proposal } from "@/interpretation/proposal";
-import { flushMovements, flushRecordings, type QueuedMovement, type QueuedRecording, type QueueStore, type ReadyRecording } from "./queue";
+import {
+  flushMovements,
+  flushRecordings,
+  MAX_TRANSCRIPTION_ATTEMPTS,
+  type QueuedMovement,
+  type QueuedRecording,
+  type QueueStore,
+  type ReadyRecording,
+  type TranscribeOutcome,
+} from "./queue";
 
 /** Kolejka w pamięci zamiast IndexedDB. */
 class MemoryStore<T> implements QueueStore<T> {
@@ -156,17 +165,32 @@ describe("wysyłanie nagrań z kolejki", () => {
     expect(ready.items.get("r2")).not.toHaveProperty("text");
   });
 
-  it("bez sieci albo gdy transkrypcja chwilowo nie działa, nagranie zostaje w telefonie do ponowienia", async () => {
+  it("bez sieci nagrania zostają w telefonie do ponowienia", async () => {
     const { recordings, ready } = givenRecordings(recording("r1", 1000), recording("r2", 2000), recording("k", 1500, "user-kowalski"));
 
     const offline = await flushRecordings(recordings, ready, NOWAK, async () => {
       throw new TypeError("Failed to fetch");
     });
-    const failing = await flushRecordings(recordings, ready, NOWAK, async () => ({ status: "retry" }));
 
     expect(offline).toEqual({ ready: 0, pending: 2 });
-    expect(failing).toEqual({ ready: 0, pending: 2 });
     expect([...recordings.items.keys()].sort()).toEqual(["k", "r1", "r2"]);
     expect(ready.items.size).toBe(0);
+  });
+
+  it("nagranie, którego transkrypcja chwilowo nie działa, nie blokuje kolejnych, a po kilku próbach kończy się komunikatem", async () => {
+    const { recordings, ready } = givenRecordings(recording("zle", 1000), recording("dobre", 2000));
+    const transcribe = async (item: QueuedRecording): Promise<TranscribeOutcome> =>
+      item.id === "zle" ? { status: "retry" } : { status: "transcribed", text: proposal.text, proposal };
+
+    const first = await flushRecordings(recordings, ready, NOWAK, transcribe);
+
+    expect(first).toEqual({ ready: 1, pending: 1 });
+    expect([...ready.items.keys()]).toEqual(["dobre"]);
+    expect(recordings.items.get("zle")).toMatchObject({ attempts: 1 });
+
+    for (let attempt = 2; attempt <= MAX_TRANSCRIPTION_ATTEMPTS; attempt++) await flushRecordings(recordings, ready, NOWAK, transcribe);
+
+    expect(recordings.items.size).toBe(0);
+    expect(ready.items.get("zle")).toEqual({ id: "zle", userId: NOWAK, recordedAt: new Date(1000).toISOString(), error: "Nie udało się rozpoznać nagrania. Spróbuj jeszcze raz albo wpisz tekstem." });
   });
 });

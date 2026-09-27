@@ -42,8 +42,8 @@ test("kierownik bez zasięgu wydaje dwie szlifierki: ruchy czekają w kolejce, p
   await expect(recent.getByRole("listitem").filter({ hasText: "Adam Nowak" })).toContainText("S-01");
   await expect(page.getByTestId("bell-count")).toHaveText("1");
 
-  await page.getByRole("link", { name: "Powiadomienia, nieprzeczytane: 1" }).click();
-  const entry = page.getByRole("list", { name: "Powiadomienia" }).getByRole("listitem").first();
+  await page.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
+  const entry = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem").first();
   await expect(entry).toContainText("Ruch z kolejki odrzucony: Wydanie S-02");
   await entry.getByRole("button", { name: "Pokaż" }).click();
 

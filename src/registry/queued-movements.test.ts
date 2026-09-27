@@ -67,6 +67,17 @@ describe("ruch z kolejki offline", () => {
   });
 });
 
+describe("ruch z kolejki z telefonu z rozjechanym zegarem", () => {
+  it("czas zdarzenia z przyszłości (zegar telefonu się spieszy) to chwila dotarcia na serwer, a nie odrzucenie", async () => {
+    const z = await givenZawbud();
+    testbed.clock.advance(HOUR);
+
+    const result = await queued(z.nowakId, { kind: "wydanie", fromLocationId: z.baseId, toLocationId: z.ratajeId, toolIds: [z.s01] }, -2 * HOUR);
+
+    expect(result).toMatchObject({ status: "registered", movement: { occurredAt: testbed.clock.now() } });
+  });
+});
+
 describe("ruch z kolejki odrzucony: do wyjaśnienia", () => {
   it("magazynierka w międzyczasie wydała S-01 gdzie indziej: ruch Nowaka trafia na jego listę „Do wyjaśnienia” z powodem i do dzwonka", async () => {
     const z = await givenZawbud();

@@ -41,3 +41,43 @@ grant update (resolved_at) on app.rejected_movements to authenticated;
 create policy rejected_movements_own on app.rejected_movements for all to authenticated
   using (company_id = app.current_company_id() and author_id = auth.uid())
   with check (company_id = app.current_company_id() and author_id = auth.uid());
+
+-- Powiadomienie o odrzuconym ruchu dostaje tylko jego autor, o własnym odrzuceniu.
+create or replace function app.deliver_notification(
+  p_recipient_id uuid, p_kind text, p_content jsonb, p_created_at timestamptz
+) returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_company_id uuid := app.current_company_id();
+  v_dedupe_key text;
+begin
+  if v_company_id is null then
+    raise exception 'Powiadomienie zapisuje tylko aktywny użytkownik firmy';
+  end if;
+  if p_kind = 'narzedzia_zabrane' then
+    -- Przeniesienie aktora z budowy, którą prowadzi adresat.
+    if not exists (
+      select 1 from app.movements m join app.locations l on l.id = m.from_location_id
+      where m.id = (p_content ->> 'movementId')::uuid and m.kind = 'przeniesienie'
+        and m.author_id = auth.uid() and l.manager_id = p_recipient_id
+    ) then
+      raise exception 'Powiadomienie o zabranym sprzęcie tylko z własnego przeniesienia';
+    end if;
+    v_dedupe_key := 'ruch:' || (p_content ->> 'movementId');
+  elsif p_kind = 'ruch_odrzucony' then
+    if p_recipient_id <> auth.uid() or not exists (
+      select 1 from app.rejected_movements r
+      where r.id = (p_content ->> 'rejectionId')::uuid and r.author_id = auth.uid()
+    ) then
+      raise exception 'Powiadomienie o odrzuconym ruchu tylko dla autora, o jego odrzuceniu';
+    end if;
+    v_dedupe_key := 'odrzucony:' || (p_content ->> 'rejectionId');
+  else
+    raise exception 'Rodzaj powiadomienia % nie powstaje w transakcji użytkownika', p_kind;
+  end if;
+  insert into app.notifications (company_id, recipient_id, kind, content, dedupe_key, created_at)
+  values (v_company_id, p_recipient_id, p_kind, p_content, v_dedupe_key, p_created_at)
+  on conflict (recipient_id, dedupe_key) where dedupe_key is not null do nothing;
+end
+$$;

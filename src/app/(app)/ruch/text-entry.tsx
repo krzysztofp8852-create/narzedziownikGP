@@ -71,8 +71,8 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
       error: recording.error,
       round: (previous?.round ?? 0) + 1,
     }));
-    // Bez propozycji nie ma czego zatwierdzać: komunikat albo tekst do poprawienia są już na ekranie.
-    if (!recording.proposal) await forget(recording.id);
+    // Sam komunikat (np. nic nie słychać) już przeczytany; tekst do poprawienia czeka, aż kierownik go wyśle.
+    if (!recording.proposal && !recording.text) await forget(recording.id);
   }, []);
 
   useEffect(() => {
@@ -97,7 +97,8 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
     setDone(null);
     setRecordingQueued(false);
     // Poprawiony tekst z nagrania nadal opisuje ruch z chwili nagrania; nowe zdanie już nie.
-    setFromRecording((current) => (current?.correcting ? current : null));
+    if (fromRecording?.correcting) void forget(fromRecording.id);
+    else setFromRecording(null);
     startAsking(async () => {
       const result = await proposeMovement(asked);
       answer({ asked, spoken: false, ...result });
