@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/naklejki/pdf": ["./src/stickers/fonts/*.ttf"],
   },
+  // Nowa wersja service workera ma dotrzeć do telefonów przy najbliższym otwarciu aplikacji (ADR 0010).
+  async headers() {
+    return [{ source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] }];
+  },
 };
 
 export default nextConfig;

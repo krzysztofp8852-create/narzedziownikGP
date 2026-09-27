@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { OfflineSync } from "@/components/offline-sync";
+import { SignOutForm } from "@/components/sign-out-form";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { canManageSettings } from "@/registry/registry";
-import { signOut } from "../actions";
 
 function GearIcon() {
   return (
@@ -57,11 +57,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 <span className="icon-button-label">{t("header.settings")}</span>
               </Link>
             )}
-            <form action={signOut}>
-              <button className="button button-quiet" type="submit">
-                {t("header.logout")}
-              </button>
-            </form>
+            <SignOutForm />
           </div>
         </div>
       </header>

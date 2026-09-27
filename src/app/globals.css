@@ -1669,3 +1669,14 @@ a.tool-row:hover .tool-row-name {
   display: grid;
   gap: 6px;
 }
+
+/* Tablica z kopii w telefonie, bez sieci */
+.board-snapshot {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  color: var(--warning);
+  font-weight: 600;
+}

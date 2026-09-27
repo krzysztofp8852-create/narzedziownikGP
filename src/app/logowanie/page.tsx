@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth-shell";
+import { ForgetBoard } from "@/components/forget-board";
 import { t } from "@/i18n/t";
 import { currentUserId } from "@/lib/auth";
 import { safeNextPath } from "@/lib/next-path";
@@ -15,6 +16,7 @@ export default async function LoginPage(props: PageProps<"/logowanie">) {
   return (
     <AuthShell title={t("login.title")}>
       <LoginForm nextPath={nextPath} />
+      <ForgetBoard />
     </AuthShell>
   );
 }

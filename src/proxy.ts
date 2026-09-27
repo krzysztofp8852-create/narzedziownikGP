@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-// Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika.
-const PUBLIC_PATHS = ["/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi"];
+// Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika. „Brak sieci” service worker
+// pobiera przy instalacji, także przed zalogowaniem.
+const PUBLIC_PATHS = ["/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi", "/offline"];
 
 /**
  * Odświeża sesję Supabase w ciasteczkach i odsyła niezalogowanych do logowania.
@@ -39,6 +40,8 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// Manifest i service worker muszą być dostępne bez sesji: przeglądarka pobiera manifest bez ciasteczek,
+// a skryptu service workera nie wolno przekierować.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest$|sw\\.js$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };

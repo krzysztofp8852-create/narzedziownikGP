@@ -57,6 +57,7 @@
   },
   "board": {
     "title": "Gdzie jest co",
+    "snapshot": "Brak sieci. Stan z {when}: to, co ten telefon pobrał ostatnio.",
     "baseKind": "Baza",
     "toolCount": "{count} szt.",
     "baseEmpty": "Na bazie nie ma jeszcze żadnych narzędzi.",
@@ -654,6 +655,9 @@
     "movementRejectedBody": "Zapisany w telefonie {when}. {reason} Sprawdź go na liście „Do wyjaśnienia”."
   },
   "offline": {
+    "pageTitle": "Brak sieci",
+    "pageText": "Ta strona nie działa bez zasięgu. Tablica „Gdzie jest co” otworzy się z ostatnio pobranym stanem, jeśli była już otwierana na tym telefonie, a ruchy zapisane bez sieci wyślą się same, gdy wróci zasięg.",
+    "pageBoard": "Otwórz tablicę",
     "pending": "⏳ Oczekuje: {count}",
     "pendingTag": "oczekuje",
     "pendingList": "Ruchy czekające na sieć",

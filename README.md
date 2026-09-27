@@ -158,6 +158,12 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   wkładają ruch do IndexedDB z czasem zdarzenia z tej chwili. Nagłówek pokazuje „Oczekuje: N” i wysyła kolejkę
   po kolei, gdy wróci sieć (`registerQueuedMovement`). Ruch, którego serwer nie przyjmie, trafia na listę
   „Do wyjaśnienia” (`/do-wyjasnienia`, `app.rejected_movements`) z powodem i do dzwonka autora.
+- Instalowalna PWA (`src/app/manifest.ts`, `public/sw.js`, zob. `docs/adr/0010`): aplikację dodaje się do
+  ekranu głównego Androida i iPhone'a (ikony w `public/icons`, rysuje je `npx tsx scripts/generate-icons.mts`).
+  Service worker trzyma w telefonie pliki interfejsu, stronę „Brak sieci” i ostatnio pobraną tablicę tej
+  osoby; bez zasięgu tablica otwiera się z kopii z informacją, z której godziny są dane. Wylogowanie kasuje
+  kopię. Pełne otwarcie strony bez sieci działa tylko w zbudowanej aplikacji (`next dev` nie ożywia strony
+  bez połączenia z HMR).
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu

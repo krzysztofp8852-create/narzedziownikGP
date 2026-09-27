@@ -28,6 +28,7 @@ import {
 } from "@/registry/registry";
 import { changeSiteManager } from "./lokalizacje/actions";
 import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
+import { BoardSnapshot } from "./board-snapshot";
 import { ToolReportReview } from "./narzedzia/tool-report-review";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
@@ -257,11 +258,13 @@ export default async function BoardPage(props: PageProps<"/">) {
     canManageTools(session) || canReportTools(session) ? registry.categories() : null,
     canReviewToolReports(session) ? registry.toolReports() : [],
   ]);
+  // Chwila pobrania stanu: tablica z kopii w telefonie pokazuje ją bez sieci (service worker czyta ją z atrybutu).
+  const fetchedAt = new Date().toISOString();
   const { base, sites } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
 
   return (
-    <div className="board">
+    <div className="board" data-fetched-at={fetchedAt}>
       <aside className="board-side" aria-label={t("board.sidebar")}>
         <OperationsPanel
           checklist={checklistData(session, board)}
@@ -292,6 +295,7 @@ export default async function BoardPage(props: PageProps<"/">) {
 
       <div className="board-main">
         <section className="where" aria-labelledby="board-title">
+          <BoardSnapshot fetchedAt={fetchedAt} />
           <div className="page-head">
             <h1 id="board-title" className="display page-title">
               {t("board.title")}

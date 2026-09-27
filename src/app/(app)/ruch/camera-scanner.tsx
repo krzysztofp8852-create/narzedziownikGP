@@ -26,6 +26,14 @@ const REPEAT_AFTER_MS = 2000;
 /** Dłuższy bok klatki dla biblioteki JS: mniejsza klatka to szybszy odczyt, a naklejka i tak wypełnia kadr. */
 const JS_FRAME_SIZE = 640;
 
+/**
+ * Doładowuje bibliotekę jsQR tam, gdzie nie ma natywnego odczytu (Safari), żeby service worker miał ją
+ * w telefonie i skaner działał także bez zasięgu.
+ */
+export async function preloadQrDecoder() {
+  if (!window.BarcodeDetector) await import("jsqr");
+}
+
 /** Natywny BarcodeDetector, gdy umie QR; w przeciwnym razie biblioteka jsQR, ładowana dopiero wtedy. */
 async function createFrameReader(): Promise<ReadFrame> {
   const Native = window.BarcodeDetector;
