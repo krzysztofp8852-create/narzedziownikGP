@@ -91,28 +91,38 @@ export interface Service {
 
 /** Budowy firmy: najpierw aktywne, potem według nazwy. */
 export async function sites(sql: Sql, { activeOnly }: { activeOnly: boolean }): Promise<Site[]> {
-  const rows = await sql<{
-    id: string;
-    name: string;
-    address: string;
-    status: SiteStatus;
-    manager_id: string;
-    manager_name: string;
-    manager_active: boolean;
-  }>(
-    `select l.id, l.name, l.address, l.status, u.user_id as manager_id, u.full_name as manager_name, u.active as manager_active
+  const rows = await sql<SiteRow>(
+    `select ${SITE_COLUMNS}
      from app.locations l join app.users u on u.user_id = l.manager_id
      where l.kind = 'budowa' and ($1 = false or l.status = 'aktywna')
      order by l.status, l.name`,
     [activeOnly],
   );
-  return rows.map((row) => ({
+  return rows.map(siteFromRow);
+}
+
+/** Kolumny budowy `l` z jej kierownikiem `u`, do odczytu przez siteFromRow. */
+export const SITE_COLUMNS =
+  "l.id, l.name, l.address, l.status, u.user_id as manager_id, u.full_name as manager_name, u.active as manager_active";
+
+export interface SiteRow {
+  id: string;
+  name: string;
+  address: string;
+  status: SiteStatus;
+  manager_id: string;
+  manager_name: string;
+  manager_active: boolean;
+}
+
+export function siteFromRow(row: SiteRow): Site {
+  return {
     id: row.id,
     name: row.name,
     address: row.address,
     status: row.status,
     manager: { id: row.manager_id, fullName: row.manager_name, active: row.manager_active },
-  }));
+  };
 }
 
 export async function services(sql: Sql): Promise<Service[]> {

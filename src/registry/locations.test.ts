@@ -118,8 +118,7 @@ describe("zmiana kierownika budowy", () => {
     const kowalskiId = await testbed.givenMember(zawbud, "kierownik");
     const owner = testbed.registry.as(zawbud.ownerId);
     const { locationId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: nowakId });
-    // Zamykanie budów przyjdzie osobnym poleceniem; tu kończymy budowę jako aktor systemowy.
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [locationId]));
+    await owner.closeSite(locationId);
 
     await expect(owner.changeSiteManager(locationId, kowalskiId)).rejects.toMatchObject({ code: "site_finished" });
     const changed = await withActor(testbed.db, zawbud.ownerId, (sql) =>

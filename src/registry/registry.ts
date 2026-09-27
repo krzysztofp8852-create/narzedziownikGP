@@ -16,6 +16,8 @@ import * as notifications from "./notifications";
 import type { Notification } from "./notifications";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
+import * as siteClosing from "./site-closing";
+import type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 import { generateTemporaryPassword } from "./temporary-password";
 import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
@@ -45,6 +47,8 @@ export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./cor
 export { canCorrectTools, TOOL_STATES } from "./corrections";
 export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
 export { canManageLocations } from "./locations";
+export type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
+export { canCloseSite, canForceCloseSites } from "./site-closing";
 export type {
   Movement,
   MovementConflict,
@@ -179,6 +183,19 @@ export interface Registry {
     /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
     addService(input: { name: string }): Promise<{ locationId: string }>;
     /**
+     * Oznacza budowę jako zakończoną: znika z tablicy, a jej historia zostaje. Kierownik zamyka
+     * swoją, właściciel każdą. Gdy zostały na niej narzędzia w obiegu, odmawia (`site_not_empty`).
+     */
+    closeSite(siteId: string): Promise<void>;
+    /**
+     * Zamyka budowę mimo pozostałych narzędzi, z obowiązkowym powodem. Tylko właściciel. Każde
+     * z nich zaginęło na tej budowie pod opieką jej kierownika; wynikiem jest ten ruch zaginięcia,
+     * a przy pustej budowie null.
+     */
+    forceCloseSite(input: ForceCloseSiteInput): Promise<Movement | null>;
+    /** Zakończone budowy, od ostatnio zamkniętej, z datą i osobą, która zamknęła. */
+    finishedSites(): Promise<FinishedSite[]>;
+    /**
      * Wydanie, zwrot, przeniesienie, wysłanie do serwisu albo przyjęcie z serwisu jednego lub wielu
      * narzędzi. Gdy któreś narzędzie nie jest w lokalizacji źródłowej, odrzuca cały ruch błędem
      * MovementConflictError. Powiadomienia z wyniku wysyła port powiadomień, tylko przy pierwszym zapisie.
@@ -253,14 +270,14 @@ export function createRegistry(deps: Deps): Registry {
        * wynik z ruchu w tej samej transakcji.
        */
       const movementCommand =
-        <I extends { operationId: string }, R>(
-          command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>,
-          result: (sql: Sql, movement: Movement) => Promise<R>,
+        <I extends { operationId: string }, R, M extends Movement | null = Movement>(
+          command: (sql: Sql, session: Session, input: I, now: Date) => Promise<M>,
+          result: (sql: Sql, movement: M) => Promise<R>,
         ) =>
         async (input: I): Promise<{ result: R; replayed: boolean }> => {
           const replay = (sql: Sql, session: Session) =>
             movements.movementByOperation(sql, session, input.operationId).then(async (movement) =>
-              movement ? { result: await result(sql, movement), replayed: true } : null,
+              movement ? { result: await result(sql, movement as M), replayed: true } : null,
             );
           const attempt = () =>
             asMember(async (sql, session) => {
@@ -286,9 +303,11 @@ export function createRegistry(deps: Deps): Registry {
         };
       /** Polecenie ruchu, którego wynikiem jest sam ruch (bez powiadomień). */
       const movementOnlyCommand =
-        <I extends { operationId: string }>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<Movement>) =>
+        <I extends { operationId: string }, M extends Movement | null = Movement>(
+          command: (sql: Sql, session: Session, input: I, now: Date) => Promise<M>,
+        ) =>
         async (input: I) =>
-          (await movementCommand(command, async (_sql, movement) => movement)(input)).result;
+          (await movementCommand(command, async (_sql, movement: M) => movement)(input)).result;
 
       return {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
@@ -466,6 +485,18 @@ export function createRegistry(deps: Deps): Registry {
             locations.requireLocationManager(session);
             return locations.addService(sql, session, input, deps.clock.now());
           }),
+        closeSite: async (siteId) => {
+          const attempt = () => asMember((sql, session) => siteClosing.closeSite(sql, session, siteId, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległy ruch dowiózł narzędzie na budowę; drugie podejście je zobaczy.
+            if (error instanceof movements.ConcurrentMoveError) return attempt();
+            throw error;
+          }
+        },
+        forceCloseSite: movementOnlyCommand(siteClosing.forceCloseSite),
+        finishedSites: () => asMember((sql) => siteClosing.finishedSites(sql)),
         registerMovement: async (input) => {
           const { result, replayed } = await movementCommand(movements.registerMovement, async (sql, movement) => ({
             ...movement,

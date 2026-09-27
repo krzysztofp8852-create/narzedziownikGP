@@ -241,7 +241,7 @@ describe("skutki cofnięcia", () => {
     const z = await givenZawbud();
     await issue(z, z.nowakId, [z.s01]);
     const returned = await giveBack(z, z.nowakId, [z.s01]);
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [z.ratajeId]));
+    await z.owner.closeSite(z.ratajeId);
 
     await expect(undo(z.nowakId, returned.id)).rejects.toMatchObject({ code: "site_finished" });
     expect(await whereIs(z, z.s01)).toBe("Magazyn Swarzędz");
@@ -311,7 +311,7 @@ describe("korekta", () => {
     const { base: foreignBase } = await testbed.registry.as(budrex.ownerId).whereIsWhat();
     const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik");
     const { locationId: finishedId } = await z.owner.addSite({ name: "Stara", address: "ul. Stara 1", managerId: kowalskiId });
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [finishedId]));
+    await z.owner.closeSite(finishedId);
     const reason = "Sprawdzone na miejscu";
 
     await expect(correct(z.zawbud.ownerId, { toolId: z.s01, locationId: z.baseId, reason })).rejects.toMatchObject({ code: "invalid_input" });
@@ -579,7 +579,7 @@ describe("uprawnienia w bazie", () => {
     const z = await givenZawbud();
     await issue(z, z.nowakId, [z.s01]);
     const returned = await giveBack(z, z.nowakId, [z.s01]);
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [z.ratajeId]));
+    await z.owner.closeSite(z.ratajeId);
 
     await expect(
       insertMovement(
@@ -652,7 +652,7 @@ describe("równoległe cofnięcia", () => {
     const z = await givenZawbud();
     await issue(z, z.nowakId, [z.s01]);
     const returned = await giveBack(z, z.nowakId, [z.s01]);
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [z.ratajeId]));
+    await z.owner.closeSite(z.ratajeId);
 
     const recent = await testbed.registry.as(z.nowakId).recentMovements();
 

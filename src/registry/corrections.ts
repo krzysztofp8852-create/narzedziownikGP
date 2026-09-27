@@ -50,7 +50,8 @@ export async function correctTool(sql: Sql, session: Session, input: CorrectTool
   const target = input.locationId === undefined ? await location(sql, tool.locationId) : await location(sql, input.locationId);
   if (!target) throw new RegistryError("invalid_input");
   if (target.id === tool.locationId && state === tool.state) throw new RegistryError("invalid_input");
-  if (target.id !== tool.locationId && target.kind === "budowa" && target.status !== "aktywna") {
+  // Na zakończoną budowę nic już nie trafia, a narzędzie w obiegu na niej nie zostaje.
+  if (target.kind === "budowa" && target.status !== "aktywna" && (target.id !== tool.locationId || state === "w_obiegu")) {
     throw new RegistryError("site_finished");
   }
 

@@ -486,7 +486,7 @@ describe("dane ruchu", () => {
     const { locationId: serviceId } = await z.owner.addService({ name: "Serwis Hilti" });
     const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik");
     const { locationId: finishedId } = await z.owner.addSite({ name: "Stara", address: "ul. Stara 1", managerId: kowalskiId });
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [finishedId]));
+    await z.owner.closeSite(finishedId);
     const register = (overrides: Partial<Parameters<ReturnType<typeof testbed.registry.as>["registerMovement"]>[0]>) =>
       z.owner.registerMovement({
         operationId: randomUUID(),

@@ -27,7 +27,7 @@ describe("podgląd importu", () => {
   it("pokazuje błędy każdego wiersza i niczego nie zapisuje", async () => {
     const z = await givenZawbud();
     await z.owner.addTool({ operationId: randomUUID(), code: "H-01", name: "Młot Hilti", categoryId: z.hammers.id });
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [z.ratajeId]));
+    await z.owner.closeSite(z.ratajeId);
 
     const preview = await z.owner.previewToolImport([
       { code: "H-02", name: "Młot Bosch", category: "Młoty", value: "1 200,50 zł" },

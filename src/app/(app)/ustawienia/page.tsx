@@ -11,7 +11,7 @@ import { SettingsSection } from "./settings-section";
 
 export const metadata: Metadata = { title: t("settingsPage.title") };
 
-/** Sprawy firmy, które nie są codzienną pracą na tablicy: zespół, serwisy, próg alarmu, naklejki QR, zakończone budowy. */
+/** Sprawy firmy, które nie są codzienną pracą na tablicy: zespół, serwisy, próg alarmu, naklejki QR. */
 export default async function SettingsPage() {
   const session = await requireSession();
   if (!canManageSettings(session)) redirect("/");
@@ -22,7 +22,6 @@ export default async function SettingsPage() {
     registry.settings(),
     canPrintStickers(session) ? registry.stickerCandidates() : null,
   ]);
-  const finishedSites = locations.sites.filter((site) => site.status === "zakonczona");
 
   return (
     <>
@@ -51,21 +50,6 @@ export default async function SettingsPage() {
         )}
         <ServicesSection services={locations.services} />
         <TeamSection session={session} members={members} />
-        {finishedSites.length > 0 && (
-          <section className="company-card" aria-labelledby="finished-sites">
-            <h2 id="finished-sites" className="display section-title">
-              {t("settingsPage.finishedSites")}
-            </h2>
-            <ul className="member-list">
-              {finishedSites.map((site) => (
-                <li key={site.id} className="member member-inactive">
-                  <strong>{site.name}</strong>
-                  <p className="muted member-email">{site.address}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
       </div>
     </>
   );

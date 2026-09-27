@@ -186,7 +186,7 @@ describe("dane przeniesienia", () => {
     const z = await givenZawbud();
     await givenOnWinogrady(z);
     const { locationId: finishedId } = await z.owner.addSite({ name: "Stara", address: "ul. Stara 1", managerId: z.nowakId });
-    await testbed.db.transaction((sql) => sql("update app.locations set status = 'zakonczona' where id = $1", [finishedId]));
+    await z.owner.closeSite(finishedId);
 
     await expect(move(z.nowakId, "przeniesienie", z.winogradyId, finishedId, [z.s01])).rejects.toMatchObject({ code: "site_finished" });
     await expect(move(z.kowalskiId, "przeniesienie", z.winogradyId, z.winogradyId, [z.s01])).rejects.toMatchObject({

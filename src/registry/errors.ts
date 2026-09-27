@@ -14,6 +14,7 @@ export type RegistryErrorCode =
   | "prefix_taken"
   | "invalid_manager"
   | "site_finished"
+  | "site_not_empty"
   | "movement_conflict"
   | "not_undoable"
   | "undo_expired"

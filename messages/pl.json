@@ -100,8 +100,7 @@
   },
   "settingsPage": {
     "title": "Ustawienia",
-    "back": "← Wróć do tablicy",
-    "finishedSites": "Zakończone budowy"
+    "back": "← Wróć do tablicy"
   },
   "team": {
     "title": "Zespół",
@@ -150,6 +149,7 @@
     "prefix_taken": "Ten prefiks ma już inna kategoria.",
     "invalid_manager": "Kierownikiem budowy może być tylko aktywny kierownik z Twojej firmy.",
     "site_finished": "Ta budowa jest zakończona.",
+    "site_not_empty": "Na budowie zostały narzędzia. Zwróć je na bazę albo przenieś, zanim ją zamkniesz.",
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
     "movement_conflict": "Ruch odrzucony: stan narzędzi zmienił się w międzyczasie. Nic nie zostało zapisane.",
     "not_undoable": "Tego ruchu nie da się cofnąć. Ewidencję ustawi właściciel korektą.",
@@ -600,5 +600,36 @@
     "settingsHint": "Naklejki z kodem QR do oklejenia sprzętu. Nieoklejone: {count} szt.",
     "settingsLink": "Drukuj naklejki →",
     "toolsLink": "Naklejki QR do wydruku →"
+  },
+  "siteClosing": {
+    "close": "Oznacz budowę jako zakończoną",
+    "title": "Zamykanie budowy {name}",
+    "back": "← Wróć do tablicy",
+    "emptyHint": "Na budowie nie zostało żadne narzędzie w obiegu. Po zamknięciu budowa zniknie z tablicy, a jej historia zostanie.",
+    "submit": "Oznacz jako zakończoną",
+    "confirm": "Zamknąć budowę {name}? Nie da się jej potem otworzyć ponownie.",
+    "confirmYes": "Tak, zamknij",
+    "cancel": "Anuluj",
+    "closing": "Zamykanie…",
+    "remainingTitle": "Zostały na budowie",
+    "remainingHint": "Budowę zamkniesz, gdy nie zostanie na niej żadne narzędzie. Zwróć każde na bazę albo przenieś na inną budowę.",
+    "managerHint": "Jeśli czegoś brakuje, zamknięcie z powodem może wymusić właściciel.",
+    "returnTool": "Zwróć na bazę",
+    "returnAll": "Zwróć wszystkie na bazę ({count} szt.)",
+    "transferTo": "Przenieś {code} na budowę",
+    "transfer": "Przenieś",
+    "sitePlaceholder": "Wybierz budowę",
+    "moving": "Zapisywanie…",
+    "forceTitle": "Wymuś zamknięcie",
+    "forceHint": "Pozostałe narzędzia ({count} szt.) zostaną oznaczone jako zaginione na tej budowie, a odpowiadać za nie będzie {manager}.",
+    "reason": "Powód",
+    "forceReasonPlaceholder": "np. inwestor przejął plac, sprzętu nie ma",
+    "forceSubmit": "Zamknij i oznacz jako zaginione",
+    "forceConfirm": "Oznaczyć {count} szt. jako zaginione i zamknąć budowę {name}?",
+    "finishedTitle": "Zakończone budowy",
+    "finishedLink": "Zakończone budowy →",
+    "finishedEmpty": "Nie ma jeszcze zakończonych budów.",
+    "finishedOn": "Zamknięcie: {when}, {name}",
+    "history": "Historia budowy →"
   }
 }

@@ -10,6 +10,7 @@ import { requireSession } from "@/lib/auth";
 import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
 import {
+  canCloseSite,
   canImportTools,
   canManageLocations,
   canManageTools,
@@ -19,6 +20,7 @@ import {
   canSeeValues,
   type Category,
   type RecentMovement,
+  type Session,
   type SiteManagerCandidate,
   type ToolOnBoard,
   type ToolReport,
@@ -183,7 +185,15 @@ function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   );
 }
 
-function SiteCard({ site, managers }: { site: WhereIsWhat["sites"][number]; managers: SiteManagerCandidate[] | null }) {
+function SiteCard({
+  site,
+  managers,
+  session,
+}: {
+  site: WhereIsWhat["sites"][number];
+  managers: SiteManagerCandidate[] | null;
+  session: Session;
+}) {
   return (
     <section className="location location-site" aria-labelledby={`location-${site.id}`}>
       <div className="location-head">
@@ -204,6 +214,13 @@ function SiteCard({ site, managers }: { site: WhereIsWhat["sites"][number]; mana
           <summary>{t("locations.changeManager")}</summary>
           <ChangeManagerForm action={changeSiteManager.bind(null, site.id)} site={site} managers={managers} />
         </details>
+      )}
+      {canCloseSite(session, site) && (
+        <p>
+          <Link className="button button-quiet button-small" href={`/budowy/${site.id}/zamykanie`}>
+            {t("siteClosing.close")}
+          </Link>
+        </p>
       )}
     </section>
   );
@@ -326,9 +343,12 @@ export default async function BoardPage() {
               </div>
             )}
             {sites.map((site) => (
-              <SiteCard key={site.id} site={site} managers={managers} />
+              <SiteCard key={site.id} site={site} managers={managers} session={session} />
             ))}
             {managers && <AddSiteTile managers={managers} />}
+          </div>
+          <div className="section-head">
+            <Link href="/budowy/zakonczone">{t("siteClosing.finishedLink")}</Link>
           </div>
 
           <Services services={board.services} />
