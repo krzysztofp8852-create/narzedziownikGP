@@ -52,7 +52,8 @@ test("kierownik bez zasięgu wydaje dwie szlifierki: ruchy czekają w kolejce, p
   await entry.getByRole("button", { name: "Pokaż" }).click();
 
   await expect(page).toHaveURL(/\/do-wyjasnienia$/);
-  const toClarify = page.getByRole("list", { name: "Do wyjaśnienia" }).getByRole("listitem");
+  // Tylko pozycje listy: każda ma w środku własną listę konfliktów („S-02 jest teraz: …”).
+  const toClarify = page.getByRole("list", { name: "Do wyjaśnienia" }).locator(":scope > li");
   await expect(toClarify).toHaveCount(1);
   await expect(toClarify).toContainText("S-02");
   await expect(toClarify).toContainText("stan narzędzi zmienił się w międzyczasie");
