@@ -1705,3 +1705,27 @@ a.tool-row:hover .tool-row-name {
 .report-row {
   grid-template-columns: auto 1fr;
 }
+
+/* Panel super-admina */
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 0 var(--gutter) 10px;
+  max-width: var(--page-width);
+  margin: 0 auto;
+  font-weight: 700;
+}
+fieldset.company-card {
+  min-width: 0;
+  margin: 0;
+}
+fieldset.company-card legend.section-title {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+.preserve-lines {
+  white-space: pre-line;
+}

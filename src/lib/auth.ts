@@ -39,12 +39,29 @@ export const currentSession = cache(async (): Promise<Session | null> => {
   return userId ? getRegistry().as(userId).session() : null;
 });
 
-/** Sesja członka firmy: bez logowania prowadzi do logowania, a bez konta w firmie do „Brak dostępu”. */
+/** Czy zalogowany użytkownik jest super-adminem (GP Engineering). */
+const currentUserIsSuperAdmin = cache(async (): Promise<boolean> => {
+  const userId = await currentUserId();
+  return userId ? getRegistry().superAdmin(userId).isSuperAdmin() : false;
+});
+
+/**
+ * Sesja członka firmy: bez logowania prowadzi do logowania, super-admina do jego panelu,
+ * a bez konta w firmie do „Brak dostępu”.
+ */
 export async function requireMember(): Promise<Session> {
   if (!(await currentUserId())) redirect("/logowanie");
   const session = await currentSession();
-  if (!session) redirect("/brak-dostepu");
+  if (!session) redirect((await currentUserIsSuperAdmin()) ? "/super-admin" : "/brak-dostepu");
   return session;
+}
+
+/** Identyfikator zalogowanego super-admina; innych prowadzi do logowania albo na ich stronę główną. */
+export async function requireSuperAdmin(): Promise<string> {
+  const userId = await currentUserId();
+  if (!userId) redirect("/logowanie");
+  if (!(await currentUserIsSuperAdmin())) redirect("/");
+  return userId;
 }
 
 /** Sesja do stron aplikacji: jak requireMember, a z hasłem tymczasowym prowadzi do jego zmiany. */

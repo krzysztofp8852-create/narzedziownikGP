@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import { deactivateMember, type MemberActionState, resetMemberPassword } from "./actions";
-import { TemporaryPassword } from "./temporary-password";
+import { TemporaryPassword } from "@/components/temporary-password";
 
 /** Przyciski właściciela przy aktywnym kierowniku lub magazynierze. */
 export function MemberActions({ memberId, fullName }: { memberId: string; fullName: string }) {

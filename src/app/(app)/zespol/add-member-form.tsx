@@ -5,7 +5,7 @@ import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import type { MemberRole } from "@/registry/registry";
 import { addMember } from "./actions";
-import { TemporaryPassword } from "./temporary-password";
+import { TemporaryPassword } from "@/components/temporary-password";
 
 export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
   const [state, formAction, pending] = useActionState(addMember, {});
