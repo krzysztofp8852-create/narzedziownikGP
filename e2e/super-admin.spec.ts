@@ -80,6 +80,7 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
 
   // Właściciel nowej firmy loguje się hasłem tymczasowym z panelu, a panel nie jest dla niego.
   await page.getByRole("button", { name: "Wyloguj" }).click();
+  await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, ownerEmail, temporaryPassword!);
   await expect(page).toHaveURL(/\/zmien-haslo$/);
   await page.goto("/super-admin");
