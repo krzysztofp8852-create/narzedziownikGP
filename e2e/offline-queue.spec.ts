@@ -2,7 +2,11 @@ import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 
 function tsx(script: string, ...args: string[]) {
-  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", script, ...args], { encoding: "utf8" });
+  // Worker Playwrighta ma FORCE_COLOR=1; bez tego wyjście skryptu mogłoby zawierać kody kolorów.
+  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", script, ...args], {
+    encoding: "utf8",
+    env: { ...process.env, FORCE_COLOR: "0" },
+  });
   return output.trim().split("\n").at(-1)!;
 }
 

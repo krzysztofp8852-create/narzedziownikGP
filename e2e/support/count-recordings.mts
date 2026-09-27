@@ -8,5 +8,6 @@ const { data, error } = await createClient(publicEnv.supabaseUrl(), serverEnv.su
   .storage.from(RECORDINGS_BUCKET)
   .list(companyId);
 if (error) throw error;
-console.log(data.length);
+// Tekst, nie liczba: console.log koloruje liczby, gdy jest FORCE_COLOR (Playwright ustawia je workerom).
+console.log(String(data.length));
 process.exit(0);
