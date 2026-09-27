@@ -2,6 +2,7 @@ import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { NotificationContent } from "@/registry/registry";
 import { historySearch } from "./history-filters";
+import { reportLink, reportText } from "./report-text";
 
 /** Tekst powiadomienia w dzwonku: nagłówek i jedno zdanie szczegółów. */
 export function notificationText(notification: NotificationContent): { title: string; body: string } {
@@ -41,6 +42,9 @@ export function notificationText(notification: NotificationContent): { title: st
           reason: t(`errors.${notification.reason}`),
         }),
       };
+    case "raport_tygodniowy":
+    case "raport_piatkowy":
+      return reportText(notification.report);
   }
 }
 
@@ -57,6 +61,9 @@ export function notificationLink(notification: NotificationContent): string {
       return "/";
     case "ruch_odrzucony":
       return "/do-wyjasnienia";
+    case "raport_tygodniowy":
+    case "raport_piatkowy":
+      return reportLink(notification.report);
   }
 }
 

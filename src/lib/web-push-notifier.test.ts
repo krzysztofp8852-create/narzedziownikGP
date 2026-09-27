@@ -40,6 +40,31 @@ describe("powiadomienie push z wpisu dzwonka", () => {
     expect(body.length).toBeLessThanOrEqual(300);
     expect(body.endsWith("…")).toBe(true);
   });
+
+  it("raport piątkowy: ile sprzętu i gdzie, a kliknięcie otwiera wpis dzwonka, który prowadzi do raportu", () => {
+    const tool = (code: string) => ({ id: code, code, name: "Szlifierka", days: 3 });
+    const push = pushNotification({
+      window: "dzwonek",
+      notificationId: "raport-1",
+      notification: {
+        kind: "raport_piatkowy",
+        report: {
+          kind: "piatkowy",
+          day: "2026-04-10",
+          locations: [
+            { id: "r", name: "Rataje", kind: "budowa", manager: { id: "n", fullName: "Adam Nowak" }, tools: [tool("S-01"), tool("S-02")] },
+            { id: "w", name: "Winogrady", kind: "budowa", manager: { id: "k", fullName: "Jan Kowalski" }, tools: [tool("S-03")] },
+          ],
+        },
+      },
+    });
+    expect(push).toEqual({
+      title: "Przed weekendem poza bazą: 3 szt.",
+      body: "Rataje: 2 szt. · Winogrady: 1 szt.",
+      url: "/dzwonek/raport-1",
+      tag: "dzwonek:raport-1",
+    });
+  });
 });
 
 describe("kanał Web Push", () => {

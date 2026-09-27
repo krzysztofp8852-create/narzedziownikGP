@@ -19,6 +19,8 @@ import type { EmailedNotification, ToolsTakenNotification } from "./notification
 import * as push from "./push";
 import type { PushCopy, PushSubscriptionData } from "./push";
 import * as queuedMovements from "./queued-movements";
+import * as reports from "./reports";
+import type { FridayReport, Report, ReportKind, WeeklyReport } from "./reports";
 import type { RejectedMovement } from "./queued-movements";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
@@ -70,6 +72,7 @@ export type {
 export { canMoveEverywhere, canMoveTools, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
 export type {
   EmailedNotification,
+  FridayReportNotification,
   MovementRejectedNotification,
   Notification,
   NotificationContent,
@@ -77,7 +80,10 @@ export type {
   ThresholdExceededNotification,
   ThresholdsExceededNotification,
   ToolsTakenNotification,
+  WeeklyReportNotification,
 } from "./notifications";
+export type { FridayReport, Report, ReportKind, WeeklyReport } from "./reports";
+export { isReportKind } from "./reports";
 export type { Bell, BellEntry } from "./bell";
 export type { PushMessage, PushSubscriptionData } from "./push";
 export type { RejectedMovement } from "./queued-movements";
@@ -136,6 +142,12 @@ export interface Registry {
      * (każde raz na pobyt). Kierownik budowy dostaje powiadomienie o każdym, a właściciel jedno zbiorcze.
      */
     notifyExceededThresholds(): Promise<{ tools: number }>;
+    /**
+     * Zadanie harmonogramu: raporty, na które przyszła pora w Polsce (tygodniowy od poniedziałku 7:00, piątkowy
+     * od piątku 16:00, do końca tego dnia). Każda firma dostaje każdy raport raz na dzień: do dzwonka, push
+     * i e-mailem (e-mail tylko właściciel). Zwraca, ile firm dostało który raport.
+     */
+    sendDueReports(): Promise<{ weekly: number; friday: number }>;
   };
   /** Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. */
   as(userId: string): {
@@ -283,6 +295,15 @@ export interface Registry {
     subscribeToPush(subscription: PushSubscriptionData): Promise<void>;
     /** Wyłącza powiadomienia push w tej przeglądarce aktora (np. przy wylogowaniu). Cudzej nie rusza. */
     unsubscribeFromPush(endpoint: string): Promise<void>;
+    /**
+     * Raport tygodniowy firmy w tej chwili: narzędzia ponad progiem, zaginione, kwota poza bazą wobec raportu
+     * z poprzedniego tygodnia, zgłoszenia narzędzi i sprzęt najdłużej nieużywany. Tylko właściciel.
+     */
+    weeklyReport(): Promise<WeeklyReport>;
+    /** Raport piątkowy w tej chwili: sprzęt poza bazą według lokalizacji. Właściciel całą firmę, kierownik swoje. */
+    fridayReport(): Promise<FridayReport>;
+    /** Raport z dzwonka aktora z danego dnia (RRRR-MM-DD), tak jak go wtedy dostał; null, gdy go nie dostał. */
+    sentReport(kind: ReportKind, day: string): Promise<Report | null>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
     /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
@@ -319,6 +340,24 @@ export function createRegistry(deps: Deps): Registry {
           }
         }
         return { tools };
+      },
+      sendDueReports: async () => {
+        const now = deps.clock.now();
+        const sent = { weekly: 0, friday: 0 };
+        const due = reports.dueReports(now);
+        if (due.length === 0) return sent;
+        const companyIds = await deps.db.transaction((sql) => reports.companies(sql));
+        // Każdy raport każdej firmy osobno: błąd jednego nie zabiera pozostałych.
+        for (const companyId of companyIds) {
+          for (const { kind } of due) {
+            try {
+              if (await sendReport(deps, companyId, kind, now)) sent[kind === "tygodniowy" ? "weekly" : "friday"] += 1;
+            } catch (error) {
+              console.error(`Nie wysłano raportu (${kind}) firmy ${companyId}`, error);
+            }
+          }
+        }
+        return sent;
       },
     }),
     as: (userId) => {
@@ -625,6 +664,9 @@ export function createRegistry(deps: Deps): Registry {
         markAllNotificationsRead: () => asMember((sql, session) => bell.markAllRead(sql, session, deps.clock.now())),
         subscribeToPush: (subscription) => asMember((sql) => push.subscribe(sql, subscription, deps.clock.now())),
         unsubscribeFromPush: (endpoint) => asMember((sql, session) => push.unsubscribe(sql, session, endpoint)),
+        weeklyReport: () => asMember((sql, session) => reports.weeklyReport(sql, session, deps.clock.now())),
+        fridayReport: () => asMember((sql, session) => reports.fridayReport(sql, session, deps.clock.now())),
+        sentReport: (kind, day) => asMember((sql, session) => reports.sentReport(sql, session, kind, day)),
         settings: () =>
           asMember((sql, session) => {
             settings.requireSettingsManager(session);
@@ -641,7 +683,26 @@ export function createRegistry(deps: Deps): Registry {
 }
 
 /**
- * Wysyła powiadomienia już zapisanego ruchu. Ruch się nie cofnie, więc błąd wysyłki tylko odnotowujemy.
+ * Raport firmy z tej chwili: składa go (tak jak widzi firmę) jej najdawniej dodany aktywny właściciel, a zapis
+ * w dzwonkach idzie w transakcji systemowej, raz na dzień. Kopie push i e-mail wysyła po zatwierdzeniu.
+ * Zwraca, czy raport właśnie poszedł.
+ */
+async function sendReport(deps: Deps, companyId: string, kind: ReportKind, now: Date): Promise<boolean> {
+  const [owner] = await deps.db.transaction((sql) => reports.owners(sql, companyId));
+  if (!owner) return false;
+  const report = await withActor(deps.db, owner.userId, async (sql) => {
+    const session = await loadSession(sql, owner.userId);
+    if (!session) throw new RegistryError("no_access");
+    return kind === "tygodniowy" ? reports.weeklyReport(sql, session, now) : reports.fridayReport(sql, session, now);
+  });
+  const result = await deps.db.transaction((sql) => reports.deliverReport(sql, companyId, report, now));
+  await Promise.all([sendNotifications(deps.notifier, result.emails), sendPushCopies(deps, result.copies)]);
+  return result.delivered;
+}
+
+/**
+ * Wysyła e-maile z powiadomieniami już zapisanego zdarzenia (ruchu, raportu). Zdarzenie się nie cofnie, więc błąd
+ * wysyłki tylko odnotowujemy.
  */
 async function sendNotifications(notifier: Notifier, list: EmailedNotification[]) {
   await Promise.all(

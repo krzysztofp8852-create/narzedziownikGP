@@ -694,5 +694,48 @@
     "when": "Zapisany w telefonie {recorded}, odrzucony {rejected}",
     "resolve": "Wyjaśnione",
     "back": "← Wróć do tablicy"
+  },
+  "reports": {
+    "weeklyTitle": "Raport tygodniowy",
+    "fridayTitle": "Raport piątkowy",
+    "back": "← Wróć do dzwonka",
+    "dayOf": "Stan na {day}",
+    "notFound": "Nie ma tu takiego raportu. Raporty przychodzą do dzwonka: tygodniowy w poniedziałek o 7:00, piątkowy w piątek o 16:00.",
+    "offBase": "Sprzęt poza bazą",
+    "previousWeek": "Tydzień temu: {value}",
+    "change": "Zmiana: {change}",
+    "noChange": "bez zmian",
+    "noPrevious": "Brak raportu z poprzedniego tygodnia do porównania.",
+    "overThreshold": "Ponad progiem {days} dni",
+    "overThresholdEmpty": "Żadne narzędzie nie stoi na budowie dłużej niż próg.",
+    "overThresholdItem": "{place}, od {days} · kierownik: {manager}",
+    "lost": "Zaginione",
+    "lostEmpty": "Nic nie zaginęło.",
+    "lostItem": "od {days} · ostatnio: {place}",
+    "lostResponsible": " · odpowiadał: {name}",
+    "toolReports": "Zgłoszenia narzędzi do decyzji",
+    "toolReportsEmpty": "Nie ma zgłoszeń czekających na decyzję.",
+    "toolReportsItem": "{place} · zgłosił: {name} · czeka {days}",
+    "toolReportsLink": "Rozpatrz na tablicy →",
+    "longestUnused": "Najdłużej nieużywane na bazie",
+    "longestUnusedEmpty": "Na bazie nie ma sprzętu.",
+    "longestUnusedItem": "nie wyjeżdżało od {days}",
+    "fridayIntro": "Sprzęt poza bazą przed weekendem. Zwieź na bazę, czego nie będzie trzeba w poniedziałek.",
+    "fridayEmpty": "Cały sprzęt jest na bazie albo w serwisie.",
+    "fridayLocation": "{place} · kierownik: {manager}",
+    "toolDays": "{days} na miejscu",
+    "open": "Otwórz raport w aplikacji: {url}",
+    "openButton": "Otwórz raport w aplikacji",
+    "bell": {
+      "weekly": "Raport tygodniowy: poza bazą {value}",
+      "weeklyChange": "Raport tygodniowy: poza bazą {value} ({change} w tydzień)",
+      "weeklyBody": "Ponad progiem: {over} · zaginione: {lost} · zgłoszenia do decyzji: {reports}",
+      "friday": "Przed weekendem poza bazą: {count} szt.",
+      "fridayLocation": "{place}: {count} szt."
+    },
+    "email": {
+      "weeklySubject": "Raport tygodniowy {day}: poza bazą {value}",
+      "fridaySubject": "Przed weekendem poza bazą: {count} szt. ({day})"
+    }
   }
 }

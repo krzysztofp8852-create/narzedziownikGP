@@ -31,3 +31,10 @@ export function warsawWallClock(date: Date): Date {
 export function formatDay(date: Date): string {
   return warsawWallClock(date).toISOString().slice(0, 10);
 }
+
+const calendarDay = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeZone: "UTC" });
+
+/** Dzień zapisany jako RRRR-MM-DD, np. „6.04.2026”. */
+export function formatCalendarDay(day: string): string {
+  return calendarDay.format(new Date(`${day}T00:00:00Z`));
+}

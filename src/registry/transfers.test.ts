@@ -98,7 +98,8 @@ describe("uprawnienia do przeniesienia", () => {
     expect(testbed.notifier.sent).toEqual([
       expect.objectContaining({ recipient: expect.objectContaining({ fullName: "Jan Kowalski" }), takenBy: "Ewa Magazyn" }),
     ]);
-    expect(testbed.notifier.sent[0].tools.map((tool) => tool.code)).toEqual(["S-01", "S-02"]);
+    const [taken] = testbed.notifier.sent;
+    expect(taken.kind === "narzedzia_zabrane" && taken.tools.map((tool) => tool.code)).toEqual(["S-01", "S-02"]);
   });
 
   it("kierownik nie zapisze przeniesienia na cudzą budowę nawet z pominięciem Rejestru", async () => {

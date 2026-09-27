@@ -209,8 +209,11 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   Scribe (`ELEVENLABS_API_KEY`, model `scribe_v2`, inny w `ELEVENLABS_MODEL`). Kubełek `nagrania` zakłada
   migracja. Lokalnie i w teście dymnym `TRANSCRIPTION_PROVIDER=staly` z `TRANSCRIPTION_FIXED_TEXT` udaje
   transkrypcję stałym tekstem.
-- Zadania harmonogramu: Vercel Cron z `vercel.json` (codziennie o 5:00 UTC `/zadania/progi`) wymaga
-  `CRON_SECRET` w zmiennych Vercel; bez niego zadanie odpowiada 401. Lokalnie można je wywołać
-  `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/zadania/progi`.
+- Zadania harmonogramu: Vercel Cron z `vercel.json` (codziennie o 5:00 UTC `/zadania/progi`, a raporty
+  `/zadania/raporty` w poniedziałek o 5:00 i 6:00 UTC oraz w piątek o 14:00 i 15:00 UTC, bo 7:00 i 16:00 czasu
+  polskiego wypadają zimą i latem o różnych godzinach UTC) wymaga `CRON_SECRET` w zmiennych Vercel; bez niego
+  zadanie odpowiada 401. Lokalnie można je wywołać
+  `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/zadania/progi`. Link do raportu w e-mailu
+  bierze adres z `APP_URL`; bez niego e-mail ma sam raport.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.
