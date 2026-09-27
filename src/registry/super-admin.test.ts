@@ -33,7 +33,7 @@ describe("zakładanie firmy w panelu super-admina", () => {
       name: "Zawbud",
       invoice: { name: "Zawbud Jan Kowalski", taxId: "7781234563", address: "ul. Polna 3\n60-001 Poznań" },
       owner: { fullName: "Jan Kowalski", email: "jan@zawbud.pl" },
-      tier: { id: "sredni", name: "Średni", toolLimit: 150, monthlyPrice: 99 },
+      tier: { id: "sredni", name: "Średni", toolLimit: 300, yearlyPrice: 500 },
       toolCount: 0,
       paidUntil: "2026-03-31",
       readOnlyFrom: "2026-04-15",
@@ -185,7 +185,18 @@ describe("abonament firmy", () => {
       paidUntil: "2026-04-30",
       readOnlyFrom: "2026-05-15",
       status: "aktywna",
-      tier: { id: "duzy", name: "Duży", toolLimit: 300, monthlyPrice: 199 },
+      tier: { id: "duzy", name: "Duży", toolLimit: 1000, yearlyPrice: 1000 },
+    });
+  });
+
+  it("ponad 1000 narzędzi firma przechodzi na plan indywidualny, bez limitu i z ceną ustalaną osobno", async () => {
+    const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
+    const { companyId } = await admin.createCompany({ ...zawbud, tier: "duzy" });
+
+    await admin.changeTier(companyId, "indywidualny");
+
+    expect(await admin.company(companyId)).toMatchObject({
+      tier: { id: "indywidualny", name: "Indywidualny", toolLimit: null, yearlyPrice: null },
     });
   });
 

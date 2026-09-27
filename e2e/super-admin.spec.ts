@@ -55,7 +55,7 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await page.getByRole("link", { name: "Wszystkie firmy" }).click();
   const row = page.getByTestId("company-row").filter({ hasText: companyName });
   await expect(row).toContainText("Średni");
-  await expect(row).toContainText("0 / 150");
+  await expect(row).toContainText("0 / 300");
   await expect(row).toContainText("brak wpłaty");
   await expect(row).toContainText("Czeka na wpłatę");
 

@@ -7,7 +7,7 @@
 create table app.subscriptions (
   company_id uuid primary key references app.companies (id) on delete restrict,
   -- Progi i ich limity narzędzi zna Rejestr (src/registry/subscriptions.ts).
-  tier text not null check (tier in ('maly', 'sredni', 'duzy')),
+  tier text not null check (tier in ('maly', 'sredni', 'duzy', 'indywidualny')),
   -- Ostatni opłacony dzień; null, dopóki nie zaksięgowano pierwszego przelewu.
   paid_until date,
   manual_read_only boolean not null default false,

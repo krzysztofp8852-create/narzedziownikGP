@@ -23,12 +23,14 @@ export function PaidUntil({ company }: { company: ManagedCompany }) {
   return company.paidUntil ? formatCalendarDay(company.paidUntil) : <span className="muted">{t("superAdmin.notPaid")}</span>;
 }
 
-/** Liczba narzędzi wobec limitu progu, z ostrzeżeniem po przekroczeniu. */
+/** Liczba narzędzi wobec limitu progu, z ostrzeżeniem po przekroczeniu; plan indywidualny nie ma limitu. */
 export function ToolUsage({ company }: { company: ManagedCompany }) {
+  const limit = company.tier.toolLimit;
+  if (limit === null) return company.toolCount;
   return (
     <>
-      {t("superAdmin.toolUsage", { count: company.toolCount, limit: company.tier.toolLimit })}
-      {company.toolCount > company.tier.toolLimit && <span className="tag tag-alarm">{t("superAdmin.overLimit")}</span>}
+      {t("superAdmin.toolUsage", { count: company.toolCount, limit })}
+      {company.toolCount > limit && <span className="tag tag-alarm">{t("superAdmin.overLimit")}</span>}
     </>
   );
 }

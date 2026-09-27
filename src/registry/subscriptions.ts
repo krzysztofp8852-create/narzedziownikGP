@@ -4,21 +4,24 @@ import { warsawTime } from "./reports";
 import { isCalendarDay, UUID_PATTERN } from "./validation";
 
 /**
- * Próg abonamentu: pakiet z limitem narzędzi i ceną netto za miesiąc. Ceny to cennik roboczy ze
- * specyfikacji (#1); limity narzędzi są założeniem roboczym, do potwierdzenia razem z cennikiem.
+ * Próg abonamentu: pakiet z limitem narzędzi i ceną za rok. Plan indywidualny (ponad 1000 narzędzi)
+ * nie ma limitu, a cenę ustalamy z klientem osobno.
  */
 export interface SubscriptionTier {
   id: TierId;
   name: string;
-  toolLimit: number;
-  monthlyPrice: number;
+  /** Null w planie indywidualnym. */
+  toolLimit: number | null;
+  /** W zł za rok; null w planie indywidualnym. */
+  yearlyPrice: number | null;
 }
 
 export const TIERS = [
-  { id: "maly", name: "Mały", toolLimit: 50, monthlyPrice: 49 },
-  { id: "sredni", name: "Średni", toolLimit: 150, monthlyPrice: 99 },
-  { id: "duzy", name: "Duży", toolLimit: 300, monthlyPrice: 199 },
-] as const satisfies readonly { id: string; name: string; toolLimit: number; monthlyPrice: number }[];
+  { id: "maly", name: "Mały", toolLimit: 150, yearlyPrice: 300 },
+  { id: "sredni", name: "Średni", toolLimit: 300, yearlyPrice: 500 },
+  { id: "duzy", name: "Duży", toolLimit: 1000, yearlyPrice: 1000 },
+  { id: "indywidualny", name: "Indywidualny", toolLimit: null, yearlyPrice: null },
+] as const satisfies readonly { id: string; name: string; toolLimit: number | null; yearlyPrice: number | null }[];
 
 export type TierId = (typeof TIERS)[number]["id"];
 

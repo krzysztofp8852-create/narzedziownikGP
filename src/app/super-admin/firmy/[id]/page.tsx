@@ -8,6 +8,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { TIERS } from "@/registry/registry";
 import { PaidUntil, SubscriptionStatus, ToolUsage } from "../../subscription-status";
+import { tierLabel } from "../../tier-options";
 import { PaidUntilForm, ReadOnlyForm, TierForm } from "./subscription-forms";
 
 /** Jedna firma na żądanie, wspólna dla tytułu strony i jej treści. */
@@ -30,7 +31,7 @@ export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[
   const none = t("superAdmin.none");
   const details: [label: string, value: React.ReactNode][] = [
     [t("superAdmin.columnStatus"), <SubscriptionStatus key="status" company={company} />],
-    [t("superAdmin.columnTier"), t("superAdmin.tierOption", { name: company.tier.name, limit: company.tier.toolLimit, price: company.tier.monthlyPrice })],
+    [t("superAdmin.columnTier"), tierLabel(company.tier)],
     [t("superAdmin.tools"), <ToolUsage key="tools" company={company} />],
     [t("superAdmin.columnPaidUntil"), <PaidUntil key="paid" company={company} />],
     [t("superAdmin.readOnlyFrom"), company.readOnlyFrom ? formatCalendarDay(company.readOnlyFrom) : none],
