@@ -1,6 +1,7 @@
 import type { RegistryErrorCode } from "./errors";
 import type { Movement, RegisteredKind } from "./movements";
 import type { Sql } from "./ports";
+import type { FridayReport, ReportKind, WeeklyReport } from "./reports";
 
 /** Adresat powiadomienia: osoba z firmy, w której zaszło zdarzenie. */
 export interface Recipient {
@@ -54,15 +55,38 @@ export interface MovementRejectedNotification {
   occurredAt: Date;
 }
 
+/** Właściciel: raport tygodniowy firmy z poniedziałku, 7:00. */
+export interface WeeklyReportNotification {
+  kind: "raport_tygodniowy";
+  /** Z e-mailem: raport tygodniowy ma kopię e-mailową. */
+  recipient: Recipient & { email: string };
+  report: WeeklyReport;
+}
+
+/** Raport piątkowy z 16:00: właściciel dostaje całą firmę, a kierownik swoje lokalizacje. */
+export interface FridayReportNotification {
+  kind: "raport_piatkowy";
+  recipient: Recipient;
+  report: FridayReport;
+}
+
 /** Powiadomienie dla użytkownika firmy. Trafia do jego dzwonka, a port powiadomień wysyła kopię. */
 export type Notification =
   | ToolsTakenNotification
   | ThresholdExceededNotification
   | ThresholdsExceededNotification
-  | MovementRejectedNotification;
+  | MovementRejectedNotification
+  | WeeklyReportNotification
+  | FridayReportNotification;
 
-/** Powiadomienia, których kopię port powiadomień wysyła e-mailem; pozostałe są tylko w dzwonku. */
-export type EmailedNotification = ToolsTakenNotification;
+/**
+ * Powiadomienia, których kopię port powiadomień wysyła także e-mailem; pozostałe idą tylko do dzwonka i push.
+ * Raport piątkowy dostaje e-mailem tylko właściciel.
+ */
+export type EmailedNotification =
+  | ToolsTakenNotification
+  | WeeklyReportNotification
+  | (FridayReportNotification & { recipient: Recipient & { email: string } });
 
 /** Rodzaj powiadomienia. */
 export type NotificationKind = Notification["kind"];
@@ -102,6 +126,11 @@ export async function notificationsFor(sql: Sql, movement: Movement): Promise<To
   ];
 }
 
+/** Klucz raportu w dzwonku: adresat dostaje raport z danego dnia najwyżej raz. */
+export function reportKey(kind: ReportKind, day: string): string {
+  return `raport_${kind}:${day}`;
+}
+
 /**
  * Klucz zdarzenia: to samo zdarzenie daje adresatowi najwyżej jedno powiadomienie w dzwonku. Zbiorcze
  * nie ma klucza, bo każde narzędzie wchodzi do niego raz, gdy zadanie dzienne wykryje przekroczenie.
@@ -117,5 +146,8 @@ export function dedupeKey(notification: Notification): string | null {
       return null;
     case "ruch_odrzucony":
       return `odrzucony:${notification.rejectionId}`;
+    case "raport_tygodniowy":
+    case "raport_piatkowy":
+      return reportKey(notification.report.kind, notification.report.day);
   }
 }

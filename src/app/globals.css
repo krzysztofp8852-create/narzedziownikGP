@@ -1693,3 +1693,15 @@ a.tool-row:hover .tool-row-name {
   display: grid;
   gap: 4px;
 }
+
+/* Raport z dzwonka: duża kwota pod tytułem sekcji i wiersze bez kolumny z liczbami */
+.report-lead {
+  font-weight: 700;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-row {
+  grid-template-columns: auto 1fr;
+}

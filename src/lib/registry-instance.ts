@@ -24,7 +24,7 @@ function notifier(): Notifier {
   const resend = serverEnv.resend();
   const webPush = serverEnv.webPush();
   return {
-    send: (resend ? createResendNotifier(resend) : logNotifier).send,
+    send: (resend ? createResendNotifier({ ...resend, appUrl: serverEnv.appUrl() }) : logNotifier).send,
     push: webPush ? createWebPushChannel(webPush) : logPush,
   };
 }

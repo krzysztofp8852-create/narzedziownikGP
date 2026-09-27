@@ -119,5 +119,8 @@ function reviveContent(raw: Record<string, unknown>): NotificationContent {
       return content;
     case "ruch_odrzucony":
       return { ...content, occurredAt: new Date(content.occurredAt) };
+    case "raport_tygodniowy":
+    case "raport_piatkowy":
+      return content;
   }
 }
