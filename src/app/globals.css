@@ -1529,6 +1529,7 @@ a.tool-row:hover .tool-row-name {
   color: var(--danger);
   font-weight: 600;
   min-width: 220px;
+}
 
 /* Zgłoszenia narzędzi: zgłoszone narzędzie jeździ jak każde, ale czeka na akceptację właściciela. */
 .tag-reported {
@@ -1717,15 +1718,24 @@ a.tool-row:hover .tool-row-name {
   margin: 0 auto;
   font-weight: 700;
 }
-fieldset.company-card {
-  min-width: 0;
-  margin: 0;
-}
-fieldset.company-card legend.section-title {
-  float: left;
-  width: 100%;
-  padding: 0;
-}
 .preserve-lines {
   white-space: pre-line;
+}
+/* Długa nazwa progu w liście wyboru nie może poszerzyć karty ponad ekran telefonu. */
+.company-card {
+  min-width: 0;
+}
+.field select {
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+.company-card .field textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  resize: vertical;
 }
