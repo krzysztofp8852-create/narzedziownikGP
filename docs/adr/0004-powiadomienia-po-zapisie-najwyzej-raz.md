@@ -1,6 +1,6 @@
 # 0004. Powiadomienia wysyłane po zapisie ruchu, najwyżej raz, bez kolejki
 
-Data: 2026-09-26 · Status: przyjęta (do rewizji przy dzwonku, #38)
+Data: 2026-09-26 · Status: zastąpiona częściowo przez ADR 0007 (dzwonek)
 
 ## Kontekst
 

@@ -1,4 +1,4 @@
-import type { Notification } from "./notifications";
+import type { EmailedNotification } from "./notifications";
 
 /** Parametryzowane zapytanie SQL w ramach jednej transakcji. */
 export type Sql = <Row = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<Row[]>;
@@ -22,9 +22,12 @@ export interface AuthAdmin {
   deleteUser(userId: string): Promise<void>;
 }
 
-/** Port powiadomień: dostarcza powiadomienie adresatowi (na razie e-mailem). */
+/**
+ * Port powiadomień: kopia powiadomienia z dzwonka poza aplikacją (na razie e-mail), wysyłana po zapisie.
+ * Dostaje tylko rodzaje, które mają kopię (`EmailedNotification`).
+ */
 export interface Notifier {
-  send(notification: Notification): Promise<void>;
+  send(notification: EmailedNotification): Promise<void>;
 }
 
 export class EmailTakenError extends Error {

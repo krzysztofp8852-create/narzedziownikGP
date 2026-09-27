@@ -79,7 +79,7 @@ export interface HistoryEntry {
   undone: boolean;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const DAY_MS = 24 * 60 * 60 * 1000;
 const PREFIX_PATTERN = /^[A-Z]{1,4}$/;
 
 export function canManageTools(session: Session) {

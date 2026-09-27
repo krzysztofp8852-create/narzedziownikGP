@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { Notifier } from "@/registry/ports";
-import type { Notification } from "@/registry/registry";
+import type { EmailedNotification } from "@/registry/registry";
 
 export interface Email {
   to: string;
@@ -10,7 +10,7 @@ export interface Email {
 }
 
 /** Treść e-maila z powiadomieniem, np. „Adam Nowak zabiera S-01, S-02 z budowy Winogrady”. */
-export function notificationEmail(notification: Notification): Email {
+export function notificationEmail(notification: EmailedNotification): Email {
   const codes = notification.tools.map((tool) => tool.code).join(", ");
   return {
     to: notification.recipient.email,

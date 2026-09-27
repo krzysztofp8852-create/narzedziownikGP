@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-const PUBLIC_PATHS = ["/logowanie", "/reset-hasla", "/auth/confirm"];
+// Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika.
+const PUBLIC_PATHS = ["/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi"];
 
 /**
  * Odświeża sesję Supabase w ciasteczkach i odsyła niezalogowanych do logowania.

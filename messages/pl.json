@@ -51,7 +51,9 @@
   },
   "header": {
     "logout": "Wyloguj",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "bell": "Powiadomienia",
+    "bellUnread": "Powiadomienia, nieprzeczytane: {count}"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -631,5 +633,22 @@
     "finishedEmpty": "Nie ma jeszcze zakończonych budów.",
     "finishedOn": "Zamknięcie: {when}, {name}",
     "history": "Historia budowy →"
+  },
+  "bell": {
+    "title": "Powiadomienia",
+    "back": "← Wróć do tablicy",
+    "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo narzędzie, które stoi za długo.",
+    "unread": "Nowe",
+    "open": "Pokaż",
+    "markRead": "Oznacz jako przeczytane",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "toolsTaken": "Sprzęt jest teraz na budowie {to} ({when}). Nie odpowiadasz już za niego.",
+    "thresholdExceeded": "{code} {name} stoi na budowie {place} dłużej niż {days} dni",
+    "thresholdExceededBody": "Jest tam od {since}. Jeśli nie jest już potrzebne, zwróć je na bazę albo przenieś.",
+    "thresholdsExceeded": {
+      "one": "{count} narzędzie przekroczyło próg {days} dni",
+      "few": "{count} narzędzia przekroczyły próg {days} dni",
+      "many": "{count} narzędzi przekroczyło próg {days} dni"
+    }
   }
 }
