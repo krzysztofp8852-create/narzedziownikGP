@@ -1,4 +1,5 @@
-// Service worker NarzędziownikGP: interfejs i ostatnio pobrana tablica „Gdzie jest co” bez sieci (ADR 0010).
+// Service worker NarzędziownikGP: interfejs i ostatnio pobrana tablica „Gdzie jest co” bez sieci (ADR 0010)
+// oraz powiadomienia push (ADR 0011).
 
 /** Pliki interfejsu (skrypty, style, czcionki) i strona „Brak sieci”; nie ma w nich danych firmy. */
 const STATIC_CACHE = "ngp-interfejs-v1";
@@ -7,6 +8,9 @@ const BOARD_CACHE = "ngp-tablica";
 const BOARD = "/";
 const OFFLINE_PAGE = "/offline";
 const STATIC_PREFIX = "/_next/static/";
+const BELL = "/dzwonek";
+const APP_NAME = "NarzędziownikGP";
+const NOTIFICATION_ICON = "/icons/icon-192.png";
 /** Tyle czekamy na tablicę z sieci, zanim pokażemy kopię. */
 const NETWORK_TIMEOUT_MS = 5000;
 /** `next dev` podmienia pliki bez zmiany nazwy, więc tam pliki interfejsu bierzemy najpierw z sieci. */
@@ -60,6 +64,53 @@ self.addEventListener("message", (event) => {
   }
   if (event.data?.type === "forget") event.waitUntil(inOrder(forgetBoard).finally(() => reply(true)));
 });
+
+/**
+ * Powiadomienie push: kopia wpisu z dzwonka (ADR 0011). Treść składa serwer (tytuł, tekst, adres wpisu). Pokazujemy
+ * je zawsze, także bez treści, bo Safari na iPhonie cofa zgodę na powiadomienia stronie, która push dostaje,
+ * a nic nie pokazuje.
+ */
+self.addEventListener("push", (event) => {
+  let message = {};
+  try {
+    message = event.data?.json() ?? {};
+  } catch {
+    // Treść nieczytelna: ogólne powiadomienie prowadzące do dzwonka.
+  }
+  event.waitUntil(
+    self.registration.showNotification(message.title || APP_NAME, {
+      body: message.body || "",
+      tag: message.tag || undefined,
+      icon: NOTIFICATION_ICON,
+      data: { url: appPath(message.url) },
+    }),
+  );
+});
+
+/** Kliknięcie powiadomienia otwiera jego wpis: w otwartym już oknie aplikacji, a bez niego w nowym. */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = appPath(event.notification.data?.url);
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      if (open) {
+        // Okno, którego service worker nie kontroluje, nie da się przenieść; wtedy otwieramy nowe.
+        const moved = await open.navigate(url).catch(() => null);
+        if (moved) return void (await moved.focus());
+      }
+      await self.clients.openWindow(url);
+    })(),
+  );
+});
+
+/** Adres wewnątrz aplikacji z treści powiadomienia; każdy inny prowadzi do dzwonka. */
+function appPath(address) {
+  if (typeof address !== "string" || !address.startsWith("/") || address.startsWith("//")) return BELL;
+  const url = new URL(address, self.location.origin);
+  return url.origin === self.location.origin ? url.pathname + url.search : BELL;
+}
 
 /**
  * Tablica z sieci, a bez sieci ostatnia zapamiętana kopia. Przy słabym zasięgu nie czekamy dłużej niż

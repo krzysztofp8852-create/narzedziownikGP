@@ -16,6 +16,8 @@ import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as notifications from "./notifications";
 import type { EmailedNotification, ToolsTakenNotification } from "./notifications";
+import * as push from "./push";
+import type { PushCopy, PushSubscriptionData } from "./push";
 import * as queuedMovements from "./queued-movements";
 import type { RejectedMovement } from "./queued-movements";
 import * as settings from "./settings";
@@ -77,6 +79,7 @@ export type {
   ToolsTakenNotification,
 } from "./notifications";
 export type { Bell, BellEntry } from "./bell";
+export type { PushMessage, PushSubscriptionData } from "./push";
 export type { RejectedMovement } from "./queued-movements";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
@@ -273,6 +276,13 @@ export interface Registry {
     /** Oznacza własne powiadomienie jako przeczytane; null, gdy aktor go nie ma. */
     markNotificationRead(notificationId: string): Promise<BellEntry | null>;
     markAllNotificationsRead(): Promise<void>;
+    /**
+     * Włącza powiadomienia push w przeglądarce aktora: każdy nowy wpis w jego dzwonku przyjdzie tam jako kopia.
+     * Tylko adresy znanych usług push. Przeglądarka, która należała do kogoś innego, przechodzi na aktora.
+     */
+    subscribeToPush(subscription: PushSubscriptionData): Promise<void>;
+    /** Wyłącza powiadomienia push w tej przeglądarce aktora (np. przy wylogowaniu). Cudzej nie rusza. */
+    unsubscribeFromPush(endpoint: string): Promise<void>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
     /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
@@ -301,7 +311,9 @@ export function createRegistry(deps: Deps): Registry {
         // Każda firma w osobnej transakcji: błąd jednej nie zabiera powiadomień pozostałym.
         for (const companyId of companyIds) {
           try {
-            tools += (await deps.db.transaction((sql) => thresholds.notifyExceededThresholds(sql, companyId, now))).tools;
+            const result = await deps.db.transaction((sql) => thresholds.notifyExceededThresholds(sql, companyId, now));
+            tools += result.tools;
+            await sendPushCopies(deps, result.copies);
           } catch (error) {
             console.error(`Nie sprawdzono progów dni firmy ${companyId}`, error);
           }
@@ -368,13 +380,15 @@ export function createRegistry(deps: Deps): Registry {
           (await movementCommand(command, async (_sql, movement: M) => movement)(input)).result;
 
       const registerMovement = async (input: RegisterMovementInput): Promise<RegisteredMovement> => {
+        // Kopie push nowych wpisów dzwonka z podejścia, które się zatwierdziło.
+        let copies: PushCopy[] = [];
         const { result, replayed } = await movementCommand(movements.registerMovement, async (sql, movement) => {
           const list = await notifications.notificationsFor(sql, movement);
           // Ponowienie operacji niczego nie dubluje w dzwonku, a w wyniku są te same powiadomienia.
-          await bell.deliver(sql, list, deps.clock.now());
+          copies = await bell.deliver(sql, list, deps.clock.now());
           return { ...movement, notifications: list };
         })(input);
-        if (!replayed) await sendNotifications(deps.notifier, result.notifications);
+        await Promise.all([replayed ? null : sendNotifications(deps.notifier, result.notifications), sendPushCopies(deps, copies)]);
         return result;
       };
 
@@ -577,9 +591,10 @@ export function createRegistry(deps: Deps): Registry {
             return { status: "registered", movement: await registerMovement(input) };
           } catch (error) {
             if (!queuedMovements.isFinalRejection(error, input)) throw error;
-            const rejection = await asMember((sql, session) =>
+            const { rejection, copies } = await asMember((sql, session) =>
               queuedMovements.recordRejection(sql, session, input, error, deps.clock.now()),
             );
+            await sendPushCopies(deps, copies);
             return { status: "rejected", rejection };
           }
         },
@@ -608,6 +623,8 @@ export function createRegistry(deps: Deps): Registry {
         markNotificationRead: (notificationId) =>
           asMember((sql, session) => bell.markRead(sql, session, notificationId, deps.clock.now())),
         markAllNotificationsRead: () => asMember((sql, session) => bell.markAllRead(sql, session, deps.clock.now())),
+        subscribeToPush: (subscription) => asMember((sql) => push.subscribe(sql, subscription, deps.clock.now())),
+        unsubscribeFromPush: (endpoint) => asMember((sql, session) => push.unsubscribe(sql, session, endpoint)),
         settings: () =>
           asMember((sql, session) => {
             settings.requireSettingsManager(session);
@@ -632,6 +649,33 @@ async function sendNotifications(notifier: Notifier, list: EmailedNotification[]
       notifier.send(notification).catch((error) => console.error("Nie wysłano powiadomienia", notification.kind, error)),
     ),
   );
+}
+
+/**
+ * Wysyła kopie push już zapisanych wpisów na przeglądarki adresatów i usuwa subskrypcje, które wygasły.
+ * Subskrypcje innych osób czyta transakcja systemowa. Wpis w dzwonku zostaje, więc błąd tylko odnotowujemy.
+ */
+async function sendPushCopies(deps: Deps, copies: PushCopy[]) {
+  if (copies.length === 0) return;
+  try {
+    const subscriptions = await deps.db.transaction((sql) => push.subscriptionsOf(sql, [...new Set(copies.map((copy) => copy.recipientId))]));
+    const expired: string[] = [];
+    await Promise.all(
+      copies.flatMap((copy) =>
+        subscriptions
+          .filter((subscription) => subscription.userId === copy.recipientId)
+          .map(({ endpoint, keys }) =>
+            deps.notifier
+              .push({ endpoint, keys }, copy.message)
+              .then((outcome) => void (outcome === "expired" && expired.push(endpoint)))
+              .catch((error) => console.error("Nie wysłano powiadomienia push", copy.message.window, error)),
+          ),
+      ),
+    );
+    if (expired.length > 0) await deps.db.transaction((sql) => push.forgetExpired(sql, [...new Set(expired)]));
+  } catch (error) {
+    console.error("Nie wysłano powiadomień push", error);
+  }
 }
 
 /**

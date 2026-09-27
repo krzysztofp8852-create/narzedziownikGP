@@ -196,6 +196,11 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Powiadomienia e-mail (np. „Adam Nowak zabiera S-01 z budowy Rataje” dla kierownika, któremu przeniesienie
   zabrało sprzęt) wysyła Resend: `RESEND_API_KEY` i `NOTIFICATIONS_FROM` (adres w domenie zweryfikowanej
   w Resend) w zmiennych Vercel. Bez klucza powiadomienia trafiają tylko do logu serwera.
+- Powiadomienia push (kopia każdego nowego wpisu w dzwonku, zob. `docs/adr/0011`) wymagają pary kluczy VAPID
+  (`npx web-push generate-vapid-keys`): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` i `VAPID_SUBJECT` (kontakt dla
+  usług push, np. `mailto:powiadomienia@gp-engineering.pl`) w zmiennych Vercel. Bez kluczy włączanie powiadomień
+  w dzwonku się nie pokazuje, a kopie push trafiają tylko do logu serwera. Wymiana kluczy unieważnia wszystkie
+  subskrypcje.
 - Wpis tekstem wymaga `OPENAI_API_KEY` (OpenAI API bez trenowania na danych i bez przechowywania odpowiedzi,
   zob. `docs/adr/0005`) w zmiennych Vercel; model domyślnie `gpt-5.4-mini`, inny w `OPENAI_MODEL`. Bez klucza przycisk „Wpisz tekstem” się nie pokazuje. Lokalnie i w teście dymnym
   `TEXT_ENTRY_INTERPRETER=slowa` włącza interpretację słowami kluczowymi bez AI.

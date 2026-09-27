@@ -1680,3 +1680,16 @@ a.tool-row:hover .tool-row-name {
   color: var(--warning);
   font-weight: 600;
 }
+
+/* Powiadomienia push */
+.push-settings {
+  max-width: 640px;
+  margin-bottom: 16px;
+}
+
+.push-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 4px;
+}

@@ -9,6 +9,7 @@ import {
   type RegisterMovementInput,
 } from "./movements";
 import type { Sql } from "./ports";
+import type { PushCopy } from "./push";
 import type { Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
@@ -52,7 +53,7 @@ export async function rejectionByOperation(sql: Sql, session: Session, operation
 
 /**
  * Zapisuje odrzucenie i wkłada autorowi do dzwonka powiadomienie z odnośnikiem do listy „Do wyjaśnienia”.
- * Równoległe odrzucenie tej samej operacji zapisze się raz i da jedno powiadomienie.
+ * Równoległe odrzucenie tej samej operacji zapisze się raz i da jedno powiadomienie (i jedną kopię push).
  */
 export async function recordRejection(
   sql: Sql,
@@ -60,7 +61,7 @@ export async function recordRejection(
   input: RegisterMovementInput,
   error: RegistryError,
   now: Date,
-): Promise<RejectedMovement> {
+): Promise<{ rejection: RejectedMovement; copies: PushCopy[] }> {
   const uuidOrNull = (id: string) => (UUID_PATTERN.test(id) ? id : null);
   await sql(
     `insert into app.rejected_movements (company_id, author_id, client_operation_id, kind, source, from_location_id,
@@ -83,7 +84,7 @@ export async function recordRejection(
     ],
   );
   const rejection = (await rejectionByOperation(sql, session, input.operationId))!;
-  await deliver(
+  const copies = await deliver(
     sql,
     [
       {
@@ -99,7 +100,7 @@ export async function recordRejection(
     ],
     now,
   );
-  return rejection;
+  return { rejection, copies };
 }
 
 /** Lista „Do wyjaśnienia” autora: niewyjaśnione odrzucenia, od najnowszego. */

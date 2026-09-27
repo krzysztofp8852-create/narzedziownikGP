@@ -1,6 +1,7 @@
 import { deliverAsSystem } from "./bell";
 import type { Notification, Recipient } from "./notifications";
 import type { Sql } from "./ports";
+import type { PushCopy } from "./push";
 import type { Role } from "./registry";
 import { DAY_MS, type LocationKind } from "./tools";
 
@@ -32,9 +33,9 @@ export async function companiesWithSites(sql: Sql): Promise<string[]> {
 /**
  * Wykrywa narzędzia firmy, które od ostatniego uruchomienia przekroczyły próg dni firmy na budowie, i każde
  * zapisuje raz na pobyt. Kierownik budowy dostaje powiadomienie o każdym narzędziu, a właściciel jedno
- * zbiorcze. Transakcja systemowa (poza RLS). Zwraca liczbę nowych przekroczeń.
+ * zbiorcze. Transakcja systemowa (poza RLS). Zwraca liczbę nowych przekroczeń i kopie push nowych wpisów dzwonka.
  */
-export async function notifyExceededThresholds(sql: Sql, companyId: string, now: Date): Promise<{ tools: number }> {
+export async function notifyExceededThresholds(sql: Sql, companyId: string, now: Date): Promise<{ tools: number; copies: PushCopy[] }> {
   const candidates = await sql<{
     tool_id: string;
     code: string;
@@ -68,7 +69,7 @@ export async function notifyExceededThresholds(sql: Sql, companyId: string, now:
     if (inserted.length > 0) detected.push(row);
   }
 
-  if (detected.length === 0) return { tools: 0 };
+  if (detected.length === 0) return { tools: 0, copies: [] };
   const people = await activePeople(sql, companyId);
   const managers = await siteManagers(sql, [...new Set(detected.map((row) => row.location_id))]);
   const notifications: Notification[] = [];
@@ -97,8 +98,8 @@ export async function notifyExceededThresholds(sql: Sql, companyId: string, now:
       })),
     });
   }
-  await deliverAsSystem(sql, companyId, notifications, now);
-  return { tools: detected.length };
+  const copies = await deliverAsSystem(sql, companyId, notifications, now);
+  return { tools: detected.length, copies };
 }
 
 async function activePeople(sql: Sql, companyId: string): Promise<(Recipient & { role: Role })[]> {

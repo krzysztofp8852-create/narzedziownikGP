@@ -34,7 +34,7 @@ export function notificationEmail(notification: EmailedNotification): Email {
 }
 
 /** Kanał e-mail portu powiadomień na API Resend (https://resend.com/docs/api-reference/emails/send-email). */
-export function createResendNotifier({ apiKey, from }: { apiKey: string; from: string }): Notifier {
+export function createResendNotifier({ apiKey, from }: { apiKey: string; from: string }): Pick<Notifier, "send"> {
   return {
     async send(notification) {
       const email = notificationEmail(notification);
@@ -55,7 +55,7 @@ export function createResendNotifier({ apiKey, from }: { apiKey: string; from: s
 }
 
 /** Bez klucza Resend (lokalnie, w CI) powiadomienia trafiają tylko do logu serwera. */
-export const logNotifier: Notifier = {
+export const logNotifier: Pick<Notifier, "send"> = {
   async send(notification) {
     const email = notificationEmail(notification);
     console.warn(`[powiadomienie bez wysyłki: brak RESEND_API_KEY] do ${email.to}: ${email.subject}`);

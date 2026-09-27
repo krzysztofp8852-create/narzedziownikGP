@@ -54,6 +54,19 @@ export const serverEnv = {
   },
   /** Sekret zadań harmonogramu (Vercel Cron wysyła go w nagłówku `Authorization`); bez niego zadania są wyłączone. */
   cronSecret: () => process.env.CRON_SECRET || null,
+  /**
+   * Powiadomienia push: para kluczy VAPID serwera (`npx web-push generate-vapid-keys`) i kontakt dla usług push
+   * (`VAPID_SUBJECT`, np. mailto:powiadomienia@gp-engineering.pl). Bez kluczy przeglądarka nie ma czego
+   * subskrybować, więc włączanie powiadomień jest ukryte, a kopie push trafiają tylko do logu.
+   */
+  webPush: () =>
+    process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY
+      ? {
+          publicKey: process.env.VAPID_PUBLIC_KEY,
+          privateKey: process.env.VAPID_PRIVATE_KEY,
+          subject: required("VAPID_SUBJECT", process.env.VAPID_SUBJECT),
+        }
+      : null,
   /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
   resend: () =>
     process.env.RESEND_API_KEY

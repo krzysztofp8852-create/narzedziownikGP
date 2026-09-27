@@ -1,14 +1,15 @@
 import { createPgDb } from "@/registry/pg-db";
-import { systemClock } from "@/registry/ports";
+import { type Notifier, systemClock } from "@/registry/ports";
 import { createRegistry, type Registry } from "@/registry/registry";
 import { createSupabaseAuthAdmin } from "@/registry/supabase-auth-admin";
 import { createResendNotifier, logNotifier } from "./email-notifier";
 import { publicEnv, serverEnv } from "./env";
+import { createWebPushChannel, logPush } from "./web-push-notifier";
 import { SUPABASE_ROOT_CA } from "./supabase-root-ca";
 
 let registry: Registry | undefined;
 
-/** Rejestr na prawdziwej bazie, Supabase Auth i powiadomieniach e-mail. Wspólny dla aplikacji i skryptów. */
+/** Rejestr na prawdziwej bazie, Supabase Auth i powiadomieniach e-mail i push. Wspólny dla aplikacji i skryptów. */
 export function getRegistry(): Registry {
   registry ??= createRegistry({
     db: createPgDb({ connectionString: serverEnv.databaseUrl(), ssl: sslFor(serverEnv.databaseUrl()), max: 3 }),
@@ -19,9 +20,13 @@ export function getRegistry(): Registry {
   return registry;
 }
 
-function notifier() {
+function notifier(): Notifier {
   const resend = serverEnv.resend();
-  return resend ? createResendNotifier(resend) : logNotifier;
+  const webPush = serverEnv.webPush();
+  return {
+    send: (resend ? createResendNotifier(resend) : logNotifier).send,
+    push: webPush ? createWebPushChannel(webPush) : logPush,
+  };
 }
 
 /** Poza lokalnym Supabase połączenie jest szyfrowane, a certyfikat serwera sprawdzany względem CA Supabase. */

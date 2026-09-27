@@ -1,4 +1,5 @@
 import type { EmailedNotification } from "./notifications";
+import type { PushMessage, PushSubscriptionData } from "./push";
 
 /** Parametryzowane zapytanie SQL w ramach jednej transakcji. */
 export type Sql = <Row = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<Row[]>;
@@ -23,11 +24,18 @@ export interface AuthAdmin {
 }
 
 /**
- * Port powiadomień: kopia powiadomienia z dzwonka poza aplikacją (na razie e-mail), wysyłana po zapisie.
- * Dostaje tylko rodzaje, które mają kopię (`EmailedNotification`).
+ * Port powiadomień: kopia powiadomienia z dzwonka poza aplikacją, wysyłana po zapisie. Dwa kanały: e-mail
+ * (tylko rodzaje z kopią e-mailową, `EmailedNotification`) i Web Push (każdy nowy wpis, na każdą przeglądarkę,
+ * w której adresat włączył powiadomienia).
  */
 export interface Notifier {
+  /** Kanał e-mail. */
   send(notification: EmailedNotification): Promise<void>;
+  /**
+   * Kanał Web Push: kopia na jedną przeglądarkę. `expired`, gdy usługa push odpowie, że subskrypcja
+   * wygasła albo jej nie ma; Rejestr ją wtedy usuwa.
+   */
+  push(subscription: PushSubscriptionData, message: PushMessage): Promise<"sent" | "expired">;
 }
 
 export class EmailTakenError extends Error {

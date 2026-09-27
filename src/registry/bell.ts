@@ -1,6 +1,7 @@
 import type { Notification, NotificationContent } from "./notifications";
 import { dedupeKey } from "./notifications";
 import type { Sql } from "./ports";
+import type { PushCopy } from "./push";
 import type { Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
@@ -25,26 +26,42 @@ const MAX_ENTRIES = 100;
 /**
  * Wkłada powiadomienia do dzwonków adresatów w transakcji zdarzenia aktora. Funkcja w bazie sprawdza,
  * że aktor naprawdę wywołał to zdarzenie, i nie dubluje powiadomienia, które adresat już ma (np. przy
- * ponowieniu operacji).
+ * ponowieniu operacji). Zwraca kopie push tylko nowych wpisów.
  */
-export async function deliver(sql: Sql, notifications: Notification[], now: Date): Promise<void> {
+export async function deliver(sql: Sql, notifications: Notification[], now: Date): Promise<PushCopy[]> {
+  const copies: PushCopy[] = [];
   for (const notification of notifications) {
     const { recipient, ...content } = notification;
-    await sql("select app.deliver_notification($1, $2, $3, $4)", [recipient.userId, notification.kind, JSON.stringify(content), now]);
+    const [{ id }] = await sql<{ id: string | null }>("select app.deliver_notification($1, $2, $3, $4) as id", [
+      recipient.userId,
+      notification.kind,
+      JSON.stringify(content),
+      now,
+    ]);
+    if (id) copies.push(pushCopy(recipient.userId, id, content));
   }
+  return copies;
 }
 
 /** Jak `deliver`, ale w transakcji systemowej (zadanie harmonogramu, poza RLS), dla wskazanej firmy. */
-export async function deliverAsSystem(sql: Sql, companyId: string, notifications: Notification[], now: Date): Promise<void> {
+export async function deliverAsSystem(sql: Sql, companyId: string, notifications: Notification[], now: Date): Promise<PushCopy[]> {
+  const copies: PushCopy[] = [];
   for (const notification of notifications) {
     const { recipient, ...content } = notification;
-    await sql(
+    const [row] = await sql<{ id: string }>(
       `insert into app.notifications (company_id, recipient_id, kind, content, dedupe_key, created_at)
        values ($1, $2, $3, $4, $5, $6)
-       on conflict (recipient_id, dedupe_key) where dedupe_key is not null do nothing`,
+       on conflict (recipient_id, dedupe_key) where dedupe_key is not null do nothing
+       returning id`,
       [companyId, recipient.userId, notification.kind, JSON.stringify(content), dedupeKey(notification), now],
     );
+    if (row) copies.push(pushCopy(recipient.userId, row.id, content));
   }
+  return copies;
+}
+
+function pushCopy(recipientId: string, notificationId: string, notification: NotificationContent): PushCopy {
+  return { recipientId, message: { window: "dzwonek", notificationId, notification } };
 }
 
 /** Dzwonek aktora: nieprzeczytane i ostatnie powiadomienia. */

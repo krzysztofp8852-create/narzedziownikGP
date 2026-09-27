@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PushToggle } from "@/components/push-toggle";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { notificationText } from "@/lib/bell-text";
+import { serverEnv } from "@/lib/env";
 import { getRegistry } from "@/lib/registry-instance";
 import { markAllNotificationsRead, markNotificationRead, openNotification } from "./actions";
 
@@ -13,6 +15,8 @@ export const metadata: Metadata = { title: t("bell.title") };
 export default async function BellPage() {
   const session = await requireSession();
   const { unread, entries } = await getRegistry().as(session.userId).bell();
+  // Bez kluczy VAPID serwer nie wyśle pusha, więc nie ma czego włączać.
+  const vapidPublicKey = serverEnv.webPush()?.publicKey ?? null;
 
   return (
     <>
@@ -31,6 +35,7 @@ export default async function BellPage() {
           </form>
         )}
       </div>
+      {vapidPublicKey && <PushToggle vapidPublicKey={vapidPublicKey} />}
       {entries.length === 0 ? (
         <p className="empty">{t("bell.empty")}</p>
       ) : (

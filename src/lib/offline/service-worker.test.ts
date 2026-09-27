@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Service worker z public/sw.js uruchomiony w udawanym środowisku przeglądarki: zdarzenia install, activate,
-// fetch i message, pamięć podręczna w pamięci i sieć, którą test ustawia sam.
+// fetch, message, push i notificationclick, pamięć podręczna w pamięci, sieć, którą test ustawia sam, i okna
+// aplikacji.
 
 const ORIGIN = "https://app.test";
 const code = readFileSync(new URL("../../../public/sw.js", import.meta.url), "utf8");
@@ -78,8 +79,34 @@ const offline: Network = async () => {
   throw new TypeError("Failed to fetch");
 };
 
+/** Okno aplikacji (karta albo PWA), które service worker może znaleźć, pokazać i przenieść pod inny adres. */
+class FakeWindow {
+  focused = false;
+  constructor(public url: string) {}
+  async focus() {
+    this.focused = true;
+    return this;
+  }
+  async navigate(url: string) {
+    this.url = new URL(url, ORIGIN).href;
+    return this;
+  }
+}
+
+interface ShownNotification {
+  title: string;
+  options: { body?: string; tag?: string; data?: { url?: string }; icon?: string };
+}
+
 interface Worker {
   caches: FakeCacheStorage;
+  /** Powiadomienia pokazane przez service worker. */
+  notifications: ShownNotification[];
+  /** Otwarte okna aplikacji; nowe dochodzą przez `clients.openWindow`. */
+  windows: FakeWindow[];
+  push(data: unknown): Promise<void>;
+  /** Kliknięcie powiadomienia; zwraca, czy service worker je zamknął. */
+  clickNotification(notification: ShownNotification): Promise<{ closed: boolean }>;
   fetch: ReturnType<typeof vi.fn<Network>>;
   /** Ustawia, jak odpowiada sieć od tej chwili. */
   setNetwork(network: Network): void;
@@ -94,13 +121,26 @@ interface Worker {
 function startWorker({ network = offline, scriptUrl = `${ORIGIN}/sw.js` }: { network?: Network; scriptUrl?: string } = {}): Worker {
   const listeners = new Map<string, (event: unknown) => void>();
   const caches = new FakeCacheStorage();
+  const notifications: ShownNotification[] = [];
+  const windows: FakeWindow[] = [];
   let current = network;
   const fetch = vi.fn<Network>((url, init) => current(href(url as string | { url: string }), init));
   const self = {
     location: new URL(scriptUrl),
     addEventListener: (type: string, listener: (event: unknown) => void) => listeners.set(type, listener),
     skipWaiting: async () => {},
-    clients: { claim: async () => {} },
+    clients: {
+      claim: async () => {},
+      matchAll: async () => [...windows],
+      openWindow: async (url: string) => {
+        const opened = new FakeWindow(new URL(url, ORIGIN).href);
+        windows.push(opened);
+        return opened;
+      },
+    },
+    registration: {
+      showNotification: async (title: string, options: ShownNotification["options"]) => void notifications.push({ title, options }),
+    },
   };
   new Function("self", "caches", "fetch", code)(self, caches, fetch);
 
@@ -120,6 +160,15 @@ function startWorker({ network = offline, scriptUrl = `${ORIGIN}/sw.js` }: { net
 
   return {
     caches,
+    notifications,
+    windows,
+    push: async (data) =>
+      void (await dispatch("push", { data: data === undefined ? null : { json: () => (typeof data === "string" ? JSON.parse(data) : data) } })),
+    clickNotification: async (notification) => {
+      let closed = false;
+      await dispatch("notificationclick", { notification: { ...notification, data: notification.options.data, close: () => (closed = true) } });
+      return { closed };
+    },
     fetch,
     setNetwork: (next) => (current = next),
     install: async () => void (await dispatch("install", {})),
@@ -350,5 +399,61 @@ describe("pliki interfejsu", () => {
 
     expect(await worker.request("/", { method: "POST", mode: "navigate" })).toBeUndefined();
     expect(await worker.request("https://supabase.test/_next/static/x.js")).toBeUndefined();
+  });
+});
+
+describe("powiadomienia push", () => {
+  const message = { title: "Adam Nowak zabiera S-01 z budowy Winogrady", body: "Sprzęt jest teraz na budowie Rataje.", url: "/dzwonek/abc", tag: "dzwonek:abc" };
+
+  it("pokazuje powiadomienie z treścią od serwera i pamięta, dokąd prowadzi", async () => {
+    const worker = startWorker();
+
+    await worker.push(message);
+
+    expect(worker.notifications).toEqual([
+      {
+        title: message.title,
+        options: expect.objectContaining({ body: message.body, tag: "dzwonek:abc", data: { url: "/dzwonek/abc" }, icon: "/icons/icon-192.png" }),
+      },
+    ]);
+  });
+
+  it("pokazuje powiadomienie także wtedy, gdy treść nie dotarła (iPhone wymaga powiadomienia po każdym pushu)", async () => {
+    const worker = startWorker();
+
+    await worker.push(undefined);
+
+    expect(worker.notifications).toEqual([{ title: "NarzędziownikGP", options: expect.objectContaining({ data: { url: "/dzwonek" } }) }]);
+  });
+
+  it("kliknięcie otwiera wpis w nowym oknie, gdy aplikacja nie jest otwarta", async () => {
+    const worker = startWorker();
+    await worker.push(message);
+
+    const { closed } = await worker.clickNotification(worker.notifications[0]);
+
+    expect(closed).toBe(true);
+    expect(worker.windows.map((window) => window.url)).toEqual([`${ORIGIN}/dzwonek/abc`]);
+  });
+
+  it("kliknięcie przenosi otwartą aplikację do wpisu i ją pokazuje", async () => {
+    const worker = startWorker();
+    const open = new FakeWindow(`${ORIGIN}/historia`);
+    worker.windows.push(open);
+    await worker.push(message);
+
+    await worker.clickNotification(worker.notifications[0]);
+
+    expect(worker.windows).toEqual([open]);
+    expect(open).toMatchObject({ url: `${ORIGIN}/dzwonek/abc`, focused: true });
+  });
+
+  it("nie otwiera adresu spoza aplikacji", async () => {
+    const worker = startWorker();
+    await worker.push({ ...message, url: "https://zly.test/wyludzenie" });
+
+    await worker.clickNotification(worker.notifications[0]);
+
+    expect(worker.windows.map((window) => window.url)).toEqual([`${ORIGIN}/dzwonek`]);
   });
 });

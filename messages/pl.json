@@ -654,6 +654,21 @@
     "movementRejected": "Ruch z kolejki odrzucony: {kind} {codes}",
     "movementRejectedBody": "Zapisany w telefonie {when}. {reason} Sprawdź go na liście „Do wyjaśnienia”."
   },
+  "push": {
+    "title": "Powiadomienia na telefonie",
+    "off": "Włącz, a każdy nowy wpis w dzwonku przyjdzie też jako powiadomienie na ten telefon, np. gdy ktoś zabierze sprzęt z Twojej budowy.",
+    "on": "Powiadomienia na tym telefonie są włączone. Każdy nowy wpis w dzwonku przyjdzie też tutaj.",
+    "enable": "Włącz powiadomienia",
+    "disable": "Wyłącz powiadomienia",
+    "saving": "Zapisywanie…",
+    "failed": "Nie udało się zmienić powiadomień. Sprawdź zasięg i spróbuj jeszcze raz.",
+    "blocked": "Powiadomienia dla NarzędziownikaGP są zablokowane w ustawieniach przeglądarki albo telefonu. Zezwól na nie i wróć tutaj.",
+    "unsupported": "Ta przeglądarka nie obsługuje powiadomień push. Wpisy znajdziesz zawsze tutaj, w dzwonku.",
+    "iosIntro": "Na iPhonie powiadomienia działają tylko w aplikacji dodanej do ekranu początkowego:",
+    "iosStep1": "Dotknij „Udostępnij” (kwadrat ze strzałką w górę: w Safari na dolnym pasku, w Chrome obok adresu).",
+    "iosStep2": "Wybierz „Do ekranu początkowego” i dotknij „Dodaj”.",
+    "iosStep3": "Otwórz NarzędziownikGP z ekranu początkowego, zaloguj się i włącz powiadomienia tutaj, w dzwonku."
+  },
   "offline": {
     "pageTitle": "Brak sieci",
     "pageText": "Ta strona nie działa bez zasięgu. Tablica „Gdzie jest co” otworzy się z ostatnio pobranym stanem, jeśli była już otwierana na tym telefonie, a ruchy zapisane bez sieci wyślą się same, gdy wróci zasięg.",

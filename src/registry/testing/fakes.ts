@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { EmailedNotification } from "../notifications";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier } from "../ports";
+import type { PushMessage, PushSubscriptionData } from "../push";
 
 /** Zegar ustawiany ręcznie. */
 export class FixedClock implements Clock {
@@ -77,17 +78,34 @@ export class FakeAuthAdmin implements AuthAdmin {
 
 /** Port powiadomień, który zapisuje, co i do kogo zostało wysłane. */
 export class RecordingNotifier implements Notifier {
+  /** Wysłane e-maile. */
   readonly sent: EmailedNotification[] = [];
-  /** Kolejne wysyłki kończą się tym błędem, np. gdy dostawca e-maili nie działa. */
+  /** Wysłane kopie push, z przeglądarką, na którą poszły. */
+  readonly pushed: { subscription: PushSubscriptionData; message: PushMessage }[] = [];
+  /** Adresy subskrypcji, o których usługa push mówi, że wygasły. */
+  readonly expired = new Set<string>();
+  /** Kolejne wysyłki e-maili kończą się tym błędem, np. gdy dostawca e-maili nie działa. */
   failWith: Error | null = null;
+  /** Kolejne wysyłki push kończą się tym błędem, np. gdy usługa push nie odpowiada. */
+  pushFailWith: Error | null = null;
 
   async send(notification: EmailedNotification) {
     if (this.failWith) throw this.failWith;
     this.sent.push(notification);
   }
 
+  async push(subscription: PushSubscriptionData, message: PushMessage) {
+    if (this.pushFailWith) throw this.pushFailWith;
+    if (this.expired.has(subscription.endpoint)) return "expired" as const;
+    this.pushed.push({ subscription, message });
+    return "sent" as const;
+  }
+
   clear() {
     this.sent.length = 0;
+    this.pushed.length = 0;
+    this.expired.clear();
     this.failWith = null;
+    this.pushFailWith = null;
   }
 }
