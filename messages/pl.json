@@ -51,7 +51,9 @@
   },
   "header": {
     "logout": "Wyloguj",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "bell": "Dzwonek",
+    "bellUnread": "Dzwonek, nieprzeczytane: {count}"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -631,5 +633,47 @@
     "finishedEmpty": "Nie ma jeszcze zakończonych budów.",
     "finishedOn": "Zamknięcie: {when}, {name}",
     "history": "Historia budowy →"
+  },
+  "bell": {
+    "title": "Dzwonek",
+    "back": "← Wróć do tablicy",
+    "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo narzędzie, które stoi za długo.",
+    "unread": "Nowe",
+    "open": "Pokaż",
+    "markRead": "Oznacz jako przeczytane",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "toolsTaken": "Sprzęt jest teraz na budowie {to} ({when}). Nie odpowiadasz już za niego.",
+    "thresholdExceeded": "{code} {name} stoi na budowie {place} dłużej niż {days} dni",
+    "thresholdExceededBody": "Jest tam od {since}. Jeśli nie jest już potrzebne, zwróć je na bazę albo przenieś.",
+    "thresholdsExceeded": {
+      "one": "{count} narzędzie przekroczyło próg {days} dni",
+      "few": "{count} narzędzia przekroczyły próg {days} dni",
+      "many": "{count} narzędzi przekroczyło próg {days} dni"
+    },
+    "movementRejected": "Ruch z kolejki odrzucony: {kind} {codes}",
+    "movementRejectedBody": "Zapisany w telefonie {when}. {reason} Sprawdź go na liście „Do wyjaśnienia”."
+  },
+  "offline": {
+    "pending": "⏳ Oczekuje: {count}",
+    "pendingTag": "oczekuje",
+    "pendingList": "Ruchy czekające na sieć",
+    "pendingHint": "Te ruchy są zapisane w telefonie i wyślą się same, gdy wróci zasięg. Czas w historii będzie z chwili zapisu.",
+    "queued": "Brak zasięgu. Zapisano w telefonie: {summary}. Wyślę sam, gdy wróci sieć.",
+    "recording": "Nagranie z {when}",
+    "ready": "🎙 Do zatwierdzenia: {count}",
+    "readyLabel": "Propozycje z nagrań gotowe do zatwierdzenia: {count}",
+    "recordingQueued": "Brak zasięgu. Nagranie jest w telefonie; gdy wróci sieć, rozpoznam je i pokażę propozycję do zatwierdzenia.",
+    "readyTitle": "Nagrania do zatwierdzenia",
+    "readyItem": "Nagranie z {when}",
+    "recordedAt": "Nagranie z {when}",
+    "discard": "Odrzuć"
+  },
+  "toClarify": {
+    "title": "Do wyjaśnienia",
+    "intro": "Ruchy zapisane w telefonie bez zasięgu, których serwer nie przyjął, bo stan zmienił się w międzyczasie. Nic z nich nie trafiło do historii. Sprawdź, gdzie jest sprzęt, zarejestruj ruch jeszcze raz, jeśli trzeba, i oznacz go jako wyjaśniony.",
+    "empty": "Nie ma ruchów do wyjaśnienia.",
+    "when": "Zapisany w telefonie {recorded}, odrzucony {rejected}",
+    "resolve": "Wyjaśnione",
+    "back": "← Wróć do tablicy"
   }
 }

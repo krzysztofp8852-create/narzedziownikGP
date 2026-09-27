@@ -146,7 +146,18 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   `proposeFromRecording` modułu Interpretacja kładzie je do prywatnego kubełka Supabase Storage `nagrania`
   (port kubełka nagrań), przekazuje portowi transkrypcji (gpt-4o-transcribe albo ElevenLabs Scribe, zob.
   `docs/adr/0006`) i w `finally` usuwa, więc nagranie znika także po nieudanej transkrypcji. Rozpoznany tekst
-  przechodzi dalej tą samą ścieżką co wpis tekstem.
+  przechodzi dalej tą samą ścieżką co wpis tekstem. Nagranie bez zasięgu czeka w IndexedDB, a po powrocie sieci
+  przechodzi transkrypcję i staje się propozycją do zatwierdzenia w telefonie („🎙 Do zatwierdzenia” w nagłówku),
+  z czasem zdarzenia z chwili nagrania (zob. `docs/adr/0009`).
+- Dzwonek (🔔 w nagłówku, `/dzwonek`): skrzynka powiadomień każdego użytkownika z licznikiem
+  nieprzeczytanych (`app.notifications`, zob. `docs/adr/0007`). Rejestr zapisuje powiadomienie w transakcji
+  zdarzenia, a port powiadomień wysyła po zapisie kopię e-mailem. Rodzaje: zabrany sprzęt (kierownik budowy,
+  z której przeniesienie zabrało narzędzia) i przekroczenie progu dni (zadanie dzienne
+  `system().notifyExceededThresholds`: kierownik budowy o każdym narzędziu, właściciel zbiorczo).
+- Kolejka offline (`src/lib/offline/`, zob. `docs/adr/0008`): bez zasięgu checklista, skaner i propozycja
+  wkładają ruch do IndexedDB z czasem zdarzenia z tej chwili. Nagłówek pokazuje „Oczekuje: N” i wysyła kolejkę
+  po kolei, gdy wróci sieć (`registerQueuedMovement`). Ruch, którego serwer nie przyjmie, trafia na listę
+  „Do wyjaśnienia” (`/do-wyjasnienia`, `app.rejected_movements`) z powodem i do dzwonka autora.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu
@@ -187,5 +198,8 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   Scribe (`ELEVENLABS_API_KEY`, model `scribe_v2`, inny w `ELEVENLABS_MODEL`). Kubełek `nagrania` zakłada
   migracja. Lokalnie i w teście dymnym `TRANSCRIPTION_PROVIDER=staly` z `TRANSCRIPTION_FIXED_TEXT` udaje
   transkrypcję stałym tekstem.
+- Zadania harmonogramu: Vercel Cron z `vercel.json` (codziennie o 5:00 UTC `/zadania/progi`) wymaga
+  `CRON_SECRET` w zmiennych Vercel; bez niego zadanie odpowiada 401. Lokalnie można je wywołać
+  `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/zadania/progi`.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.

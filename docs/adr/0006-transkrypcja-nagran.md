@@ -33,4 +33,4 @@ nagrań („magazyn” w specyfikacji; w kodzie „kubełek nagrań”, bo „ma
   i umowie powierzenia jako podprocesorów.
 - Jeśli serwer padnie między zapisem a usunięciem albo usunięcie zawiedzie dwa razy, nagranie zostaje w kubełku. Przy obecnej skali to rzadkie
   i widoczne w Storage; gdyby się zdarzało, potrzebne będzie zadanie harmonogramu czyszczące stare nagrania.
-- Nagrywanie bez zasięgu (#20) użyje tej samej akcji: kolejka w IndexedDB wyśle nagranie, gdy sieć wróci.
+- Nagrywanie bez zasięgu (#20) idzie tą samą ścieżką: kolejka w IndexedDB wysyła nagranie, gdy sieć wróci (ADR 0009).

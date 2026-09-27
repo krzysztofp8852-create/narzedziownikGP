@@ -4,6 +4,7 @@ import { type FormEvent, useActionState, useRef, useState } from "react";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
+import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import type { LocationKind, RegisteredKind } from "@/registry/registry";
@@ -37,6 +38,8 @@ export interface Route {
 export interface ChecklistData {
   /** Identyfikator pierwszej operacji; każda zmiana zaznaczenia albo lokalizacji to nowa operacja. */
   operationId: string;
+  /** Kto rusza sprzęt: ruchy w kolejce offline należą do niego. */
+  userId: string;
   places: ChecklistPlace[];
   /** Magazynier i właściciel: ruszają sprzęt wszystkich lokalizacji. */
   everywhere: boolean;
@@ -47,6 +50,7 @@ export interface ChecklistData {
 export interface ChecklistProps {
   kind: RegisteredKind;
   operationId: string;
+  userId: string;
   places: ChecklistPlace[];
   route: Route;
 }
@@ -65,7 +69,7 @@ const STEPS: Record<RegisteredKind, Step[]> = {
   z_serwisu: ["from", "tools"],
 };
 
-export function Checklist({ kind, operationId: firstOperationId, places, route }: ChecklistProps) {
+export function Checklist({ kind, operationId: firstOperationId, userId, places, route }: ChecklistProps) {
   // Ponowne wysłanie tego samego wyboru (np. po zerwanym połączeniu) nie zdubluje ruchu, a zmiana
   // wyboru, także na ekranie przywróconym przyciskiem Wstecz, nie zwróci poprzedniego ruchu.
   const [operationId, setOperationId] = useState(firstOperationId);
@@ -76,14 +80,16 @@ export function Checklist({ kind, operationId: firstOperationId, places, route }
   const submittedSummary = useRef("");
   const [done, setDone] = useState<DoneMovement | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
-    const result = await registerMovement(prev, formData);
-    if (result.done) {
+    const summary = submittedSummary.current;
+    const result = await sendOrQueue(() => registerMovement(prev, formData), queuedFromForm(formData, { userId, summary }));
+    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified };
+    if (done) {
       setSelectedIds([]);
       setQuery("");
       setOperationId(newOperationId());
-      setDone({ summary: submittedSummary.current, notified: result.done.notified });
+      setDone(done);
     }
-    return result;
+    return result === "queued" ? {} : result;
   }, {});
 
   const byId = new Map(places.map((place) => [place.id, place]));

@@ -488,10 +488,14 @@ describe("historia tylko się dopisuje", () => {
 
     const commands = Object.keys(testbed.registry.as(z.zawbud.ownerId));
 
+    // Wyjaśnienie odrzuconego ruchu z kolejki offline zamyka odrzucenie; ruchu w historii nie ma.
     expect(commands.filter((name) => /movement/i.test(name)).sort()).toEqual([
       "movementHistory",
+      "movementsToClarify",
       "recentMovements",
       "registerMovement",
+      "registerQueuedMovement",
+      "resolveRejectedMovement",
       "undoMovement",
     ]);
   });

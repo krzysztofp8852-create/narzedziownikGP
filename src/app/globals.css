@@ -1573,3 +1573,99 @@ a.tool-row:hover .tool-row-name {
     grid-template-columns: 1fr;
   }
 }
+
+/* Dzwonek */
+.bell-button {
+  position: relative;
+}
+
+.bell-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bell-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 var(--gutter);
+}
+
+.bell-entry-unread {
+  box-shadow: inset 4px 0 0 var(--accent);
+  margin: 0 calc(-1 * var(--gutter));
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  background: var(--accent-soft);
+}
+
+.tag-unread {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Kolejka offline */
+.offline-pending {
+  position: relative;
+}
+
+.offline-pending > summary {
+  list-style: none;
+  cursor: pointer;
+  background: var(--warning-soft);
+  border-color: var(--warning);
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.offline-pending > summary::-webkit-details-marker {
+  display: none;
+}
+
+.offline-pending-body {
+  position: absolute;
+  right: 0;
+  z-index: 10;
+  width: min(360px, calc(100vw - 2 * var(--gutter)));
+  margin-top: 6px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(20 23 28 / 0.12);
+}
+
+.offline-pending-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.tag-pending {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.offline-ready {
+  white-space: nowrap;
+}
+
+.ready-recordings {
+  display: grid;
+  gap: 6px;
+}

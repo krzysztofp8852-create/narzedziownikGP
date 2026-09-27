@@ -2,6 +2,7 @@ import type { Service, Site } from "./locations";
 import * as locations from "./locations";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
+import { hasAlarm } from "./thresholds";
 import { baseLocation, canSeeValues, daysSince, type LocationKind, type ToolRegistration } from "./tools";
 
 /** Narzędzie widoczne na tablicy. */
@@ -111,7 +112,7 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
       name: row.name,
       registration: row.registration,
       daysInPlace,
-      alarm: row.location_kind === "budowa" && daysInPlace > row.threshold_days,
+      alarm: hasAlarm(row.location_kind, row.located_since, row.threshold_days, now),
       ...(withValues && { value: parseValue(row.value) }),
     });
     byLocation.set(row.location_id, tools);

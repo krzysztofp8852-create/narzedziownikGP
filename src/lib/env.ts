@@ -52,6 +52,8 @@ export const serverEnv = {
         return null;
     }
   },
+  /** Sekret zadań harmonogramu (Vercel Cron wysyła go w nagłówku `Authorization`); bez niego zadania są wyłączone. */
+  cronSecret: () => process.env.CRON_SECRET || null,
   /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
   resend: () =>
     process.env.RESEND_API_KEY

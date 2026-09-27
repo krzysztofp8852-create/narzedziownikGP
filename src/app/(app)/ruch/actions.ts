@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh, revalidatePath } from "next/cache";
-import { formatDateTime } from "@/i18n/dates";
+import { conflictText } from "@/i18n/movement-text";
 import { t } from "@/i18n/t";
 import { InterpretationFailedError } from "@/interpretation/interpretation";
 import type { Proposal, ProposalKind } from "@/interpretation/proposal";
@@ -10,6 +10,7 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getInterpretation } from "@/lib/interpretation-instance";
+import type { QueuedMovement, SendOutcome, TranscribeOutcome } from "@/lib/offline/queue";
 import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import { MovementConflictError, type RegisteredKind, type RegisteredMovement, type RegisterSource } from "@/registry/registry";
@@ -41,7 +42,13 @@ export async function confirmProposal(_prev: ChecklistState, formData: FormData)
   return saveMovement(formData, (movement) =>
     getInterpretation()
       .as(session.userId)
-      .confirm({ ...movement, kind: formText(formData, "kind") as ProposalKind, text: formText(formData, "text") }),
+      .confirm({
+        ...movement,
+        kind: formText(formData, "kind") as ProposalKind,
+        text: formText(formData, "text"),
+        // Propozycja z nagrania z kolejki offline: ruch zdarzył się w chwili nagrania.
+        ...(formText(formData, "occurredAt") && { occurredAt: new Date(formText(formData, "occurredAt")) }),
+      }),
   );
 }
 
@@ -66,16 +73,7 @@ async function saveMovement(
     refresh();
     return {
       error: errorMessage(error),
-      conflicts: error.conflicts.map((conflict) =>
-        conflict.state === "w_obiegu"
-          ? t("checklist.conflictMoved", {
-              code: conflict.code,
-              place: conflict.location.name,
-              author: conflict.movedBy,
-              when: formatDateTime(conflict.movedAt),
-            })
-          : t("checklist.conflictState", { code: conflict.code, state: t(`toolState.${conflict.state}`) }),
-      ),
+      conflicts: error.conflicts.map(conflictText),
     };
   }
   revalidatePath("/");
@@ -100,26 +98,74 @@ export async function proposeMovement(text: string): Promise<{ proposal?: Propos
  * interpretacja się nie udała, żeby kierownik mógł go poprawić i wysłać bez mówienia od nowa.
  */
 export async function proposeFromRecording(formData: FormData): Promise<{ text?: string; proposal?: Proposal; error?: string }> {
+  const { text, proposal, error } = await hearRecording(formData);
+  return { text, proposal, error };
+}
+
+/**
+ * Nagranie z kolejki offline telefonu: jak `proposeFromRecording`, ale mówi telefonowi, czy nagranie może
+ * już zniknąć (rozpoznane albo bez szans na rozpoznanie), czy ma poczekać na ponowienie (np. awaria dostawcy).
+ */
+export async function transcribeQueuedRecording(formData: FormData): Promise<TranscribeOutcome> {
+  const { retry, text, proposal, error } = await hearRecording(formData);
+  if (retry) return { status: "retry" };
+  if (text !== undefined) return { status: "transcribed", text, ...(proposal && { proposal }), ...(error && { error }) };
+  return { status: "discarded", error: error ?? t("voice.failed") };
+}
+
+/** `retry`: nagranie nie zostało rozpoznane z powodu, który może minąć (dostawca transkrypcji, kubełek, awaria). */
+async function hearRecording(formData: FormData): Promise<{ text?: string; proposal?: Proposal; error?: string; retry: boolean }> {
   const session = await requireSession();
   const audio = formData.get("audio");
-  if (!(audio instanceof Blob)) return { error: t("voice.invalid") };
+  if (!(audio instanceof Blob)) return { error: t("voice.invalid"), retry: false };
   try {
     const proposal = await getInterpretation().as(session.userId).proposeFromRecording(audio);
-    return { text: proposal.text, proposal };
+    return { text: proposal.text, proposal, retry: false };
   } catch (error) {
     if (error instanceof TranscriptionFailedError) {
-      if (error.reason === "silence") return { error: t("voice.silence") };
+      if (error.reason === "silence") return { error: t("voice.silence"), retry: false };
       console.error(error);
-      return { error: t("voice.failed") };
+      return { error: t("voice.failed"), retry: true };
     }
     if (error instanceof InterpretationFailedError) {
       console.error(error);
-      return { text: error.text, error: t("textEntry.failed") };
+      return { text: error.text, error: t("textEntry.failed"), retry: false };
     }
-    if (isRegistryError(error)) return { error: error.code === "invalid_input" ? t("voice.invalid") : errorMessage(error) };
+    if (isRegistryError(error)) {
+      return error.code === "invalid_input" ? { error: t("voice.invalid"), retry: false } : { error: errorMessage(error), retry: true };
+    }
     // Kubełek nagrań albo nieoczekiwana awaria: nagranie można powtórzyć.
     console.error(error);
-    return { error: t("voice.failed") };
+    return { error: t("voice.failed"), retry: true };
+  }
+}
+
+/**
+ * Ruch z kolejki offline telefonu, z czasem zdarzenia z chwili zapisu. Odrzucony trafia na listę
+ * „Do wyjaśnienia” i do dzwonka; przy błędzie, po którym warto ponowić, ruch zostaje w kolejce.
+ */
+export async function sendQueuedMovement(item: QueuedMovement): Promise<SendOutcome> {
+  const session = await requireSession();
+  // Na wspólnym telefonie ruch innej osoby czeka, aż ona się zaloguje.
+  if (item.userId !== session.userId) return "retry";
+  try {
+    const result = await getRegistry()
+      .as(session.userId)
+      .registerQueuedMovement({
+        operationId: item.operationId,
+        kind: item.kind,
+        fromLocationId: item.fromLocationId,
+        toLocationId: item.toLocationId,
+        toolIds: item.toolIds,
+        source: item.source,
+        transcript: item.transcript,
+        occurredAt: new Date(item.occurredAt),
+      });
+    revalidatePath("/", "layout");
+    return result.status;
+  } catch (error) {
+    console.error("Ruch z kolejki offline czeka na ponowienie", error);
+    return "retry";
   }
 }
 
