@@ -7,7 +7,7 @@
 create table app.subscriptions (
   company_id uuid primary key references app.companies (id) on delete restrict,
   -- Progi i ich limity narzędzi zna Rejestr (src/registry/subscriptions.ts).
-  tier text not null check (tier in ('maly', 'sredni', 'duzy', 'indywidualny')),
+  tier text not null check (tier in ('maly', 'sredni', 'duzy')),
   -- Ostatni opłacony dzień; null, dopóki nie zaksięgowano pierwszego przelewu.
   paid_until date,
   manual_read_only boolean not null default false,
@@ -24,9 +24,9 @@ alter table app.subscriptions enable row level security;
 grant select, insert on app.subscriptions to authenticated;
 grant update (tier, paid_until, manual_read_only) on app.subscriptions to authenticated;
 
--- Abonament z danymi do faktury widzi właściciel swojej firmy, a zmienia tylko super-admin.
+-- Stan abonamentu widzi cała firma (np. baner trybu tylko do odczytu), a zmienia tylko super-admin.
 create policy subscriptions_select on app.subscriptions for select to authenticated
-  using ((company_id = app.current_company_id() and app.current_user_role() = 'wlasciciel') or app.is_super_admin());
+  using (company_id = app.current_company_id() or app.is_super_admin());
 create policy subscriptions_insert_by_super_admin on app.subscriptions for insert to authenticated
   with check (app.is_super_admin());
 create policy subscriptions_update_by_super_admin on app.subscriptions for update to authenticated
