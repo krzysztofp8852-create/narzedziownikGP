@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { flushMovements, type QueuedMovement, type QueueStore } from "./queue";
+import type { Proposal } from "@/interpretation/proposal";
+import { flushMovements, flushRecordings, type QueuedMovement, type QueuedRecording, type QueueStore, type ReadyRecording } from "./queue";
 
 /** Kolejka w pamięci zamiast IndexedDB. */
 class MemoryStore<T> implements QueueStore<T> {
@@ -95,5 +96,77 @@ describe("wysyłanie kolejki ruchów", () => {
     expect(sent).toEqual(["a"]);
     expect(result).toEqual({ registered: 1, rejected: 0, pending: 0 });
     expect([...store.items.keys()]).toEqual(["k"]);
+  });
+});
+
+function recording(id: string, queuedAt: number, userId = NOWAK): QueuedRecording {
+  return { id, userId, audio: new Uint8Array([1, 2, 3]).buffer, type: "audio/webm", recordedAt: new Date(queuedAt).toISOString(), queuedAt };
+}
+
+const proposal: Proposal = {
+  text: "biorę szlifierkę na Rataje",
+  kind: "wydanie",
+  site: { id: "rataje", name: "Rataje" },
+  from: { id: "baza", name: "Magazyn" },
+  tools: [{ id: "s01", code: "S-01", name: "Szlifierka kątowa", phrase: "szlifierkę" }],
+  ambiguities: [],
+  unrecognized: [],
+};
+
+function givenRecordings(...items: QueuedRecording[]) {
+  const recordings = new MemoryStore<QueuedRecording>((item) => item.id);
+  for (const item of items) recordings.items.set(item.id, item);
+  const ready = new MemoryStore<ReadyRecording>((item) => item.id);
+  return { recordings, ready };
+}
+
+describe("wysyłanie nagrań z kolejki", () => {
+  it("rozpoznane nagranie staje się propozycją do zatwierdzenia z czasem nagrania, a jego dźwięk znika z telefonu", async () => {
+    const { recordings, ready } = givenRecordings(recording("r2", 2000), recording("r1", 1000));
+    const sent: string[] = [];
+
+    const result = await flushRecordings(recordings, ready, NOWAK, async (item) => {
+      sent.push(item.id);
+      return { status: "transcribed", text: proposal.text, proposal };
+    });
+
+    expect(sent).toEqual(["r1", "r2"]);
+    expect(result).toEqual({ ready: 2, pending: 0 });
+    expect(recordings.items.size).toBe(0);
+    expect(ready.items.get("r1")).toEqual({
+      id: "r1",
+      userId: NOWAK,
+      recordedAt: new Date(1000).toISOString(),
+      text: proposal.text,
+      proposal,
+    });
+  });
+
+  it("rozpoznany tekst, którego nie udało się zrozumieć, czeka do poprawienia; nagranie bez mowy znika z komunikatem", async () => {
+    const { recordings, ready } = givenRecordings(recording("r1", 1000), recording("r2", 2000));
+
+    await flushRecordings(recordings, ready, NOWAK, async (item) =>
+      item.id === "r1" ? { status: "transcribed", text: "coś tam", error: "Nie zrozumiałem" } : { status: "discarded", error: "Nic nie słychać" },
+    );
+
+    expect(recordings.items.size).toBe(0);
+    expect(ready.items.get("r1")).toMatchObject({ text: "coś tam", error: "Nie zrozumiałem" });
+    expect(ready.items.get("r1")).not.toHaveProperty("proposal");
+    expect(ready.items.get("r2")).toMatchObject({ error: "Nic nie słychać" });
+    expect(ready.items.get("r2")).not.toHaveProperty("text");
+  });
+
+  it("bez sieci albo gdy transkrypcja chwilowo nie działa, nagranie zostaje w telefonie do ponowienia", async () => {
+    const { recordings, ready } = givenRecordings(recording("r1", 1000), recording("r2", 2000), recording("k", 1500, "user-kowalski"));
+
+    const offline = await flushRecordings(recordings, ready, NOWAK, async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    const failing = await flushRecordings(recordings, ready, NOWAK, async () => ({ status: "retry" }));
+
+    expect(offline).toEqual({ ready: 0, pending: 2 });
+    expect(failing).toEqual({ ready: 0, pending: 2 });
+    expect([...recordings.items.keys()].sort()).toEqual(["k", "r1", "r2"]);
+    expect(ready.items.size).toBe(0);
   });
 });

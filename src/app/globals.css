@@ -1660,3 +1660,12 @@ a.tool-row:hover .tool-row-name {
   color: var(--warning);
   border-color: var(--warning);
 }
+
+.offline-ready {
+  white-space: nowrap;
+}
+
+.ready-recordings {
+  display: grid;
+  gap: 6px;
+}

@@ -1,9 +1,12 @@
 "use client";
 
-import { type FormEvent, startTransition, useActionState, useRef, useState, useTransition } from "react";
+import { type FormEvent, startTransition, useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { Proposal } from "@/interpretation/proposal";
-import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
+import { enqueueRecording, isNetworkError, onQueueChanged, queueChanged, queuedFromForm, readyRecordings, sendOrQueue } from "@/lib/offline/client";
+import { hasOfflineQueue } from "@/lib/offline/idb";
+import type { ReadyRecording } from "@/lib/offline/queue";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import { type ChecklistState, confirmProposal, proposeFromRecording, proposeMovement } from "./actions";
@@ -24,28 +27,77 @@ interface Reply {
   round: number;
 }
 
+/** Nagranie z kolejki offline, nad którym teraz pracujemy: ruch z niego zdarzył się w chwili nagrania. */
+interface FromRecording {
+  id: string;
+  recordedAt: string;
+  /** Bez propozycji: rozpoznany tekst jest w polu wpisu do poprawienia i wysłania. */
+  correcting: boolean;
+}
+
 /**
  * Głos i wpis tekstem: kierownik mówi (przytrzymując przycisk) albo pisze zdanie, a system odpowiada
  * propozycją ruchu (rodzaj, budowa, narzędzia z kodami), pyta o niejednoznaczne narzędzia i daje ją
- * poprawić. Nic się nie zapisuje przed ✓.
+ * poprawić. Nic się nie zapisuje przed ✓. Nagranie bez zasięgu czeka w telefonie, a po transkrypcji
+ * jego propozycja jest na liście „Nagrania do zatwierdzenia” (`recordingId` otwiera jedną z nich).
  */
-export function TextEntry({ data, voice }: { data: ChecklistData; voice: boolean }) {
+export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; voice: boolean; recordingId?: string }) {
   const [text, setText] = useState("");
   const [reply, setReply] = useState<Reply | null>(null);
   const [done, setDone] = useState<DoneMovement | null>(null);
+  const [recordingQueued, setRecordingQueued] = useState(false);
+  const [ready, setReady] = useState<ReadyRecording[]>([]);
+  const [fromRecording, setFromRecording] = useState<FromRecording | null>(null);
   const [asking, startAsking] = useTransition();
   // Formularz otwiera się po kliknięciu, więc nie ma go w HTML z serwera.
   const [voiceAvailable] = useState(() => voice && canRecord());
+  // Które nagranie z adresu (link „Do zatwierdzenia” w nagłówku) już otworzyliśmy.
+  const openedFromLink = useRef<string | undefined>(undefined);
 
   function answer(next: Omit<Reply, "round">) {
     setReply((previous) => ({ ...next, round: (previous?.round ?? 0) + 1 }));
   }
+
+  /** Otwiera propozycję z nagrania z kolejki; bez propozycji rozpoznany tekst trafia do pola wpisu. */
+  const open = useCallback(async (recording: ReadyRecording) => {
+    setDone(null);
+    setRecordingQueued(false);
+    setFromRecording({ id: recording.id, recordedAt: recording.recordedAt, correcting: !recording.proposal });
+    if (recording.text && !recording.proposal) setText(recording.text);
+    setReply((previous) => ({
+      asked: recording.text ?? t("voice.yourRecording"),
+      spoken: true,
+      proposal: recording.proposal,
+      error: recording.error,
+      round: (previous?.round ?? 0) + 1,
+    }));
+    // Bez propozycji nie ma czego zatwierdzać: komunikat albo tekst do poprawienia są już na ekranie.
+    if (!recording.proposal) await forget(recording.id);
+  }, []);
+
+  useEffect(() => {
+    if (!hasOfflineQueue()) return;
+    const load = async () => {
+      const mine = (await readyRecordings().all()).filter((item) => item.userId === data.userId);
+      setReady(mine.sort((a, b) => a.recordedAt.localeCompare(b.recordedAt)));
+      const linked = recordingId !== openedFromLink.current && mine.find((item) => item.id === recordingId);
+      if (linked) {
+        openedFromLink.current = recordingId;
+        await open(linked);
+      }
+    };
+    void load();
+    return onQueueChanged(() => void load());
+  }, [data.userId, recordingId, open]);
 
   function ask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const asked = text.trim();
     if (!asked) return;
     setDone(null);
+    setRecordingQueued(false);
+    // Poprawiony tekst z nagrania nadal opisuje ruch z chwili nagrania; nowe zdanie już nie.
+    setFromRecording((current) => (current?.correcting ? current : null));
     startAsking(async () => {
       const result = await proposeMovement(asked);
       answer({ asked, spoken: false, ...result });
@@ -54,19 +106,68 @@ export function TextEntry({ data, voice }: { data: ChecklistData; voice: boolean
 
   function hear(audio: Blob) {
     setDone(null);
+    setRecordingQueued(false);
+    setFromRecording(null);
+    const recordedAt = new Date();
+    const queue = async () => {
+      await enqueueRecording(audio, data.userId, recordedAt);
+      setReply(null);
+      setRecordingQueued(true);
+    };
     startAsking(async () => {
+      if (hasOfflineQueue() && !navigator.onLine) return queue();
       const formData = new FormData();
       formData.set("audio", audio);
-      const { text: heard, ...result } = await proposeFromRecording(formData);
+      let heard: Awaited<ReturnType<typeof proposeFromRecording>>;
+      try {
+        heard = await proposeFromRecording(formData);
+      } catch (error) {
+        if (hasOfflineQueue() && isNetworkError(error)) return queue();
+        throw error;
+      }
+      const { text: recognized, ...result } = heard;
       // Gdy nie udało się zrozumieć rozpoznanego tekstu, można go poprawić i wysłać bez mówienia od nowa.
-      if (heard && !result.proposal) setText(heard);
-      answer({ asked: heard ?? t("voice.yourRecording"), spoken: true, ...result });
+      if (recognized && !result.proposal) setText(recognized);
+      answer({ asked: recognized ?? t("voice.yourRecording"), spoken: true, ...result });
     });
   }
 
   return (
     <div className="text-entry">
+      {ready.length > 0 && (
+        <section className="ready-recordings" aria-label={t("offline.readyTitle")}>
+          <h3 className="scan-legend">{t("offline.readyTitle")}</h3>
+          <div className="proposal-options">
+            {ready.map((recording) => (
+              <span key={recording.id} className="undo">
+                <button
+                  type="button"
+                  className={fromRecording?.id === recording.id ? "button button-small" : "button button-quiet button-small"}
+                  onClick={() => void open(recording)}
+                >
+                  {t("offline.readyItem", { when: formatDateTime(new Date(recording.recordedAt)) })}
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet button-small"
+                  onClick={() => {
+                    if (fromRecording?.id === recording.id) setReply(null);
+                    void forget(recording.id);
+                  }}
+                >
+                  {t("offline.discard")}
+                </button>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
       {voiceAvailable && <VoiceRecorder busy={asking} onRecorded={hear} />}
+      {recordingQueued && (
+        <p className="checklist-done checklist-queued" role="status">
+          {t("offline.recordingQueued")}
+        </p>
+      )}
       <form className="text-entry-ask" onSubmit={ask}>
         <div className="field">
           <label htmlFor="text-entry-text">{t("textEntry.label")}</label>
@@ -98,7 +199,10 @@ export function TextEntry({ data, voice }: { data: ChecklistData; voice: boolean
       {reply && (
         <div className="chat">
           <p className="bubble bubble-you">
-            <span className="bubble-who">{reply.spoken ? t("voice.you") : t("textEntry.you")}</span>
+            <span className="bubble-who">
+              {reply.spoken ? t("voice.you") : t("textEntry.you")}
+              {fromRecording && ` · ${t("offline.recordedAt", { when: formatDateTime(new Date(fromRecording.recordedAt)) })}`}
+            </span>
             {reply.asked}
           </p>
           <div className="bubble bubble-system">
@@ -113,10 +217,13 @@ export function TextEntry({ data, voice }: { data: ChecklistData; voice: boolean
                 key={reply.round}
                 proposal={reply.proposal}
                 data={data}
+                occurredAt={fromRecording?.recordedAt}
                 onDone={(movement) => {
                   setDone(movement);
                   setReply(null);
                   setText("");
+                  if (fromRecording) void forget(fromRecording.id);
+                  setFromRecording(null);
                 }}
               />
             )}
@@ -127,14 +234,22 @@ export function TextEntry({ data, voice }: { data: ChecklistData; voice: boolean
   );
 }
 
+/** Propozycja z nagrania z kolejki jest zatwierdzona, odrzucona albo już pokazana: znika z telefonu. */
+async function forget(recordingId: string) {
+  await readyRecordings().remove(recordingId);
+  queueChanged();
+}
+
 interface ProposalFormProps {
   proposal: Proposal;
   data: ChecklistData;
+  /** Czas zdarzenia (ISO) przy propozycji z nagrania z kolejki offline: chwila nagrania. */
+  occurredAt?: string;
   onDone: (movement: DoneMovement) => void;
 }
 
 /** Propozycja do poprawienia i zatwierdzenia ✓: rodzaj, budowa, pytania, narzędzia i to, czego nie rozpoznano. */
-function ProposalForm({ proposal, data, onDone }: ProposalFormProps) {
+function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps) {
   const [draft, setDraft] = useState<Draft>(() => startDraft(proposal, data));
   const [query, setQuery] = useState("");
   // Ponowne wysłanie tego samego ruchu (np. po zerwanym połączeniu) idzie pod tym samym
@@ -197,6 +312,7 @@ function ProposalForm({ proposal, data, onDone }: ProposalFormProps) {
   return (
     <form className="proposal" aria-label={t("textEntry.proposalLabel")} onSubmit={submit}>
       <input type="hidden" name="text" value={proposal.text} />
+      {occurredAt && <input type="hidden" name="occurredAt" value={occurredAt} />}
       <input type="hidden" name="kind" value={draft.kind} />
       <input type="hidden" name="fromLocationId" value={plan.from?.id ?? ""} />
       <input type="hidden" name="toLocationId" value={plan.to?.id ?? ""} />

@@ -246,8 +246,9 @@ function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
   );
 }
 
-export default async function BoardPage() {
+export default async function BoardPage(props: PageProps<"/">) {
   const session = await requireSession();
+  const { nagranie } = await props.searchParams;
   const registry = getRegistry().as(session.userId);
   const [board, movements, managers, categories, reports] = await Promise.all([
     registry.whereIsWhat(),
@@ -276,6 +277,7 @@ export default async function BoardPage() {
           }
           textEntry={textEntryEnabled()}
           voiceEntry={voiceEntryEnabled()}
+          recordingId={typeof nagranie === "string" ? nagranie : undefined}
           reportTool={
             categories &&
             canReportTools(session) && {

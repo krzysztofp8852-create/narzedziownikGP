@@ -231,3 +231,31 @@ describe("propozycja ruchu z nagrania", () => {
     expect(recordings.stored.size).toBe(0);
   });
 });
+
+describe("nagranie z kolejki offline", () => {
+  it("propozycja z nagrania zrobionego bez zasięgu, zatwierdzona później, ma w historii czas nagrania", async () => {
+    const z = await givenZawbud();
+    const recordedAt = new Date(testbed.clock.now().getTime() + 10 * 60_000);
+    // Sieć wraca godzinę po nagraniu: transkrypcja, propozycja i ✓.
+    testbed.clock.set(new Date(recordedAt.getTime() + 60 * 60_000));
+    transcriber.text = "biorę szlifierkę na Rataje";
+    interpreter.answer = { kind: "wydanie", siteId: z.ratajeId, fromSiteId: null, mentions: [{ phrase: "szlifierkę", quantity: 1, codes: ["S-01"] }] };
+    const proposal = await interpretation().as(z.nowakId).proposeFromRecording(recording());
+
+    const movement = await interpretation()
+      .as(z.nowakId)
+      .confirm({
+        operationId: randomUUID(),
+        kind: proposal.kind,
+        fromLocationId: proposal.from!.id,
+        toLocationId: proposal.site!.id,
+        toolIds: proposal.tools.map((tool) => tool.id),
+        text: proposal.text,
+        occurredAt: recordedAt,
+      });
+
+    expect(movement).toMatchObject({ source: "glos", occurredAt: recordedAt, recordedAt: testbed.clock.now() });
+    expect((await testbed.registry.as(z.zawbud.ownerId).toolCard(z.s01))!.history[0]).toMatchObject({ occurredAt: recordedAt });
+    expect(recordings.stored.size).toBe(0);
+  });
+});

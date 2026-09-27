@@ -658,7 +658,15 @@
     "pendingTag": "oczekuje",
     "pendingList": "Ruchy czekające na sieć",
     "pendingHint": "Te ruchy są zapisane w telefonie i wyślą się same, gdy wróci zasięg. Czas w historii będzie z chwili zapisu.",
-    "queued": "Brak zasięgu. Zapisano w telefonie: {summary}. Wyślę sam, gdy wróci sieć."
+    "queued": "Brak zasięgu. Zapisano w telefonie: {summary}. Wyślę sam, gdy wróci sieć.",
+    "recording": "Nagranie z {when}",
+    "ready": "🎙 Do zatwierdzenia: {count}",
+    "readyLabel": "Propozycje z nagrań gotowe do zatwierdzenia: {count}",
+    "recordingQueued": "Brak zasięgu. Nagranie jest w telefonie; gdy wróci sieć, rozpoznam je i pokażę propozycję do zatwierdzenia.",
+    "readyTitle": "Nagrania do zatwierdzenia",
+    "readyItem": "Nagranie z {when}",
+    "recordedAt": "Nagranie z {when}",
+    "discard": "Odrzuć"
   },
   "toClarify": {
     "title": "Do wyjaśnienia",

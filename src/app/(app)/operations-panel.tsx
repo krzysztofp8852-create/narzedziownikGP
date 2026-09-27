@@ -29,11 +29,19 @@ export interface OperationsPanelProps {
   textEntry: boolean;
   /** Nagrywanie głosu: gdy skonfigurowano także dostawcę transkrypcji. */
   voiceEntry: boolean;
+  /** Propozycja z nagrania z kolejki offline do otwarcia (link „Do zatwierdzenia” w nagłówku). */
+  recordingId?: string;
 }
 
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
-export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voiceEntry }: OperationsPanelProps) {
-  const [open, setOpen] = useState<Operation | null>(null);
+export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voiceEntry, recordingId }: OperationsPanelProps) {
+  const [open, setOpen] = useState<Operation | null>(recordingId && textEntry ? "tekst" : null);
+  // Link „Do zatwierdzenia” w nagłówku otwiera głos i wpis tekstem także na już otwartej tablicy.
+  const [linkedRecording, setLinkedRecording] = useState(recordingId);
+  if (recordingId !== linkedRecording) {
+    setLinkedRecording(recordingId);
+    if (recordingId && textEntry) setOpen("tekst");
+  }
   const movements = MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]);
   const operations: [Operation, string][] = [
     // Skaner podpowiada te same ruchy, więc jest tam, gdzie choć jeden z nich.
@@ -76,7 +84,7 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
           {open === "narzedzie" && newTool && <NewToolForm {...newTool} />}
           {open === "zgloszenie" && reportTool && <ReportToolForm {...reportTool} />}
           {open === "skaner" && <Scanner data={checklist} />}
-          {open === "tekst" && <TextEntry data={checklist} voice={voiceEntry} />}
+          {open === "tekst" && <TextEntry data={checklist} voice={voiceEntry} recordingId={recordingId} />}
           {open !== "skaner" && open !== "tekst" && open !== "narzedzie" && open !== "zgloszenie" && checklist.routes[open] && (
             <Checklist
               key={open}

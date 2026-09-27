@@ -146,7 +146,9 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   `proposeFromRecording` modułu Interpretacja kładzie je do prywatnego kubełka Supabase Storage `nagrania`
   (port kubełka nagrań), przekazuje portowi transkrypcji (gpt-4o-transcribe albo ElevenLabs Scribe, zob.
   `docs/adr/0006`) i w `finally` usuwa, więc nagranie znika także po nieudanej transkrypcji. Rozpoznany tekst
-  przechodzi dalej tą samą ścieżką co wpis tekstem.
+  przechodzi dalej tą samą ścieżką co wpis tekstem. Nagranie bez zasięgu czeka w IndexedDB, a po powrocie sieci
+  przechodzi transkrypcję i staje się propozycją do zatwierdzenia w telefonie („🎙 Do zatwierdzenia” w nagłówku),
+  z czasem zdarzenia z chwili nagrania (zob. `docs/adr/0009`).
 - Dzwonek (🔔 w nagłówku, `/powiadomienia`): skrzynka powiadomień każdego użytkownika z licznikiem
   nieprzeczytanych (`app.notifications`, zob. `docs/adr/0007`). Rejestr zapisuje powiadomienie w transakcji
   zdarzenia, a port powiadomień wysyła po zapisie kopię e-mailem. Rodzaje: zabrany sprzęt (kierownik budowy,
