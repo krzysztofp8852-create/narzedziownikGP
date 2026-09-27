@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OfflineSync } from "@/components/offline-sync";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
@@ -41,6 +42,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             </p>
           </div>
           <div className="app-header-actions">
+            <OfflineSync userId={session.userId} />
             <Link href="/powiadomienia" className="button button-quiet icon-button bell-button" aria-label={bellLabel} title={bellLabel}>
               <BellIcon />
               {unread > 0 && (

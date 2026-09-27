@@ -152,6 +152,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   zdarzenia, a port powiadomień wysyła po zapisie kopię e-mailem. Rodzaje: zabrany sprzęt (kierownik budowy,
   z której przeniesienie zabrało narzędzia) i przekroczenie progu dni (zadanie dzienne
   `system().notifyExceededThresholds`: kierownik budowy o każdym narzędziu, właściciel zbiorczo).
+- Kolejka offline (`src/lib/offline/`, zob. `docs/adr/0008`): bez zasięgu checklista, skaner i propozycja
+  wkładają ruch do IndexedDB z czasem zdarzenia z tej chwili. Nagłówek pokazuje „Oczekuje: N” i wysyła kolejkę
+  po kolei, gdy wróci sieć (`registerQueuedMovement`). Ruch, którego serwer nie przyjmie, trafia na listę
+  „Do wyjaśnienia” (`/do-wyjasnienia`, `app.rejected_movements`) z powodem i do dzwonka autora.
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
   aktywny kierownik z tej samej firmy, czego pilnuje też RLS. Dezaktywacja kierownika nie odbiera mu

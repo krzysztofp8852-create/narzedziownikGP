@@ -2,6 +2,7 @@
 
 import { type FormEvent, startTransition, useActionState, useRef, useState } from "react";
 import { t } from "@/i18n/t";
+import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
 import type { RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
@@ -40,16 +41,18 @@ export function Scanner({ data }: { data: ChecklistData }) {
   const operationIds = useRef(new Map<string, string>());
   const submitted = useRef<Submitted | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
-    const result = await registerMovement(prev, formData);
     const sent = submitted.current;
-    if (result.done && sent) {
+    const summary = sent?.summary ?? "";
+    const result = await sendOrQueue(() => registerMovement(prev, formData), queuedFromForm(formData, { userId: data.userId, summary }));
+    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified };
+    if (done && sent) {
       operationIds.current.delete(sent.signature);
       setScannedIds((ids) => ids.filter((id) => !sent.toolIds.includes(id)));
       // Kolejne narzędzia z tego miejsca znowu dostaną podpowiedź, a nie poprzedni wybór.
       setChoices((current) => Object.fromEntries(Object.entries(current).filter(([fromId]) => fromId !== sent.fromId)));
-      setDone({ summary: sent.summary, notified: result.done.notified });
+      setDone(done);
     }
-    return result;
+    return result === "queued" ? {} : result;
   }, {});
 
   const toolsById = new Map(data.places.flatMap((place) => place.tools.map((tool) => [tool.id, tool] as const)));

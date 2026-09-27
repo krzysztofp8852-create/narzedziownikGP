@@ -1,5 +1,6 @@
+import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
-import type { ToolState } from "@/registry/registry";
+import type { MovementConflict, ToolState } from "@/registry/registry";
 
 /** Trasa ruchu: „Baza → Rataje”, samo „→ Baza” przy przyjęciu albo samo miejsce, gdy narzędzie w nim zostało. */
 export function movementRoute(from: string | null, to: string | null): string | null {
@@ -12,4 +13,16 @@ export function movementRoute(from: string | null, to: string | null): string | 
 export function stateChangeText(change: { from: ToolState; to: ToolState } | null): string | null {
   if (!change || change.from === change.to) return null;
   return t("toolCard.stateChange", { from: t(`toolState.${change.from}`), to: t(`toolState.${change.to}`) });
+}
+
+/** Dlaczego ruch odrzucono przy danym narzędziu: gdzie jest teraz i kto je przeniósł, albo w jakim jest stanie. */
+export function conflictText(conflict: MovementConflict): string {
+  return conflict.state === "w_obiegu"
+    ? t("checklist.conflictMoved", {
+        code: conflict.code,
+        place: conflict.location.name,
+        author: conflict.movedBy,
+        when: formatDateTime(conflict.movedAt),
+      })
+    : t("checklist.conflictState", { code: conflict.code, state: t(`toolState.${conflict.state}`) });
 }

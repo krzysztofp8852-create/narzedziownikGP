@@ -649,6 +649,22 @@
       "one": "{count} narzędzie przekroczyło próg {days} dni",
       "few": "{count} narzędzia przekroczyły próg {days} dni",
       "many": "{count} narzędzi przekroczyło próg {days} dni"
-    }
+    },
+    "movementRejected": "Ruch z kolejki odrzucony: {kind} {codes}",
+    "movementRejectedBody": "Zapisany w telefonie {when}. {reason} Sprawdź go na liście „Do wyjaśnienia”."
+  },
+  "offline": {
+    "pending": "⏳ Oczekuje: {count}",
+    "pendingTag": "oczekuje",
+    "pendingList": "Ruchy czekające na sieć",
+    "pendingHint": "Te ruchy są zapisane w telefonie i wyślą się same, gdy wróci zasięg. Czas w historii będzie z chwili zapisu.",
+    "queued": "Brak zasięgu. Zapisano w telefonie: {summary}. Wyślę sam, gdy wróci sieć."
+  },
+  "toClarify": {
+    "title": "Do wyjaśnienia",
+    "intro": "Ruchy zapisane w telefonie bez zasięgu, których serwer nie przyjął, bo stan zmienił się w międzyczasie. Nic z nich nie trafiło do historii. Sprawdź, gdzie jest sprzęt, zarejestruj ruch jeszcze raz, jeśli trzeba, i oznacz go jako wyjaśniony.",
+    "empty": "Nie ma ruchów do wyjaśnienia.",
+    "when": "Zapisany w telefonie {recorded}, odrzucony {rejected}",
+    "resolve": "Wyjaśnione"
   }
 }

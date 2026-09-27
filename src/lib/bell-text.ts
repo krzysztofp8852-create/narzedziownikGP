@@ -30,6 +30,17 @@ export function notificationText(notification: NotificationContent): { title: st
         title: t(countKey(notification.tools.length), { count: notification.tools.length, days: notification.thresholdDays }),
         body: notification.tools.map((tool) => `${tool.code} (${tool.location.name})`).join(", "),
       };
+    case "ruch_odrzucony":
+      return {
+        title: t("bell.movementRejected", {
+          kind: t(`movementKind.${notification.movementKind}`),
+          codes: notification.tools.map((tool) => tool.code).join(", "),
+        }),
+        body: t("bell.movementRejectedBody", {
+          when: formatDateTime(notification.occurredAt),
+          reason: t(`errors.${notification.reason}`),
+        }),
+      };
   }
 }
 
@@ -44,6 +55,8 @@ export function notificationLink(notification: NotificationContent): string {
       return `/narzedzia/${notification.tool.id}`;
     case "progi_przekroczone":
       return "/";
+    case "ruch_odrzucony":
+      return "/do-wyjasnienia";
   }
 }
 

@@ -3,6 +3,7 @@
 import { type FormEvent, startTransition, useActionState, useRef, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import type { Proposal } from "@/interpretation/proposal";
+import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import { type ChecklistState, confirmProposal, proposeFromRecording, proposeMovement } from "./actions";
@@ -141,9 +142,11 @@ function ProposalForm({ proposal, data, onDone }: ProposalFormProps) {
   const operationIds = useRef(new Map<string, string>());
   const submitted = useRef<{ summary: string } | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
-    const result = await confirmProposal(prev, formData);
-    if (result.done && submitted.current) onDone({ summary: submitted.current.summary, notified: result.done.notified });
-    return result;
+    const summary = submitted.current?.summary ?? "";
+    const result = await sendOrQueue(() => confirmProposal(prev, formData), queuedFromForm(formData, { userId: data.userId, summary }));
+    if (result === "queued") onDone({ summary, notified: [], queued: true });
+    else if (result.done) onDone({ summary, notified: result.done.notified });
+    return result === "queued" ? {} : result;
   }, {});
 
   const plan = planDraft(draft, proposal, data);

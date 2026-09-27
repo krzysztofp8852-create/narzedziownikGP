@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh, revalidatePath } from "next/cache";
-import { formatDateTime } from "@/i18n/dates";
+import { conflictText } from "@/i18n/movement-text";
 import { t } from "@/i18n/t";
 import { InterpretationFailedError } from "@/interpretation/interpretation";
 import type { Proposal, ProposalKind } from "@/interpretation/proposal";
@@ -10,6 +10,7 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getInterpretation } from "@/lib/interpretation-instance";
+import type { QueuedMovement, SendOutcome } from "@/lib/offline/queue";
 import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import { MovementConflictError, type RegisteredKind, type RegisteredMovement, type RegisterSource } from "@/registry/registry";
@@ -66,16 +67,7 @@ async function saveMovement(
     refresh();
     return {
       error: errorMessage(error),
-      conflicts: error.conflicts.map((conflict) =>
-        conflict.state === "w_obiegu"
-          ? t("checklist.conflictMoved", {
-              code: conflict.code,
-              place: conflict.location.name,
-              author: conflict.movedBy,
-              when: formatDateTime(conflict.movedAt),
-            })
-          : t("checklist.conflictState", { code: conflict.code, state: t(`toolState.${conflict.state}`) }),
-      ),
+      conflicts: error.conflicts.map(conflictText),
     };
   }
   revalidatePath("/");
@@ -120,6 +112,35 @@ export async function proposeFromRecording(formData: FormData): Promise<{ text?:
     // Kubełek nagrań albo nieoczekiwana awaria: nagranie można powtórzyć.
     console.error(error);
     return { error: t("voice.failed") };
+  }
+}
+
+/**
+ * Ruch z kolejki offline telefonu, z czasem zdarzenia z chwili zapisu. Odrzucony trafia na listę
+ * „Do wyjaśnienia” i do dzwonka; przy błędzie, po którym warto ponowić, ruch zostaje w kolejce.
+ */
+export async function sendQueuedMovement(item: QueuedMovement): Promise<SendOutcome> {
+  const session = await requireSession();
+  // Na wspólnym telefonie ruch innej osoby czeka, aż ona się zaloguje.
+  if (item.userId !== session.userId) return "retry";
+  try {
+    const result = await getRegistry()
+      .as(session.userId)
+      .registerQueuedMovement({
+        operationId: item.operationId,
+        kind: item.kind,
+        fromLocationId: item.fromLocationId,
+        toLocationId: item.toLocationId,
+        toolIds: item.toolIds,
+        source: item.source,
+        transcript: item.transcript,
+        occurredAt: new Date(item.occurredAt),
+      });
+    revalidatePath("/", "layout");
+    return result.status;
+  } catch (error) {
+    console.error("Ruch z kolejki offline czeka na ponowienie", error);
+    return "retry";
   }
 }
 

@@ -21,6 +21,7 @@ const places: ChecklistPlace[] = [
 /** Kierownik Nowak: tak jak checklistData dla kierownika jednej budowy. */
 const nowak: ChecklistData = {
   operationId: "op",
+  userId: "nowak",
   places,
   everywhere: false,
   routes: {
@@ -34,6 +35,7 @@ const nowak: ChecklistData = {
 /** Magazynier: rusza sprzęt wszystkich lokalizacji. */
 const storekeeper: ChecklistData = {
   operationId: "op",
+  userId: "nowak",
   places: places.map((place) => ({ ...place, mine: false })),
   everywhere: true,
   routes: {

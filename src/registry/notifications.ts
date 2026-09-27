@@ -1,17 +1,18 @@
-import type { Movement } from "./movements";
+import type { RegistryErrorCode } from "./errors";
+import type { Movement, RegisteredKind } from "./movements";
 import type { Sql } from "./ports";
 
 /** Adresat powiadomienia: osoba z firmy, w której zaszło zdarzenie. */
 export interface Recipient {
   userId: string;
   fullName: string;
-  email: string;
 }
 
 /** Kierownik dowiaduje się, że ktoś zabrał sprzęt z jego budowy i już za niego nie odpowiada. */
 export interface ToolsTakenNotification {
   kind: "narzedzia_zabrane";
-  recipient: Recipient;
+  /** Z e-mailem: to powiadomienie ma kopię e-mailową. */
+  recipient: Recipient & { email: string };
   movementId: string;
   /** Kto zabrał. */
   takenBy: string;
@@ -40,8 +41,25 @@ export interface ThresholdsExceededNotification {
   tools: { id: string; code: string; name: string; location: { id: string; name: string } }[];
 }
 
+/** Autor: serwer odrzucił ruch z jego kolejki offline; ruch czeka na liście „Do wyjaśnienia”. */
+export interface MovementRejectedNotification {
+  kind: "ruch_odrzucony";
+  recipient: Recipient;
+  rejectionId: string;
+  movementKind: RegisteredKind;
+  tools: { id: string; code: string; name: string }[];
+  to: { id: string; name: string } | null;
+  /** Kod błędu Rejestru. */
+  reason: RegistryErrorCode;
+  occurredAt: Date;
+}
+
 /** Powiadomienie dla użytkownika firmy. Trafia do jego dzwonka, a port powiadomień wysyła kopię. */
-export type Notification = ToolsTakenNotification | ThresholdExceededNotification | ThresholdsExceededNotification;
+export type Notification =
+  | ToolsTakenNotification
+  | ThresholdExceededNotification
+  | ThresholdsExceededNotification
+  | MovementRejectedNotification;
 
 /** Powiadomienia, których kopię port powiadomień wysyła e-mailem; pozostałe są tylko w dzwonku. */
 export type EmailedNotification = ToolsTakenNotification;
@@ -96,5 +114,7 @@ export function dedupeKey(notification: Notification): string | null {
       return `prog:${notification.tool.id}:${notification.since.toISOString()}`;
     case "progi_przekroczone":
       return null;
+    case "ruch_odrzucony":
+      return `odrzucony:${notification.rejectionId}`;
   }
 }

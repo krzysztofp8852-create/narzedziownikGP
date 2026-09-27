@@ -82,6 +82,7 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
               key={open}
               kind={open}
               operationId={checklist.operationId}
+              userId={checklist.userId}
               places={checklist.places}
               route={checklist.routes[open]}
             />

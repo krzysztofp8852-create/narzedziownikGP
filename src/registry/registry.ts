@@ -16,6 +16,8 @@ import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as notifications from "./notifications";
 import type { EmailedNotification, ToolsTakenNotification } from "./notifications";
+import * as queuedMovements from "./queued-movements";
+import type { RejectedMovement } from "./queued-movements";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import * as siteClosing from "./site-closing";
@@ -66,6 +68,7 @@ export type {
 export { canMoveEverywhere, canMoveTools, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
 export type {
   EmailedNotification,
+  MovementRejectedNotification,
   Notification,
   NotificationContent,
   NotificationKind,
@@ -74,6 +77,7 @@ export type {
   ToolsTakenNotification,
 } from "./notifications";
 export type { Bell, BellEntry } from "./bell";
+export type { RejectedMovement } from "./queued-movements";
 export type { MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
@@ -110,6 +114,9 @@ export interface ExportData {
   /** Wszystkie ruchy pasujące do filtrów, od najnowszego. */
   movements: Movement[];
 }
+
+/** Wynik ruchu z kolejki offline: zapisany albo odrzucony na listę „Do wyjaśnienia”. */
+export type QueuedMovementResult = { status: "registered"; movement: RegisteredMovement } | { status: "rejected"; rejection: RejectedMovement };
 
 /** Zapisany ruch z powiadomieniami, które z niego wynikły. */
 export interface RegisteredMovement extends Movement {
@@ -220,6 +227,17 @@ export interface Registry {
      * MovementConflictError. Powiadomienia z wyniku wysyła port powiadomień, tylko przy pierwszym zapisie.
      */
     registerMovement(input: RegisterMovementInput): Promise<RegisteredMovement>;
+    /**
+     * Ruch z kolejki offline telefonu, z czasem zdarzenia z chwili zapisu w telefonie. Gdy serwer go nie
+     * przyjmie (konflikt, uprawnienia, zakończona budowa), odrzucenie jest ostateczne: trafia na listę
+     * „Do wyjaśnienia” autora i do jego dzwonka, a ponowne wysłanie tej samej operacji je zwraca. Błędy,
+     * po których warto ponowić (np. trzeba zmienić hasło, awaria), rzuca jak `registerMovement`.
+     */
+    registerQueuedMovement(input: RegisterMovementInput): Promise<QueuedMovementResult>;
+    /** Lista „Do wyjaśnienia”: odrzucone ruchy aktora z kolejki offline, od najnowszego. */
+    movementsToClarify(): Promise<RejectedMovement[]>;
+    /** Autor oznacza odrzucony ruch jako wyjaśniony; znika z jego listy. */
+    resolveRejectedMovement(rejectionId: string): Promise<void>;
     /**
      * Cofa własny ruch (wydanie, zwrot, przeniesienie, serwis) zapisany najwyżej 15 minut temu, o ile od tamtej pory żadne
      * z jego narzędzi się nie ruszyło. Oryginał zostaje w historii jako cofnięty.
@@ -335,6 +353,17 @@ export function createRegistry(deps: Deps): Registry {
         ) =>
         async (input: I) =>
           (await movementCommand(command, async (_sql, movement: M) => movement)(input)).result;
+
+      const registerMovement = async (input: RegisterMovementInput): Promise<RegisteredMovement> => {
+        const { result, replayed } = await movementCommand(movements.registerMovement, async (sql, movement) => {
+          const list = await notifications.notificationsFor(sql, movement);
+          // Ponowienie operacji niczego nie dubluje w dzwonku, a w wyniku są te same powiadomienia.
+          await bell.deliver(sql, list, deps.clock.now());
+          return { ...movement, notifications: list };
+        })(input);
+        if (!replayed) await sendNotifications(deps.notifier, result.notifications);
+        return result;
+      };
 
       return {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
@@ -524,16 +553,23 @@ export function createRegistry(deps: Deps): Registry {
         },
         forceCloseSite: movementOnlyCommand(siteClosing.forceCloseSite),
         finishedSites: () => asMember((sql) => siteClosing.finishedSites(sql)),
-        registerMovement: async (input) => {
-          const { result, replayed } = await movementCommand(movements.registerMovement, async (sql, movement) => {
-            const list = await notifications.notificationsFor(sql, movement);
-            // Ponowienie operacji niczego nie dubluje w dzwonku, a w wyniku są te same powiadomienia.
-            await bell.deliver(sql, list, deps.clock.now());
-            return { ...movement, notifications: list };
-          })(input);
-          if (!replayed) await sendNotifications(deps.notifier, result.notifications);
-          return result;
+        registerMovement,
+        registerQueuedMovement: async (input) => {
+          const rejected = await asMember((sql, session) => queuedMovements.rejectionByOperation(sql, session, input.operationId));
+          if (rejected) return { status: "rejected", rejection: rejected };
+          try {
+            return { status: "registered", movement: await registerMovement(input) };
+          } catch (error) {
+            if (!queuedMovements.isFinalRejection(error, input)) throw error;
+            const rejection = await asMember((sql, session) =>
+              queuedMovements.recordRejection(sql, session, input, error, deps.clock.now()),
+            );
+            return { status: "rejected", rejection };
+          }
         },
+        movementsToClarify: () => asMember((sql, session) => queuedMovements.movementsToClarify(sql, session)),
+        resolveRejectedMovement: (rejectionId) =>
+          asMember((sql, session) => queuedMovements.resolveRejectedMovement(sql, session, rejectionId, deps.clock.now())),
         undoMovement: movementOnlyCommand(movements.undoMovement),
         correctTool: movementOnlyCommand(corrections.correctTool),
         markToolLost: movementOnlyCommand(corrections.markToolLost),

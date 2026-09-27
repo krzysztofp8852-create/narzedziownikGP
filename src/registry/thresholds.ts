@@ -90,20 +90,20 @@ export async function notifyExceededThresholds(sql: Sql, now: Date): Promise<{ t
 }
 
 async function activePeople(sql: Sql, companyId: string): Promise<(Recipient & { role: string })[]> {
-  const rows = await sql<{ user_id: string; full_name: string; email: string; role: string }>(
-    "select user_id, full_name, email, role from app.users where company_id = $1 and active order by full_name",
+  const rows = await sql<{ user_id: string; full_name: string; role: string }>(
+    "select user_id, full_name, role from app.users where company_id = $1 and active order by full_name",
     [companyId],
   );
-  return rows.map((row) => ({ userId: row.user_id, fullName: row.full_name, email: row.email, role: row.role }));
+  return rows.map((row) => ({ userId: row.user_id, fullName: row.full_name, role: row.role }));
 }
 
 /** Aktywni kierownicy budów, według budowy. */
 async function siteManagers(sql: Sql, locationIds: string[]): Promise<Map<string, Recipient>> {
-  const rows = await sql<{ location_id: string; user_id: string; full_name: string; email: string }>(
-    `select l.id as location_id, u.user_id, u.full_name, u.email
+  const rows = await sql<{ location_id: string; user_id: string; full_name: string }>(
+    `select l.id as location_id, u.user_id, u.full_name
      from app.locations l join app.users u on u.user_id = l.manager_id
      where l.id = any($1::uuid[]) and u.active`,
     [locationIds],
   );
-  return new Map(rows.map((row) => [row.location_id, { userId: row.user_id, fullName: row.full_name, email: row.email }]));
+  return new Map(rows.map((row) => [row.location_id, { userId: row.user_id, fullName: row.full_name }]));
 }
