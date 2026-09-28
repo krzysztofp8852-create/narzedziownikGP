@@ -49,6 +49,8 @@ export interface ToolCard {
   registration: ToolRegistration;
   location: { id: string; name: string; kind: LocationKind };
   daysInPlace: number;
+  /** Od kiedy narzędzie jest zgłoszone jako uszkodzone; null, gdy jest sprawne. */
+  damagedSince: Date | null;
   /** Przy zaginionym narzędziu: kiedy zaginęło, gdzie było ostatnio i kto za nie odpowiadał. */
   lost: LostTool | null;
   history: HistoryEntry[];
@@ -321,10 +323,11 @@ export async function toolCard(
     location_name: string;
     location_kind: LocationKind;
     located_since: Date;
+    damaged_since: Date | null;
   }>(
     `select t.id, t.code, t.name, c.id as category_id, c.name as category_name, c.prefix as category_prefix,
             t.brand, t.model, t.serial_number, v.value::text as value, t.state, t.registration, l.id as location_id, l.name as location_name, l.kind as location_kind,
-            t.located_since
+            t.located_since, t.damaged_since
      from app.tools t
      join app.categories c on c.id = t.category_id
      join app.locations l on l.id = t.location_id
@@ -386,6 +389,7 @@ export async function toolCard(
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },
     daysInPlace: daysSince(row.located_since, now),
+    damagedSince: row.damaged_since && new Date(row.damaged_since),
     lost: lost
       ? {
           since: new Date(lost.occurred_at),

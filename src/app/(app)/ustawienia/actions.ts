@@ -26,3 +26,24 @@ export async function updateSettings(_prev: SettingsFormState, formData: FormDat
   revalidatePath("/ustawienia");
   return { saved: true };
 }
+
+/** Kto poza właścicielem i autorem widzi zgłoszenia; magazynier, który ich nie widzi, nie może ich zamykać. */
+export async function updateIssueVisibility(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
+  const session = await requireSession();
+  const storekeepers = formData.get("storekeepers") === "on";
+  try {
+    await getRegistry()
+      .as(session.userId)
+      .updateSettings({
+        issueVisibility: {
+          siteManagers: formData.get("siteManagers") === "on",
+          storekeepers,
+          storekeepersClose: storekeepers && formData.get("storekeepersClose") === "on",
+        },
+      });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/", "layout");
+  return { saved: true };
+}

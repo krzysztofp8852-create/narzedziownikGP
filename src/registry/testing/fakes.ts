@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { EmailedNotification } from "../notifications";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier } from "../ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore } from "../ports";
 import type { PushMessage, PushSubscriptionData } from "../push";
 
 /** Zegar ustawiany ręcznie. */
@@ -119,5 +119,31 @@ export class RecordingNotifier implements Notifier {
     this.expired.clear();
     this.failWith = null;
     this.pushFailWith = null;
+  }
+}
+
+/** Kubełek zdjęć w pamięci. */
+export class MemoryPhotoStore implements PhotoStore {
+  readonly photos = new Map<string, Blob>();
+  /** Kolejne zapisy kończą się tym błędem, np. gdy Storage nie odpowiada. */
+  failWith: Error | null = null;
+
+  async save(key: string, photo: Blob) {
+    if (this.failWith) throw this.failWith;
+    if (this.photos.has(key)) throw new Error(`Zdjęcie ${key} już jest`);
+    this.photos.set(key, photo);
+  }
+
+  async read(key: string) {
+    return this.photos.get(key) ?? null;
+  }
+
+  async remove(key: string) {
+    this.photos.delete(key);
+  }
+
+  clear() {
+    this.photos.clear();
+    this.failWith = null;
   }
 }

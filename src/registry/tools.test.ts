@@ -30,7 +30,7 @@ describe("dodawanie narzędzia", () => {
 
     const { base } = await owner.whereIsWhat();
     expect(base.tools).toEqual([
-      { id: toolId, code: "H-03", name: "Młot udarowy", registration: "zaakceptowane", daysInPlace: 3, alarm: false, value: 3200 },
+      { id: toolId, code: "H-03", name: "Młot udarowy", registration: "zaakceptowane", daysInPlace: 3, alarm: false, value: 3200, damagedSince: null },
     ]);
     expect(await owner.toolCard(toolId)).toEqual({
       id: toolId,
@@ -45,6 +45,7 @@ describe("dodawanie narzędzia", () => {
       registration: "zaakceptowane",
       location: { id: base.id, name: "Magazyn Swarzędz", kind: "baza" },
       daysInPlace: 3,
+      damagedSince: null,
       lost: null,
       history: [
         {

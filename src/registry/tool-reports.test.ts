@@ -47,7 +47,7 @@ describe("zgłoszenie narzędzia", () => {
     expect(code).toBe("W-02");
     const board = await testbed.registry.as(z.nowakId).whereIsWhat();
     expect(board.sites.find((site) => site.id === z.ratajeId)!.tools).toEqual([
-      { id: toolId, code: "W-02", name: "Wiertarka Makita", registration: "zgloszone", daysInPlace: 2, alarm: false },
+      { id: toolId, code: "W-02", name: "Wiertarka Makita", registration: "zgloszone", daysInPlace: 2, alarm: false, damagedSince: null },
     ]);
     const card = (await z.owner.toolCard(toolId))!;
     expect(card).toMatchObject({

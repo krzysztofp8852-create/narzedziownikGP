@@ -2,6 +2,7 @@ import { createPgDb } from "@/registry/pg-db";
 import { type Notifier, systemClock } from "@/registry/ports";
 import { createRegistry, type Registry } from "@/registry/registry";
 import { createSupabaseAuthAdmin } from "@/registry/supabase-auth-admin";
+import { createSupabasePhotoStore } from "@/registry/supabase-photo-store";
 import { createResendNotifier, logNotifier } from "./email-notifier";
 import { publicEnv, serverEnv } from "./env";
 import { createWebPushChannel, logPush } from "./web-push-notifier";
@@ -9,13 +10,14 @@ import { SUPABASE_ROOT_CA } from "./supabase-root-ca";
 
 let registry: Registry | undefined;
 
-/** Rejestr na prawdziwej bazie, Supabase Auth i powiadomieniach e-mail i push. Wspólny dla aplikacji i skryptów. */
+/** Rejestr na prawdziwej bazie, Supabase Auth i Storage (zdjęcia zgłoszeń) i powiadomieniach e-mail i push. Wspólny dla aplikacji i skryptów. */
 export function getRegistry(): Registry {
   registry ??= createRegistry({
     db: createPgDb({ connectionString: serverEnv.databaseUrl(), ssl: sslFor(serverEnv.databaseUrl()), max: 3 }),
     clock: systemClock,
     authAdmin: createSupabaseAuthAdmin(publicEnv.supabaseUrl(), serverEnv.supabaseServiceRoleKey()),
     notifier: notifier(),
+    photos: createSupabasePhotoStore(publicEnv.supabaseUrl(), serverEnv.supabaseServiceRoleKey()),
   });
   return registry;
 }

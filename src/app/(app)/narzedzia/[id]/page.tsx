@@ -2,12 +2,14 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DamagedIcon } from "@/components/damaged-icon";
 import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { historySearch } from "@/lib/history-filters";
+import { damagedAgo } from "@/lib/issue-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { canCorrectTools, canManageTools, canPrintStickers, canSeeValues } from "@/registry/registry";
 import { StickerReprintForm } from "../../naklejki/sticker-forms";
@@ -61,6 +63,23 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
           </strong>
         </p>
       </section>
+
+      {card.damagedSince && (
+        <p className="damaged-note" role="status" data-testid="tool-damaged">
+          <DamagedIcon /> {t("toolCard.damaged", { ago: damagedAgo(card.damagedSince, new Date()) })}
+        </p>
+      )}
+
+      {card.state === "w_obiegu" && (
+        <p className="tool-card-issues">
+          <Link className="button button-danger tool-card-report-damage" href={`/zgloszenia/nowe?narzedzie=${card.id}&rodzaj=uszkodzenie`}>
+            <DamagedIcon /> {t("toolCard.reportDamage")}
+          </Link>
+          <Link className="button button-quiet" href={`/zgloszenia/nowe?narzedzie=${card.id}&rodzaj=brak`}>
+            {t("toolCard.reportOther")}
+          </Link>
+        </p>
+      )}
 
       {card.lost && (
         <section className="lost" aria-labelledby="lost">

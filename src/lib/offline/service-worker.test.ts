@@ -448,6 +448,15 @@ describe("powiadomienia push", () => {
     expect(open).toMatchObject({ url: `${ORIGIN}/dzwonek/abc`, focused: true });
   });
 
+  it("zgłoszone narzędzie z okna zgłoszeń otwiera się na swoim miejscu listy", async () => {
+    const worker = startWorker();
+    await worker.push({ ...message, url: "/zgloszenia#narzedzie-t1" });
+
+    await worker.clickNotification(worker.notifications[0]);
+
+    expect(worker.windows.map((window) => window.url)).toEqual([`${ORIGIN}/zgloszenia#narzedzie-t1`]);
+  });
+
   it("nie otwiera adresu spoza aplikacji", async () => {
     const worker = startWorker();
     await worker.push({ ...message, url: "https://zly.test/wyludzenie" });

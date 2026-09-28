@@ -137,11 +137,20 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Zgłoszenia narzędzi: kierownik zgłasza sprzęt kupiony na swoją budowę (`reportTool`: nazwa i kategoria,
   kod nadaje Rejestr). Narzędzie od razu jest na tej budowie ze statusem ewidencji `zgloszone` i ruchem
   „przyjęcie” autorstwa kierownika, a na tablicy ma znacznik „zgłoszone” i jeździ jak każde inne. Właściciel
-  widzi listę zgłoszeń na tablicy (`toolReports`) i akceptuje je z ostatecznym kodem, kategorią i wartością
+  widzi listę zgłoszeń w oknie 📋 zgłoszeń (`toolReports`; tablica tylko o nich przypomina) i akceptuje je z ostatecznym kodem, kategorią i wartością
   (`acceptToolReport`) albo odrzuca z komentarzem (`rejectToolReport`: wycofanie z komentarzem jako powodem,
   historia zostaje). Osobne polityki RLS pozwalają kierownikowi dopisać tylko zgłoszone narzędzie na własną
   budowę, przyjęcie obejmuje tylko narzędzie dopisane w tej samej transakcji, a status ewidencji zmienia
   tylko właściciel.
+- Zgłoszenia do właściciela (📋 w nagłówku, `/zgloszenia`, zob. `docs/adr/0015`): każda rola składa zgłoszenie
+  (`fileIssue`) uszkodzenia (z narzędziem w obiegu), braku lub zaginięcia albo innej sprawy, z opisem
+  i opcjonalnym zdjęciem (prywatny kubełek Storage `zdjecia-zgloszen`, port zdjęć). Karta narzędzia ma duży
+  przycisk „Zgłoś uszkodzenie”. Uszkodzenie od razu daje narzędziu flagę „uszkodzone” (czerwona ikona na tablicy
+  i w checklistach, ostrzeżenie przy zatwierdzaniu ruchu, który i tak się zapisuje); zdejmuje ją ruch z serwisu
+  albo właściciel przy zamknięciu („sprawne”). Brak / zaginięcie stanu narzędzia nie zmienia. Wątek komentarzy
+  tylko się dopisuje, a zamknięcie wymaga komentarza. Kto poza właścicielem i autorem widzi zgłoszenia
+  (kierownik lokalizacji, magazynier z opcją zamykania), ustawia właściciel; pilnuje tego RLS. Nowe zgłoszenia,
+  komentarze, zamknięcia i zgłoszenia narzędzi trafiają do okna 📋 z własnym licznikiem i kopią push.
 - Wpis tekstem (przycisk „Wpisz tekstem” w operacjach): moduł **Interpretacja** (`src/interpretation/`) zamienia
   zdanie kierownika w Propozycję ruchu. Port interpretacji (OpenAI Responses API ze strukturalnym wyjściem, zob.
   `docs/adr/0005`) dostaje tekst, narzędzia firmy z zapytania Rejestru `toolCatalog` (kod, nazwa, kategoria,

@@ -67,6 +67,60 @@ describe("powiadomienie push z wpisu dzwonka", () => {
   });
 });
 
+describe("powiadomienie push z wpisu okna 📋 zgłoszeń", () => {
+  it("nowe zgłoszenie uszkodzenia: czego dotyczy, kto i co napisał, a kliknięcie otwiera zgłoszenie", () => {
+    expect(
+      pushNotification({
+        window: "zgloszenia",
+        entryId: "wpis-1",
+        entry: {
+          kind: "zgloszenie",
+          issueId: "zgl-1",
+          issue: { kind: "uszkodzenie", tool: { code: "W-02", name: "Wiertarka Makita" }, place: "Rataje" },
+          author: "Marek Zieliński",
+          text: "Nie trzyma udaru, iskrzy",
+        },
+      }),
+    ).toEqual({
+      title: "Nowe zgłoszenie: Uszkodzenie W-02 Wiertarka Makita",
+      body: "Marek Zieliński: Nie trzyma udaru, iskrzy",
+      url: "/zgloszenia/zgl-1/otworz",
+      tag: "zgloszenia:wpis-1",
+    });
+  });
+
+  it("komentarz i zamknięcie zgłoszenia lokalizacji", () => {
+    const issue = { kind: "inne" as const, tool: null, place: "Rataje" };
+    const comment = pushNotification({
+      window: "zgloszenia",
+      entryId: "wpis-2",
+      entry: { kind: "komentarz", issueId: "zgl-2", issue, author: "Właściciel", text: "Zamówione" },
+    });
+    const closing = pushNotification({
+      window: "zgloszenia",
+      entryId: "wpis-3",
+      entry: { kind: "zamkniecie", issueId: "zgl-2", issue, author: "Właściciel", text: "Są w kontenerze" },
+    });
+    expect([comment.title, closing.title]).toEqual(["Komentarz do zgłoszenia: Inne, Rataje", "Zgłoszenie zamknięte: Inne, Rataje"]);
+    expect(closing).toMatchObject({ body: "Właściciel: Są w kontenerze", url: "/zgloszenia/zgl-2/otworz" });
+  });
+
+  it("zgłoszone narzędzie z budowy: kliknięcie otwiera je w oknie zgłoszeń", () => {
+    expect(
+      pushNotification({
+        window: "zgloszenia",
+        entryId: "wpis-4",
+        entry: { kind: "zgloszenie_narzedzia", toolId: "t1", code: "M-03", name: "Młot Hilti", place: "Rataje", author: "Adam Nowak" },
+      }),
+    ).toEqual({
+      title: "Zgłoszone narzędzie: M-03 Młot Hilti",
+      body: "Adam Nowak, Rataje. Zaakceptuj je albo odrzuć w oknie zgłoszeń.",
+      url: "/zgloszenia#narzedzie-t1",
+      tag: "zgloszenia:wpis-4",
+    });
+  });
+});
+
 describe("kanał Web Push", () => {
   it("wysyła zaszyfrowaną treść z kluczem VAPID serwera", async () => {
     const send = vi.fn(async () => ({ statusCode: 201, body: "", headers: {} }));

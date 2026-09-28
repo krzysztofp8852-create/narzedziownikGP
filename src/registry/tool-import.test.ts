@@ -150,7 +150,7 @@ describe("zatwierdzenie importu", () => {
     expect(result).toEqual({ imported: 4, limitWarning: null });
     const board = await z.owner.whereIsWhat();
     expect(board.base.tools).toEqual([
-      { id: expect.any(String), code: "H-01", name: "Młot Hilti", registration: "zaakceptowane", daysInPlace: 2, alarm: false, value: 3200 },
+      { id: expect.any(String), code: "H-01", name: "Młot Hilti", registration: "zaakceptowane", daysInPlace: 2, alarm: false, value: 3200, damagedSince: null },
     ]);
     expect(board.sites[0].tools.map((tool) => [tool.code, tool.name, tool.daysInPlace, tool.value])).toEqual([
       ["H-03", "Młot Makita", 2, null],

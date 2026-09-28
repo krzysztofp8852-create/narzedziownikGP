@@ -109,7 +109,7 @@ self.addEventListener("notificationclick", (event) => {
 function appPath(address) {
   if (typeof address !== "string" || !address.startsWith("/") || address.startsWith("//")) return BELL;
   const url = new URL(address, self.location.origin);
-  return url.origin === self.location.origin ? url.pathname + url.search : BELL;
+  return url.origin === self.location.origin ? url.pathname + url.search + url.hash : BELL;
 }
 
 /**
