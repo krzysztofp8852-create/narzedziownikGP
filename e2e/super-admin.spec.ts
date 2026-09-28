@@ -103,5 +103,8 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await expect(page.getByTestId("subscription-tools")).toHaveText("0 z 1000");
   await page.getByLabel("Po ilu dniach").fill("21");
   await page.getByRole("button", { name: "Zapisz", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy.");
+  // Next.js ma też własny, pusty `role="alert"` (ogłaszanie zmiany strony), więc szukamy komunikatu po treści.
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy." }),
+  ).toBeVisible();
 });
