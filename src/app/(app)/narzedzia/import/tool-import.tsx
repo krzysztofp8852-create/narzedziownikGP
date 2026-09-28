@@ -22,6 +22,7 @@ const ERROR_FIELD: Record<ImportRowError, ImportField | null> = {
   location_unknown: "location",
   location_ambiguous: "location",
   site_finished: "location",
+  vehicle_inactive: "location",
 };
 
 /** Wgranie pliku, mapowanie kolumn, podgląd z błędami i zatwierdzenie importu. */

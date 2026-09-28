@@ -144,17 +144,17 @@ export async function weeklyReport(sql: Sql, session: Session, now: Date): Promi
     kind: "tygodniowy",
     day,
     thresholdDays: threshold_days,
-    overThreshold: board.sites
-      .flatMap((site) =>
-        site.tools
+    overThreshold: [...board.sites, ...board.vehicles]
+      .flatMap((place) =>
+        place.tools
           .filter((tool) => tool.alarm)
           .map((tool) => ({
             id: tool.id,
             code: tool.code,
             name: tool.name,
-            location: { id: site.id, name: site.name },
+            location: { id: place.id, name: place.name },
             days: tool.daysInPlace,
-            manager: site.manager.fullName,
+            manager: place.manager.fullName,
           })),
       )
       .sort((a, b) => b.days - a.days || a.code.localeCompare(b.code)),
@@ -192,14 +192,18 @@ export async function weeklyReport(sql: Sql, session: Session, now: Date): Promi
 export async function fridayReport(sql: Sql, session: Session, now: Date): Promise<FridayReport> {
   requireFridayReportReader(session);
   const board = await whereIsWhat(sql, session, now);
-  const locations = board.sites
-    .filter((site) => site.tools.length > 0)
-    .map((site) => ({
-      id: site.id,
-      name: site.name,
-      kind: "budowa" as const,
-      manager: { id: site.manager.id, fullName: site.manager.fullName },
-      tools: site.tools.map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, days: tool.daysInPlace })),
+  const places = [
+    ...board.sites.map((site) => ({ ...site, kind: "budowa" as const })),
+    ...board.vehicles.map((vehicle) => ({ ...vehicle, kind: "pojazd" as const })),
+  ];
+  const locations = places
+    .filter((place) => place.tools.length > 0)
+    .map((place) => ({
+      id: place.id,
+      name: place.name,
+      kind: place.kind,
+      manager: { id: place.manager.id, fullName: place.manager.fullName },
+      tools: place.tools.map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, days: tool.daysInPlace })),
     }));
   const report: FridayReport = { kind: "piatkowy", day: warsawTime(now).day, locations };
   return session.role === "wlasciciel" ? report : forManager(report, session.userId);

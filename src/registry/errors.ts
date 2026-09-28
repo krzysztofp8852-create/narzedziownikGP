@@ -15,6 +15,8 @@ export type RegistryErrorCode =
   | "invalid_manager"
   | "site_finished"
   | "site_not_empty"
+  | "vehicle_inactive"
+  | "vehicle_not_empty"
   | "movement_conflict"
   | "not_undoable"
   | "undo_expired"

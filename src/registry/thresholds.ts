@@ -17,22 +17,38 @@ export function alarmStartsAt(since: Date, thresholdDays: number): Date {
   return new Date(new Date(since).getTime() + (thresholdDays + 1) * DAY_MS);
 }
 
-/** Alarm na tablicy: narzędzie na budowie dłużej niż próg dni. Ta sama reguła co w zadaniu dziennym. */
-export function hasAlarm(locationKind: LocationKind, since: Date, thresholdDays: number, now: Date): boolean {
-  return locationKind === "budowa" && alarmStartsAt(since, thresholdDays).getTime() <= now.getTime();
+/** Czy w lokalizacji działa alarm po progu dni: na budowie zawsze, na pojeździe, gdy właściciel go włączył. */
+function watchesThreshold(location: { kind: LocationKind; alarmEnabled: boolean | null }): boolean {
+  return location.kind === "budowa" || (location.kind === "pojazd" && location.alarmEnabled === true);
 }
 
-/** Firmy z aktywnymi budowami, dla których zadanie dzienne sprawdza progi. */
+/** Warunek SQL na lokalizację `l` z alarmem po progu dni: aktywna budowa albo aktywny pojazd z włączonym alarmem. */
+const WATCHED_LOCATION = "((l.kind = 'budowa' and l.status = 'aktywna') or (l.kind = 'pojazd' and l.active and l.alarm_enabled))";
+
+/**
+ * Alarm na tablicy: narzędzie na budowie (albo pojeździe z włączonym alarmem) dłużej niż próg dni.
+ * Ta sama reguła co w zadaniu dziennym.
+ */
+export function hasAlarm(
+  location: { kind: LocationKind; alarmEnabled: boolean | null },
+  since: Date,
+  thresholdDays: number,
+  now: Date,
+): boolean {
+  return watchesThreshold(location) && alarmStartsAt(since, thresholdDays).getTime() <= now.getTime();
+}
+
+/** Firmy z aktywnymi budowami albo pojazdami z alarmem, dla których zadanie dzienne sprawdza progi. */
 export async function companiesWithSites(sql: Sql): Promise<string[]> {
   const rows = await sql<{ company_id: string }>(
-    "select distinct company_id from app.locations where kind = 'budowa' and status = 'aktywna' order by company_id",
+    `select distinct company_id from app.locations l where ${WATCHED_LOCATION} order by company_id`,
   );
   return rows.map((row) => row.company_id);
 }
 
 /**
- * Wykrywa narzędzia firmy, które od ostatniego uruchomienia przekroczyły próg dni firmy na budowie, i każde
- * zapisuje raz na pobyt. Kierownik budowy dostaje powiadomienie o każdym narzędziu, a właściciel jedno
+ * Wykrywa narzędzia firmy, które od ostatniego uruchomienia przekroczyły próg dni firmy na budowie (albo pojeździe
+ * z włączonym alarmem), i każde zapisuje raz na pobyt. Kierownik budowy lub pojazdu dostaje powiadomienie o każdym narzędziu, a właściciel jedno
  * zbiorcze. Transakcja systemowa (poza RLS). Zwraca liczbę nowych przekroczeń i kopie push nowych wpisów dzwonka.
  */
 export async function notifyExceededThresholds(sql: Sql, companyId: string, now: Date): Promise<{ tools: number; copies: PushCopy[] }> {
@@ -44,13 +60,14 @@ export async function notifyExceededThresholds(sql: Sql, companyId: string, now:
     threshold_days: number;
     location_id: string;
     location_name: string;
+    location_kind: "budowa" | "pojazd";
   }>(
     `select t.id as tool_id, t.code, t.name, t.located_since, co.alarm_threshold_days as threshold_days,
-            l.id as location_id, l.name as location_name
+            l.id as location_id, l.name as location_name, l.kind as location_kind
      from app.tools t
      join app.locations l on l.id = t.location_id
      join app.companies co on co.id = t.company_id
-     where t.company_id = $1 and t.state = 'w_obiegu' and l.kind = 'budowa' and l.status = 'aktywna'
+     where t.company_id = $1 and t.state = 'w_obiegu' and ${WATCHED_LOCATION}
      order by t.code`,
     [companyId],
   );
@@ -80,7 +97,7 @@ export async function notifyExceededThresholds(sql: Sql, companyId: string, now:
       kind: "prog_przekroczony",
       recipient: manager,
       tool: { id: row.tool_id, code: row.code, name: row.name },
-      location: { id: row.location_id, name: row.location_name },
+      location: { id: row.location_id, name: row.location_name, kind: row.location_kind },
       since: new Date(row.located_since),
       thresholdDays: row.threshold_days,
     });
@@ -110,7 +127,7 @@ async function activePeople(sql: Sql, companyId: string): Promise<(Recipient & {
   return rows.map((row) => ({ userId: row.user_id, fullName: row.full_name, role: row.role }));
 }
 
-/** Aktywni kierownicy budów, według budowy. */
+/** Aktywni kierownicy budów i pojazdów, według lokalizacji. */
 async function siteManagers(sql: Sql, locationIds: string[]): Promise<Map<string, Recipient>> {
   const rows = await sql<{ location_id: string; user_id: string; full_name: string }>(
     `select l.id as location_id, u.user_id, u.full_name

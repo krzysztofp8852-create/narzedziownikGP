@@ -11,7 +11,7 @@ import * as history from "./history";
 import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 import type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 import * as locations from "./locations";
-import type { NewSiteInput, Service, Site, SiteManagerCandidate } from "./locations";
+import type { NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, Vehicle } from "./locations";
 import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as notifications from "./notifications";
@@ -68,7 +68,7 @@ export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 export { canCorrectTools, TOOL_STATES } from "./corrections";
-export type { NewSiteInput, Service, Site, SiteManagerCandidate, SiteStatus } from "./locations";
+export type { NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, SiteStatus, Vehicle } from "./locations";
 export { canManageLocations } from "./locations";
 export type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 export { canCloseSite, canForceCloseSites } from "./site-closing";
@@ -90,6 +90,7 @@ export type {
   FridayReportNotification,
   MovementRejectedNotification,
   Notification,
+  NotifiedPlace,
   NotificationContent,
   NotificationKind,
   ReadOnlyNotification,
@@ -219,7 +220,7 @@ export interface Registry {
     /** Nowe hasło w sesji z linku resetu hasła, otwartego (`recoveredAt`, z JWT) najwyżej godzinę temu. */
     setPasswordFromRecoveryLink(newPassword: string, recovery: { recoveredAt: Date | null }): Promise<void>;
     /**
-     * Tablica „Gdzie jest co”: baza, aktywne budowy, serwisy i zaginione, z alarmami. Wartości
+     * Tablica „Gdzie jest co”: baza, aktywne budowy i pojazdy, serwisy i zaginione, z alarmami. Wartości
      * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
      */
     whereIsWhat(): Promise<WhereIsWhat>;
@@ -274,9 +275,9 @@ export interface Registry {
     resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
     /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
     deactivateMember(memberId: string): Promise<void>;
-    /** Baza, budowy (także zakończone) i serwisy firmy. */
-    locations(): Promise<{ base: { id: string; name: string }; sites: Site[]; services: Service[] }>;
-    /** Aktywni kierownicy, którym można przypisać budowę. Tylko właściciel. */
+    /** Baza, budowy (także zakończone), serwisy i pojazdy (także nieaktywne) firmy. */
+    locations(): Promise<{ base: { id: string; name: string }; sites: Site[]; services: Service[]; vehicles: Vehicle[] }>;
+    /** Aktywni kierownicy, którym można przypisać budowę albo pojazd. Tylko właściciel. */
     siteManagerCandidates(): Promise<SiteManagerCandidate[]>;
     /** Nowa aktywna budowa z kierownikiem. Tylko właściciel. */
     addSite(input: NewSiteInput): Promise<{ locationId: string }>;
@@ -284,6 +285,17 @@ export interface Registry {
     changeSiteManager(siteId: string, managerId: string): Promise<void>;
     /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
     addService(input: { name: string }): Promise<{ locationId: string }>;
+    /** Nowy aktywny pojazd (np. „Bus WX 12345”) z kierownikiem i wyłączonym alarmem po progu dni. Tylko właściciel. */
+    addVehicle(input: NewVehicleInput): Promise<{ locationId: string }>;
+    /** Przekazuje aktywny pojazd innemu aktywnemu kierownikowi. Tylko właściciel. */
+    changeVehicleManager(vehicleId: string, managerId: string): Promise<void>;
+    /** Włącza albo wyłącza alarm po progu dni dla aktywnego pojazdu. Tylko właściciel. */
+    setVehicleAlarm(vehicleId: string, enabled: boolean): Promise<void>;
+    /**
+     * Dezaktywuje pojazd (np. po sprzedaży): znika z tablicy, a jego historia zostaje. Tylko właściciel. Gdy
+     * zostały na nim narzędzia w obiegu, odmawia (`vehicle_not_empty`).
+     */
+    deactivateVehicle(vehicleId: string): Promise<void>;
     /**
      * Oznacza budowę jako zakończoną: znika z tablicy, a jej historia zostaje. Kierownik zamyka
      * swoją, właściciel każdą. Gdy zostały na niej narzędzia w obiegu, odmawia (`site_not_empty`).
@@ -746,6 +758,7 @@ export function createRegistry(deps: Deps): Registry {
             base: await tools.baseLocation(sql, session),
             sites: await locations.sites(sql, { activeOnly: false }),
             services: await locations.services(sql),
+            vehicles: await locations.vehicles(sql, { activeOnly: false }),
           })),
         siteManagerCandidates: () =>
           asMember((sql, session) => {
@@ -766,6 +779,26 @@ export function createRegistry(deps: Deps): Registry {
           asWriter((sql, session) => {
             locations.requireLocationManager(session);
             return locations.addService(sql, session, input, deps.clock.now());
+          }),
+        addVehicle: (input) =>
+          asWriter((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.addVehicle(sql, session, input, deps.clock.now());
+          }),
+        changeVehicleManager: (vehicleId, managerId) =>
+          asWriter((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.changeVehicleManager(sql, vehicleId, managerId);
+          }),
+        setVehicleAlarm: (vehicleId, enabled) =>
+          asWriter((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.setVehicleAlarm(sql, vehicleId, enabled);
+          }),
+        deactivateVehicle: (vehicleId) =>
+          asWriter((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.deactivateVehicle(sql, vehicleId);
           }),
         closeSite: async (siteId) => {
           const attempt = () => asWriter((sql, session) => siteClosing.closeSite(sql, session, siteId, deps.clock.now()));

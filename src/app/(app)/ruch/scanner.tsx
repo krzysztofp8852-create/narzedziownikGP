@@ -8,7 +8,7 @@ import type { RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
 import { CameraScanner } from "./camera-scanner";
 import { readSticker } from "@/stickers/url";
-import type { ChecklistData, ChecklistPlace, ChecklistTool } from "./checklist";
+import { type ChecklistData, type ChecklistPlace, type ChecklistTool, PlaceName } from "./checklist";
 import { type DoneMovement, MovementResult } from "./movement-result";
 import { findToolByCode, planScan, type ScanGroup, type ScanOption } from "./scan-plan";
 
@@ -269,7 +269,7 @@ function ScanGroupForm({ group, choice, pending, onChoose, onRemove, onSubmit }:
                       checked={place.id === to?.id}
                       onChange={() => onChoose({ to: place.id })}
                     />
-                    <span className="choice-name">{place.name}</span>
+                    <PlaceName place={place} />
                     {place.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
                   </label>
                 ))}

@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { MovementEntry } from "@/components/movement-entry";
 import { SiteManagerLabel } from "@/components/site-manager-label";
+import { VehicleIcon } from "@/components/vehicle-icon";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -26,8 +28,8 @@ import {
   type ToolReport,
   type WhereIsWhat,
 } from "@/registry/registry";
-import { changeSiteManager } from "./lokalizacje/actions";
-import { AddSiteForm, ChangeManagerForm } from "./lokalizacje/location-forms";
+import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
+import { AddSiteForm, AddVehicleForm, ChangeManagerForm, DeactivateVehicleForm, VehicleAlarmForm } from "./lokalizacje/location-forms";
 import { BoardSnapshot } from "./board-snapshot";
 import { ToolReportReview } from "./narzedzia/tool-report-review";
 import { OperationsPanel } from "./operations-panel";
@@ -213,7 +215,12 @@ function SiteCard({
       {managers && managers.length > 0 && (
         <details className="location-more">
           <summary>{t("locations.changeManager")}</summary>
-          <ChangeManagerForm action={changeSiteManager.bind(null, site.id)} site={site} managers={managers} />
+          <ChangeManagerForm
+            action={changeSiteManager.bind(null, site.id)}
+            location={site}
+            label={t("locations.newManager", { name: site.name })}
+            managers={managers}
+          />
         </details>
       )}
       {canCloseSite(session, site) && (
@@ -227,10 +234,61 @@ function SiteCard({
   );
 }
 
-function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
+/**
+ * Pojazd na tablicy, jak budowa: kierownik i sprzęt, który jest poza bazą. Właściciel zmienia tu
+ * kierownika, włącza alarm po progu dni i dezaktywuje pusty pojazd.
+ */
+function VehicleCard({ vehicle, managers }: { vehicle: WhereIsWhat["vehicles"][number]; managers: SiteManagerCandidate[] | null }) {
+  return (
+    <section className="location location-site location-vehicle" aria-labelledby={`location-${vehicle.id}`}>
+      <div className="location-head">
+        <h3 id={`location-${vehicle.id}`} className="display location-name">
+          <span className="location-kind">
+            <VehicleIcon /> {t("board.vehicleKind")}
+          </span>{" "}
+          <span>{vehicle.name}</span>
+        </h3>
+        <LocationTotals count={vehicle.tools.length} totalValue={vehicle.totalValue} />
+      </div>
+      <div className="location-details">
+        <p>
+          <SiteManagerLabel manager={vehicle.manager} />
+        </p>
+        {!vehicle.alarmEnabled && <p className="muted">{t("board.vehicleAlarmOff")}</p>}
+      </div>
+      {vehicle.tools.length === 0 ? <p className="empty">{t("board.vehicleEmpty")}</p> : <ToolList tools={vehicle.tools} />}
+      {managers && (
+        <>
+          {managers.length > 0 && (
+            <details className="location-more">
+              <summary>{t("locations.changeManager")}</summary>
+              <ChangeManagerForm
+                action={changeVehicleManager.bind(null, vehicle.id)}
+                location={vehicle}
+                label={t("locations.newVehicleManager", { name: vehicle.name })}
+                managers={managers}
+              />
+            </details>
+          )}
+          <details className="location-more">
+            <summary>{t("locations.vehicleAlarm")}</summary>
+            <VehicleAlarmForm vehicle={vehicle} />
+          </details>
+          <details className="location-more">
+            <summary>{t("locations.deactivateVehicle")}</summary>
+            <DeactivateVehicleForm vehicle={vehicle} empty={vehicle.tools.length === 0} />
+          </details>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Kafelek dodawania budowy albo pojazdu; bez aktywnego kierownika odsyła do zespołu. */
+function AddLocationTile({ title, managers, form }: { title: string; managers: SiteManagerCandidate[]; form: ReactNode }) {
   return (
     <details className="location location-add">
-      <summary className="panel-summary">{t("board.addSite")}</summary>
+      <summary className="panel-summary">{title}</summary>
       {managers.length === 0 ? (
         <div className="stack-form">
           <p className="empty">{t("locations.noManagers")}</p>
@@ -241,9 +299,27 @@ function AddSiteTile({ managers }: { managers: SiteManagerCandidate[] }) {
           </p>
         </div>
       ) : (
-        <AddSiteForm managers={managers} />
+        form
       )}
     </details>
+  );
+}
+
+function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; managers: SiteManagerCandidate[] | null }) {
+  // Firma bez pojazdów nie potrzebuje tej sekcji; właściciel widzi ją, żeby dodać pierwszy.
+  if (vehicles.length === 0 && !managers) return null;
+  return (
+    <section className="board-section" aria-labelledby="board-vehicles">
+      <h2 id="board-vehicles" className="display section-title">
+        {t("board.vehiclesTitle")}
+      </h2>
+      <div className="site-grid">
+        {vehicles.map((vehicle) => (
+          <VehicleCard key={vehicle.id} vehicle={vehicle} managers={managers} />
+        ))}
+        {managers && <AddLocationTile title={t("board.addVehicle")} managers={managers} form={<AddVehicleForm managers={managers} />} />}
+      </div>
+    </section>
   );
 }
 
@@ -260,8 +336,9 @@ export default async function BoardPage(props: PageProps<"/">) {
   ]);
   // Chwila pobrania stanu: tablica z kopii w telefonie pokazuje ją bez sieci (service worker czyta ją z atrybutu).
   const fetchedAt = new Date().toISOString();
-  const { base, sites } = board;
+  const { base, sites, vehicles } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
+  const onVehicles = vehicles.reduce((sum, vehicle) => sum + vehicle.tools.length, 0);
 
   return (
     <div className="board" data-fetched-at={fetchedAt}>
@@ -313,6 +390,12 @@ export default async function BoardPage(props: PageProps<"/">) {
                 <dt>{t("board.statSiteCount")}</dt>
                 <dd>{sites.length}</dd>
               </div>
+              {vehicles.length > 0 && (
+                <div>
+                  <dt>{t("board.statVehicles")}</dt>
+                  <dd>{onVehicles}</dd>
+                </div>
+              )}
               {board.offBaseValue !== undefined && (
                 <div>
                   <dt>{t("board.statOffBase")}</dt>
@@ -351,11 +434,13 @@ export default async function BoardPage(props: PageProps<"/">) {
             {sites.map((site) => (
               <SiteCard key={site.id} site={site} managers={managers} session={session} />
             ))}
-            {managers && <AddSiteTile managers={managers} />}
+            {managers && <AddLocationTile title={t("board.addSite")} managers={managers} form={<AddSiteForm managers={managers} />} />}
           </div>
           <div className="section-head">
             <Link href="/budowy/zakonczone">{t("siteClosing.finishedLink")}</Link>
           </div>
+
+          <Vehicles vehicles={vehicles} managers={managers} />
 
           <Services services={board.services} />
           <Lost lost={board.lost} lostValue={board.lostValue} />

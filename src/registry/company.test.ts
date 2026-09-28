@@ -86,6 +86,7 @@ describe("tablica „Gdzie jest co”", () => {
       alarmCount: 0,
       base: { id: expect.any(String), name: "Baza", totalValue: 0, tools: [] },
       sites: [],
+      vehicles: [],
       services: [],
       lost: [],
       lostValue: 0,

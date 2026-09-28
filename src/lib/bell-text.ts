@@ -2,6 +2,7 @@ import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { NotificationContent } from "@/registry/registry";
 import { historySearch } from "./history-filters";
+import { placeAt, placeFrom } from "./place-text";
 import { reportLink, reportText } from "./report-text";
 
 /** Tekst powiadomienia w dzwonku: nagłówek i jedno zdanie szczegółów. */
@@ -12,16 +13,16 @@ export function notificationText(notification: NotificationContent): { title: st
         title: t("notifications.toolsTaken.subject", {
           author: notification.takenBy,
           codes: notification.tools.map((tool) => tool.code).join(", "),
-          from: notification.from.name,
+          from: placeFrom(notification.from),
         }),
-        body: t("bell.toolsTaken", { to: notification.to.name, when: formatDateTime(notification.occurredAt) }),
+        body: t("bell.toolsTaken", { to: placeAt(notification.to), when: formatDateTime(notification.occurredAt) }),
       };
     case "prog_przekroczony":
       return {
         title: t("bell.thresholdExceeded", {
           code: notification.tool.code,
           name: notification.tool.name,
-          place: notification.location.name,
+          place: placeAt(notification.location),
           days: notification.thresholdDays,
         }),
         body: t("bell.thresholdExceededBody", { since: formatDateTime(notification.since) }),

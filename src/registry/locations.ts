@@ -52,6 +52,71 @@ export async function changeSiteManager(sql: Sql, siteId: string, managerId: str
   await sql("update app.locations set manager_id = $2 where id = $1", [siteId, managerId]);
 }
 
+export interface NewVehicleInput {
+  /** Np. „Bus WX 12345”. */
+  name: string;
+  /** Aktywny kierownik z firmy właściciela. */
+  managerId: string;
+}
+
+/** Pojazd (np. bus brygady): sprzęt na nim jest poza bazą. */
+export interface Vehicle {
+  id: string;
+  name: string;
+  /** Nieaktywny (np. sprzedany) nie przyjmuje sprzętu i nie ma go na tablicy. */
+  active: boolean;
+  /** Alarm po progu dni; domyślnie wyłączony. */
+  alarmEnabled: boolean;
+  manager: { id: string; fullName: string; active: boolean };
+}
+
+export async function addVehicle(sql: Sql, session: Session, raw: NewVehicleInput, now: Date): Promise<{ locationId: string }> {
+  const name = raw.name.trim();
+  if (!name) throw new RegistryError("invalid_input");
+  await requireSiteManagerCandidate(sql, raw.managerId);
+  const [vehicle] = await sql<{ id: string }>(
+    `insert into app.locations (company_id, kind, name, manager_id, active, alarm_enabled, created_at)
+     values ($1, 'pojazd', $2, $3, true, false, $4) returning id`,
+    [session.company.id, name, raw.managerId, now],
+  );
+  return { locationId: vehicle.id };
+}
+
+export async function changeVehicleManager(sql: Sql, vehicleId: string, managerId: string) {
+  await requireActiveVehicle(sql, vehicleId);
+  await requireSiteManagerCandidate(sql, managerId);
+  await sql("update app.locations set manager_id = $2 where id = $1", [vehicleId, managerId]);
+}
+
+export async function setVehicleAlarm(sql: Sql, vehicleId: string, enabled: boolean) {
+  if (typeof enabled !== "boolean") throw new RegistryError("invalid_input");
+  await requireActiveVehicle(sql, vehicleId);
+  await sql("update app.locations set alarm_enabled = $2 where id = $1", [vehicleId, enabled]);
+}
+
+/** Dezaktywuje pojazd, na którym nie zostało żadne narzędzie w obiegu; historia zostaje. */
+export async function deactivateVehicle(sql: Sql, vehicleId: string) {
+  await requireActiveVehicle(sql, vehicleId);
+  const [{ tools }] = await sql<{ tools: number }>(
+    "select count(*)::int as tools from app.tools where location_id = $1 and state = 'w_obiegu'",
+    [vehicleId],
+  );
+  if (tools > 0) throw new RegistryError("vehicle_not_empty");
+  await sql("update app.locations set active = false where id = $1", [vehicleId]).catch((error) => {
+    // Równoległy ruch dowiózł narzędzie na pojazd po naszym sprawdzeniu.
+    throw (error as { code?: string }).code === "GP409" ? new RegistryError("vehicle_not_empty") : error;
+  });
+}
+
+/** Aktywny pojazd firmy aktora (RLS ukrywa inne firmy). */
+async function requireActiveVehicle(sql: Sql, vehicleId: string) {
+  const [vehicle] = UUID_PATTERN.test(vehicleId)
+    ? await sql<{ active: boolean }>("select active from app.locations where id = $1 and kind = 'pojazd'", [vehicleId])
+    : [];
+  if (!vehicle) throw new RegistryError("not_found");
+  if (!vehicle.active) throw new RegistryError("vehicle_inactive");
+}
+
 export async function addService(sql: Sql, session: Session, raw: { name: string }, now: Date): Promise<{ locationId: string }> {
   const name = raw.name.trim();
   if (!name) throw new RegistryError("invalid_input");
@@ -62,7 +127,7 @@ export async function addService(sql: Sql, session: Session, raw: { name: string
   return { locationId: service.id };
 }
 
-/** Aktywni kierownicy firmy, spośród których właściciel wybiera kierownika budowy. */
+/** Aktywni kierownicy firmy, spośród których właściciel wybiera kierownika budowy albo pojazdu. */
 export async function siteManagerCandidates(sql: Sql): Promise<SiteManagerCandidate[]> {
   return sql(
     `select user_id as id, full_name as "fullName" from app.users
@@ -70,7 +135,7 @@ export async function siteManagerCandidates(sql: Sql): Promise<SiteManagerCandid
   );
 }
 
-/** Kierownikiem budowy może być tylko aktywny kierownik z firmy aktora (RLS ukrywa inne firmy). */
+/** Kierownikiem budowy i pojazdu może być tylko aktywny kierownik z firmy aktora (RLS ukrywa inne firmy). */
 async function requireSiteManagerCandidate(sql: Sql, managerId: string) {
   const [candidate] = UUID_PATTERN.test(managerId)
     ? await sql("select 1 from app.users where user_id = $1 and role = 'kierownik' and active", [managerId])
@@ -127,4 +192,31 @@ export function siteFromRow(row: SiteRow): Site {
 
 export async function services(sql: Sql): Promise<Service[]> {
   return sql<Service>("select id, name from app.locations where kind = 'serwis' order by name");
+}
+
+/** Pojazdy firmy: najpierw aktywne, potem według nazwy. */
+export async function vehicles(sql: Sql, { activeOnly }: { activeOnly: boolean }): Promise<Vehicle[]> {
+  const rows = await sql<{
+    id: string;
+    name: string;
+    active: boolean;
+    alarm_enabled: boolean;
+    manager_id: string;
+    manager_name: string;
+    manager_active: boolean;
+  }>(
+    `select l.id, l.name, l.active, l.alarm_enabled,
+            u.user_id as manager_id, u.full_name as manager_name, u.active as manager_active
+     from app.locations l join app.users u on u.user_id = l.manager_id
+     where l.kind = 'pojazd' and ($1 = false or l.active)
+     order by l.active desc, l.name`,
+    [activeOnly],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    active: row.active,
+    alarmEnabled: row.alarm_enabled,
+    manager: { id: row.manager_id, fullName: row.manager_name, active: row.manager_active },
+  }));
 }

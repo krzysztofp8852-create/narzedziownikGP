@@ -3,6 +3,7 @@ import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import type { Notifier } from "@/registry/ports";
 import { type EmailedNotification, type ReadOnlySoonNotification, readOnlyWarning, type Report, type ToolsTakenNotification } from "@/registry/registry";
+import { placeAt, placeFrom } from "./place-text";
 import { fridayToolCount, reportHeading, reportLink, reportSections } from "./report-text";
 
 export interface Email {
@@ -59,14 +60,14 @@ function toolsTakenEmail(notification: ToolsTakenNotification): Email {
   const codes = notification.tools.map((tool) => tool.code).join(", ");
   return {
     to: notification.recipient.email,
-    subject: t("notifications.toolsTaken.subject", { author: notification.takenBy, codes, from: notification.from.name }),
+    subject: t("notifications.toolsTaken.subject", { author: notification.takenBy, codes, from: placeFrom(notification.from) }),
     text: [
       t("notifications.greeting", { name: notification.recipient.fullName }),
       "",
       t("notifications.toolsTaken.lead", {
         author: notification.takenBy,
-        from: notification.from.name,
-        to: notification.to.name,
+        from: placeFrom(notification.from),
+        to: placeAt(notification.to),
         when: formatDateTime(notification.occurredAt),
       }),
       ...notification.tools.map((tool) => `- ${tool.code} ${tool.name}`),

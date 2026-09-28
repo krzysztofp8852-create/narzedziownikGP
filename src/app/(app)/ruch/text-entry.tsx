@@ -10,7 +10,7 @@ import type { ReadyRecording } from "@/lib/offline/queue";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import { type ChecklistState, confirmProposal, proposeFromRecording, proposeMovement } from "./actions";
-import type { ChecklistData } from "./checklist";
+import { type ChecklistData, PlaceName } from "./checklist";
 import { type DoneMovement, MovementResult } from "./movement-result";
 import { type Draft, planDraft, startDraft } from "./proposal-draft";
 import { canRecord, VoiceRecorder } from "./voice-recorder";
@@ -346,7 +346,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
           {plan.sites.map((site) => (
             <label key={site.id} className="choice">
               <input type="radio" name="siteChoice" checked={site.id === plan.site?.id} onChange={() => change({ siteId: site.id })} />
-              <span className="choice-name">{site.name}</span>
+              <PlaceName place={site} />
               {site.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
             </label>
           ))}

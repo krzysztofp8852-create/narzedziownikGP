@@ -10,7 +10,7 @@ type Place = { id: string; name: string };
 
 export interface ToolCorrectionsProps {
   tool: { id: string; code: string; state: ToolState; locationId: string };
-  places: { base: Place; sites: Place[]; services: Place[] };
+  places: { base: Place; sites: Place[]; vehicles: Place[]; services: Place[] };
   /** Identyfikatory operacji nadane przy wyświetleniu karty, osobno dla każdego formularza. */
   operationIds: { correct: string; lost: string; retire: string };
 }
@@ -33,6 +33,15 @@ export function ToolCorrections({ tool, places, operationIds }: ToolCorrectionsP
                 {places.sites.map((site) => (
                   <option key={site.id} value={site.id}>
                     {site.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {places.vehicles.length > 0 && (
+              <optgroup label={t("corrections.vehiclesGroup")}>
+                {places.vehicles.map((vehicle) => (
+                  <option key={vehicle.id} value={vehicle.id}>
+                    {vehicle.name}
                   </option>
                 ))}
               </optgroup>

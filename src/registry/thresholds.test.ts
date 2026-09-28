@@ -55,7 +55,9 @@ describe("przekroczenie progu dni", () => {
 
     const tool = { id: z.s01, code: "S-01", name: "Szlifierka kątowa" };
     const rataje = { id: z.ratajeId, name: "Rataje" };
-    expect(await bellOf(z.nowakId)).toEqual([{ kind: "prog_przekroczony", tool, location: rataje, since: issuedAt, thresholdDays: 30 }]);
+    expect(await bellOf(z.nowakId)).toEqual([
+      { kind: "prog_przekroczony", tool, location: { ...rataje, kind: "budowa" }, since: issuedAt, thresholdDays: 30 },
+    ]);
     expect(await bellOf(z.zawbud.ownerId)).toEqual([{ kind: "progi_przekroczone", thresholdDays: 30, tools: [{ ...tool, location: rataje }] }]);
     expect(await bellOf(z.kowalskiId)).toEqual([]);
 

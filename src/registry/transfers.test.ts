@@ -65,8 +65,8 @@ describe("przeniesienie", () => {
       recipient: { userId: z.kowalskiId, fullName: "Jan Kowalski", email: expect.stringMatching(/^kierownik\d+@/) },
       movementId: movement.id,
       takenBy: "Adam Nowak",
-      from: { id: z.winogradyId, name: "Winogrady" },
-      to: { id: z.ratajeId, name: "Rataje" },
+      from: { id: z.winogradyId, name: "Winogrady", kind: "budowa" },
+      to: { id: z.ratajeId, name: "Rataje", kind: "budowa" },
       tools: [{ id: z.s01, code: "S-01", name: "Szlifierka kątowa" }],
       occurredAt: testbed.clock.now(),
     };
