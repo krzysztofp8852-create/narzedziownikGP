@@ -2,7 +2,7 @@
 
 Sprawdza, jak prawdziwy port interpretacji (OpenAI, zob. `docs/adr/0005`) rozumie budowlaną polszczyznę:
 slang („szlifa”, „kujak”, „niwela”), liczebniki, niejednoznaczności, przeniesienia, sprzęt w serwisie
-i narzędzia spoza ewidencji. Uruchamiaj go przy każdej zmianie modelu albo promptu
+i ruchy do serwisu i z serwisu, „wszystko z …” oraz narzędzia spoza ewidencji. Uruchamiaj go przy każdej zmianie modelu albo promptu
 (`src/interpretation/openai-interpreter.ts`, podpowiedź transkrypcji w `openai-transcriber.ts`). Nie jest częścią CI:
 woła płatne API, a wynik modelu może się różnić między uruchomieniami.
 
@@ -25,7 +25,7 @@ dwóch modeli.
   tylko Rejestr zastępuje ewidencja przypadku w pamięci. Moduł niczego nie zapisuje.
 
 Raport pokazuje ✓/✗ dla każdego przypadku i przy pudle, które pole się nie zgadza: rodzaj, budowa, skąd,
-narzędzia (kody), pytania „które?” (liczba sztuk i kody kandydatów) i nierozpoznane frazy (nieznane albo ilu
+serwis, narzędzia (kody), pytania „które?” (liczba sztuk i kody kandydatów) i nierozpoznane frazy (nieznane albo ilu
 brakuje). Fraz z tekstu nie porównujemy, bo zależą od modelu. Na końcu jest trafność całości, każdego pola
 i każdego obszaru.
 

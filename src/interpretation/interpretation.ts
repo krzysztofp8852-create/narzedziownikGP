@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { RegistryError } from "@/registry/errors";
 import {
   type CatalogTool,
+  canMoveEverywhere,
   canMoveTools,
   canRegisterMovements,
   MAX_TRANSCRIPT_LENGTH,
@@ -10,15 +11,16 @@ import {
   type Registry,
   type Session,
 } from "@/registry/registry";
-import { PROPOSAL_KINDS, type Proposal, type ProposalKind, type ProposedTool } from "./proposal";
+import { PROPOSAL_KINDS, type Proposal, type ProposalKind, type ProposedTool, SERVICE_KINDS } from "./proposal";
 import { MAX_RECORDING_BYTES, type RecordingStore, recordingType, type Transcriber, TranscriptionFailedError } from "./transcription";
 
-/** Co port interpretacji dostaje: tekst, narzędzia firmy (bez wartości) i aktywne budowy. */
+/** Co port interpretacji dostaje: tekst, narzędzia firmy (bez wartości), aktywne budowy i serwisy. */
 export interface InterpretRequest {
   text: string;
   tools: Omit<CatalogTool, "id">[];
   /** `mine`: budowa, którą prowadzi aktor („na moją budowę”). */
   sites: { id: string; name: string; mine: boolean }[];
+  services: { id: string; name: string }[];
 }
 
 /** Narzędzie wspomniane w tekście: fraza, ile sztuk i kody wszystkich pasujących narzędzi firmy. */
@@ -31,10 +33,14 @@ export interface Mention {
 /** Surowy wynik portu interpretacji; egzemplarze wybiera z niego dopiero moduł. */
 export interface Interpretation {
   kind: ProposalKind;
-  /** Budowa kierownika: docelowa przy wydaniu i przeniesieniu, źródłowa przy zwrocie. */
+  /** Budowa kierownika: docelowa przy wydaniu i przeniesieniu, źródłowa przy zwrocie i wysłaniu do serwisu. */
   siteId: string | null;
   /** Budowa, z której przeniesienie zabiera sprzęt, gdy padła w tekście. */
   fromSiteId: string | null;
+  /** Serwis, do którego sprzęt jedzie albo z którego wraca, gdy padł w tekście. */
+  serviceId: string | null;
+  /** „Wszystko z …”: ruch zabiera cały sprzęt ze źródła; wymienione narzędzia się wtedy nie liczą. */
+  everything: boolean;
   mentions: Mention[];
 }
 
@@ -131,38 +137,75 @@ export function createInterpretation({ registry, interpreter, transcriber, recor
             text,
             tools: catalog.map(({ code, name, category, location }) => ({ code, name, category, location })),
             sites: sites.map((site) => ({ id: site.id, name: site.name, mine: site.manager.id === userId })),
+            services: locations.services.map((service) => ({ id: service.id, name: service.name })),
           });
           const { kind } = interpretation;
           const siteById = new Map(sites.map((site) => [site.id, site]));
-          let site = (interpretation.siteId && siteById.get(interpretation.siteId)) || null;
+          const serviceById = new Map(locations.services.map((service) => [service.id, service]));
+          const serviceKind = SERVICE_KINDS.includes(kind);
+          let site: { id: string; name: string } | null =
+            (kind !== "z_serwisu" && interpretation.siteId && siteById.get(interpretation.siteId)) || null;
           const fromSite = (kind === "przeniesienie" && interpretation.fromSiteId && siteById.get(interpretation.fromSiteId)) || null;
+          let service = (serviceKind && interpretation.serviceId && serviceById.get(interpretation.serviceId)) || null;
+          // Jedyny serwis firmy nie wymaga wyboru.
+          if (kind === "do_serwisu" && !service && locations.services.length === 1) service = locations.services[0];
 
-          // Skąd ruch może zabrać sprzęt: przy zwrocie bez budowy z każdej, z której aktor zwraca,
-          // a przy przeniesieniu bez budowy źródłowej z każdej innej niż docelowa.
+          // Skąd ruch może zabrać sprzęt: przy zwrocie bez budowy z każdej, z której aktor zwraca, przy
+          // przeniesieniu bez budowy źródłowej z każdej innej niż docelowa, a do serwisu bez budowy z bazy
+          // (magazynier i właściciel) albo z budowy aktora.
+          const movable = sites.filter((candidate) => canMoveTools(session, candidate)).map((candidate) => candidate.id);
           const candidateSources: string[] =
             kind === "wydanie"
               ? [locations.base.id]
               : kind === "zwrot"
                 ? site
                   ? [site.id]
-                  : sites.filter((candidate) => canMoveTools(session, candidate)).map((candidate) => candidate.id)
-                : fromSite
-                  ? [fromSite.id]
-                  : sites.filter((candidate) => candidate.id !== site?.id).map((candidate) => candidate.id);
-          const sources = singleSource(candidateSources, interpretation.mentions, catalog);
-          const resolved = resolveMentions(interpretation.mentions, catalog, (tool) => sources.includes(tool.location.id));
+                  : movable
+                : kind === "przeniesienie"
+                  ? fromSite
+                    ? [fromSite.id]
+                    : sites.filter((candidate) => candidate.id !== site?.id).map((candidate) => candidate.id)
+                  : kind === "do_serwisu"
+                    ? site
+                      ? [site.id]
+                      : [...(canMoveEverywhere(session) ? [locations.base.id] : []), ...movable]
+                    : service
+                      ? [service.id]
+                      : locations.services.map((candidate) => candidate.id);
+          const sources = singleSource(candidateSources, interpretation.everything ? [] : interpretation.mentions, catalog);
+          const resolved = interpretation.everything
+            ? everythingFrom(sources, catalog)
+            : resolveMentions(interpretation.mentions, catalog, (tool) => sources.includes(tool.location.id));
 
-          // Budowa źródłowa wynika z rozpoznanych narzędzi, gdy wszystkie są na jednej.
-          const toolSites = new Set(resolved.tools.map((tool) => catalog.find((entry) => entry.id === tool.id)!.location.id));
-          const onlyToolSite = toolSites.size === 1 ? siteById.get([...toolSites][0]) : undefined;
-          if (kind === "zwrot" && !site) site = onlyToolSite ?? null;
-          const from = kind === "wydanie" ? locations.base : kind === "zwrot" ? site : (fromSite ?? onlyToolSite ?? null);
+          // Źródło wynika z rozpoznanych narzędzi, gdy wszystkie są w jednym miejscu; przy „wszystko z …” z samego zdania.
+          const toolPlaces = new Set(resolved.tools.map((tool) => catalog.find((entry) => entry.id === tool.id)!.location.id));
+          const onlySource = interpretation.everything
+            ? sources.length === 1
+              ? sources[0]
+              : undefined
+            : toolPlaces.size === 1
+              ? [...toolPlaces][0]
+              : undefined;
+          if ((kind === "zwrot" || kind === "do_serwisu") && !site && onlySource) {
+            site = onlySource === locations.base.id ? locations.base : (siteById.get(onlySource) ?? null);
+          }
+          if (kind === "z_serwisu" && !service && onlySource) service = serviceById.get(onlySource) ?? null;
+          const from =
+            kind === "wydanie"
+              ? locations.base
+              : kind === "zwrot" || kind === "do_serwisu"
+                ? site
+                : kind === "z_serwisu"
+                  ? service
+                  : (fromSite ?? (onlySource ? siteById.get(onlySource) : undefined) ?? null);
 
           return {
             text,
             kind,
             site: site && { id: site.id, name: site.name },
+            service: service && { id: service.id, name: service.name },
             from: from && { id: from.id, name: from.name },
+            everything: interpretation.everything,
             ...resolved,
           };
         },
@@ -204,6 +247,17 @@ function singleSource(sources: string[], mentions: Mention[], catalog: CatalogTo
   const counts = sources.map((id) => catalog.filter((tool) => tool.location.id === id && mentioned.has(tool.code)).length);
   const best = Math.max(...counts);
   return best > 0 && counts.filter((count) => count === best).length === 1 ? [sources[counts.indexOf(best)]] : sources;
+}
+
+/** „Wszystko z …”: cały sprzęt ze źródła, gdy wiadomo, które to; inaczej kierownik wybierze je sam. */
+function everythingFrom(sources: string[], catalog: CatalogTool[]) {
+  const tools: ProposedTool[] =
+    sources.length === 1
+      ? catalog
+          .filter((tool) => tool.location.id === sources[0])
+          .map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, phrase: "wszystko" }))
+      : [];
+  return { tools, ambiguities: [], unrecognized: [] };
 }
 
 /**

@@ -9,7 +9,7 @@ const testbed = setupRegistryTestbed();
 /** Port interpretacji zwracający podstawioną interpretację i zapamiętujący, o co go zapytano. */
 class StubInterpreter implements Interpreter {
   requests: InterpretRequest[] = [];
-  answer: Interpretation = { kind: "wydanie", siteId: null, fromSiteId: null, mentions: [] };
+  answer: Interpretation = { kind: "wydanie", siteId: null, fromSiteId: null, serviceId: null, everything: false, mentions: [] };
 
   async interpret(request: InterpretRequest) {
     this.requests.push(request);
@@ -54,6 +54,8 @@ describe("propozycja ruchu z tekstu", () => {
       kind: "wydanie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [
         { phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02"] },
         { phrase: "młot", quantity: 1, codes: ["H-01"] },
@@ -66,7 +68,9 @@ describe("propozycja ruchu z tekstu", () => {
       text: "biorę dwie szlifierki i młot na Rataje",
       kind: "wydanie",
       site: { id: z.ratajeId, name: "Rataje" },
+      service: null,
       from: { id: z.baseId, name: "Magazyn Swarzędz" },
+      everything: false,
       tools: [
         { id: z.s01, code: "S-01", name: "Szlifierka kątowa", phrase: "dwie szlifierki" },
         { id: z.s02, code: "S-02", name: "Szlifierka mała", phrase: "dwie szlifierki" },
@@ -90,6 +94,8 @@ describe("liczebniki i niejednoznaczności", () => {
       kind: "wydanie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02", "S-03"] }],
     };
 
@@ -108,6 +114,8 @@ describe("liczebniki i niejednoznaczności", () => {
       kind: "wydanie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [
         { phrase: "wkrętarka", quantity: 1, codes: ["W-01", "W-02"] },
         { phrase: "młot", quantity: 1, codes: ["H-01"] },
@@ -135,6 +143,8 @@ describe("liczebniki i niejednoznaczności", () => {
       kind: "wydanie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [
         { phrase: "trzy szlifierki", quantity: 3, codes: ["S-01", "S-02"] },
         { phrase: "przecinarka", quantity: 1, codes: [] },
@@ -161,6 +171,8 @@ describe("zwrot i przeniesienie", () => {
       kind: "zwrot",
       siteId: null,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "szlifierkę", quantity: 1, codes: ["S-01", "S-02"] }],
     };
 
@@ -191,6 +203,8 @@ describe("zwrot i przeniesienie", () => {
       kind: "przeniesienie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "szlifierkę", quantity: 1, codes: ["S-01", "S-02"] }],
     };
 
@@ -206,6 +220,116 @@ describe("zwrot i przeniesienie", () => {
       { id: z.ratajeId, name: "Rataje", mine: true },
       { id: winogradyId, name: "Winogrady", mine: false },
     ]);
+  });
+});
+
+describe("serwis", () => {
+  it("„młot z Rataj do serwisu”: wysłanie do jedynego serwisu firmy, z Rataj, bez pytania o serwis", async () => {
+    const z = await givenZawbud();
+    const { locationId: serviceId } = await z.owner.addService({ name: "Serwis Hilti" });
+    await issue(z, [z.h01]);
+    interpreter.answer = {
+      kind: "do_serwisu",
+      siteId: z.ratajeId,
+      fromSiteId: null,
+      serviceId: null,
+      everything: false,
+      mentions: [{ phrase: "młot", quantity: 1, codes: ["H-01"] }],
+    };
+
+    const proposal = await interpretation().as(z.nowakId).propose("młot z Rataj do serwisu");
+
+    expect(proposal).toMatchObject({
+      kind: "do_serwisu",
+      site: { id: z.ratajeId, name: "Rataje" },
+      service: { id: serviceId, name: "Serwis Hilti" },
+      from: { id: z.ratajeId, name: "Rataje" },
+      tools: [{ id: z.h01, code: "H-01" }],
+    });
+    expect(interpreter.requests[0].services).toEqual([{ id: serviceId, name: "Serwis Hilti" }]);
+  });
+
+  it("„odbieram młot z serwisu”: przyjęcie z serwisu, w którym jest młot, na bazę", async () => {
+    const z = await givenZawbud();
+    const { locationId: hiltiId } = await z.owner.addService({ name: "Serwis Hilti" });
+    await z.owner.addService({ name: "Serwis Makita" });
+    await z.owner.registerMovement({
+      operationId: randomUUID(),
+      kind: "do_serwisu",
+      fromLocationId: z.baseId,
+      toLocationId: hiltiId,
+      toolIds: [z.h01],
+      source: "checklista",
+    });
+    interpreter.answer = {
+      kind: "z_serwisu",
+      siteId: null,
+      fromSiteId: null,
+      serviceId: null,
+      everything: false,
+      mentions: [{ phrase: "młot", quantity: 1, codes: ["H-01"] }],
+    };
+
+    const proposal = await interpretation().as(z.zawbud.ownerId).propose("odbieram młot z serwisu");
+
+    expect(proposal).toMatchObject({
+      kind: "z_serwisu",
+      site: null,
+      service: { id: hiltiId, name: "Serwis Hilti" },
+      from: { id: hiltiId, name: "Serwis Hilti" },
+      tools: [{ id: z.h01, code: "H-01" }],
+    });
+  });
+});
+
+describe("wszystko z jednego miejsca", () => {
+  it("„oddaję wszystko z Rataj”: zwrot całego sprzętu z Rataj, bez wymieniania narzędzi", async () => {
+    const z = await givenZawbud();
+    await issue(z, [z.s01, z.h01]);
+    interpreter.answer = { kind: "zwrot", siteId: z.ratajeId, fromSiteId: null, serviceId: null, everything: true, mentions: [] };
+
+    const proposal = await interpretation().as(z.nowakId).propose("oddaję wszystko z Rataj");
+
+    expect(proposal).toMatchObject({
+      kind: "zwrot",
+      everything: true,
+      from: { id: z.ratajeId, name: "Rataje" },
+      ambiguities: [],
+      unrecognized: [],
+    });
+    expect(proposal.tools.map((tool) => tool.code).sort()).toEqual(["H-01", "S-01"]);
+  });
+
+  it("„zabieram wszystko z Winograd na Rataje”: przeniesienie całego sprzętu z Winograd", async () => {
+    const z = await givenZawbud();
+    const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik", "Jan Kowalski");
+    const { locationId: winogradyId } = await z.owner.addSite({ name: "Winogrady", address: "os. Wichrowe 3", managerId: kowalskiId });
+    await testbed.registry.as(kowalskiId).registerMovement({
+      operationId: randomUUID(),
+      kind: "wydanie",
+      fromLocationId: z.baseId,
+      toLocationId: winogradyId,
+      toolIds: [z.s02, z.h01],
+      source: "checklista",
+    });
+    interpreter.answer = { kind: "przeniesienie", siteId: z.ratajeId, fromSiteId: winogradyId, serviceId: null, everything: true, mentions: [] };
+
+    const proposal = await interpretation().as(z.nowakId).propose("zabieram wszystko z Winograd na Rataje");
+
+    expect(proposal).toMatchObject({ site: { id: z.ratajeId }, from: { id: winogradyId, name: "Winogrady" }, everything: true });
+    expect(proposal.tools.map((tool) => tool.code).sort()).toEqual(["H-01", "S-02"]);
+  });
+
+  it("„zabieram wszystko na Rataje” bez budowy źródłowej: nie wiadomo skąd, więc narzędzia wybierze kierownik", async () => {
+    const z = await givenZawbud();
+    const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik", "Jan Kowalski");
+    await z.owner.addSite({ name: "Winogrady", address: "os. Wichrowe 3", managerId: kowalskiId });
+    await z.owner.addSite({ name: "Łazarz", address: "ul. Głogowska 1", managerId: kowalskiId });
+    interpreter.answer = { kind: "przeniesienie", siteId: z.ratajeId, fromSiteId: null, serviceId: null, everything: true, mentions: [] };
+
+    const proposal = await interpretation().as(z.nowakId).propose("zabieram wszystko na Rataje");
+
+    expect(proposal).toMatchObject({ from: null, everything: true, tools: [] });
   });
 });
 
@@ -227,6 +351,8 @@ describe("jedna lokalizacja źródłowa", () => {
       kind: "przeniesienie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02", "S-03"] }],
     };
 
@@ -293,15 +419,25 @@ describe("zatwierdzenie ✓", () => {
 
   it("zatwierdzenie bez tekstu albo z rodzajem ruchu spoza wpisu tekstem jest odrzucane", async () => {
     const z = await givenZawbud();
-    const { locationId: serviceId } = await z.owner.addService({ name: "Serwis Hilti" });
-    const confirm = (kind: ProposalKind, toLocationId: string, text: string) =>
+    const confirm = (kind: ProposalKind, text: string) =>
       interpretation()
         .as(z.zawbud.ownerId)
-        .confirm({ operationId: randomUUID(), kind, fromLocationId: z.baseId, toLocationId, toolIds: [z.s01], text });
+        .confirm({ operationId: randomUUID(), kind, fromLocationId: z.baseId, toLocationId: z.ratajeId, toolIds: [z.s01], text });
 
-    await expect(confirm("wydanie", z.ratajeId, "  ")).rejects.toMatchObject({ code: "invalid_input" });
-    await expect(confirm("do_serwisu" as ProposalKind, serviceId, "szlifierka do serwisu")).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(confirm("wydanie", "  ")).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(confirm("korekta" as ProposalKind, "szlifierka na Rataje")).rejects.toMatchObject({ code: "invalid_input" });
     expect((await z.owner.toolCard(z.s01))!.location.name).toBe("Magazyn Swarzędz");
+  });
+
+  it("zatwierdzone wysłanie do serwisu to zwykły ruch „do serwisu” ze źródłem głos", async () => {
+    const z = await givenZawbud();
+    const { locationId: serviceId } = await z.owner.addService({ name: "Serwis Hilti" });
+
+    const movement = await interpretation()
+      .as(z.zawbud.ownerId)
+      .confirm({ operationId: randomUUID(), kind: "do_serwisu", fromLocationId: z.baseId, toLocationId: serviceId, toolIds: [z.h01], text: "młot do serwisu" });
+
+    expect(movement).toMatchObject({ kind: "do_serwisu", source: "glos", to: { name: "Serwis Hilti" }, tools: [{ code: "H-01" }] });
   });
 });
 

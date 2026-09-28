@@ -2,7 +2,7 @@ import { budmax, zawbud } from "./companies";
 import type { EvalCase } from "./eval";
 
 /** Obszary, które zestaw musi pokrywać (issue #17); przypadek może mieć kilka. */
-export const REQUIRED_TAGS = ["slang", "liczebniki", "niejednoznacznosci", "przeniesienia", "serwis", "nierozpoznane"];
+export const REQUIRED_TAGS = ["slang", "liczebniki", "niejednoznacznosci", "przeniesienia", "serwis", "nierozpoznane", "wszystko"];
 
 // Bez pola `actor` mówi pierwszy kierownik z ewidencji: w Zawbudzie Adam Nowak (Rataje), w Budmaksie Krzysztof Wójcik.
 // Gdzie jest sprzęt Zawbudu (companies.ts): na bazie S-01 (125 mm), S-02 (230 mm), H-01, H-02, A-01, N-01, Z-01, W-01, W-02, P-01,
@@ -552,5 +552,60 @@ export const CASES: EvalCase[] = [
     actor: "Marek Zieliński",
     text: "wydaj na Łazarz agregat i niwelę",
     expected: { kind: "wydanie", site: "Łazarz", from: "Baza Swarzędz", tools: ["A-01", "N-01"] },
+  },
+  // Ruchy serwisowe: wysłanie do serwisu (z budowy albo z bazy) i przyjęcie z serwisu na bazę.
+  {
+    id: "serwis-ruch-01",
+    tags: ["serwis"],
+    company: zawbud,
+    text: "wiozę dużą szlifierkę z Rataj do serwisu Hilti",
+    expected: { kind: "do_serwisu", site: "Rataje", service: "Serwis Hilti Poznań", from: "Rataje", tools: ["S-04"] },
+  },
+  {
+    id: "serwis-ruch-02",
+    tags: ["serwis", "slang"],
+    company: zawbud,
+    actor: "Marek Zieliński",
+    text: "hiltiego z magazynu oddaję do naprawy w Kórniku",
+    expected: { kind: "do_serwisu", site: "Baza Swarzędz", service: "Serwis Elektronarzędzi Kórnik", from: "Baza Swarzędz", tools: ["H-01"] },
+  },
+  {
+    id: "serwis-ruch-03",
+    tags: ["serwis"],
+    company: zawbud,
+    actor: "Marek Zieliński",
+    text: "odebrałem młot wyburzeniowy z serwisu Hilti",
+    expected: { kind: "z_serwisu", site: null, service: "Serwis Hilti Poznań", from: "Serwis Hilti Poznań", tools: ["H-04"] },
+  },
+  {
+    id: "serwis-ruch-04",
+    tags: ["serwis"],
+    company: zawbud,
+    actor: "Marek Zieliński",
+    text: "agregat wrócił z naprawy",
+    expected: { kind: "z_serwisu", site: null, service: "Serwis Elektronarzędzi Kórnik", tools: ["A-02"] },
+  },
+  // „Wszystko z …”: cały sprzęt ze źródła, bez wymieniania narzędzi.
+  {
+    id: "wszystko-01",
+    tags: ["wszystko"],
+    company: zawbud,
+    text: "zwożę wszystko z Rataj na bazę",
+    expected: { kind: "zwrot", site: "Rataje", from: "Rataje", tools: ["S-04", "N-02", "W-03"] },
+  },
+  {
+    id: "wszystko-02",
+    tags: ["wszystko", "przeniesienia"],
+    company: zawbud,
+    text: "przejmuję cały sprzęt z Winograd na Rataje",
+    expected: { kind: "przeniesienie", site: "Rataje", from: "Winogrady", tools: ["S-03", "Z-02"] },
+  },
+  {
+    id: "wszystko-03",
+    tags: ["wszystko", "serwis"],
+    company: zawbud,
+    actor: "Marek Zieliński",
+    text: "odbieram wszystko z serwisu w Kórniku",
+    expected: { kind: "z_serwisu", site: null, service: "Serwis Elektronarzędzi Kórnik", tools: ["A-02"] },
   },
 ];

@@ -18,7 +18,10 @@ export interface EvalCompany {
 /** Oczekiwana Propozycja: lokalizacje po nazwie, narzędzia po kodzie; frazy zależą od modelu, więc się nie liczą. */
 export interface ExpectedProposal {
   kind: ProposalKind;
+  /** Budowa kierownika; przy wysłaniu do serwisu także baza, z której sprzęt jedzie. */
   site: string | null;
+  /** Serwis przy wysłaniu do serwisu i przyjęciu z serwisu; bez tego pola nie jest sprawdzany. */
+  service?: string | null;
   /** Skąd ruch zabiera sprzęt; bez tego pola nie jest sprawdzane. */
   from?: string | null;
   tools: string[];
@@ -41,7 +44,7 @@ export interface EvalCase {
   expected: ExpectedProposal;
 }
 
-export type CheckField = "kind" | "site" | "from" | "tools" | "ambiguities" | "unrecognized";
+export type CheckField = "kind" | "site" | "service" | "from" | "tools" | "ambiguities" | "unrecognized";
 
 export interface Check {
   field: CheckField;
@@ -141,7 +144,9 @@ export function caseProblems({ company, actor, expected }: EvalCase): string[] {
     codes.add(tool.code);
     if (!locations.has(tool.at)) problems.push(`${tool.code} jest w nieznanej lokalizacji ${tool.at}`);
   }
-  if (expected.site !== null && !sites.includes(expected.site)) problems.push(`oczekiwana budowa ${expected.site} nie jest aktywną budową`);
+  const siteOrBase = expected.kind === "do_serwisu" && expected.site === company.base;
+  if (expected.site !== null && !siteOrBase && !sites.includes(expected.site)) problems.push(`oczekiwana budowa ${expected.site} nie jest aktywną budową`);
+  if (expected.service != null && !company.services.includes(expected.service)) problems.push(`oczekiwany serwis ${expected.service} nie istnieje`);
   if (expected.from != null && !locations.has(expected.from)) problems.push(`oczekiwane „skąd” to nieznana lokalizacja ${expected.from}`);
   const expectedCodes = [...expected.tools, ...(expected.ambiguities ?? []).flatMap((ambiguity) => ambiguity.candidates)];
   for (const code of new Set(expectedCodes)) {
@@ -216,5 +221,6 @@ function score(expected: ExpectedProposal, proposal: Proposal): Check[] {
     check("unrecognized", unrecognized(expected.unrecognized ?? []), unrecognized(proposal.unrecognized)),
   ];
   if (expected.from !== undefined) checks.splice(2, 0, check("from", expected.from ?? "—", proposal.from?.name ?? "—"));
+  if (expected.service !== undefined) checks.splice(2, 0, check("service", expected.service ?? "—", proposal.service?.name ?? "—"));
   return checks;
 }

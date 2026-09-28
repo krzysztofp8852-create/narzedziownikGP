@@ -49,7 +49,7 @@ class StubTranscriber implements Transcriber {
 
 class StubInterpreter implements Interpreter {
   requests: InterpretRequest[] = [];
-  answer: Interpretation = { kind: "wydanie", siteId: null, fromSiteId: null, mentions: [] };
+  answer: Interpretation = { kind: "wydanie", siteId: null, fromSiteId: null, serviceId: null, everything: false, mentions: [] };
   failure: Error | null = null;
 
   async interpret(request: InterpretRequest) {
@@ -93,6 +93,8 @@ describe("propozycja ruchu z nagrania", () => {
       kind: "wydanie",
       siteId: z.ratajeId,
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "szlifierkę", quantity: 1, codes: ["S-01"] }],
     };
 
@@ -249,7 +251,7 @@ describe("nagranie z kolejki offline", () => {
     // Sieć wraca godzinę po nagraniu: transkrypcja, propozycja i ✓.
     testbed.clock.set(new Date(recordedAt.getTime() + 60 * 60_000));
     transcriber.text = "biorę szlifierkę na Rataje";
-    interpreter.answer = { kind: "wydanie", siteId: z.ratajeId, fromSiteId: null, mentions: [{ phrase: "szlifierkę", quantity: 1, codes: ["S-01"] }] };
+    interpreter.answer = { kind: "wydanie", siteId: z.ratajeId, fromSiteId: null, serviceId: null, everything: false, mentions: [{ phrase: "szlifierkę", quantity: 1, codes: ["S-01"] }] };
     const proposal = await interpretation().as(z.nowakId).proposeFromRecording(recording());
 
     const movement = await interpretation()

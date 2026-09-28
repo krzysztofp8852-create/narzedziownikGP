@@ -3,7 +3,7 @@
 import { type FormEvent, startTransition, useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
-import type { Proposal } from "@/interpretation/proposal";
+import { type Proposal, SERVICE_KINDS } from "@/interpretation/proposal";
 import { enqueueRecording, isNetworkError, onQueueChanged, queueChanged, queuedFromForm, readyRecordings, sendOrQueue } from "@/lib/offline/client";
 import { hasOfflineQueue } from "@/lib/offline/idb";
 import type { ReadyRecording } from "@/lib/offline/queue";
@@ -268,7 +268,10 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
   const plan = planDraft(draft, proposal, data);
   const codes = plan.tools.map((tool) => tool.code).join(", ");
   const summary = plan.to ? t("checklist.summary", { codes, place: plan.to.name }) : "";
-  const siteLegend = draft.kind === "zwrot" ? t("checklist.kinds.zwrot.from") : t(`checklist.kinds.${draft.kind}.to`);
+  const siteLegend =
+    draft.kind === "zwrot" || draft.kind === "do_serwisu" ? t(`checklist.kinds.${draft.kind}.from`) : t(`checklist.kinds.${draft.kind}.to`);
+  const serviceLegend = draft.kind === "z_serwisu" ? t("checklist.kinds.z_serwisu.from") : t("checklist.kinds.do_serwisu.to");
+  const serviceKind = SERVICE_KINDS.includes(draft.kind);
   const addable = plan.addable.filter((tool) => matchesTool(tool, query));
 
   function change(next: Partial<Draft>) {
@@ -280,7 +283,16 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
       ...current,
       toolIds: current.toolIds.filter((id) => id !== toolId),
       picks: current.picks.map((picked) => picked.filter((id) => id !== toolId)),
+      excluded: current.everything ? [...current.excluded, toolId] : current.excluded,
     }));
+  }
+
+  function add(toolId: string) {
+    setDraft((current) =>
+      current.everything
+        ? { ...current, excluded: current.excluded.filter((id) => id !== toolId) }
+        : { ...current, toolIds: [...current.toolIds, toolId] },
+    );
   }
 
   function pick(index: number, toolId: string, quantity: number) {
@@ -337,21 +349,62 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
         </fieldset>
       )}
 
-      <fieldset className="checklist-section">
-        <legend className="scan-legend">{siteLegend}</legend>
-        {proposal.site && !plan.sites.some((site) => site.id === proposal.site!.id) && draft.siteId === "" && (
-          <p className="proposal-note">{t("textEntry.siteNotAllowed", { site: proposal.site.name })}</p>
-        )}
-        <div className="choice-list">
-          {plan.sites.map((site) => (
-            <label key={site.id} className="choice">
-              <input type="radio" name="siteChoice" checked={site.id === plan.site?.id} onChange={() => change({ siteId: site.id })} />
-              <PlaceName place={site} />
-              {site.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {draft.kind !== "z_serwisu" && (
+        <fieldset className="checklist-section">
+          <legend className="scan-legend">{siteLegend}</legend>
+          {proposal.site && !plan.sites.some((site) => site.id === proposal.site!.id) && draft.siteId === "" && (
+            <p className="proposal-note">{t("textEntry.siteNotAllowed", { site: proposal.site.name })}</p>
+          )}
+          <div className="choice-list">
+            {plan.sites.map((site) => (
+              <label key={site.id} className="choice">
+                <input type="radio" name="siteChoice" checked={site.id === plan.site?.id} onChange={() => change({ siteId: site.id })} />
+                <PlaceName place={site} />
+                {site.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
+      {serviceKind && (
+        <fieldset className="checklist-section">
+          <legend className="scan-legend">{serviceLegend}</legend>
+          {plan.services.length === 0 ? (
+            <p className="empty">{t("checklist.kinds.do_serwisu.noTo")}</p>
+          ) : (
+            <div className="choice-list">
+              {plan.services.map((service) => (
+                <label key={service.id} className="choice">
+                  <input
+                    type="radio"
+                    name="serviceChoice"
+                    checked={service.id === plan.service?.id}
+                    onChange={() => change({ serviceId: service.id })}
+                  />
+                  <PlaceName place={service} />
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+      )}
+
+      {/* Przy „wszystko z …” przeniesienie nie ma narzędzi, z których wynika skąd, więc wybiera się to wprost. */}
+      {draft.kind === "przeniesienie" && draft.everything && (
+        <fieldset className="checklist-section">
+          <legend className="scan-legend">{t("checklist.kinds.przeniesienie.from")}</legend>
+          <div className="choice-list">
+            {plan.sources.map((place) => (
+              <label key={place.id} className="choice">
+                <input type="radio" name="fromChoice" checked={place.id === plan.from?.id} onChange={() => change({ fromId: place.id })} />
+                <PlaceName place={place} />
+                {place.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       {proposal.ambiguities.map((question, index) => {
         const candidates = question.candidates.filter((candidate) => !draft.toolIds.includes(candidate.id));
@@ -381,6 +434,11 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
 
       <fieldset className="checklist-section">
         <legend className="scan-legend">{t("checklist.tools")}</legend>
+        {draft.everything && (
+          <p className="proposal-note">
+            {plan.from ? t("textEntry.everything", { place: plan.from.name }) : t("textEntry.everythingChooseFrom")}
+          </p>
+        )}
         {plan.tools.length === 0 ? (
           <p className="empty">{t("textEntry.noTools")}</p>
         ) : (
@@ -441,7 +499,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
                   type="button"
                   className="button button-quiet"
                   aria-label={t("textEntry.addTool", { code: tool.code })}
-                  onClick={() => change({ toolIds: [...draft.toolIds, tool.id] })}
+                  onClick={() => add(tool.id)}
                 >
                   {t("checklist.toolLabel", { code: tool.code, name: tool.name })}
                 </button>
@@ -453,7 +511,15 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
 
       <p className="checklist-summary-text" data-testid="proposal-summary">
         {t(`movementKind.${draft.kind}`)}:{" "}
-        {!plan.site ? t("textEntry.chooseSite") : plan.open > 0 ? t("textEntry.answerQuestions") : summary}
+        {draft.kind !== "z_serwisu" && !plan.site
+          ? t(draft.kind === "do_serwisu" ? "textEntry.chooseFrom" : "textEntry.chooseSite")
+          : serviceKind && !plan.service
+            ? t("textEntry.chooseService")
+            : !plan.from && draft.everything
+              ? t("textEntry.chooseFrom")
+              : plan.open > 0
+                ? t("textEntry.answerQuestions")
+                : summary}
       </p>
       <DamagedWarnings tools={plan.tools} />
       <MovementResult done={null} state={state} refreshedHint={t("checklist.conflictRefreshed")} />
