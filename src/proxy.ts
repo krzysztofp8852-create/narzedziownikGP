@@ -2,9 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-// Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika. „Brak sieci” service worker
+// Do demo wchodzi się bez logowania. Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika. „Brak sieci” service worker
 // pobiera przy instalacji, także przed zalogowaniem.
-const PUBLIC_PATHS = ["/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi", "/zadania/raporty", "/zadania/abonamenty", "/offline"];
+const PUBLIC_PATHS = ["/demo", "/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi", "/zadania/raporty", "/zadania/abonamenty", "/offline"];
 
 /**
  * Odświeża sesję Supabase w ciasteczkach i odsyła niezalogowanych do logowania.

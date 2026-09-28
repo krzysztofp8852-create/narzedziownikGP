@@ -63,10 +63,13 @@ function devicePoints(devices: MapDevice[], places: Map<string, Point>): Map<str
     const index = perPlace.get(device.placeId) ?? 0;
     perPlace.set(device.placeId, index + 1);
     const angle = (index * 2.4 + (hash(device.id) % 10) / 10) % (2 * Math.PI);
-    points.set(device.id, { x: center.x + Math.cos(angle) * 4.5, y: center.y + Math.sin(angle) * 7 });
+    // Zaokrąglone: przeglądarka zapisuje procenty w stylu z mniejszą dokładnością niż serwer, a różnica psuje hydratację.
+    points.set(device.id, { x: round(center.x + Math.cos(angle) * 4.5), y: round(center.y + Math.sin(angle) * 7) });
   }
   return points;
 }
+
+const round = (value: number) => Math.round(value * 100) / 100;
 
 /** Przykładowy sygnał lokalizatora. */
 function demoSignal(id: string) {
@@ -173,7 +176,7 @@ export function SiteMap({ places, devices }: { places: MapPlace[]; devices: MapD
     setSelection((current) => (current?.type === next.type && current.id === next.id ? null : next));
 
   return (
-    <section className="board-section" aria-labelledby="board-map">
+    <section className="board-section" aria-labelledby="board-map" data-tour="map">
       <div className="section-head">
         <h2 id="board-map" className="display section-title">
           {t("siteMap.title")} <span className="tag tag-demo">{t("siteMap.demo")}</span>
