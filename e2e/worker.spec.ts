@@ -27,6 +27,8 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   const company = seedCompany();
 
   await signIn(page, company.owner.email, company.owner.password);
+  // Przejście dalej dopiero po zalogowaniu; inaczej /ustawienia odeśle z powrotem do logowania.
+  await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   await page.goto("/ustawienia");
   const team = page.locator("#zespol");
   await team.locator("summary", { hasText: "Dodaj osobę" }).click();
