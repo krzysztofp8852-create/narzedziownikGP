@@ -68,3 +68,21 @@ describe("e-mail z raportem", () => {
     expect(email.html).not.toContain("href=");
   });
 });
+
+describe("e-mail z ostrzeżeniem przed trybem tylko do odczytu", () => {
+  const warning = { kind: "tylko_do_odczytu_wkrotce" as const, recipient: owner, paidUntil: "2026-03-31", readOnlyFrom: "2026-04-15" };
+
+  it("tydzień przed: ile dni zostało, od kiedy tryb i co w nim działa", () => {
+    const email = notificationEmail({ ...warning, daysLeft: 7 });
+
+    expect(email.to).toBe("anna@zawbud.test");
+    expect(email.subject).toBe("Za 7 dni NarzędziownikGP przejdzie w tryb tylko do odczytu");
+    expect(email.text).toContain("opłacony do 31.03.2026");
+    expect(email.text).toContain("od 15.04.2026 firma przejdzie w tryb tylko do odczytu");
+    expect(email.text).toContain("Żadne dane nie zostaną usunięte.");
+  });
+
+  it("dzień przed: jutro", () => {
+    expect(notificationEmail({ ...warning, daysLeft: 1 }).subject).toBe("Jutro NarzędziownikGP przejdzie w tryb tylko do odczytu");
+  });
+});

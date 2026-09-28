@@ -57,11 +57,14 @@ export default async function ToClarifyPage() {
               <p className="muted movement-meta">
                 {t("toClarify.when", { recorded: formatDateTime(rejection.occurredAt), rejected: formatDateTime(rejection.rejectedAt) })}
               </p>
-              <form action={resolveRejectedMovement.bind(null, rejection.id)} className="undo">
-                <button className="button button-quiet button-small" type="submit">
-                  {t("toClarify.resolve")}
-                </button>
-              </form>
+              {/* W trybie tylko do odczytu nie ma czego zapisać; baner mówi dlaczego. */}
+              {!session.company.readOnly && (
+                <form action={resolveRejectedMovement.bind(null, rejection.id)} className="undo">
+                  <button className="button button-quiet button-small" type="submit">
+                    {t("toClarify.resolve")}
+                  </button>
+                </form>
+              )}
             </li>
           ))}
         </ol>

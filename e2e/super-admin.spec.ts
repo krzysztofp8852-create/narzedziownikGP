@@ -25,7 +25,7 @@ async function signIn(page: Page, email: string, password: string) {
 // potem usunąć z aplikacji. Dlatego ten test działa tylko w CI, na jednorazowym Supabase.
 test.skip(!process.env.CI, "tylko w CI: zakłada konto super-admina");
 
-test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „opłacone do” i włącza tryb tylko do odczytu", async ({ page }) => {
+test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „opłacone do” i włącza tryb tylko do odczytu, a właściciel widzi baner i nie zapisze zmian", async ({ page }) => {
   const admin = createSuperAdmin();
   const suffix = randomUUID().slice(0, 8);
   const companyName = `Test dymny panelu ${suffix}`;
@@ -73,6 +73,8 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await expect(page.getByTestId("subscription-status")).toHaveText("Tylko do odczytu (ręcznie)");
   await page.getByRole("button", { name: "Wyłącz tryb tylko do odczytu" }).click();
   await expect(page.getByTestId("subscription-status")).toHaveText("Aktywna");
+  await page.getByRole("button", { name: "Włącz tryb tylko do odczytu" }).click();
+  await expect(page.getByTestId("subscription-status")).toHaveText("Tylko do odczytu (ręcznie)");
 
   await page.getByRole("link", { name: "Wszystkie firmy" }).click();
   await expect(row).toContainText("Duży");
@@ -85,4 +87,24 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await expect(page).toHaveURL(/\/zmien-haslo$/);
   await page.goto("/super-admin");
   await expect(page).toHaveURL(/\/zmien-haslo$/);
+
+  // Hasło zmieni także w trybie tylko do odczytu, a potem widzi dane, baner i abonament, ale nic nie zapisze.
+  const ownerPassword = `Nowe-${randomUUID().slice(0, 8)}`;
+  await page.getByLabel("Nowe hasło", { exact: true }).fill(ownerPassword);
+  await page.getByLabel("Powtórz nowe hasło").fill(ownerPassword);
+  await page.getByRole("button", { name: "Zapisz hasło" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
+  await expect(page.getByTestId("read-only-banner")).toContainText("Firma jest w trybie tylko do odczytu.");
+
+  await page.goto("/ustawienia");
+  await expect(page.getByTestId("read-only-banner")).toBeVisible();
+  await expect(page.getByTestId("subscription")).toContainText("Duży");
+  await expect(page.getByTestId("subscription-tools")).toHaveText("0 z 1000");
+  await page.getByLabel("Po ilu dniach").fill("21");
+  await page.getByRole("button", { name: "Zapisz", exact: true }).click();
+  // Next.js ma też własny, pusty `role="alert"` (ogłaszanie zmiany strony), więc szukamy komunikatu po treści.
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy." }),
+  ).toBeVisible();
 });

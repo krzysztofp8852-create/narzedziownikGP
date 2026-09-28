@@ -2,7 +2,7 @@ import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import type { Notifier } from "@/registry/ports";
-import type { EmailedNotification, Report, ToolsTakenNotification } from "@/registry/registry";
+import { type EmailedNotification, type ReadOnlySoonNotification, readOnlyWarning, type Report, type ToolsTakenNotification } from "@/registry/registry";
 import { fridayToolCount, reportHeading, reportLink, reportSections } from "./report-text";
 
 export interface Email {
@@ -24,7 +24,34 @@ export function notificationEmail(notification: EmailedNotification, { appUrl }:
     case "raport_tygodniowy":
     case "raport_piatkowy":
       return reportEmail(notification.recipient, notification.report, appUrl);
+    case "tylko_do_odczytu_wkrotce":
+      return readOnlySoonEmail(notification);
   }
+}
+
+/** Ostrzeżenie przed trybem tylko do odczytu, tydzień i dzień przed przełączeniem. */
+function readOnlySoonEmail(notification: ReadOnlySoonNotification): Email {
+  return {
+    to: notification.recipient.email,
+    subject:
+      notification.daysLeft === 1
+        ? t("notifications.readOnlySoon.subject.one")
+        : t("notifications.readOnlySoon.subject.many", { days: notification.daysLeft }),
+    text: [
+      t("notifications.greeting", { name: notification.recipient.fullName }),
+      "",
+      t("notifications.readOnlySoon.lead", {
+        paidUntil: formatCalendarDay(notification.paidUntil),
+        from: formatCalendarDay(notification.readOnlyFrom),
+      }),
+      "",
+      t("notifications.readOnlySoon.effect"),
+      "",
+      t("notifications.readOnlySoon.action"),
+      "",
+      t("notifications.signature"),
+    ].join("\n"),
+  };
 }
 
 /** „Adam Nowak zabiera S-01, S-02 z budowy Winogrady”. */
@@ -131,7 +158,12 @@ function escapeHtml(text: string): string {
 
 /** Ponowiona wysyłka tego samego powiadomienia nie dotrze drugi raz. */
 function idempotencyKey(notification: EmailedNotification): string {
-  const event = notification.kind === "narzedzia_zabrane" ? notification.movementId : notification.report.day;
+  const event =
+    notification.kind === "narzedzia_zabrane"
+      ? notification.movementId
+      : notification.kind === "tylko_do_odczytu_wkrotce"
+        ? `${notification.readOnlyFrom}/${readOnlyWarning(notification)}`
+        : notification.report.day;
   return `${notification.kind}/${event}/${notification.recipient.userId}`;
 }
 

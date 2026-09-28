@@ -282,6 +282,20 @@ a.button {
   font-size: 0.9rem;
 }
 
+/* Tryb tylko do odczytu: stały baner pod nagłówkiem na każdej stronie firmy. */
+.read-only-banner {
+  padding: 12px var(--gutter);
+  background: var(--warning-soft);
+  border-bottom: 2px solid var(--warning);
+  color: var(--warning);
+}
+
+.read-only-banner p {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  overflow-wrap: anywhere;
+}
+
 .app-main {
   padding: 20px var(--gutter) 40px;
   max-width: var(--page-width);
@@ -886,6 +900,27 @@ a.tool-row:hover .tool-row-name {
 
 .checklist-summary .form-error ul {
   margin: 6px 0 6px 20px;
+}
+
+/* Ostrzeżenie, które niczego nie blokuje, np. limit narzędzi w progu. */
+.form-warning {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.subscription-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin-bottom: 12px;
+}
+
+.subscription-facts dt {
+  color: var(--text-muted);
 }
 
 .checklist-done {

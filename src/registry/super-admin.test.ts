@@ -26,7 +26,7 @@ describe("zakładanie firmy w panelu super-admina", () => {
       fullName: "Jan Kowalski",
       role: "wlasciciel",
       mustChangePassword: true,
-      company: { id: created.companyId, name: "Zawbud" },
+      company: { id: created.companyId, name: "Zawbud", readOnly: false },
     });
     expect(await admin.company(created.companyId)).toEqual({
       id: created.companyId,

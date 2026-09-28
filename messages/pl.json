@@ -162,7 +162,8 @@
     "invalid_tool_state": "Narzędzie jest już w tym stanie.",
     "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane.",
     "not_reported": "To zgłoszenie jest już rozpatrzone.",
-    "no_stickers": "Nie ma narzędzi do oklejenia: każde w obiegu ma już wydrukowaną naklejkę."
+    "no_stickers": "Nie ma narzędzi do oklejenia: każde w obiegu ma już wydrukowaną naklejkę.",
+    "read_only": "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy. Tablica, historia i eksport działają normalnie."
   },
   "days": {
     "one": "{count} dzień",
@@ -444,6 +445,27 @@
     "saved": "Zapisano.",
     "invalidDays": "Wpisz liczbę dni od 1 do {max}."
   },
+  "subscription": {
+    "title": "Abonament",
+    "tier": "Próg",
+    "tools": "Narzędzia",
+    "toolUsage": "{count} z {limit}",
+    "noLimit": "{count} (plan bez limitu)",
+    "paidUntil": "Opłacone do",
+    "notPaid": "czeka na pierwszą wpłatę",
+    "readOnlyFrom": "Tryb tylko do odczytu od",
+    "status": "Stan",
+    "hint": "Zmianę progu i płatności ustalisz z GP Engineering. Konta w zespole nie wchodzą do limitu."
+  },
+  "toolLimit": {
+    "warning": "Wszystko zapisane, ale firma przekroczyła limit progu {tier}: {count} z {limit} narzędzi. Właściciel może przejść na próg {suggested}.",
+    "settings": "Firma przekroczyła limit progu. Nic nie jest blokowane, ale warto przejść na próg {suggested}."
+  },
+  "readOnly": {
+    "banner": "Firma jest w trybie tylko do odczytu. Tablica, historia i eksport działają, ale zmian nie zapiszesz.",
+    "bannerOwner": "Opłać abonament albo napisz do GP Engineering, a wszystko wróci. Żadne dane nie zostały usunięte.",
+    "bannerMember": "Właściciel firmy może to zmienić. Żadne dane nie zostały usunięte."
+  },
   "corrections": {
     "correctTitle": "Korekta",
     "correctHint": "Ustaw, gdzie narzędzie naprawdę jest i w jakim jest stanie. Odnalezione zaginione ustaw jako „W obiegu”.",
@@ -573,6 +595,15 @@
       "subject": "{author} zabiera {codes} z budowy {from}",
       "lead": "Sprzęt z budowy {from} jest teraz na budowie {to} (przeniósł: {author}, {when}):",
       "responsibility": "Nie odpowiadasz już za ten sprzęt. Kto go ma i gdzie jest, zobaczysz na tablicy „Gdzie jest co”."
+    },
+    "readOnlySoon": {
+      "subject": {
+        "one": "Jutro NarzędziownikGP przejdzie w tryb tylko do odczytu",
+        "many": "Za {days} dni NarzędziownikGP przejdzie w tryb tylko do odczytu"
+      },
+      "lead": "Abonament NarzędziownikaGP jest opłacony do {paidUntil}. Jeśli do tego czasu nie wpłynie opłata, od {from} firma przejdzie w tryb tylko do odczytu.",
+      "effect": "W tym trybie wszyscy nadal zobaczą tablicę, historię i eksport, ale nikt nie zapisze zmian (ruchów, narzędzi, zespołu). Żadne dane nie zostaną usunięte.",
+      "action": "Po zaksięgowaniu przelewu wszystko działa od razu. W razie pytań napisz do GP Engineering."
     }
   },
   "stickers": {
@@ -652,7 +683,15 @@
       "many": "{count} narzędzi przekroczyło próg {days} dni"
     },
     "movementRejected": "Ruch z kolejki odrzucony: {kind} {codes}",
-    "movementRejectedBody": "Zapisany w telefonie {when}. {reason} Sprawdź go na liście „Do wyjaśnienia”."
+    "movementRejectedBody": "Zapisany w telefonie {when}. {reason} Sprawdź go na liście „Do wyjaśnienia”.",
+    "readOnlySoon": {
+      "one": "Jutro firma przejdzie w tryb tylko do odczytu",
+      "many": "Za {days} dni firma przejdzie w tryb tylko do odczytu"
+    },
+    "readOnlySoonBody": "Abonament jest opłacony do {paidUntil}. Od {from} zobaczysz tablicę, historię i eksport, ale nie zapiszesz zmian. Opłać abonament, żeby pracować dalej.",
+    "readOnly": "Firma jest w trybie tylko do odczytu",
+    "readOnlyOverdue": "Minęło 14 dni od końca opłaconego okresu ({paidUntil}). Tablica, historia i eksport działają, ale zmian nie zapiszesz. Po wpłacie wszystko wróci; żadne dane nie zostały usunięte.",
+    "readOnlyManual": "GP Engineering włączyło tryb tylko do odczytu. Tablica, historia i eksport działają, ale zmian nie zapiszesz. Żadne dane nie zostały usunięte."
   },
   "push": {
     "title": "Powiadomienia na telefonie",

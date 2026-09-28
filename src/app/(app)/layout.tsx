@@ -61,6 +61,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+      {session.company.readOnly && (
+        <div className="read-only-banner" role="status" data-testid="read-only-banner">
+          <p>
+            <strong>{t("readOnly.banner")}</strong> {t(session.role === "wlasciciel" ? "readOnly.bannerOwner" : "readOnly.bannerMember")}
+          </p>
+        </div>
+      )}
       <main className="app-main">{children}</main>
     </>
   );

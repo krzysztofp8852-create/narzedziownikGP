@@ -49,6 +49,11 @@ export function NewToolForm(props: {
           <Link href={`/narzedzia/${added.id}`}>{t("tools.openCard")}</Link>
         </p>
       )}
+      {added?.limitWarning && (
+        <p role="status" className="form-warning" data-testid="tool-limit-warning">
+          {added.limitWarning}
+        </p>
+      )}
       <ToolForm
         key={operationId}
         action={action}

@@ -31,7 +31,7 @@ export function ToolImport(props: { operationId: string }) {
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
   const [preview, setPreview] = useState<ToolImportPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [imported, setImported] = useState<number | null>(null);
+  const [imported, setImported] = useState<{ count: number; limitWarning?: string } | null>(null);
   const [onlyErrors, setOnlyErrors] = useState(false);
   const [reading, startReading] = useTransition();
   const [checking, startChecking] = useTransition();
@@ -95,7 +95,7 @@ export function ToolImport(props: { operationId: string }) {
         if (result.invalid) check(sheet, mapping);
         return;
       }
-      setImported(result.imported);
+      setImported({ count: result.imported, limitWarning: result.limitWarning });
       setOperationId(newOperationId());
       setSheet(null);
       setMapping(null);
@@ -123,7 +123,12 @@ export function ToolImport(props: { operationId: string }) {
         {reading && <p role="status">{t("import.reading")}</p>}
         {imported !== null && (
           <p role="status" className="checklist-done">
-            {t("import.done", { count: imported })} <Link href="/">{t("import.openBoard")}</Link>
+            {t("import.done", { count: imported.count })} <Link href="/">{t("import.openBoard")}</Link>
+          </p>
+        )}
+        {imported?.limitWarning && (
+          <p role="status" className="form-warning" data-testid="tool-limit-warning">
+            {imported.limitWarning}
           </p>
         )}
         {error && (

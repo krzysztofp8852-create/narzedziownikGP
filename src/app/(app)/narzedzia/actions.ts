@@ -6,12 +6,13 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
+import { toolLimitText } from "@/lib/tool-limit-text";
 import type { Category, EditToolInput, ToolState } from "@/registry/registry";
 
 export interface ToolFormState {
   error?: string;
-  /** Dodane narzędzie; tablica czyści wtedy formularz pod następne. */
-  added?: { id: string; code: string; name: string };
+  /** Dodane narzędzie; tablica czyści wtedy formularz pod następne. `limitWarning`: firma ma więcej narzędzi niż limit progu. */
+  added?: { id: string; code: string; name: string; limitWarning?: string };
   /** Zapisane zmiany karty. */
   saved?: boolean;
 }
@@ -27,7 +28,7 @@ export async function addTool(_prev: ToolFormState, formData: FormData): Promise
   const session = await requireSession();
   try {
     const fields = readToolFields(formData, "add");
-    const { toolId, code } = await getRegistry()
+    const { toolId, code, limitWarning } = await getRegistry()
       .as(session.userId)
       .addTool({
         ...fields,
@@ -36,7 +37,7 @@ export async function addTool(_prev: ToolFormState, formData: FormData): Promise
         categoryId: fields.categoryId ?? "",
       });
     revalidatePath("/");
-    return { added: { id: toolId, code, name: fields.name ?? "" } };
+    return { added: { id: toolId, code, name: fields.name ?? "", limitWarning: toolLimitText(limitWarning) } };
   } catch (error) {
     return { error: formError(error) };
   }
@@ -149,8 +150,8 @@ export async function changeToolRecord(_prev: CorrectionFormState, formData: For
 
 export interface ToolReportFormState {
   error?: string;
-  /** Zgłoszone narzędzie; formularz czyści się wtedy pod następne. */
-  reported?: { id: string; code: string; name: string; place: string };
+  /** Zgłoszone narzędzie; formularz czyści się wtedy pod następne. `limitWarning`: firma ma więcej narzędzi niż limit progu. */
+  reported?: { id: string; code: string; name: string; place: string; limitWarning?: string };
   /** Decyzja zapisana; zgłoszenie znika z listy. */
   done?: boolean;
 }
@@ -160,7 +161,7 @@ export async function reportTool(_prev: ToolReportFormState, formData: FormData)
   const session = await requireSession();
   const name = formText(formData, "name");
   try {
-    const { toolId, code } = await getRegistry()
+    const { toolId, code, limitWarning } = await getRegistry()
       .as(session.userId)
       .reportTool({
         operationId: formText(formData, "operationId"),
@@ -169,7 +170,9 @@ export async function reportTool(_prev: ToolReportFormState, formData: FormData)
         categoryId: formText(formData, "categoryId"),
       });
     revalidatePath("/");
-    return { reported: { id: toolId, code, name: name.trim(), place: formText(formData, "siteName") } };
+    return {
+      reported: { id: toolId, code, name: name.trim(), place: formText(formData, "siteName"), limitWarning: toolLimitText(limitWarning) },
+    };
   } catch (error) {
     return { error: errorMessage(error) };
   }
