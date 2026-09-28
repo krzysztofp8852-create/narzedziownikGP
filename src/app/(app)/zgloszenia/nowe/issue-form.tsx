@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, startTransition, useActionState, useState } from "react";
+import { PhotoField } from "@/components/photo-field";
 import { t } from "@/i18n/t";
 import { withShrunkPhoto } from "@/lib/shrink-photo";
 import { matchesTool } from "@/lib/tool-search";
@@ -104,11 +105,7 @@ export function IssueForm({ operationId, tools, places, kind: initialKind, toolI
         />
       </div>
 
-      <div className="field">
-        <label htmlFor="issue-photo">{t("issues.form.photo")}</label>
-        <input id="issue-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" aria-describedby="issue-photo-hint" />
-        <small id="issue-photo-hint">{t("issues.form.photoHint")}</small>
-      </div>
+      <PhotoField id="issue-photo" label={t("issues.form.photo")} hint={t("issues.form.photoHint")} />
 
       {state.error && (
         <p className="form-error" role="alert">

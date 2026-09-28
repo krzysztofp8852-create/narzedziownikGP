@@ -486,3 +486,76 @@ function issue(z: Zawbud, toolIds: string[]) {
     source: "checklista",
   });
 }
+
+describe("pytanie „gdzie jest …”", () => {
+  const question = (codes: string[][], phrases = codes.map((_, index) => `fraza ${index + 1}`)): Interpretation => ({
+    kind: "wydanie",
+    siteId: null,
+    fromSiteId: null,
+    serviceId: null,
+    everything: false,
+    mentions: codes.map((list, index) => ({ phrase: phrases[index], quantity: 1, codes: list })),
+    whereIs: true,
+  });
+
+  it("„gdzie są szlifierki?” w „Powiedz lub wpisz”: odpowiedź, gdzie jest każda, od ilu dni i kto odpowiada, zamiast ruchu", async () => {
+    const z = await givenZawbud();
+    await issue(z, [z.s02]);
+    testbed.clock.advance(3 * 24 * 60 * 60 * 1000);
+    interpreter.answer = question([["S-02", "S-01"]], ["szlifierki"]);
+
+    const reply = await interpretation().as(z.nowakId).reply("gdzie są szlifierki?");
+
+    expect(reply).toEqual({
+      where: {
+        text: "gdzie są szlifierki?",
+        tools: [
+          {
+            id: z.s01,
+            code: "S-01",
+            name: "Szlifierka kątowa",
+            place: { name: "Magazyn Swarzędz", kind: "baza" },
+            daysInPlace: 3,
+            responsible: null,
+          },
+          { id: z.s02, code: "S-02", name: "Szlifierka mała", place: { name: "Rataje", kind: "budowa" }, daysInPlace: 3, responsible: "Adam Nowak" },
+        ],
+        unrecognized: [],
+      },
+    });
+    // Nic się nie zapisało: ostatni ruch to wydanie sprzed pytania.
+    expect((await testbed.registry.as(z.nowakId).recentMovements())[0]).toMatchObject({ kind: "wydanie" });
+    expect(await testbed.registry.as(z.nowakId).recentMovements()).toHaveLength(4);
+  });
+
+  it("zdanie o ruchu w „Powiedz lub wpisz” to dalej propozycja", async () => {
+    const z = await givenZawbud();
+    interpreter.answer = { ...question([["H-01"]]), whereIs: false, siteId: z.ratajeId };
+
+    const reply = await interpretation().as(z.nowakId).reply("biorę młot na Rataje");
+
+    expect(reply.where).toBeUndefined();
+    expect(reply.proposal).toMatchObject({ kind: "wydanie", site: { id: z.ratajeId }, tools: [{ code: "H-01" }] });
+  });
+
+  it("wyszukiwanie: pyta także pracownik, a fraza bez narzędzia firmy jest nierozpoznana", async () => {
+    const z = await givenZawbud();
+    const workerId = await testbed.givenMember(z.zawbud, "pracownik");
+    interpreter.answer = question([["H-01"], []], ["młot", "koparka"]);
+
+    const answer = await interpretation().as(workerId).find("gdzie jest młot i koparka");
+
+    expect(answer).toMatchObject({ tools: [{ id: z.h01, code: "H-01", place: { name: "Magazyn Swarzędz" } }], unrecognized: ["koparka"] });
+    expect(interpreter.requests[0].text).toBe("gdzie jest młot i koparka");
+  });
+
+  it("wyszukiwanie nie podaje narzędzi spoza obiegu ani kodów, których firma nie ma", async () => {
+    const z = await givenZawbud();
+    await z.owner.retireTool({ operationId: randomUUID(), toolId: z.s02, reason: "Spalona" });
+    interpreter.answer = question([["S-01", "S-02", "X-99"]], ["szlifierka"]);
+
+    const answer = await interpretation().as(z.nowakId).find("szlifierka");
+
+    expect(answer.tools.map((tool) => tool.code)).toEqual(["S-01"]);
+  });
+});

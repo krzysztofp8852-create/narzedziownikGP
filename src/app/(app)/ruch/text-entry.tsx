@@ -3,7 +3,9 @@
 import { type FormEvent, startTransition, useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
-import { type Proposal, SERVICE_KINDS } from "@/interpretation/proposal";
+import Link from "next/link";
+import { FoundToolList } from "@/components/found-tools";
+import { type Proposal, SERVICE_KINDS, type WhereAnswer } from "@/interpretation/proposal";
 import { enqueueRecording, isNetworkError, onQueueChanged, queueChanged, queuedFromForm, readyRecordings, sendOrQueue } from "@/lib/offline/client";
 import { hasOfflineQueue } from "@/lib/offline/idb";
 import type { ReadyRecording } from "@/lib/offline/queue";
@@ -23,6 +25,8 @@ interface Reply {
   asked: string;
   spoken: boolean;
   proposal?: Proposal;
+  /** Na pytanie „gdzie jest …”: gdzie jest sprzęt, o który pytano. */
+  where?: WhereAnswer;
   error?: string;
   round: number;
 }
@@ -49,10 +53,16 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
   const [ready, setReady] = useState<ReadyRecording[]>([]);
   const [fromRecording, setFromRecording] = useState<FromRecording | null>(null);
   const [asking, startAsking] = useTransition();
+  // Na co system właśnie odpowiada: „Słucham nagrania…” tylko przy nagraniu, a nie przy wpisanym tekście.
+  const [askedBy, setAskedBy] = useState<"text" | "voice">("text");
   // Formularz otwiera się po kliknięciu, więc nie ma go w HTML z serwera.
   const [voiceAvailable] = useState(() => voice && canRecord());
   // Które nagranie z adresu (link „Do zatwierdzenia” w nagłówku) już otworzyliśmy.
   const openedFromLink = useRef<string | undefined>(undefined);
+
+  // Przykład z budową, którą kierownik zna (najpierw własną); nazwa w mianowniku po „na budowę” zawsze brzmi dobrze.
+  const exampleSite = data.places.find((place) => place.kind === "budowa" && place.mine) ?? data.places.find((place) => place.kind === "budowa");
+  const placeholder = exampleSite ? t("textEntry.placeholderSite", { site: exampleSite.name }) : t("textEntry.placeholder");
 
   function answer(next: Omit<Reply, "round">) {
     setReply((previous) => ({ ...next, round: (previous?.round ?? 0) + 1 }));
@@ -99,6 +109,7 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
     // Poprawiony tekst z nagrania nadal opisuje ruch z chwili nagrania; nowe zdanie już nie.
     if (fromRecording?.correcting) void forget(fromRecording.id);
     else setFromRecording(null);
+    setAskedBy("text");
     startAsking(async () => {
       const result = await proposeMovement(asked);
       answer({ asked, spoken: false, ...result });
@@ -110,6 +121,7 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
     setRecordingQueued(false);
     setFromRecording(null);
     const recordedAt = new Date();
+    setAskedBy("voice");
     const queue = async () => {
       await enqueueRecording(audio, data.userId, recordedAt);
       setReply(null);
@@ -128,7 +140,7 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
       }
       const { text: recognized, ...result } = heard;
       // Gdy nie udało się zrozumieć rozpoznanego tekstu, można go poprawić i wysłać bez mówienia od nowa.
-      if (recognized && !result.proposal) setText(recognized);
+      if (recognized && !result.proposal && !result.where) setText(recognized);
       answer({ asked: recognized ?? t("voice.yourRecording"), spoken: true, ...result });
     });
   }
@@ -163,7 +175,7 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
           </div>
         </section>
       )}
-      {voiceAvailable && <VoiceRecorder busy={asking} onRecorded={hear} />}
+      {voiceAvailable && <VoiceRecorder busy={asking} listening={asking && askedBy === "voice"} onRecorded={hear} />}
       {recordingQueued && (
         <p className="checklist-done checklist-queued" role="status">
           {t("offline.recordingQueued")}
@@ -182,7 +194,7 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
                 event.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder={t("textEntry.placeholder")}
+            placeholder={placeholder}
             rows={2}
             maxLength={2000}
             enterKeyHint="send"
@@ -213,6 +225,7 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
                 {reply.error}
               </p>
             )}
+            {reply.where && <WhereReply answer={reply.where} />}
             {reply.proposal && (
               <ProposalForm
                 key={reply.round}
@@ -231,6 +244,24 @@ export function TextEntry({ data, voice, recordingId }: { data: ChecklistData; v
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Odpowiedź na „gdzie jest …”: znalezione narzędzia z miejscem, dniami i odpowiedzialnym; nic tu nie zatwierdza się. */
+function WhereReply({ answer }: { answer: WhereAnswer }) {
+  return (
+    <div className="where-answer" data-testid="where-answer">
+      <p>
+        {answer.tools.length > 0 ? t("search.answer", { count: answer.tools.length }) : t("search.heardNothing", { text: answer.text })}
+        {answer.tools.length > 0 && answer.unrecognized.length > 0 && (
+          <span className="muted"> {t("search.unrecognized", { phrases: answer.unrecognized.join(", ") })}</span>
+        )}
+      </p>
+      {answer.tools.length > 0 && <FoundToolList tools={answer.tools} />}
+      <p>
+        <Link href="/szukaj">{t("search.more")}</Link>
+      </p>
     </div>
   );
 }
@@ -261,7 +292,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
     const summary = submitted.current?.summary ?? "";
     const result = await sendOrQueue(() => confirmProposal(prev, formData), queuedFromForm(formData, { userId: data.userId, summary }));
     if (result === "queued") onDone({ summary, notified: [], queued: true });
-    else if (result.done) onDone({ summary, notified: result.done.notified });
+    else if (result.done) onDone({ summary, notified: result.done.notified, movementId: result.done.movementId });
     return result === "queued" ? {} : result;
   }, {});
 
@@ -521,7 +552,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
                 ? t("textEntry.answerQuestions")
                 : summary}
       </p>
-      <DamagedWarnings tools={plan.tools} />
+      <DamagedWarnings tools={plan.tools} kind={draft.kind} />
       <MovementResult done={null} state={state} refreshedHint={t("checklist.conflictRefreshed")} />
       <div className="form-actions">
         <button className="button" type="submit" disabled={!plan.ready || pending}>

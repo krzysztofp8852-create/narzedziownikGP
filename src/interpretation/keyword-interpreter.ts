@@ -14,8 +14,8 @@ function words(text: string) {
 }
 
 /**
- * Port interpretacji bez AI: słowa kluczowe, kody, liczebniki i „wszystko”. Do pracy lokalnej i testu dymnego,
- * gdy nie ma klucza OpenAI API; slangu ani składni nie rozumie.
+ * Port interpretacji bez AI: słowa kluczowe, kody, liczebniki, „wszystko” i pytanie „gdzie jest …”. Do pracy lokalnej
+ * i testu dymnego, gdy nie ma klucza OpenAI API; slangu ani składni nie rozumie.
  */
 export const keywordInterpreter: Interpreter = {
   async interpret({ text, tools, sites, services }: InterpretRequest): Promise<Interpretation> {
@@ -53,6 +53,8 @@ export const keywordInterpreter: Interpreter = {
       words(candidate.name).some((known) => known.length > 3 && !/^serwis/.test(known) && said.some((word) => stem(word) === stem(known))),
     );
     const everything = said.some((word) => /^(wszystk|cał[aąeoy])/.test(word));
+    // „gdzie jest …”, „szukam …”, „kto ma …”: pytanie o sprzęt, a nie ruch.
+    const whereIs = said.some((word) => /^(gdzie|szuka)/.test(word)) || /\bkto\s+ma\b/.test(text.toLowerCase());
 
     const mentions: Mention[] = [];
     said.forEach((word, index) => {
@@ -77,8 +79,9 @@ export const keywordInterpreter: Interpreter = {
       siteId: kind === "z_serwisu" ? null : (site?.site.id ?? null),
       fromSiteId: fromSite?.site.id ?? null,
       serviceId: namedService?.id ?? null,
-      everything,
-      mentions: everything ? [] : mentions,
+      everything: everything && !whereIs,
+      mentions: everything && !whereIs ? [] : mentions,
+      whereIs,
     };
   },
 };

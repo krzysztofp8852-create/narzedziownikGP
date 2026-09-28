@@ -135,6 +135,56 @@ describe("zgłoszenie uszkodzenia", () => {
     expect(await z.owner.toolCard(z.w02)).toMatchObject({ damagedSince: null });
   });
 
+  it("cofnięcie ruchu z serwisu przywraca flagę z chwili zgłoszenia, bo zgłoszenie jest dalej otwarte", async () => {
+    const z = await givenZawbud();
+    await fileIssue(z.nowakId, { kind: "uszkodzenie", toolId: z.w02, description: "Iskrzy" });
+    const damagedAt = testbed.clock.now();
+    testbed.clock.advance(DAY);
+    await move(z.nowakId, "do_serwisu", z.ratajeId, z.serviceId, [z.w02]);
+    testbed.clock.advance(DAY);
+    const fromService = await move(z.storekeeperId, "z_serwisu", z.serviceId, z.baseId, [z.w02]);
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ damagedSince: null });
+
+    await testbed.registry.as(z.storekeeperId).undoMovement({ operationId: randomUUID(), movementId: fromService.id });
+
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ damagedSince: damagedAt });
+    expect(await z.owner.toolCard(z.w02)).toMatchObject({ damagedSince: damagedAt, location: { id: z.serviceId } });
+  });
+
+  it("cofnięcie ruchu z serwisu nie oznacza jako uszkodzonego narzędzia, które przed serwisem nie miało flagi", async () => {
+    const z = await givenZawbud();
+    await move(z.nowakId, "do_serwisu", z.ratajeId, z.serviceId, [z.w02]);
+    const fromService = await move(z.storekeeperId, "z_serwisu", z.serviceId, z.baseId, [z.w02]);
+
+    await testbed.registry.as(z.storekeeperId).undoMovement({ operationId: randomUUID(), movementId: fromService.id });
+
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ damagedSince: null });
+  });
+
+  it("zapamiętanej przy ruchu z serwisu flagi nie da się podać przy zapisie", async () => {
+    const z = await givenZawbud();
+    await move(z.nowakId, "do_serwisu", z.ratajeId, z.serviceId, [z.w02]);
+    const fake = new Date("2020-01-01T00:00:00Z");
+
+    const movementId = await withActor(testbed.db, z.storekeeperId, async (sql) => {
+      const [movement] = await sql<{ id: string }>(
+        `insert into app.movements (company_id, kind, source, from_location_id, to_location_id, author_id, occurred_at, recorded_at, client_operation_id)
+         values ($1, 'z_serwisu', 'checklista', $2, $3, $4, $5, $5, $6) returning id`,
+        [z.zawbud.companyId, z.serviceId, z.baseId, z.storekeeperId, testbed.clock.now(), randomUUID()],
+      );
+      await sql("insert into app.movement_tools (movement_id, tool_id, company_id, damaged_since_before) values ($1, $2, $3, $4)", [
+        movement.id,
+        z.w02,
+        z.zawbud.companyId,
+        fake,
+      ]);
+      return movement.id;
+    });
+    await testbed.registry.as(z.storekeeperId).undoMovement({ operationId: randomUUID(), movementId });
+
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ damagedSince: null });
+  });
+
   it("właściciel zamyka zgłoszenie z oceną „sprawne”: flaga znika; zamknięcie bez tej oceny ją zostawia", async () => {
     const z = await givenZawbud();
     const { issueId: first } = await fileIssue(z.nowakId, { kind: "uszkodzenie", toolId: z.w02, description: "Iskrzy" });

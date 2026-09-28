@@ -44,7 +44,7 @@ export function Scanner({ data }: { data: ChecklistData }) {
     const sent = submitted.current;
     const summary = sent?.summary ?? "";
     const result = await sendOrQueue(() => registerMovement(prev, formData), queuedFromForm(formData, { userId: data.userId, summary }));
-    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified };
+    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified, movementId: result.done.movementId };
     if (done && sent) {
       operationIds.current.delete(sent.signature);
       setScannedIds((ids) => ids.filter((id) => !sent.toolIds.includes(id)));
@@ -279,7 +279,7 @@ function ScanGroupForm({ group, choice, pending, onChoose, onRemove, onSubmit }:
           <p className="checklist-summary-text" data-testid="scan-summary">
             {t(`movementKind.${option.kind}`)}: {to ? summary : t("scanner.chooseTo")}
           </p>
-          <DamagedWarnings tools={tools} />
+          <DamagedWarnings tools={tools} kind={option.kind} />
           <div className="form-actions">
             <button className="button" type="submit" disabled={!to || pending}>
               {pending ? t("checklist.confirming") : t("checklist.confirm")}

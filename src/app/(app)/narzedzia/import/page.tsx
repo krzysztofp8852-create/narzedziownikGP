@@ -34,6 +34,13 @@ export default async function ImportPage() {
         <section className="company-card import-rules">
           <p>{t("import.intro")}</p>
           <p>{t("import.rules")}</p>
+          <p>
+            {/* Plik z trasy, a nie strona: bez prefetchu i z nagłówkiem pobierania. */}
+            <a className="button button-quiet button-small" href="/narzedzia/import/przyklad" download>
+              {t("import.sample.link")}
+            </a>{" "}
+            <span className="muted">{t("import.sample.hint")}</span>
+          </p>
           {categories.length === 0 ? (
             <p className="empty">{t("import.noCategories")}</p>
           ) : (

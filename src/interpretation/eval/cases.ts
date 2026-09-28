@@ -2,7 +2,7 @@ import { budmax, zawbud } from "./companies";
 import type { EvalCase } from "./eval";
 
 /** Obszary, które zestaw musi pokrywać (issue #17); przypadek może mieć kilka. */
-export const REQUIRED_TAGS = ["slang", "liczebniki", "niejednoznacznosci", "przeniesienia", "serwis", "nierozpoznane", "wszystko"];
+export const REQUIRED_TAGS = ["slang", "liczebniki", "niejednoznacznosci", "przeniesienia", "serwis", "nierozpoznane", "wszystko", "pytania"];
 
 // Bez pola `actor` mówi pierwszy kierownik z ewidencji: w Zawbudzie Adam Nowak (Rataje), w Budmaksie Krzysztof Wójcik.
 // Gdzie jest sprzęt Zawbudu (companies.ts): na bazie S-01 (125 mm), S-02 (230 mm), H-01, H-02, A-01, N-01, Z-01, W-01, W-02, P-01,
@@ -607,5 +607,41 @@ export const CASES: EvalCase[] = [
     actor: "Marek Zieliński",
     text: "odbieram wszystko z serwisu w Kórniku",
     expected: { kind: "z_serwisu", site: null, service: "Serwis Elektronarzędzi Kórnik", tools: ["A-02"] },
+  },
+  // Pytania „gdzie jest …” (wyszukiwanie i „Powiedz lub wpisz”): wszystkie pasujące narzędzia, bez względu na miejsce.
+  {
+    id: "pytania-01",
+    tags: ["pytania", "slang"],
+    company: zawbud,
+    text: "gdzie jest niwela?",
+    expected: { question: true, tools: ["N-01", "N-02"] },
+  },
+  {
+    id: "pytania-02",
+    tags: ["pytania", "slang"],
+    company: zawbud,
+    text: "kto ma dużego flexa?",
+    expected: { question: true, tools: ["S-02", "S-04"] },
+  },
+  {
+    id: "pytania-03",
+    tags: ["pytania"],
+    company: zawbud,
+    text: "gdzie są wkrętarki",
+    expected: { question: true, tools: ["W-01", "W-02", "W-03"] },
+  },
+  {
+    id: "pytania-04",
+    tags: ["pytania"],
+    company: zawbud,
+    text: "szukam młota Hilti TE 1000",
+    expected: { question: true, tools: ["H-04"] },
+  },
+  {
+    id: "pytania-05",
+    tags: ["pytania", "kody"],
+    company: zawbud,
+    text: "gdzie jest es zero trzy",
+    expected: { question: true, tools: ["S-03"] },
   },
 ];

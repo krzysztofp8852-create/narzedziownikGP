@@ -4,6 +4,7 @@ import { type FormEvent, startTransition, useActionState, useState } from "react
 import { t } from "@/i18n/t";
 import { newOperationId } from "@/lib/operation-id";
 import { withShrunkPhoto } from "@/lib/shrink-photo";
+import { PhotoField } from "./photo-field";
 
 export interface ChatFormState {
   error?: string;
@@ -61,11 +62,7 @@ function ChatMessageFields({
         <label htmlFor="chat-text">{label}</label>
         <textarea id="chat-text" name="text" rows={3} maxLength={maxLength} placeholder={placeholder} />
       </div>
-      <div className="field">
-        <label htmlFor="chat-photo">{t("supportChat.form.photo")}</label>
-        <input id="chat-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" aria-describedby="chat-photo-hint" />
-        <small id="chat-photo-hint">{t("supportChat.form.photoHint")}</small>
-      </div>
+      <PhotoField id="chat-photo" label={t("supportChat.form.photo")} hint={t("supportChat.form.photoHint")} />
       {state.error && (
         <p className="form-error" role="alert">
           {state.error}

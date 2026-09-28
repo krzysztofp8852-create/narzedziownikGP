@@ -11,13 +11,13 @@ import {
   type Registry,
   type Session,
 } from "@/registry/registry";
-import { PROPOSAL_KINDS, type Proposal, type ProposalKind, type ProposedTool, SERVICE_KINDS } from "./proposal";
+import { PROPOSAL_KINDS, type Proposal, type ProposalKind, type ProposedTool, type Reply, SERVICE_KINDS, type WhereAnswer } from "./proposal";
 import { MAX_RECORDING_BYTES, type RecordingStore, recordingType, type Transcriber, TranscriptionFailedError } from "./transcription";
 
 /** Co port interpretacji dostaje: tekst, narzędzia firmy (bez wartości), aktywne budowy i serwisy. */
 export interface InterpretRequest {
   text: string;
-  tools: Omit<CatalogTool, "id">[];
+  tools: Pick<CatalogTool, "code" | "name" | "category" | "location">[];
   /** `mine`: budowa, którą prowadzi aktor („na moją budowę”). */
   sites: { id: string; name: string; mine: boolean }[];
   services: { id: string; name: string }[];
@@ -42,6 +42,8 @@ export interface Interpretation {
   /** „Wszystko z …”: ruch zabiera cały sprzęt ze źródła; wymienione narzędzia się wtedy nie liczą. */
   everything: boolean;
   mentions: Mention[];
+  /** Pytanie, gdzie jest sprzęt („gdzie jest niwelator?”), a nie ruch; wspomniane narzędzia to te, o które pyta. */
+  whereIs?: boolean;
 }
 
 /**
@@ -70,12 +72,12 @@ export interface ConfirmProposalInput extends Omit<RegisterMovementInput, "sourc
 }
 
 /**
- * Sesja aktora, który w ogóle rejestruje ruchy. Pracownikowi propozycja na nic, więc jego tekst ani nagranie
- * nie trafiają do dostawców AI.
+ * Sesja aktora, który w ogóle rejestruje ruchy. Pracownikowi propozycja na nic, więc jego tekst do propozycji
+ * nie trafia do dostawców AI; pytanie „gdzie jest …” z wyszukiwania zadaje każda rola (`anyRole`).
  */
-function requireMover(session: Session | null): Session {
+function requireActor(session: Session | null, { anyRole = false } = {}): Session {
   if (!session) throw new RegistryError("no_access");
-  if (!canRegisterMovements(session)) throw new RegistryError("forbidden");
+  if (!anyRole && !canRegisterMovements(session)) throw new RegistryError("forbidden");
   return session;
 }
 
@@ -93,122 +95,89 @@ interface Deps {
 }
 
 /**
- * Moduł Interpretacja: zamienia zdanie kierownika, wpisane albo nagrane, w Propozycję ruchu. Nigdy nie
- * zapisuje ruchu; zapis to zwykłe polecenie Rejestru po zatwierdzeniu.
+ * Moduł Interpretacja: zamienia zdanie kierownika, wpisane albo nagrane, w Propozycję ruchu, a pytanie „gdzie jest …”
+ * (także z wyszukiwania, od każdej roli) w listę narzędzi z miejscem, w którym są. Nigdy nie zapisuje ruchu; zapis
+ * to zwykłe polecenie Rejestru po zatwierdzeniu.
  */
 export function createInterpretation({ registry, interpreter, transcriber, recordings }: Deps) {
   return {
     as: (userId: string) => {
       const actor = registry.as(userId);
+
+      /**
+       * Tekst → interpretacja portu na ewidencji aktora. `anyRole`: pytanie z wyszukiwania, które zadaje także pracownik.
+       */
+      async function understand(raw: string, options: { anyRole?: boolean } = {}): Promise<Understood> {
+        const text = raw.trim();
+        if (!text || text.length > MAX_TRANSCRIPT_LENGTH) throw new RegistryError("invalid_input");
+        const session = requireActor(await actor.session(), options);
+        const [catalog, locations] = await Promise.all([actor.toolCatalog(), actor.locations()]);
+        const sites = locations.sites.filter((site) => site.status === "aktywna");
+        const interpretation = await interpreter.interpret({
+          text,
+          tools: catalog.map(({ code, name, category, location }) => ({ code, name, category, location })),
+          sites: sites.map((site) => ({ id: site.id, name: site.name, mine: site.manager.id === userId })),
+          services: locations.services.map((service) => ({ id: service.id, name: service.name })),
+        });
+        return { text, session, catalog, locations, sites, interpretation };
+      }
+
+      /**
+       * Nagranie → tekst. Nagranie leży w kubełku nagrań tylko na czas transkrypcji i jest z niego usuwane także
+       * wtedy, gdy zapis albo transkrypcja się nie powiedzie. `then` dostaje rozpoznany tekst; gdy zawiedzie
+       * interpretacja, błąd niesie ten tekst, żeby nie trzeba było mówić jeszcze raz.
+       */
+      async function fromRecording<T>(audio: Blob, options: { anyRole?: boolean }, then: (text: string) => Promise<T>): Promise<T> {
+        if (audio.size === 0 || audio.size > MAX_RECORDING_BYTES || !recordingType(audio)) throw new RegistryError("invalid_input");
+        const session = requireActor(await actor.session(), options);
+        const key = `${session.company.id}/${randomUUID()}`;
+        let heard: string;
+        try {
+          // Zapis może trafić do kubełka mimo błędu (np. zgubiona odpowiedź), więc i wtedy usuwamy.
+          await recordings.save(key, audio);
+          heard = await transcriber.transcribe(audio);
+        } finally {
+          await removeRecording(recordings, key);
+        }
+        const text = heard.trim();
+        if (!text) throw new TranscriptionFailedError("silence", "W nagraniu nie słychać mowy");
+        try {
+          return await then(text);
+        } catch (error) {
+          if (!(error instanceof InterpretationFailedError)) throw error;
+          throw new InterpretationFailedError(error.message, { cause: error, text });
+        }
+      }
+
       const self = {
-        /**
-         * Nagranie → tekst → Propozycja. Nagranie leży w kubełku nagrań tylko na czas transkrypcji
-         * i jest z niego usuwane także wtedy, gdy zapis albo transkrypcja się nie powiedzie.
-         */
-        async proposeFromRecording(audio: Blob): Promise<Proposal> {
-          if (audio.size === 0 || audio.size > MAX_RECORDING_BYTES || !recordingType(audio)) throw new RegistryError("invalid_input");
-          const session = requireMover(await actor.session());
-          const key = `${session.company.id}/${randomUUID()}`;
-          let heard: string;
-          try {
-            // Zapis może trafić do kubełka mimo błędu (np. zgubiona odpowiedź), więc i wtedy usuwamy.
-            await recordings.save(key, audio);
-            heard = await transcriber.transcribe(audio);
-          } finally {
-            await removeRecording(recordings, key);
-          }
-          const text = heard.trim();
-          if (!text) throw new TranscriptionFailedError("silence", "W nagraniu nie słychać mowy");
-          try {
-            return await self.propose(text);
-          } catch (error) {
-            if (!(error instanceof InterpretationFailedError)) throw error;
-            throw new InterpretationFailedError(error.message, { cause: error, text });
-          }
-        },
+        /** Nagranie → tekst → Propozycja. */
+        proposeFromRecording: (audio: Blob): Promise<Proposal> => fromRecording(audio, {}, (text) => self.propose(text)),
 
+        /** Propozycja ruchu ze zdania; pytanie „gdzie jest …” też czyta jako ruch (zestaw ewaluacyjny, testy). */
         async propose(raw: string): Promise<Proposal> {
-          const text = raw.trim();
-          if (!text || text.length > MAX_TRANSCRIPT_LENGTH) throw new RegistryError("invalid_input");
-          const session = requireMover(await actor.session());
-          const [catalog, locations] = await Promise.all([actor.toolCatalog(), actor.locations()]);
-          const sites = locations.sites.filter((site) => site.status === "aktywna");
-          const interpretation = await interpreter.interpret({
-            text,
-            tools: catalog.map(({ code, name, category, location }) => ({ code, name, category, location })),
-            sites: sites.map((site) => ({ id: site.id, name: site.name, mine: site.manager.id === userId })),
-            services: locations.services.map((service) => ({ id: service.id, name: service.name })),
-          });
-          const { kind } = interpretation;
-          const siteById = new Map(sites.map((site) => [site.id, site]));
-          const serviceById = new Map(locations.services.map((service) => [service.id, service]));
-          const serviceKind = SERVICE_KINDS.includes(kind);
-          let site: { id: string; name: string } | null =
-            (kind !== "z_serwisu" && interpretation.siteId && siteById.get(interpretation.siteId)) || null;
-          const fromSite = (kind === "przeniesienie" && interpretation.fromSiteId && siteById.get(interpretation.fromSiteId)) || null;
-          let service = (serviceKind && interpretation.serviceId && serviceById.get(interpretation.serviceId)) || null;
-          // Jedyny serwis firmy nie wymaga wyboru.
-          if (kind === "do_serwisu" && !service && locations.services.length === 1) service = locations.services[0];
-
-          // Skąd ruch może zabrać sprzęt: przy zwrocie bez budowy z każdej, z której aktor zwraca, przy
-          // przeniesieniu bez budowy źródłowej z każdej innej niż docelowa, a do serwisu bez budowy z bazy
-          // (magazynier i właściciel) albo z budowy aktora.
-          const movable = sites.filter((candidate) => canMoveTools(session, candidate)).map((candidate) => candidate.id);
-          const candidateSources: string[] =
-            kind === "wydanie"
-              ? [locations.base.id]
-              : kind === "zwrot"
-                ? site
-                  ? [site.id]
-                  : movable
-                : kind === "przeniesienie"
-                  ? fromSite
-                    ? [fromSite.id]
-                    : sites.filter((candidate) => candidate.id !== site?.id).map((candidate) => candidate.id)
-                  : kind === "do_serwisu"
-                    ? site
-                      ? [site.id]
-                      : [...(canMoveEverywhere(session) ? [locations.base.id] : []), ...movable]
-                    : service
-                      ? [service.id]
-                      : locations.services.map((candidate) => candidate.id);
-          const sources = singleSource(candidateSources, interpretation.everything ? [] : interpretation.mentions, catalog);
-          const resolved = interpretation.everything
-            ? everythingFrom(sources, catalog)
-            : resolveMentions(interpretation.mentions, catalog, (tool) => sources.includes(tool.location.id));
-
-          // Źródło wynika z rozpoznanych narzędzi, gdy wszystkie są w jednym miejscu; przy „wszystko z …” z samego zdania.
-          const toolPlaces = new Set(resolved.tools.map((tool) => catalog.find((entry) => entry.id === tool.id)!.location.id));
-          const onlySource = interpretation.everything
-            ? sources.length === 1
-              ? sources[0]
-              : undefined
-            : toolPlaces.size === 1
-              ? [...toolPlaces][0]
-              : undefined;
-          if ((kind === "zwrot" || kind === "do_serwisu") && !site && onlySource) {
-            site = onlySource === locations.base.id ? locations.base : (siteById.get(onlySource) ?? null);
-          }
-          if (kind === "z_serwisu" && !service && onlySource) service = serviceById.get(onlySource) ?? null;
-          const from =
-            kind === "wydanie"
-              ? locations.base
-              : kind === "zwrot" || kind === "do_serwisu"
-                ? site
-                : kind === "z_serwisu"
-                  ? service
-                  : (fromSite ?? (onlySource ? siteById.get(onlySource) : undefined) ?? null);
-
-          return {
-            text,
-            kind,
-            site: site && { id: site.id, name: site.name },
-            service: service && { id: service.id, name: service.name },
-            from: from && { id: from.id, name: from.name },
-            everything: interpretation.everything,
-            ...resolved,
-          };
+          return proposalFrom(await understand(raw));
         },
+
+        /** „Powiedz lub wpisz”: propozycja ruchu albo, gdy zdanie to pytanie, gdzie jest sprzęt, odpowiedź na nie. */
+        async reply(raw: string): Promise<Reply> {
+          const understood = await understand(raw);
+          return understood.interpretation.whereIs ? { where: whereAnswer(understood) } : { proposal: proposalFrom(understood) };
+        },
+
+        /** Nagranie → tekst → propozycja ruchu albo odpowiedź „gdzie jest …”. */
+        replyToRecording: (audio: Blob): Promise<Reply & { text: string }> =>
+          fromRecording(audio, {}, async (text) => ({ ...(await self.reply(text)), text })),
+
+        /**
+         * Wyszukiwanie: „gdzie jest niwelator?” albo samo „flex” → narzędzia firmy, o które pyta, i gdzie są teraz.
+         * Każda rola, także pracownik. Nic nie zapisuje.
+         */
+        async find(raw: string): Promise<WhereAnswer> {
+          return whereAnswer(await understand(raw, { anyRole: true }));
+        },
+
+        /** Wyszukiwanie głosem: nagranie → tekst → odpowiedź „gdzie jest …”. Każda rola. */
+        findFromRecording: (audio: Blob): Promise<WhereAnswer> => fromRecording(audio, { anyRole: true }, (text) => self.find(text)),
 
         /** ✓: zwykłe polecenie „zarejestruj ruch” w Rejestrze, ze źródłem `glos` i zapisanym tekstem. */
         async confirm({ text, ...movement }: ConfirmProposalInput): Promise<RegisteredMovement> {
@@ -219,6 +188,116 @@ export function createInterpretation({ registry, interpreter, transcriber, recor
       return self;
     },
   };
+}
+
+/** Zinterpretowane zdanie z ewidencją aktora, z której powstaje propozycja albo odpowiedź „gdzie jest …”. */
+interface Understood {
+  text: string;
+  session: Session;
+  catalog: CatalogTool[];
+  locations: Awaited<ReturnType<InterpretationActor["locations"]>>;
+  /** Aktywne budowy. */
+  sites: Awaited<ReturnType<InterpretationActor["locations"]>>["sites"];
+  interpretation: Interpretation;
+}
+
+/** Propozycja ruchu z interpretacji: egzemplarze dostępne tam, skąd ruch zabiera sprzęt, i to, czego nie rozpoznano. */
+function proposalFrom({ text, session, catalog, locations, sites, interpretation }: Understood): Proposal {
+  const { kind } = interpretation;
+  const siteById = new Map(sites.map((site) => [site.id, site]));
+  const serviceById = new Map(locations.services.map((service) => [service.id, service]));
+  const serviceKind = SERVICE_KINDS.includes(kind);
+  let site: { id: string; name: string } | null =
+    (kind !== "z_serwisu" && interpretation.siteId && siteById.get(interpretation.siteId)) || null;
+  const fromSite = (kind === "przeniesienie" && interpretation.fromSiteId && siteById.get(interpretation.fromSiteId)) || null;
+  let service = (serviceKind && interpretation.serviceId && serviceById.get(interpretation.serviceId)) || null;
+  // Jedyny serwis firmy nie wymaga wyboru.
+  if (kind === "do_serwisu" && !service && locations.services.length === 1) service = locations.services[0];
+
+  // Skąd ruch może zabrać sprzęt: przy zwrocie bez budowy z każdej, z której aktor zwraca, przy
+  // przeniesieniu bez budowy źródłowej z każdej innej niż docelowa, a do serwisu bez budowy z bazy
+  // (magazynier i właściciel) albo z budowy aktora.
+  const movable = sites.filter((candidate) => canMoveTools(session, candidate)).map((candidate) => candidate.id);
+  const candidateSources: string[] =
+    kind === "wydanie"
+      ? [locations.base.id]
+      : kind === "zwrot"
+        ? site
+          ? [site.id]
+          : movable
+        : kind === "przeniesienie"
+          ? fromSite
+            ? [fromSite.id]
+            : sites.filter((candidate) => candidate.id !== site?.id).map((candidate) => candidate.id)
+          : kind === "do_serwisu"
+            ? site
+              ? [site.id]
+              : [...(canMoveEverywhere(session) ? [locations.base.id] : []), ...movable]
+            : service
+              ? [service.id]
+              : locations.services.map((candidate) => candidate.id);
+  const sources = singleSource(candidateSources, interpretation.everything ? [] : interpretation.mentions, catalog);
+  const resolved = interpretation.everything
+    ? everythingFrom(sources, catalog)
+    : resolveMentions(interpretation.mentions, catalog, (tool) => sources.includes(tool.location.id));
+
+  // Źródło wynika z rozpoznanych narzędzi, gdy wszystkie są w jednym miejscu; przy „wszystko z …” z samego zdania.
+  const toolPlaces = new Set(resolved.tools.map((tool) => catalog.find((entry) => entry.id === tool.id)!.location.id));
+  const onlySource = interpretation.everything
+    ? sources.length === 1
+      ? sources[0]
+      : undefined
+    : toolPlaces.size === 1
+      ? [...toolPlaces][0]
+      : undefined;
+  if ((kind === "zwrot" || kind === "do_serwisu") && !site && onlySource) {
+    site = onlySource === locations.base.id ? locations.base : (siteById.get(onlySource) ?? null);
+  }
+  if (kind === "z_serwisu" && !service && onlySource) service = serviceById.get(onlySource) ?? null;
+  const from =
+    kind === "wydanie"
+      ? locations.base
+      : kind === "zwrot" || kind === "do_serwisu"
+        ? site
+        : kind === "z_serwisu"
+          ? service
+          : (fromSite ?? (onlySource ? siteById.get(onlySource) : undefined) ?? null);
+
+  return {
+    text,
+    kind,
+    site: site && { id: site.id, name: site.name },
+    service: service && { id: service.id, name: service.name },
+    from: from && { id: from.id, name: from.name },
+    everything: interpretation.everything,
+    ...resolved,
+  };
+}
+
+/**
+ * Odpowiedź „gdzie jest …”: wszystkie narzędzia w obiegu pasujące do wspomnianych fraz, bez względu na to, gdzie są
+ * i ile sztuk padło. Fraza bez pasującego narzędzia firmy to nierozpoznana.
+ */
+function whereAnswer({ text, catalog, interpretation }: Understood): WhereAnswer {
+  const byCode = new Map(catalog.map((tool) => [tool.code, tool]));
+  const found = new Map<string, CatalogTool>();
+  const unrecognized: string[] = [];
+  for (const { phrase, codes } of interpretation.mentions) {
+    const known = codes.flatMap((code) => byCode.get(code) ?? []);
+    if (known.length === 0) unrecognized.push(phrase);
+    for (const tool of known) found.set(tool.id, tool);
+  }
+  const tools = [...found.values()]
+    .sort((a, b) => a.code.localeCompare(b.code, "pl", { numeric: true }))
+    .map((tool) => ({
+      id: tool.id,
+      code: tool.code,
+      name: tool.name,
+      place: { name: tool.location.name, kind: tool.location.kind },
+      daysInPlace: tool.daysInPlace,
+      responsible: tool.responsible,
+    }));
+  return { text, tools, unrecognized };
 }
 
 /**

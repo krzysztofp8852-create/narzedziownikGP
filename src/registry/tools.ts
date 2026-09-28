@@ -49,6 +49,8 @@ export interface ToolCard {
   registration: ToolRegistration;
   location: { id: string; name: string; kind: LocationKind };
   daysInPlace: number;
+  /** Kto odpowiada za narzędzie teraz: kierownik budowy albo pojazdu, na którym jest; na bazie i w serwisie nikt. */
+  responsible: { fullName: string; active: boolean } | null;
   /** Od kiedy narzędzie jest zgłoszone jako uszkodzone; null, gdy jest sprawne. */
   damagedSince: Date | null;
   /** Przy zaginionym narzędziu: kiedy zaginęło, gdzie było ostatnio i kto za nie odpowiadał. */
@@ -324,13 +326,16 @@ export async function toolCard(
     location_kind: LocationKind;
     located_since: Date;
     damaged_since: Date | null;
+    manager_name: string | null;
+    manager_active: boolean | null;
   }>(
     `select t.id, t.code, t.name, c.id as category_id, c.name as category_name, c.prefix as category_prefix,
             t.brand, t.model, t.serial_number, v.value::text as value, t.state, t.registration, l.id as location_id, l.name as location_name, l.kind as location_kind,
-            t.located_since, t.damaged_since
+            t.located_since, t.damaged_since, mu.full_name as manager_name, mu.active as manager_active
      from app.tools t
      join app.categories c on c.id = t.category_id
      join app.locations l on l.id = t.location_id
+     left join app.users mu on mu.user_id = l.manager_id and l.kind in ('budowa', 'pojazd')
      left join app.tool_values v on v.tool_id = t.id
      where t.id = $1`,
     [toolId],
@@ -389,6 +394,8 @@ export async function toolCard(
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },
     daysInPlace: daysSince(row.located_since, now),
+    responsible:
+      row.state === "w_obiegu" && row.manager_name !== null ? { fullName: row.manager_name, active: row.manager_active === true } : null,
     damagedSince: row.damaged_since && new Date(row.damaged_since),
     lost: lost
       ? {

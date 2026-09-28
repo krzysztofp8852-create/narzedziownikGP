@@ -24,7 +24,7 @@ Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłosz
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
 **Firma demo**:
-Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Nowe demo zastępuje poprzednie.
+Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie.
 _Avoid_: konto testowe, piaskownica
 
 **Super-admin**:
@@ -94,7 +94,7 @@ Ruch między budowami lub pojazdami z pominięciem bazy; rejestruje go ten, kto 
 Pierwsze pojawienie się narzędzia w ewidencji (dodanie, import, akceptacja zgłoszenia narzędzia).
 
 **Cofnięcie**:
-Ruch odwracający własny ruch autora w ciągu 15 minut; oryginał zostaje w historii jako cofnięty.
+Ruch odwracający własny ruch autora w ciągu 15 minut; oryginał zostaje w historii jako cofnięty. Przywraca stan sprzed ruchu, także flagę „uszkodzone”, którą zdjął ruch z serwisu.
 _Avoid_: usunięcie, anulowanie
 
 **Korekta**:
@@ -102,7 +102,10 @@ Ruch właściciela ustawiający faktyczną lokalizację lub stan narzędzia, zaw
 _Avoid_: edycja ruchu, poprawka
 
 **Propozycja ruchu**:
-Wynik interpretacji nagrania lub tekstu; staje się ruchem dopiero po zatwierdzeniu przez kierownika.
+Wynik interpretacji nagrania lub tekstu; staje się ruchem dopiero po zatwierdzeniu przez kierownika. Na pytanie („gdzie jest niwelator?”) zamiast propozycji przychodzi odpowiedź, gdzie jest sprzęt.
+
+**Wyszukiwanie**:
+Lupa w nagłówku, dla każdej roli: gdzie jest narzędzie, od ilu dni i kto za nie odpowiada, po kodzie, nazwie, marce albo kategorii, także pytaniem głosem.
 
 ## Alarmy i raporty
 
@@ -137,7 +140,7 @@ Skrzynka powiadomień użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm
 _Avoid_: powiadomienia (jako nazwa miejsca), inbox
 
 **Czat z supportem**:
-Rozmowa użytkownika firmy z GP Engineering, jeden wątek na użytkownika. Działa także w trybie tylko do odczytu.
+Rozmowa użytkownika firmy z GP Engineering, jeden wątek na użytkownika. Działa także w trybie tylko do odczytu; w firmie demo jest wyłączona.
 _Avoid_: kontakt, helpdesk
 
 ## Abonament

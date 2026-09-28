@@ -12,11 +12,13 @@ const STEPS = {
   offBase: "off-base",
   alarms: "alarms",
   alarmTool: "alarm-tool",
+  search: "search",
   toolReports: "tool-reports",
   operationsOwner: "operations",
   operationsManager: "operations",
   operationsStorekeeper: "operations",
   recent: "recent",
+  recentWorker: "recent",
   map: "map",
   lost: "lost",
   issues: "issues",
@@ -32,10 +34,26 @@ type StepId = keyof typeof STEPS;
 const DATA_STEPS = new Set<StepId>(["alarmTool", "toolReports", "lost"]);
 
 const ROLE_STEPS: Record<DemoRole, StepId[]> = {
-  wlasciciel: ["welcome", "roles", "offBase", "alarms", "toolReports", "alarmTool", "operationsOwner", "map", "lost", "issues", "bell", "settings", "finish"],
-  kierownik: ["welcome", "roles", "alarms", "alarmTool", "operationsManager", "recent", "bell", "issues", "finish"],
-  magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "issues", "finish"],
-  pracownik: ["welcome", "roles", "alarmTool", "issuesWorker", "recent", "finish"],
+  wlasciciel: [
+    "welcome",
+    "roles",
+    "offBase",
+    "alarms",
+    "toolReports",
+    "alarmTool",
+    "search",
+    "operationsOwner",
+    "map",
+    "lost",
+    "issues",
+    "bell",
+    "settings",
+    "finish",
+  ],
+  kierownik: ["welcome", "roles", "alarms", "alarmTool", "search", "operationsManager", "recent", "bell", "issues", "finish"],
+  magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "issues", "finish"],
+  // Pracownik nie rejestruje ruchów, więc nie ma czego cofać.
+  pracownik: ["welcome", "roles", "alarmTool", "search", "issuesWorker", "recentWorker", "finish"],
 };
 
 /** Adres, który włącza przewodnik od początku (przycisk „Przewodnik” na pasku demo). */

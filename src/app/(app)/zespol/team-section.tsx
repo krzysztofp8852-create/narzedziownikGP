@@ -1,5 +1,5 @@
 import { t } from "@/i18n/t";
-import { MEMBER_ROLES, type Session, type TeamMember } from "@/registry/registry";
+import { isDemoEmail, MEMBER_ROLES, type Session, type TeamMember } from "@/registry/registry";
 import { AddMemberForm } from "./add-member-form";
 import { MemberActions } from "./member-actions";
 
@@ -28,7 +28,8 @@ export function TeamSection({ session, members }: { session: Session; members: T
               </span>
             </div>
             {member.username && <p className="muted member-email">{t("team.loginAs", { username: member.username })}</p>}
-            {member.email && <p className="muted member-email">{member.email}</p>}
+            {/* Konta demo mają techniczne adresy, na które nic nie wychodzi; oglądającym nic one nie mówią. */}
+            {member.email && <p className="muted member-email">{isDemoEmail(member.email) ? t("team.demoEmail") : member.email}</p>}
             <Status member={member} />
             {member.active && member.role !== "wlasciciel" && (
               <details className="member-more">

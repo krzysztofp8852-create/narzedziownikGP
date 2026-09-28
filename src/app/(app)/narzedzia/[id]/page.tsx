@@ -62,6 +62,13 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
               : t("toolCard.outOfCirculation", { state: t(`toolState.${card.state}`), place: card.location.name })}
           </strong>
         </p>
+        {card.responsible && (
+          <p data-testid="tool-responsible" className={card.responsible.active ? undefined : "text-danger"}>
+            {t("toolCard.responsible", {
+              name: card.responsible.active ? card.responsible.fullName : t("board.managerInactive", { name: card.responsible.fullName }),
+            })}
+          </p>
+        )}
       </section>
 
       {card.damagedSince && (

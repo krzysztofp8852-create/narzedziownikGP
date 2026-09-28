@@ -2,7 +2,7 @@
 // Uruchamiany ręcznie (`npm run eval:interpretation`), nie w CI; zob. README.md obok.
 import type { CatalogTool, Role, Site } from "@/registry/registry";
 import { createInterpretation, type InterpretationActor, InterpretationFailedError, type Interpreter } from "../interpretation";
-import type { Proposal, ProposalKind } from "../proposal";
+import type { ProposalKind, Reply } from "../proposal";
 import type { Transcriber } from "../transcription";
 
 /** Przykładowa ewidencja firmy: osoby, lokalizacje po nazwie i narzędzia w obiegu z miejscem, w którym są. */
@@ -31,6 +31,12 @@ export interface ExpectedProposal {
   unrecognized?: ({ reason: "unknown" } | { reason: "unavailable"; missing: number })[];
 }
 
+/** Oczekiwana odpowiedź na pytanie „gdzie jest …”: kody wszystkich narzędzi w obiegu, o które pytano. */
+export interface ExpectedQuestion {
+  question: true;
+  tools: string[];
+}
+
 export interface EvalCase {
   id: string;
   tags: string[];
@@ -41,10 +47,10 @@ export interface EvalCase {
   text: string;
   /** Nagranie z budowy, ścieżka względem katalogu zestawu; idzie przez port transkrypcji. */
   recording?: string;
-  expected: ExpectedProposal;
+  expected: ExpectedProposal | ExpectedQuestion;
 }
 
-export type CheckField = "kind" | "site" | "service" | "from" | "tools" | "ambiguities" | "unrecognized";
+export type CheckField = "question" | "kind" | "site" | "service" | "from" | "tools" | "ambiguities" | "unrecognized";
 
 export interface Check {
   field: CheckField;
@@ -74,7 +80,8 @@ interface Ports {
 }
 
 /**
- * Uruchamia przypadki na podanych portach przez moduł Interpretacja i ocenia każdą Propozycję.
+ * Uruchamia przypadki na podanych portach przez moduł Interpretacja, tak jak „Powiedz lub wpisz” (propozycja ruchu
+ * albo odpowiedź na pytanie „gdzie jest …”), i ocenia każdą odpowiedź.
  * Najwyżej `concurrency` przypadków naraz; wyniki w kolejności przypadków.
  */
 export async function runEval(cases: EvalCase[], ports: Ports, { concurrency = 1 } = {}): Promise<CaseResult[]> {
@@ -106,11 +113,11 @@ async function runCase(evalCase: EvalCase, { interpreter, transcriber, loadRecor
     recordings: { save: async () => {}, remove: async () => {} },
   }).as(personId(actor));
   try {
-    const proposal = evalCase.recording
-      ? await interpretation.proposeFromRecording(await loadRecording(evalCase.recording))
-      : await interpretation.propose(evalCase.text);
-    const checks = score(evalCase.expected, proposal);
-    return { ...base, text: proposal.text, passed: checks.every((check) => check.passed), checks, error: null };
+    const reply = evalCase.recording
+      ? await interpretation.replyToRecording(await loadRecording(evalCase.recording))
+      : { ...(await interpretation.reply(evalCase.text)), text: evalCase.text };
+    const checks = score(evalCase.expected, reply);
+    return { ...base, text: reply.text, passed: checks.every((check) => check.passed), checks, error: null };
   } catch (error) {
     // Rozpoznany tekst zostaje w raporcie także wtedy, gdy zawiodła interpretacja.
     return failed(error, error instanceof InterpretationFailedError ? (error.text ?? evalCase.text) : evalCase.text);
@@ -143,6 +150,10 @@ export function caseProblems({ company, actor, expected }: EvalCase): string[] {
     if (codes.has(tool.code)) problems.push(`kod ${tool.code} się powtarza`);
     codes.add(tool.code);
     if (!locations.has(tool.at)) problems.push(`${tool.code} jest w nieznanej lokalizacji ${tool.at}`);
+  }
+  if ("question" in expected) {
+    for (const code of new Set(expected.tools)) if (!codes.has(code)) problems.push(`nie ma narzędzia ${code}`);
+    return problems;
   }
   const siteOrBase = expected.kind === "do_serwisu" && expected.site === company.base;
   if (expected.site !== null && !siteOrBase && !sites.includes(expected.site)) problems.push(`oczekiwana budowa ${expected.site} nie jest aktywną budową`);
@@ -180,7 +191,11 @@ function evidence(company: EvalCompany, actor: string): InterpretationActor {
       code: tool.code,
       name: tool.name,
       category: tool.category,
+      brand: null,
+      model: null,
       location: locations.find((location) => location.name === tool.at)!,
+      daysInPlace: 0,
+      responsible: null,
     }))
     .sort((a, b) => a.code.localeCompare(b.code));
 
@@ -200,16 +215,25 @@ function evidence(company: EvalCompany, actor: string): InterpretationActor {
   };
 }
 
-/** Porównuje Propozycję z oczekiwaną pole po polu; kolejność narzędzi, pytań i fraz się nie liczy. */
-function score(expected: ExpectedProposal, proposal: Proposal): Check[] {
+/**
+ * Porównuje odpowiedź z oczekiwaną pole po polu: najpierw, czy to ruch, czy pytanie, potem Propozycję albo narzędzia,
+ * o które pytano. Kolejność narzędzi, pytań i fraz się nie liczy.
+ */
+function score(expected: ExpectedProposal | ExpectedQuestion, reply: Reply): Check[] {
   const check = (field: CheckField, want: string, got: string): Check => ({ field, passed: want === got, expected: want, actual: got });
   const codes = (list: string[]) => [...list].sort().join(", ") || "—";
+  const asked = "question" in expected;
+  const kindCheck = check("question", asked ? "pytanie" : "ruch", reply.where ? "pytanie" : "ruch");
+  if (asked) return reply.where ? [kindCheck, check("tools", codes(expected.tools), codes(reply.where.tools.map((tool) => tool.code)))] : [kindCheck];
+  const { proposal } = reply;
+  if (!proposal) return [kindCheck];
   const ambiguities = (list: { quantity: number; candidates: string[] }[]) =>
     list.map(({ quantity, candidates }) => `${quantity} z [${codes(candidates)}]`).sort().join("; ") || "—";
   const unrecognized = (list: NonNullable<ExpectedProposal["unrecognized"]>) =>
     list.map((entry) => (entry.reason === "unknown" ? "nieznane" : `brakuje ${entry.missing}`)).sort().join("; ") || "—";
 
   const checks = [
+    kindCheck,
     check("kind", expected.kind, proposal.kind),
     check("site", expected.site ?? "—", proposal.site?.name ?? "—"),
     check("tools", codes(expected.tools), codes(proposal.tools.map((tool) => tool.code))),
@@ -220,7 +244,7 @@ function score(expected: ExpectedProposal, proposal: Proposal): Check[] {
     ),
     check("unrecognized", unrecognized(expected.unrecognized ?? []), unrecognized(proposal.unrecognized)),
   ];
-  if (expected.from !== undefined) checks.splice(2, 0, check("from", expected.from ?? "—", proposal.from?.name ?? "—"));
-  if (expected.service !== undefined) checks.splice(2, 0, check("service", expected.service ?? "—", proposal.service?.name ?? "—"));
+  if (expected.from !== undefined) checks.splice(3, 0, check("from", expected.from ?? "—", proposal.from?.name ?? "—"));
+  if (expected.service !== undefined) checks.splice(3, 0, check("service", expected.service ?? "—", proposal.service?.name ?? "—"));
   return checks;
 }

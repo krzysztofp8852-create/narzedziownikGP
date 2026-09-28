@@ -32,6 +32,26 @@ class ScenarioClock implements Clock {
   }
 }
 
+/** Raporty z tylu ostatnich dni: dwa tygodniowe i dwa piątkowe, a nie sterta z całej historii. */
+const REPORT_DAYS = 14;
+
+/**
+ * Uruchomienia harmonogramu z `vercel.json` (UTC) po `from` i najpóźniej w `to`: progi dni codziennie o 5:00, raporty
+ * w poniedziałek o 5:00 i 6:00 oraz w piątek o 14:00 i 15:00 (Rejestr sam sprawdza, czy w Polsce już pora).
+ */
+function scheduledRuns(from: Date, to: Date): { at: Date; thresholds: boolean; reports: boolean }[] {
+  const runs: { at: Date; thresholds: boolean; reports: boolean }[] = [];
+  const hour = new Date(from);
+  hour.setUTCMinutes(0, 0, 0);
+  for (hour.setUTCHours(hour.getUTCHours() + 1); hour.getTime() <= to.getTime(); hour.setUTCHours(hour.getUTCHours() + 1)) {
+    const [utcHour, weekday] = [hour.getUTCHours(), hour.getUTCDay()];
+    const thresholds = utcHour === 5;
+    const reports = (weekday === 1 && (utcHour === 5 || utcHour === 6)) || (weekday === 5 && (utcHour === 14 || utcHour === 15));
+    if (thresholds || reports) runs.push({ at: new Date(hour), thresholds, reports });
+  }
+  return runs;
+}
+
 /** Demo nie wysyła e-maili ani push z przeszłości. */
 const silentNotifier: Notifier = {
   send: async () => {},
@@ -139,8 +159,9 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
 /**
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
- * do wyjaśnienia), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
- * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut.
+ * do wyjaśnienia, alarmy i raporty w dzwonkach), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr,
+ * więc dane są takie, jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed
+ * kilkudziesięciu minut.
  */
 export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date() }: { now?: Date } = {}): Promise<{ companyId: string }> {
   const daysAgo = (days: number, hour: number, minute = 0) => {
@@ -163,6 +184,22 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
     baseName: "Baza Poznań-Franowo",
     owner: { email: demoEmail("tomasz.wisniewski"), fullName: "Tomasz Wiśniewski" },
   });
+  /**
+   * Zegar idzie do `when`, a po drodze firma dostaje to, co w tym czasie dałby jej harmonogram (`vercel.json`):
+   * codzienne sprawdzenie progów dni i, w ostatnich dwóch tygodniach, raporty. Dzwonek wygląda wtedy jak u firmy,
+   * która pracuje od tygodni. Tylko ta firma: zadania dla wszystkich firm (`notifyExceededThresholds`,
+   * `sendDueReports`) wysłałyby alarmy i raporty klientom.
+   */
+  const advanceTo = async (when: Date) => {
+    for (const run of scheduledRuns(clock.now(), when)) {
+      clock.set(run.at);
+      if (run.thresholds) await registry.system().notifyCompanyExceededThresholds(company.companyId);
+      if (run.reports && now.getTime() - run.at.getTime() < REPORT_DAYS * DAY_MS) {
+        await registry.system().sendCompanyDueReports(company.companyId);
+      }
+    }
+    clock.set(when);
+  };
   const owner = registry.as(company.ownerUserId);
   // Hasło nikomu niepotrzebne: do demo wchodzi się bez niego.
   await owner.changePassword(randomUUID(), signIn());
@@ -203,7 +240,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   }
   await owner.printStickers({ unlabeled: true }, async () => null);
 
-  clock.set(daysAgo(46, 10));
+  await advanceTo(daysAgo(46, 10));
   const { base } = await owner.locations();
   const site = async (name: string, address: string, manager: string) => (await owner.addSite({ name, address, managerId: people[manager] })).locationId;
   const vehicle = async (name: string, manager: string) => (await owner.addVehicle({ name, managerId: people[manager] })).locationId;
@@ -231,7 +268,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
     keys: string[],
     transcript?: string,
   ) => {
-    clock.set(at);
+    await advanceTo(at);
     await as(who).registerMovement({
       operationId: randomUUID(),
       kind,
@@ -243,7 +280,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
     });
   };
   const issue = async (who: string, at: Date, input: { kind: "uszkodzenie" | "brak" | "inne"; description: string; tool?: string; place?: keyof typeof places }) => {
-    clock.set(at);
+    await advanceTo(at);
     const { issueId } = await as(who).fileIssue({
       operationId: randomUUID(),
       kind: input.kind,
@@ -254,7 +291,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
     return issueId;
   };
   const comment = async (who: string, at: Date, issueId: string, text: string) => {
-    clock.set(at);
+    await advanceTo(at);
     await as(who).commentOnIssue({ operationId: randomUUID(), issueId, text });
   };
 
@@ -272,7 +309,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   await move("anna", daysAgo(26, 9, 30), "przeniesienie", "tarasy", "szkola", ["se6000"]);
   await move("anna", daysAgo(24, 7, 10), "wydanie", "base", "szkola", ["te60", "flexwse", "vc40"]);
 
-  clock.set(daysAgo(23, 8));
+  await advanceTo(daysAgo(23, 8));
   places.suchyLas = await site("Dom jednorodzinny Suchy Las", "ul. Leśna 8, Suchy Las", "anna");
   await move("anna", daysAgo(23, 9, 15), "wydanie", "base", "suchyLas", ["dhr243", "ms261", "gst18", "b150ced"]);
   await move("marek", daysAgo(21, 15, 30), "zwrot", "tarasy", "base", ["collomix", "podest", "dingo"]);
@@ -280,25 +317,25 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
 
   // Biurowiec Malta: koniec budowy, jedno narzędzie nie wróciło i zaginęło.
   await move("pawel", daysAgo(19, 15, 0), "zwrot", "malta", "base", ["dch273", "dcd796", "fsz", "protec", "blp33"]);
-  clock.set(daysAgo(18, 9, 0));
+  await advanceTo(daysAgo(18, 9, 0));
   await owner.markToolLost({
     operationId: randomUUID(),
     toolId: tools.ps50,
     reason: "Nie wrócił po zakończeniu budowy Biurowiec Malta, nikt z brygady go nie ma.",
   });
-  clock.set(daysAgo(18, 9, 20));
+  await advanceTo(daysAgo(18, 9, 20));
   await as("pawel").closeSite(places.malta);
 
-  clock.set(daysAgo(17, 8));
+  await advanceTo(daysAgo(17, 8));
   places.jezyce = await site("Remont kamienicy Jeżyce", "ul. Kraszewskiego 17, Poznań", "pawel");
   await move("pawel", daysAgo(17, 9, 0), "wydanie", "base", "jezyce", ["te1000", "hm1307", "dch273", "protec", "blp33", "fsz"]);
   await move("pawel", daysAgo(15, 13, 40), "do_serwisu", "jezyce", "swarzedz", ["hm1307"]);
   await move("krzysztof", daysAgo(13, 11, 0), "z_serwisu", "hilti", "base", ["te30"]);
   await move("marek", daysAgo(12, 7, 20), "wydanie", "base", "komorniki", ["te30"]);
 
-  clock.set(daysAgo(11, 16, 0));
+  await advanceTo(daysAgo(11, 16, 0));
   await owner.retireTool({ operationId: randomUUID(), toolId: tools.metabo, reason: "Spalony silnik, naprawa nieopłacalna." });
-  clock.set(daysAgo(10, 10, 30));
+  await advanceTo(daysAgo(10, 10, 30));
   await owner.correctTool({
     operationId: randomUUID(),
     toolId: tools.gcl250,
@@ -324,12 +361,12 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   });
   await comment("marek", daysAgo(5, 8, 20), missingLevel, "Pożyczyłem go Ani na Suchy Las. Przeniesie go w aplikacji.");
   await move("anna", daysAgo(5, 9, 0), "przeniesienie", "komorniki", "suchyLas", ["n24"]);
-  clock.set(daysAgo(5, 11, 15));
+  await advanceTo(daysAgo(5, 11, 15));
   await owner.closeIssue({ operationId: randomUUID(), issueId: missingLevel, comment: "Wyjaśnione: niwelator jest na Suchym Lesie." });
 
-  clock.set(daysAgo(4, 14, 0));
+  await advanceTo(daysAgo(4, 14, 0));
   await as("anna").reportTool({ operationId: randomUUID(), siteId: places.suchyLas, name: "Mieszadło do zapraw Makita UT1401", categoryId: categoryIds.Z });
-  clock.set(daysAgo(3, 9, 40));
+  await advanceTo(daysAgo(3, 9, 40));
   await as("marek").reportTool({ operationId: randomUUID(), siteId: places.komorniki, name: "Przedłużacz bębnowy 50 m", categoryId: categoryIds.E });
 
   await issue("krzysztof", daysAgo(3, 15, 10), {
@@ -339,7 +376,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   });
 
   // Ruch zapisany w telefonie bez zasięgu, który serwer odrzucił: niwelator był już gdzie indziej.
-  clock.set(daysAgo(2, 16, 5));
+  await advanceTo(daysAgo(2, 16, 5));
   await as("marek").registerQueuedMovement({
     operationId: randomUUID(),
     kind: "zwrot",
@@ -372,7 +409,7 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   );
   await move("pawel", minutesAgo(25), "zwrot", "busPawel", "base", ["dtw300"]);
 
-  clock.set(now);
+  await advanceTo(now);
   await registry.system().activateDemoCompany(company.companyId);
   return { companyId: company.companyId };
 }

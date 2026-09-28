@@ -55,6 +55,8 @@
   "header": {
     "logout": "Wyloguj",
     "settings": "Ustawienia",
+    "search": "Szukaj narzędzia",
+    "searchShort": "Szukaj",
     "bell": "Dzwonek",
     "bellUnread": "Dzwonek, nieprzeczytane: {count}",
     "issues": "Zgłoszenia",
@@ -132,6 +134,29 @@
     "openTool": "Karta narzędzia →",
     "note": "Wersja demonstracyjna: położenie budów i sygnał lokalizatorów są przykładowe."
   },
+  "search": {
+    "title": "Gdzie jest narzędzie?",
+    "back": "← Tablica",
+    "label": "Czego szukasz?",
+    "placeholder": "np. H-03, niwelator albo Hilti",
+    "hint": "Lista zawęża się od razu. Kliknij narzędzie, żeby zobaczyć kartę z historią.",
+    "voiceHint": "Przytrzymaj i powiedz, czego szukasz, np. „gdzie jest niwelator?”. Nagranie usuwamy zaraz po rozpoznaniu tekstu.",
+    "all": "Wszystkie narzędzia: {count}",
+    "count": "Pasujące: {count}",
+    "noMatches": "Nic nie pasuje do „{query}”. Spróbuj kodu, marki albo innej nazwy.",
+    "heard": "Szukam: „{text}”",
+    "heardNothing": "Nie znalazłem narzędzia w „{text}”. Powiedz inaczej albo wpisz nazwę lub kod.",
+    "unrecognized": "Nie znam: {phrases}.",
+    "clearVoice": "Wyczyść",
+    "silence": "Nic nie usłyszałem. Przytrzymaj przycisk i powiedz, czego szukasz.",
+    "failed": "Nie udało się zrozumieć pytania. Wpisz, czego szukasz.",
+    "failedHeard": "Usłyszałem „{text}”, ale nie zrozumiałem pytania. Wpisz, czego szukasz.",
+    "answer": "Gdzie jest: {count} szt.",
+    "more": "Szukaj dalej →",
+    "lost": "Zaginione, ostatnio: {place}",
+    "responsible": "odpowiada: {name}",
+    "since": "od {days}"
+  },
   "settingsPage": {
     "title": "Ustawienia",
     "back": "← Wróć do tablicy"
@@ -152,6 +177,7 @@
     "added": "Dodano: {name} ({email}).",
     "addedWorker": "Dodano: {name}. Nazwa użytkownika do logowania: {username}.",
     "loginAs": "Login: {username}",
+    "demoEmail": "Konto demo, bez e-maila",
     "temporaryPassword": "Hasło tymczasowe",
     "passwordHint": "Przekaż je osobiście. Nie zobaczysz go ponownie. Przy pierwszym logowaniu ta osoba ustawi własne hasło.",
     "newPasswordFor": "Nowe hasło tymczasowe dla: {name}",
@@ -210,7 +236,9 @@
     "photo_invalid": "Zdjęcie musi być w formacie JPG, PNG albo WEBP i mieć najwyżej 4 MB.",
     "issue_closed": "To zgłoszenie jest już zamknięte.",
     "message_required": "Napisz wiadomość albo dołącz zdjęcie.",
-    "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w zespole działają."
+    "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w zespole działają.",
+    "demo_chat": "W wersji demo czat z supportem jest wyłączony, bo z konta tej roli korzystają wszyscy oglądający.",
+    "demo_push": "W wersji demo powiadomienia push są wyłączone, bo z konta tej roli korzystają wszyscy oglądający."
   },
   "days": {
     "one": "{count} dzień",
@@ -276,6 +304,7 @@
     "back": "← Wróć do tablicy",
     "location": "Gdzie jest",
     "inPlace": "{place}, od {days}",
+    "responsible": "Odpowiada: {name}",
     "details": "Dane",
     "none": "—",
     "history": "Historia",
@@ -404,6 +433,7 @@
     "toolLabel": "{code} {name}",
     "clear": "Wyczyść zaznaczenie",
     "done": "Zapisano: {summary}",
+    "undone": "Cofnięto: {summary}",
     "notified": "Powiadomienie e-mail: {names}.",
     "kinds": {
       "wydanie": {
@@ -447,12 +477,14 @@
         "summaryEmpty": "Wybierz serwis i zaznacz narzędzia."
       }
     },
-    "damagedWarning": "{code} zgłoszone jako uszkodzone {ago}. Ruch i tak się zapisze."
+    "damagedWarning": "{code} zgłoszone jako uszkodzone {ago}. Ruch i tak się zapisze.",
+    "damagedFromService": "{code} jest zgłoszone jako uszkodzone: przyjęcie z serwisu zdejmie tę flagę."
   },
   "textEntry": {
     "label": "Co zabierasz albo oddajesz?",
-    "placeholder": "np. biorę dwie szlifierki i młot na Rataje",
-    "hint": "Napisz zwykłym zdaniem. Pokażę, co zrozumiałem, a nic się nie zapisze, dopóki nie zatwierdzisz ✓.",
+    "placeholder": "np. biorę dwie szlifierki i młot z bazy",
+    "placeholderSite": "np. biorę dwie szlifierki i młot na budowę {site}",
+    "hint": "Napisz zwykłym zdaniem albo zapytaj, gdzie jest sprzęt („gdzie jest niwelator?”). Pokażę, co zrozumiałem, a nic się nie zapisze, dopóki nie zatwierdzisz ✓.",
     "send": "Pokaż, co zrozumiałem",
     "sending": "Czytam…",
     "you": "Ty",
@@ -631,6 +663,20 @@
     "back": "← Wróć do tablicy",
     "intro": "Wgraj plik XLSX albo CSV z listą narzędzi: pierwszy wiersz to nagłówki kolumn, a każdy następny to jedno narzędzie. Przed zatwierdzeniem zobaczysz podgląd z błędami; bez zatwierdzenia nic się nie zapisze.",
     "rules": "Każdy wiersz potrzebuje nazwy i kategorii (nazwy albo prefiksu, np. „Młoty” albo „H”). Wiersze bez kodu dostaną kolejny wolny kod w kategorii. Narzędzia bez lokalizacji trafią na bazę.",
+    "sample": {
+      "link": "Pobierz przykładowy plik",
+      "hint": "XLSX z nagłówkami, które rozpoznajemy, i kategoriami tej firmy: wpisz swój sprzęt w miejsce przykładów.",
+      "fileName": "narzedzia-przyklad.xlsx",
+      "sheet": "Narzędzia",
+      "code": "Kod",
+      "name": "Nazwa",
+      "category": "Kategoria",
+      "brand": "Marka",
+      "model": "Model",
+      "serialNumber": "Numer seryjny",
+      "value": "Wartość",
+      "location": "Lokalizacja"
+    },
     "categories": "Kategorie firmy",
     "noCategories": "Firma nie ma jeszcze kategorii. Dodaj je na tablicy przy dodawaniu narzędzia, zanim wgrasz plik.",
     "locations": "Lokalizacje",
@@ -936,6 +982,10 @@
     "yesterday": "wczoraj",
     "days": "{days} dni temu"
   },
+  "photo": {
+    "preview": "Podgląd zdjęcia {name}",
+    "remove": "Usuń zdjęcie"
+  },
   "issues": {
     "title": "Zgłoszenia",
     "back": "← Wróć do tablicy",
@@ -1035,6 +1085,10 @@
     "title": "Czat z supportem",
     "back": "← Tablica",
     "intro": "Napisz do nas (GP Engineering), gdy coś nie działa albo masz pytanie. Odpowiemy tutaj, a na telefon przyjdzie powiadomienie.",
+    "demo": {
+      "text": "W wersji demo czat jest wyłączony: z tego konta korzystają wszyscy oglądający demo, więc widzieliby nawzajem swoje wiadomości. U klienta każda osoba ma tu własną rozmowę z nami, ze zdjęciami i powiadomieniem o odpowiedzi.",
+      "contact": "Masz pytanie o NarzędziownikGP albo chcesz go w swojej firmie?"
+    },
     "empty": "Nie ma jeszcze wiadomości. Napisz, w czym możemy pomóc.",
     "sender": {
       "uzytkownik": "Ty",
@@ -1116,7 +1170,7 @@
       }
     },
     "tipsTitle": "Co warto kliknąć",
-    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał.\nJako kierownik: „Nowy ruch”. Wydaj sprzęt z bazy albo napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nDzwonek i 📋 w nagłówku: powiadomienia i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
+    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał, i kto za nie teraz odpowiada.\nLupa w nagłówku: wpisz albo powiedz, czego szukasz, np. „gdzie jest niwelator?”.\nJako kierownik: panel „Operacje”. Kliknij „Wydaj z bazy” albo „Powiedz lub wpisz” i napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nDzwonek i 📋 w nagłówku: alarmy, raporty i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
     "note": "To wspólne demo: inni oglądający też mogą w nim coś zmienić, a my co jakiś czas przywracamy je do stanu wyjściowego. E-maile z demo nigdzie nie wychodzą.",
     "contact": "Chcesz takie narzędzie dla swojej firmy?",
     "bar": {
@@ -1151,6 +1205,10 @@
         "title": "Karta narzędzia",
         "text": "Kliknij dowolne narzędzie, np. to z alarmem. Zobaczysz, gdzie jest, od ilu dni, kto za nie odpowiada i całą historię ruchów."
       },
+      "search": {
+        "title": "Szukaj",
+        "text": "Lupa w nagłówku: wpisz kod, nazwę albo markę i od razu zobaczysz, gdzie jest narzędzie, od ilu dni i kto za nie odpowiada. Możesz też zapytać głosem, np. „gdzie jest niwelator?”."
+      },
       "toolReports": {
         "title": "Do akceptacji",
         "text": "Kierownicy dopisują narzędzia kupione na budowie. Właściciel uzupełnia kod i wartość, a potem akceptuje albo odrzuca zgłoszenie."
@@ -1160,8 +1218,8 @@
         "text": "Stąd zapiszesz każdy ruch sprzętu, dodasz narzędzie, zaimportujesz listę z Excela i wydrukujesz naklejki QR."
       },
       "operationsManager": {
-        "title": "Nowy ruch",
-        "text": "Wydanie, zwrot albo przeniesienie zapiszesz checklistą, skanerem naklejek QR albo zdaniem. Kliknij „Powiedz lub wpisz” i napisz np. „biorę dwie wkrętarki na Tarasy”."
+        "title": "Operacje",
+        "text": "Wydanie, zwrot albo przeniesienie zapiszesz checklistą („Wydaj z bazy”, „Zwróć na bazę”), skanerem naklejek QR albo zdaniem. Kliknij „Powiedz lub wpisz” i napisz np. „biorę dwie wkrętarki na Tarasy”."
       },
       "operationsStorekeeper": {
         "title": "Obsługa bazy",
@@ -1170,6 +1228,10 @@
       "recent": {
         "title": "Ostatnie ruchy",
         "text": "Każdy ruch ma autora i godzinę. Własny ruch cofniesz przez 15 minut. Pełna historia z filtrami i eksportem do Excela jest pod „Cała historia”."
+      },
+      "recentWorker": {
+        "title": "Ostatnie ruchy",
+        "text": "Tu widać, kto, kiedy i dokąd ruszał sprzęt. Pełna historia z filtrami jest pod „Cała historia”."
       },
       "map": {
         "title": "Mapa",
@@ -1193,7 +1255,7 @@
       },
       "settings": {
         "title": "Ustawienia",
-        "text": "Zespół i konta, budowy, busy i serwisy, próg dni alarmu, naklejki QR i abonament."
+        "text": "Próg dni alarmu, kto widzi zgłoszenia, naklejki QR, serwisy, zespół i konta oraz abonament. Budowy i busy dodajesz na tablicy."
       },
       "finish": {
         "title": "Gotowe",

@@ -271,3 +271,45 @@ describe("nagranie z kolejki offline", () => {
     expect(recordings.stored.size).toBe(0);
   });
 });
+
+describe("wyszukiwanie głosem", () => {
+  it("pracownik pyta głosem „gdzie jest szlifierka”: odpowiedź z narzędziem, a nagranie znika z kubełka", async () => {
+    const z = await givenZawbud();
+    const workerId = await testbed.givenMember(z.zawbud, "pracownik");
+    transcriber.text = "gdzie jest szlifierka";
+    interpreter.answer = {
+      kind: "wydanie",
+      siteId: null,
+      fromSiteId: null,
+      serviceId: null,
+      everything: false,
+      mentions: [{ phrase: "szlifierka", quantity: 1, codes: ["S-01"] }],
+      whereIs: true,
+    };
+
+    const answer = await interpretation().as(workerId).findFromRecording(recording());
+
+    expect(answer).toMatchObject({ text: "gdzie jest szlifierka", tools: [{ id: z.s01, place: { name: "Magazyn Swarzędz", kind: "baza" } }] });
+    expect(recordings.saved).toHaveLength(1);
+    expect(recordings.stored.size).toBe(0);
+  });
+
+  it("kierownik pyta w „Powiedz lub wpisz”: odpowiedź niesie rozpoznany tekst", async () => {
+    const z = await givenZawbud();
+    transcriber.text = "gdzie jest es zero jeden";
+    interpreter.answer = {
+      kind: "wydanie",
+      siteId: null,
+      fromSiteId: null,
+      serviceId: null,
+      everything: false,
+      mentions: [{ phrase: "es zero jeden", quantity: 1, codes: ["S-01"] }],
+      whereIs: true,
+    };
+
+    const reply = await interpretation().as(z.nowakId).replyToRecording(recording());
+
+    expect(reply).toMatchObject({ text: "gdzie jest es zero jeden", where: { tools: [{ code: "S-01" }] } });
+    expect(reply.proposal).toBeUndefined();
+  });
+});

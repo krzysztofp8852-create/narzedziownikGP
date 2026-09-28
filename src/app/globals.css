@@ -100,7 +100,8 @@ a {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   font: inherit;
   color: var(--text);
   background: var(--surface);
@@ -114,8 +115,17 @@ a {
   padding: 10px;
 }
 
+/*
+ * Pole tekstowe bierze czcionkę strony z reguły wyżej: domyślna przeglądarki ma 13 px, a przy mniejszej niż 16 px
+ * iPhone powiększa stronę po dotknięciu pola.
+ */
+.field textarea {
+  resize: vertical;
+}
+
 .field input:focus-visible,
-.field select:focus-visible {
+.field select:focus-visible,
+.field textarea:focus-visible {
   outline: 3px solid var(--accent-soft);
   outline-offset: 0;
   border-color: var(--accent);
@@ -933,6 +943,15 @@ a.tool-row:hover .tool-row-name {
   color: var(--text-muted);
 }
 
+.form-info {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .checklist-done {
   padding: 10px 12px;
   border-radius: var(--radius);
@@ -940,6 +959,16 @@ a.tool-row:hover .tool-row-name {
   color: var(--success);
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+/* Komunikat po zapisie z „Cofnij” w tym samym polu. */
+.movement-done {
+  display: grid;
+  gap: 6px;
+}
+
+.movement-done .undo {
+  margin-top: 0;
 }
 
 /* Skaner naklejek QR */
@@ -1034,10 +1063,6 @@ a.tool-row:hover .tool-row-name {
 
 .text-entry {
   gap: 16px;
-}
-
-.text-entry textarea {
-  resize: vertical;
 }
 
 /* Przytrzymaj i mów: duży przycisk pod kciuk, także w rękawicach */
@@ -1620,6 +1645,42 @@ a.tool-row:hover .tool-row-name {
   }
 }
 
+/* Wyszukiwanie „gdzie jest narzędzie” (lupa w nagłówku) i odpowiedź na „gdzie jest …” w „Powiedz lub wpisz”. */
+.tool-finder {
+  display: grid;
+  gap: 16px;
+  max-width: 880px;
+}
+
+.found {
+  display: grid;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px var(--gutter);
+}
+
+.found-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.found-tool-place .location-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: 1px;
+}
+
+.where-answer {
+  display: grid;
+  gap: 8px;
+}
+
 /* Dzwonek */
 .bell-button {
   position: relative;
@@ -1775,16 +1836,6 @@ a.tool-row:hover .tool-row-name {
   min-width: 0;
   text-overflow: ellipsis;
 }
-.company-card .field textarea {
-  font: inherit;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  padding: 11px 14px;
-  resize: vertical;
-}
-
 /* Ikona pojazdu przy jego nazwie (tablica, checklisty). */
 .vehicle-icon {
   display: inline-block;
@@ -2029,6 +2080,26 @@ a.tool-row:hover .tool-row-name {
   color: var(--text-muted);
 }
 
+/* Podgląd wybranego zdjęcia przed wysłaniem (zgłoszenie, czat). */
+.photo-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.photo-preview img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.photo-preview-name {
+  overflow-wrap: anywhere;
+}
+
 .chat-photo {
   display: block;
   max-width: 100%;
@@ -2039,12 +2110,6 @@ a.tool-row:hover .tool-row-name {
 
 .chat-form textarea {
   width: 100%;
-  font: inherit;
-  color: var(--text);
-  padding: 10px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
 }
 
 .chat-footer {
@@ -2375,18 +2440,19 @@ a.tool-row:hover .tool-row-name {
   border-bottom: 1px solid var(--warning);
 }
 
+/* Jeden wiersz także na telefonie: role przewijają się w poziomie, a linki są ikonami. */
 .demo-bar-inner {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 8px var(--gutter);
+  padding: 6px var(--gutter);
   max-width: var(--page-width);
   margin: 0 auto;
 }
 
 .demo-bar-switch {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .demo-bar .button[aria-current] {
@@ -2397,18 +2463,74 @@ a.tool-row:hover .tool-row-name {
 }
 
 .demo-bar-roles {
-  display: inline-flex;
-  flex-wrap: wrap;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Obramowanie przycisków nie ginie przy krawędzi przewijanego wiersza. */
+  padding: 2px;
   border-radius: var(--radius);
+}
+
+.demo-bar-roles::-webkit-scrollbar {
+  display: none;
+}
+
+.demo-bar-roles .button {
+  flex: none;
+  white-space: nowrap;
 }
 
 .demo-bar-links {
   display: flex;
+  flex: none;
   gap: 16px;
-  margin-left: auto;
   font-weight: 600;
+}
+
+.demo-bar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.demo-bar-link-icon {
+  display: none;
+}
+
+@media (max-width: 719px) {
+  .demo-bar-switch,
+  .demo-bar-link-text {
+    display: none;
+  }
+
+  .demo-bar-links {
+    gap: 6px;
+  }
+
+  /* Wygaszona prawa krawędź mówi, że za nią są kolejne role. */
+  .demo-bar-roles {
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    padding-right: 28px;
+  }
+
+  .demo-bar-link {
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--warning);
+    border-radius: 50%;
+    text-decoration: none;
+  }
+
+  .demo-bar-link-icon {
+    display: inline;
+    font-weight: 800;
+  }
 }
 
 /* Przewodnik po demo: podświetlenie elementu przyciemnia resztę strony, ale jej nie blokuje. */
