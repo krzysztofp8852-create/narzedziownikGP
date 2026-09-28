@@ -260,14 +260,15 @@ describe("co widzi pracownik", () => {
     const move = (kind: "wydanie" | "zwrot" | "przeniesienie" | "do_serwisu" | "z_serwisu", from: string, to: string, toolId: string) =>
       worker.registerMovement({ operationId: randomUUID(), kind, fromLocationId: from, toLocationId: to, toolIds: [toolId], source: "checklista" });
 
+    // Po kolei: każda próba to osobna transakcja, a odrzucenie czeka na swoje `expect`.
     for (const attempt of [
-      move("wydanie", z.baseId, z.ratajeId, h02),
-      move("zwrot", z.ratajeId, z.baseId, z.h01),
-      move("do_serwisu", z.ratajeId, hiltiId, z.h01),
-      move("do_serwisu", z.baseId, hiltiId, h02),
-      move("przeniesienie", z.ratajeId, z.nowakBusId, z.h01),
+      () => move("wydanie", z.baseId, z.ratajeId, h02),
+      () => move("zwrot", z.ratajeId, z.baseId, z.h01),
+      () => move("do_serwisu", z.ratajeId, hiltiId, z.h01),
+      () => move("do_serwisu", z.baseId, hiltiId, h02),
+      () => move("przeniesienie", z.ratajeId, z.nowakBusId, z.h01),
     ]) {
-      await expect(attempt).rejects.toMatchObject({ code: "forbidden" });
+      await expect(attempt()).rejects.toMatchObject({ code: "forbidden" });
     }
     await z.owner.correctTool({ operationId: randomUUID(), toolId: h02, locationId: hiltiId, reason: "naprawa" });
     await expect(move("z_serwisu", hiltiId, z.baseId, h02)).rejects.toMatchObject({ code: "forbidden" });
