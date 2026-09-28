@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { OfflineSync } from "@/components/offline-sync";
 import { SignOutForm } from "@/components/sign-out-form";
+import { SupportChatLink } from "@/components/support-chat-link";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageSettings } from "@/registry/registry";
+import { canManageSettings, canUseSupportChat } from "@/registry/registry";
 
 function GearIcon() {
   return (
@@ -37,6 +38,14 @@ function ClipboardIcon() {
   );
 }
 
+function ChatIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+    </svg>
+  );
+}
+
 /** Licznik nieprzeczytanych przy ikonie w nagłówku. */
 function UnreadCount({ count, testId }: { count: number; testId: string }) {
   return (
@@ -51,9 +60,15 @@ function UnreadCount({ count, testId }: { count: number; testId: string }) {
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
-  const [unread, unreadIssues] = await Promise.all([registry.unreadNotificationCount(), registry.unreadIssueEntryCount()]);
+  const chat = canUseSupportChat(session);
+  const [unread, unreadIssues, unreadChat] = await Promise.all([
+    registry.unreadNotificationCount(),
+    registry.unreadIssueEntryCount(),
+    chat ? registry.unreadSupportReplyCount() : 0,
+  ]);
   const bellLabel = unread > 0 ? t("header.bellUnread", { count: unread }) : t("header.bell");
   const issuesLabel = unreadIssues > 0 ? t("header.issuesUnread", { count: unreadIssues }) : t("header.issues");
+  const chatLabel = unreadChat > 0 ? t("header.chatUnread", { count: unreadChat }) : t("header.chat");
   return (
     <>
       <header className="app-header">
@@ -77,6 +92,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <BellIcon />
               <UnreadCount count={unread} testId="bell-count" />
             </Link>
+            {chat && (
+              <SupportChatLink label={chatLabel}>
+                <ChatIcon />
+                <UnreadCount count={unreadChat} testId="chat-count" />
+              </SupportChatLink>
+            )}
             {canManageSettings(session) && (
               <Link href="/ustawienia" className="button button-quiet icon-button" aria-label={t("header.settings")} title={t("header.settings")}>
                 <GearIcon />

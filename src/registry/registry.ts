@@ -18,6 +18,7 @@ import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as notifications from "./notifications";
 import type { EmailedNotification, ToolsTakenNotification } from "./notifications";
+import * as photos from "./photos";
 import * as push from "./push";
 import type { PushCopy, PushSubscriptionData } from "./push";
 import * as queuedMovements from "./queued-movements";
@@ -29,6 +30,8 @@ import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import * as siteClosing from "./site-closing";
 import * as subscriptions from "./subscriptions";
+import * as supportChat from "./support-chat";
+import type { SupportChat, SupportMessageInput, SupportReplyInput, SupportThread, SupportThreadSummary } from "./support-chat";
 import type { CompanySubscription, ManagedCompany, NewCompanyInput, NewSubscription, TierId, ToolLimitWarning } from "./subscriptions";
 import * as thresholds from "./thresholds";
 import type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
@@ -117,8 +120,23 @@ export type {
   IssueSubject,
   IssueSummary,
 } from "./issues";
-export { ISSUE_KINDS, MAX_ISSUE_TEXT_LENGTH, MAX_PHOTO_BYTES } from "./issues";
+export { ISSUE_KINDS, MAX_ISSUE_TEXT_LENGTH } from "./issues";
+export { MAX_PHOTO_BYTES } from "./photos";
 export type { PushMessage, PushSubscriptionData } from "./push";
+export type {
+  UserMessage,
+  SupportChat,
+  SupportChatMessage,
+  SupportMessageContext,
+  SupportMessageInput,
+  SupportReply,
+  SupportReplyInput,
+  SupportSender,
+  SupportThread,
+  SupportThreadMessage,
+  SupportThreadSummary,
+} from "./support-chat";
+export { canUseSupportChat, MAX_SUPPORT_MESSAGE_LENGTH } from "./support-chat";
 export type { RejectedMovement } from "./queued-movements";
 export type { AddedMember, MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
@@ -188,6 +206,18 @@ export interface SuperAdminRegistry {
   setPaidUntil(companyId: string, day: string): Promise<void>;
   /** Ręczny tryb tylko do odczytu, niezależny od płatności. Włączenie trafia do dzwonków właścicieli firmy. */
   setManualReadOnly(companyId: string, on: boolean): Promise<void>;
+  /** Wątki czatu z supportem ze wszystkich firm: z nieprzeczytanymi na górze, potem od najnowszej wiadomości. */
+  supportThreads(): Promise<SupportThreadSummary[]>;
+  /** Wątek (identyfikator to jego użytkownik) z wiadomościami i kontekstem albo null, gdy go nie ma. */
+  supportThread(threadId: string): Promise<SupportThread | null>;
+  /** Liczba wątków z nieprzeczytanymi wiadomościami użytkowników. */
+  unreadSupportThreadCount(): Promise<number>;
+  /** Otwarcie wątku: wiadomości użytkownika są przeczytane. */
+  markSupportThreadRead(threadId: string): Promise<void>;
+  /** Odpowiedź GP Engineering w wątku, z tekstem i (albo) zdjęciem. Użytkownik dostaje ją w oknie 💬 z kopią push. */
+  replyToSupportThread(input: SupportReplyInput): Promise<void>;
+  /** Zdjęcie z dowolnego wątku; null, gdy go nie ma. */
+  supportPhoto(messageId: string): Promise<Blob | null>;
 }
 
 export interface Registry {
@@ -229,7 +259,7 @@ export interface Registry {
   /**
    * Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. W trybie tylko do odczytu każde
    * polecenie zapisu danych firmy odmawia (`read_only`), a zapytania działają. Zapisy spraw samego aktora (hasło,
-   * dzwonek, push) działają zawsze.
+   * dzwonek, push, czat z supportem) działają zawsze.
    */
   as(userId: string): {
     session(): Promise<Session | null>;
@@ -420,6 +450,20 @@ export interface Registry {
     /** Wyłącza powiadomienia push w tej przeglądarce aktora (np. przy wylogowaniu). Cudzej nie rusza. */
     unsubscribeFromPush(endpoint: string): Promise<void>;
     /**
+     * Wiadomość na czacie z supportem, z tekstem i (albo) zdjęciem, i kontekstem (ekran, wersja aplikacji). Tylko
+     * właściciel, kierownik i magazynier, także w trybie tylko do odczytu. Po pierwszej wiadomości (i po każdej,
+     * na którą od doby nie odpowiedzieliśmy) przychodzi automatyczna odpowiedź. Support dostaje e-mail.
+     */
+    sendSupportMessage(input: SupportMessageInput): Promise<void>;
+    /** Okno 💬: wątek aktora z supportem, od najstarszej wiadomości. */
+    supportChat(): Promise<SupportChat>;
+    /** Liczba nieprzeczytanych odpowiedzi supportu (licznik 💬 w nagłówku); automatyczne się nie liczą. */
+    unreadSupportReplyCount(): Promise<number>;
+    /** Otwarcie okna 💬: odpowiedzi są przeczytane. */
+    markSupportChatRead(): Promise<void>;
+    /** Zdjęcie z wątku aktora; null, gdy go nie ma albo wiadomość jest z cudzego wątku. */
+    supportPhoto(messageId: string): Promise<Blob | null>;
+    /**
      * Raport tygodniowy firmy w tej chwili: narzędzia ponad progiem, zaginione, kwota poza bazą wobec raportu
      * z poprzedniego tygodnia, zgłoszenia narzędzi i sprzęt najdłużej nieużywany. Tylko właściciel.
      */
@@ -448,7 +492,10 @@ interface Deps {
   clock: Clock;
   authAdmin: AuthAdmin;
   notifier: Notifier;
+  /** Zdjęcia zgłoszeń. */
   photos: PhotoStore;
+  /** Zdjęcia z czatu z supportem. */
+  chatPhotos: PhotoStore;
 }
 
 export function createRegistry(deps: Deps): Registry {
@@ -558,6 +605,27 @@ export function createRegistry(deps: Deps): Registry {
           const copies = await asSuperAdmin((sql) => readOnly.setManualReadOnly(sql, companyId, on === true, deps.clock.now()));
           await sendPushCopies(deps, copies);
         },
+        supportThreads: () => asSuperAdmin((sql) => supportChat.threads(sql)),
+        supportThread: (threadId) => asSuperAdmin((sql) => supportChat.thread(sql, threadId)),
+        unreadSupportThreadCount: () => asSuperAdmin((sql) => supportChat.unreadThreadCount(sql)),
+        markSupportThreadRead: (threadId) => asSuperAdmin((sql) => supportChat.markRead(sql, threadId, "support")),
+        replyToSupportThread: async (input) => {
+          const sent = await savingPhoto(deps.chatPhotos, (save) =>
+            retryOnReplay(() =>
+              asSuperAdmin(async (sql) => {
+                const content = await supportChat.checkMessage(input);
+                const sent = await supportChat.reply(sql, userId, input, content, deps.clock.now());
+                if (sent?.photoKey && content.photo) await save(sent.photoKey, content.photo.blob);
+                return sent;
+              }),
+            ),
+          );
+          if (sent) await sendPushCopies(deps, [sent.copy]);
+        },
+        supportPhoto: async (messageId) => {
+          const key = await asSuperAdmin((sql) => supportChat.visiblePhotoKey(sql, messageId));
+          return key ? deps.chatPhotos.read(key) : null;
+        },
       };
     },
     as: (userId) => {
@@ -565,7 +633,7 @@ export function createRegistry(deps: Deps): Registry {
        * Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego.
        * `access` w trybie tylko do odczytu: `write` (polecenie zapisu danych firmy) od razu odmawia, `read`
        * (domyślnie) idzie w transakcji, w której baza odrzuci każdy zapis, a `personal` (sprawy samego aktora:
-       * hasło, dzwonek, push) działa jak zawsze.
+       * hasło, dzwonek, push, czat z supportem) działa jak zawsze.
        */
       const asMember = <T>(
         fn: (sql: Sql, session: Session) => Promise<T>,
@@ -590,7 +658,7 @@ export function createRegistry(deps: Deps): Registry {
         });
       /** Polecenie zapisu danych firmy; w trybie tylko do odczytu odmawia (`read_only`). */
       const asWriter = <T>(fn: (sql: Sql, session: Session) => Promise<T>) => asMember(fn, { access: "write" });
-      /** Zapis spraw samego aktora (dzwonek, push); działa także w trybie tylko do odczytu. */
+      /** Zapis spraw samego aktora (dzwonek, push, czat z supportem); działa także w trybie tylko do odczytu. */
       const asPersonal = <T>(fn: (sql: Sql, session: Session) => Promise<T>) => asMember(fn, { access: "personal" });
       /** Z ostrzeżeniem o limicie narzędzi w progu, w transakcji polecenia, które je dodało. */
       const withLimitWarning = async <R>(sql: Sql, result: R): Promise<R & WithLimitWarning> => ({
@@ -764,29 +832,19 @@ export function createRegistry(deps: Deps): Registry {
         acceptToolReport: (input) => asWriter((sql, session) => toolReports.acceptToolReport(sql, session, input)),
         rejectToolReport: movementOnlyCommand(toolReports.rejectToolReport),
         fileIssue: async (input) => {
-          let savedPhoto: string | null = null;
-          const attempt = () =>
-            asWriter(async (sql, session) => {
-              // Zdjęcie sprawdzamy dopiero tu: w trybie tylko do odczytu polecenie odmawia, zanim sprawdzi dane.
-              const photo = input.photo ? await issues.checkPhoto(input.photo) : null;
-              const filed = await issues.fileIssue(sql, session, input, photo, deps.clock.now());
-              // Zdjęcie zapisujemy przed zatwierdzeniem: gdy Storage odmówi, zgłoszenia nie ma.
-              if (photo && filed.photoKey) {
-                await deps.photos.save(filed.photoKey, photo.blob);
-                savedPhoto = filed.photoKey;
-              }
-              return filed;
-            });
-          try {
-            const { issueId, copies } = await retryOnReplay(attempt);
-            await sendPushCopies(deps, copies);
-            return { issueId };
-          } catch (error) {
-            // Transakcja się nie zatwierdziła, więc zdjęcie nie ma zgłoszenia.
-            const orphan = savedPhoto as string | null;
-            if (orphan) await deps.photos.remove(orphan).catch((cleanupError) => console.error(cleanupError));
-            throw error;
-          }
+          const { issueId, copies } = await savingPhoto(deps.photos, (save) =>
+            retryOnReplay(() =>
+              asWriter(async (sql, session) => {
+                // Zdjęcie sprawdzamy dopiero tu: w trybie tylko do odczytu polecenie odmawia, zanim sprawdzi dane.
+                const photo = input.photo ? await photos.checkPhoto(input.photo) : null;
+                const filed = await issues.fileIssue(sql, session, input, photo, deps.clock.now());
+                if (photo && filed.photoKey) await save(filed.photoKey, photo.blob);
+                return filed;
+              }),
+            ),
+          );
+          await sendPushCopies(deps, copies);
+          return { issueId };
         },
         issues: () => asMember((sql, session) => issues.listIssues(sql, session)),
         issue: (issueId) => asMember((sql, session) => issues.issueDetails(sql, session, issueId)),
@@ -946,6 +1004,44 @@ export function createRegistry(deps: Deps): Registry {
         markAllNotificationsRead: () => asPersonal((sql, session) => bell.markAllRead(sql, session, deps.clock.now())),
         subscribeToPush: (subscription) => asPersonal((sql) => push.subscribe(sql, subscription, deps.clock.now())),
         unsubscribeFromPush: (endpoint) => asPersonal((sql, session) => push.unsubscribe(sql, session, endpoint)),
+        sendSupportMessage: async (input) => {
+          const sent = await savingPhoto(deps.chatPhotos, (save) =>
+            retryOnReplay(() =>
+              // Czat działa także w trybie tylko do odczytu: zablokowany użytkownik musi móc do nas napisać.
+              asPersonal(async (sql, session) => {
+                supportChat.requireSupportChatUser(session);
+                const content = await supportChat.checkMessage(input);
+                const sent = await supportChat.sendMessage(sql, session, input, content, deps.clock.now());
+                if (sent?.photoKey && content.photo) await save(sent.photoKey, content.photo.blob);
+                return sent;
+              }),
+            ),
+          );
+          // Wiadomość jest w wątku, więc błąd e-maila tylko odnotowujemy.
+          if (sent) await deps.notifier.sendToSupport(sent.userMessage).catch((error) => console.error("Nie wysłano e-maila do supportu", error));
+        },
+        supportChat: () =>
+          asMember((sql, session) => {
+            supportChat.requireSupportChatUser(session);
+            return supportChat.chat(sql, session);
+          }),
+        unreadSupportReplyCount: () =>
+          asMember((sql, session) => {
+            supportChat.requireSupportChatUser(session);
+            return supportChat.unreadReplyCount(sql, session);
+          }),
+        markSupportChatRead: () =>
+          asPersonal((sql, session) => {
+            supportChat.requireSupportChatUser(session);
+            return supportChat.markRead(sql, session.userId, "uzytkownik");
+          }),
+        supportPhoto: async (messageId) => {
+          const key = await asMember((sql, session) => {
+            supportChat.requireSupportChatUser(session);
+            return supportChat.visiblePhotoKey(sql, messageId);
+          });
+          return key ? deps.chatPhotos.read(key) : null;
+        },
         weeklyReport: () => asMember((sql, session) => reports.weeklyReport(sql, session, deps.clock.now())),
         fridayReport: () => asMember((sql, session) => reports.fridayReport(sql, session, deps.clock.now())),
         sentReport: (kind, day) => asMember((sql, session) => reports.sentReport(sql, session, kind, day)),
@@ -985,6 +1081,23 @@ async function sendReport(deps: Deps, companyId: string, kind: ReportKind, now: 
   const result = await deps.db.transaction((sql) => reports.deliverReport(sql, companyId, report, now));
   await Promise.all([sendNotifications(deps.notifier, result.emails), sendPushCopies(deps, result.copies)]);
   return result.delivered;
+}
+
+/**
+ * Polecenie, które zapisuje zdjęcie (`save`) przed zatwierdzeniem swojej transakcji: gdy Storage odmówi, nic się
+ * nie zapisze. Gdy transakcja się potem nie zatwierdzi, zapisane zdjęcie nie ma do czego należeć, więc je usuwamy.
+ */
+async function savingPhoto<T>(store: PhotoStore, command: (save: (key: string, photo: Blob) => Promise<void>) => Promise<T>): Promise<T> {
+  const saved: string[] = [];
+  try {
+    return await command(async (key, photo) => {
+      await store.save(key, photo);
+      saved.push(key);
+    });
+  } catch (error) {
+    await Promise.all(saved.map((key) => store.remove(key).catch((cleanupError) => console.error(cleanupError))));
+    throw error;
+  }
 }
 
 /** Jedno ponowienie, gdy równoległa ponowka tej samej operacji właśnie się zapisała; drugie podejście odczyta jej wynik. */

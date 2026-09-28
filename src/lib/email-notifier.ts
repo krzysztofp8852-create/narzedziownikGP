@@ -2,15 +2,23 @@ import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import type { Notifier } from "@/registry/ports";
-import { type EmailedNotification, type ReadOnlySoonNotification, readOnlyWarning, type Report, type ToolsTakenNotification } from "@/registry/registry";
+import {
+  type UserMessage,
+  type EmailedNotification,
+  type ReadOnlySoonNotification,
+  readOnlyWarning,
+  type Report,
+  type ToolsTakenNotification,
+} from "@/registry/registry";
 import { placeAt, placeFrom } from "./place-text";
+import { messagePreview, supportThreadOpenLink } from "./support-chat-text";
 import { fridayToolCount, reportHeading, reportLink, reportSections } from "./report-text";
 
 export interface Email {
   to: string;
   subject: string;
   text: string;
-  /** Wersja HTML (raporty); bez niej klient poczty pokaże tekst. */
+  /** Wersja HTML (raporty); bez niej użytkownik poczty pokaże tekst. */
   html?: string;
 }
 
@@ -28,6 +36,41 @@ export function notificationEmail(notification: EmailedNotification, { appUrl }:
     case "tylko_do_odczytu_wkrotce":
       return readOnlySoonEmail(notification);
   }
+}
+
+/** Najdłuższy początek wiadomości w temacie e-maila do supportu. */
+const SUBJECT_PREVIEW_LENGTH = 80;
+
+/**
+ * E-mail do supportu GP Engineering (`to`) o nowej wiadomości użytkownika na czacie: kto, z jakiej firmy, roli, ekranu
+ * i wersji aplikacji pisze, treść i link do wątku w panelu super-admina (gdy znamy adres aplikacji).
+ */
+export function supportEmail(message: UserMessage, { to, appUrl }: { to: string; appUrl: string | null }): Email {
+  const preview = messagePreview(message);
+  const none = t("supportChat.email.none");
+  const url = appUrl ? new URL(supportThreadOpenLink(message.threadId), appUrl).toString() : null;
+  return {
+    to,
+    subject: t("supportChat.email.subject", {
+      name: message.user.fullName,
+      company: message.company.name,
+      preview: preview.length > SUBJECT_PREVIEW_LENGTH ? `${preview.slice(0, SUBJECT_PREVIEW_LENGTH - 1)}…` : preview,
+    }),
+    text: [
+      t("supportChat.email.lead"),
+      "",
+      t("supportChat.email.company", { company: message.company.name }),
+      t("supportChat.email.user", { name: message.user.fullName, role: t(`roles.${message.user.role}`), email: message.user.email ?? none }),
+      t("supportChat.email.screen", { screen: message.screen ?? none }),
+      t("supportChat.email.version", { version: message.appVersion ?? none }),
+      t("supportChat.email.sentAt", { when: formatDateTime(message.sentAt) }),
+      "",
+      ...(message.text ? [message.text, ""] : []),
+      ...(message.photo ? [t("supportChat.email.photo"), ""] : []),
+      ...(url ? [t("supportChat.email.open", { url }), ""] : []),
+      t("notifications.signature"),
+    ].join("\n"),
+  };
 }
 
 /** Ostrzeżenie przed trybem tylko do odczytu, tydzień i dzień przed przełączeniem. */
@@ -168,30 +211,45 @@ function idempotencyKey(notification: EmailedNotification): string {
   return `${notification.kind}/${event}/${notification.recipient.userId}`;
 }
 
-/** Kanał e-mail portu powiadomień na API Resend (https://resend.com/docs/api-reference/emails/send-email). */
-export function createResendNotifier({ apiKey, from, appUrl }: { apiKey: string; from: string; appUrl: string | null }): Pick<Notifier, "send"> {
+/**
+ * Kanały e-mail portu powiadomień na API Resend (https://resend.com/docs/api-reference/emails/send-email):
+ * powiadomienia użytkowników i wiadomości z czatu na adres supportu (`supportAddress`; bez niego tylko do logu).
+ */
+export function createResendNotifier({
+  apiKey,
+  from,
+  appUrl,
+  supportAddress,
+}: {
+  apiKey: string;
+  from: string;
+  appUrl: string | null;
+  supportAddress: string | null;
+}): Pick<Notifier, "send" | "sendToSupport"> {
+  async function deliver(email: Email, key: string) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": key },
+      body: JSON.stringify({ from, to: [email.to], subject: email.subject, text: email.text, ...(email.html && { html: email.html }) }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) throw new Error(`Resend odrzucił e-mail (${response.status}): ${await response.text()}`);
+  }
   return {
-    async send(notification) {
-      const email = notificationEmail(notification, { appUrl });
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey(notification),
-        },
-        body: JSON.stringify({ from, to: [email.to], subject: email.subject, text: email.text, ...(email.html && { html: email.html }) }),
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!response.ok) throw new Error(`Resend odrzucił e-mail (${response.status}): ${await response.text()}`);
-    },
+    send: (notification) => deliver(notificationEmail(notification, { appUrl }), idempotencyKey(notification)),
+    sendToSupport: (message) =>
+      supportAddress ? deliver(supportEmail(message, { to: supportAddress, appUrl }), `czat/${message.messageId}`) : logNotifier.sendToSupport(message),
   };
 }
 
-/** Bez klucza Resend (lokalnie, w CI) powiadomienia trafiają tylko do logu serwera. */
-export const logNotifier: Pick<Notifier, "send"> = {
+/** Bez klucza Resend (lokalnie, w CI) albo adresu supportu e-maile trafiają tylko do logu serwera. */
+export const logNotifier: Pick<Notifier, "send" | "sendToSupport"> = {
   async send(notification) {
     const email = notificationEmail(notification);
     console.warn(`[powiadomienie bez wysyłki: brak RESEND_API_KEY] do ${email.to}: ${email.subject}`);
+  },
+  async sendToSupport(message) {
+    const { subject } = supportEmail(message, { to: "", appUrl: null });
+    console.warn(`[e-mail do supportu bez wysyłki: brak RESEND_API_KEY albo SUPPORT_EMAIL] ${subject}`);
   },
 };

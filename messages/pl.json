@@ -57,7 +57,9 @@
     "bell": "Dzwonek",
     "bellUnread": "Dzwonek, nieprzeczytane: {count}",
     "issues": "Zgłoszenia",
-    "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}"
+    "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
+    "chat": "Czat z supportem",
+    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -190,7 +192,8 @@
     "comment_required": "Wpisz komentarz.",
     "tool_required": "Wybierz narzędzie, które jest uszkodzone.",
     "photo_invalid": "Zdjęcie musi być w formacie JPG, PNG albo WEBP i mieć najwyżej 4 MB.",
-    "issue_closed": "To zgłoszenie jest już zamknięte."
+    "issue_closed": "To zgłoszenie jest już zamknięte.",
+    "message_required": "Napisz wiadomość albo dołącz zdjęcie."
   },
   "days": {
     "one": "{count} dzień",
@@ -845,7 +848,6 @@
     "navLabel": "Panel super-admina",
     "navCompanies": "Firmy",
     "navSupport": "Czat z supportem",
-    "navSoon": "wkrótce",
     "companiesTitle": "Firmy",
     "companiesEmpty": "Nie ma jeszcze żadnej firmy.",
     "newCompany": "Nowa firma",
@@ -899,7 +901,8 @@
     "readOnlyOff": "Wyłączony. Firma przejdzie w ten tryb sama po terminie płatności.",
     "enableReadOnly": "Włącz tryb tylko do odczytu",
     "disableReadOnly": "Wyłącz tryb tylko do odczytu",
-    "switching": "Przełączanie…"
+    "switching": "Przełączanie…",
+    "navSupportUnread": "Czat z supportem, wątki z nowymi wiadomościami: {count}"
   },
   "subscriptionStatus": {
     "aktywna": "Aktywna",
@@ -1006,5 +1009,63 @@
     "submit": "Zapisz",
     "submitting": "Zapisywanie…",
     "saved": "Zapisano."
+  },
+  "supportChat": {
+    "title": "Czat z supportem",
+    "back": "← Tablica",
+    "intro": "Napisz do nas (GP Engineering), gdy coś nie działa albo masz pytanie. Odpowiemy tutaj, a na telefon przyjdzie powiadomienie.",
+    "empty": "Nie ma jeszcze wiadomości. Napisz, w czym możemy pomóc.",
+    "sender": {
+      "uzytkownik": "Ty",
+      "support": "GP Engineering",
+      "auto": "GP Engineering, wiadomość automatyczna"
+    },
+    "photo": "Zdjęcie z wiadomości",
+    "photoOnly": "📷 Zdjęcie",
+    "form": {
+      "label": "Wiadomość",
+      "placeholder": "Opisz, w czym możemy pomóc",
+      "photo": "Zdjęcie lub zrzut ekranu (opcjonalnie)",
+      "submit": "Wyślij",
+      "submitting": "Wysyłanie…",
+      "photoPreparing": "Przygotowanie zdjęcia…",
+      "photoHint": "Telefon zmniejszy zdjęcie przed wysłaniem. Zrzut ekranu dodasz z galerii."
+    },
+    "phone": "Wolisz zadzwonić? Support GP Engineering:",
+    "push": {
+      "title": "GP Engineering odpisuje na czacie"
+    },
+    "email": {
+      "subject": "Czat: {name} ({company}): {preview}",
+      "lead": "Nowa wiadomość na czacie z supportem.",
+      "company": "Firma: {company}",
+      "user": "Użytkownik: {name}, {role}, {email}",
+      "screen": "Ekran: {screen}",
+      "version": "Wersja aplikacji: {version}",
+      "sentAt": "Wysłana: {when}",
+      "photo": "Do wiadomości jest zdjęcie.",
+      "open": "Odpowiedz w panelu: {url}",
+      "none": "—"
+    },
+    "admin": {
+      "title": "Czat z supportem",
+      "intro": "Wątki użytkowników ze wszystkich firm. Na górze te z nowymi wiadomościami.",
+      "empty": "Nikt jeszcze nie napisał.",
+      "back": "← Wszystkie wątki",
+      "unread": "nowe: {count}",
+      "inactive": "konto dezaktywowane",
+      "lastFrom": {
+        "uzytkownik": "{name}:",
+        "support": "My:",
+        "auto": "Automat:"
+      },
+      "context": "{role} · ekran {screen} · wersja {version}",
+      "replyLabel": "Odpowiedź",
+      "replyPlaceholder": "Odpowiedź dla użytkownika",
+      "submit": "Odpowiedz",
+      "email": "E-mail",
+      "role": "Rola",
+      "company": "Firma"
+    }
   }
 }

@@ -3,6 +3,7 @@ import type { Notifier } from "@/registry/ports";
 import type { PushMessage } from "@/registry/registry";
 import { notificationText } from "./bell-text";
 import { issueEntryLink, issueEntryText } from "./issue-text";
+import { SUPPORT_CHAT_OPEN, supportReplyText } from "./support-chat-text";
 
 /** Treść powiadomienia push, którą service worker (public/sw.js) pokazuje na telefonie. */
 export interface PushNotification {
@@ -18,16 +19,26 @@ export interface PushNotification {
 const MAX_BODY_LENGTH = 300;
 
 /**
- * Powiadomienie push z wpisu dzwonka albo okna 📋 zgłoszeń: ten sam tekst co w oknie. Kliknięcie wpisu dzwonka
- * otwiera go tak jak „Pokaż” (oznacza go jako przeczytany i prowadzi tam, dokąd wpis odsyła), a wpisu zgłoszeń
- * otwiera zgłoszenie (jego wpisy stają się przeczytane) albo zgłoszone narzędzie w oknie 📋.
+ * Powiadomienie push z wpisu dzwonka, okna 📋 zgłoszeń albo odpowiedzi supportu w 💬 czacie: ten sam tekst co
+ * w oknie. Kliknięcie wpisu dzwonka otwiera go tak jak „Pokaż” (oznacza go jako przeczytany i prowadzi tam, dokąd
+ * wpis odsyła), wpisu zgłoszeń otwiera zgłoszenie (jego wpisy stają się przeczytane) albo zgłoszone narzędzie
+ * w oknie 📋, a odpowiedzi supportu otwiera okno czatu (odpowiedzi stają się przeczytane).
  */
 export function pushNotification(message: PushMessage): PushNotification {
-  const { title, body, url, tag } =
-    message.window === "dzwonek"
-      ? { ...notificationText(message.notification), url: `/dzwonek/${message.notificationId}`, tag: `dzwonek:${message.notificationId}` }
-      : { ...issueEntryText(message.entry), url: issueEntryLink(message.entry), tag: `zgloszenia:${message.entryId}` };
+  const { title, body, url, tag } = windowNotification(message);
   return { title, body: body.length > MAX_BODY_LENGTH ? `${body.slice(0, MAX_BODY_LENGTH - 1)}…` : body, url, tag };
+}
+
+/** Tekst i adres powiadomienia według okna, z którego jest wpis. */
+function windowNotification(message: PushMessage): PushNotification {
+  switch (message.window) {
+    case "dzwonek":
+      return { ...notificationText(message.notification), url: `/dzwonek/${message.notificationId}`, tag: `dzwonek:${message.notificationId}` };
+    case "zgloszenia":
+      return { ...issueEntryText(message.entry), url: issueEntryLink(message.entry), tag: `zgloszenia:${message.entryId}` };
+    case "czat":
+      return { ...supportReplyText(message.reply), url: SUPPORT_CHAT_OPEN, tag: `czat:${message.messageId}` };
+  }
 }
 
 /** Usługa push trzyma wiadomość dla wyłączonego telefonu najwyżej dobę; starsze powiadomienie jest w dzwonku. */

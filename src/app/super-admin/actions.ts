@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ChatFormState } from "@/components/chat-message-form";
 import { requireSuperAdmin } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
-import { formText } from "@/lib/forms";
+import { formPhoto, formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
 import type { SuperAdminRegistry, TierId } from "@/registry/registry";
 
@@ -75,4 +76,23 @@ export async function setPaidUntil(companyId: string, _prev: SubscriptionFormSta
 /** Stan z klikniętego przycisku, a nie odwrotność stanu strony: nieaktualna karta nie przełączy firmy na odwrót. */
 export async function setManualReadOnly(companyId: string, _prev: SubscriptionFormState, formData: FormData) {
   return changeSubscription(companyId, (admin) => admin.setManualReadOnly(companyId, formText(formData, "manualReadOnly") === "on"));
+}
+
+/** Odpowiedź GP Engineering w wątku czatu z supportem. */
+export async function replyToSupportThread(threadId: string, _prev: ChatFormState, formData: FormData): Promise<ChatFormState> {
+  const userId = await requireSuperAdmin();
+  try {
+    await getRegistry()
+      .superAdmin(userId)
+      .replyToSupportThread({
+        operationId: formText(formData, "operationId"),
+        threadId,
+        text: formText(formData, "text"),
+        photo: formPhoto(formData),
+      });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/super-admin", "layout");
+  return { done: true };
 }

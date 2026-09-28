@@ -121,6 +121,21 @@ describe("powiadomienie push z wpisu okna 📋 zgłoszeń", () => {
   });
 });
 
+describe("powiadomienie push z odpowiedzi w oknie 💬 czatu", () => {
+  it("tekst odpowiedzi supportu, a kliknięcie otwiera okno czatu", () => {
+    expect(pushNotification({ window: "czat", messageId: "msg-1", reply: { text: "Budowę dodaje właściciel", photo: false } })).toEqual({
+      title: "GP Engineering odpisuje na czacie",
+      body: "Budowę dodaje właściciel",
+      url: "/czat/otworz",
+      tag: "czat:msg-1",
+    });
+  });
+
+  it("samo zdjęcie", () => {
+    expect(pushNotification({ window: "czat", messageId: "msg-2", reply: { text: "", photo: true } })).toMatchObject({ body: "📷 Zdjęcie" });
+  });
+});
+
 describe("kanał Web Push", () => {
   it("wysyła zaszyfrowaną treść z kluczem VAPID serwera", async () => {
     const send = vi.fn(async () => ({ statusCode: 201, body: "", headers: {} }));

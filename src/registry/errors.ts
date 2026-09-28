@@ -32,6 +32,7 @@ export type RegistryErrorCode =
   | "tool_required"
   | "photo_invalid"
   | "issue_closed"
+  | "message_required"
   | "read_only";
 
 export class RegistryError extends Error {

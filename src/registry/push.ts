@@ -3,6 +3,7 @@ import type { IssueEntry } from "./issues";
 import type { NotificationContent } from "./notifications";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
+import type { SupportReply } from "./support-chat";
 
 /** Subskrypcja Web Push jednej przeglądarki, tak jak ją zwraca `PushSubscription.toJSON()`. */
 export interface PushSubscriptionData {
@@ -11,12 +12,13 @@ export interface PushSubscriptionData {
 }
 
 /**
- * Kopia wpisu wysyłana push: skąd pochodzi (okno, które otwiera kliknięcie) i dane wpisu: 🔔 dzwonek albo
- * 📋 zgłoszenia. Wpisy 💬 czatu dołączą tu jako kolejne okno.
+ * Kopia wpisu wysyłana push: skąd pochodzi (okno, które otwiera kliknięcie) i dane wpisu: 🔔 dzwonek,
+ * 📋 zgłoszenia albo odpowiedź supportu w 💬 czacie.
  */
 export type PushMessage =
   | { window: "dzwonek"; notificationId: string; notification: NotificationContent }
-  | { window: "zgloszenia"; entryId: string; entry: IssueEntry };
+  | { window: "zgloszenia"; entryId: string; entry: IssueEntry }
+  | { window: "czat"; messageId: string; reply: SupportReply };
 
 /** Kopia push dla adresata; wysyła ją port powiadomień po zatwierdzeniu transakcji. */
 export interface PushCopy {
