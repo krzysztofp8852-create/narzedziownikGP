@@ -1,4 +1,4 @@
-import { formatDateTime } from "@/i18n/dates";
+import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { NotificationContent } from "@/registry/registry";
 import { historySearch } from "./history-filters";
@@ -45,10 +45,27 @@ export function notificationText(notification: NotificationContent): { title: st
     case "raport_tygodniowy":
     case "raport_piatkowy":
       return reportText(notification.report);
+    case "tylko_do_odczytu_wkrotce":
+      return {
+        title:
+          notification.daysLeft === 1 ? t("bell.readOnlySoon.one") : t("bell.readOnlySoon.many", { days: notification.daysLeft }),
+        body: t("bell.readOnlySoonBody", {
+          paidUntil: formatCalendarDay(notification.paidUntil),
+          from: formatCalendarDay(notification.readOnlyFrom),
+        }),
+      };
+    case "tylko_do_odczytu":
+      return {
+        title: t("bell.readOnly"),
+        body:
+          notification.reason === "po_terminie" && notification.paidUntil
+            ? t("bell.readOnlyOverdue", { paidUntil: formatCalendarDay(notification.paidUntil) })
+            : t("bell.readOnlyManual"),
+      };
   }
 }
 
-/** Dokąd prowadzi powiadomienie: karta narzędzia, historia albo tablica. */
+/** Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica albo abonament w ustawieniach. */
 export function notificationLink(notification: NotificationContent): string {
   switch (notification.kind) {
     case "narzedzia_zabrane":
@@ -64,6 +81,9 @@ export function notificationLink(notification: NotificationContent): string {
     case "raport_tygodniowy":
     case "raport_piatkowy":
       return reportLink(notification.report);
+    case "tylko_do_odczytu_wkrotce":
+    case "tylko_do_odczytu":
+      return "/ustawienia";
   }
 }
 

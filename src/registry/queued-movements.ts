@@ -42,7 +42,8 @@ export function isFinalRejection(error: unknown, input: RegisterMovementInput): 
   return error instanceof RegistryError && recordable && !RETRYABLE.has(error.code);
 }
 
-const RETRYABLE = new Set<RegistryErrorCode>(["no_access", "password_change_required", "stale_session"]);
+/** Po tych błędach ruch czeka w telefonie; tryb tylko do odczytu mija po wpłacie. */
+const RETRYABLE = new Set<RegistryErrorCode>(["no_access", "password_change_required", "stale_session", "read_only"]);
 
 /** Odrzucenie zapisane już pod tym identyfikatorem operacji autora. */
 export async function rejectionByOperation(sql: Sql, session: Session, operationId: string): Promise<RejectedMovement | null> {

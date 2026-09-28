@@ -147,7 +147,7 @@ describe("zatwierdzenie importu", () => {
     });
     testbed.clock.advance(2 * DAY);
 
-    expect(result).toEqual({ imported: 4 });
+    expect(result).toEqual({ imported: 4, limitWarning: null });
     const board = await z.owner.whereIsWhat();
     expect(board.base.tools).toEqual([
       { id: expect.any(String), code: "H-01", name: "Młot Hilti", registration: "zaakceptowane", daysInPlace: 2, alarm: false, value: 3200 },
@@ -224,7 +224,7 @@ describe("zatwierdzenie importu", () => {
     const [first, second] = await Promise.all([z.owner.importTools(input), z.owner.importTools(input)]);
     const third = await z.owner.importTools(input);
 
-    expect([first, second, third]).toEqual([{ imported: 2 }, { imported: 2 }, { imported: 2 }]);
+    expect([first, second, third]).toEqual([{ imported: 2, limitWarning: null }, { imported: 2, limitWarning: null }, { imported: 2, limitWarning: null }]);
     expect((await z.owner.whereIsWhat()).base.tools.map((tool) => tool.code)).toEqual(["H-01", "H-02"]);
   });
 });

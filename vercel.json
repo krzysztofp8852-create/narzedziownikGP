@@ -3,6 +3,7 @@
   "regions": ["fra1"],
   "crons": [
     { "path": "/zadania/progi", "schedule": "0 5 * * *" },
+    { "path": "/zadania/abonamenty", "schedule": "0 6 * * *" },
     { "path": "/zadania/raporty", "schedule": "0 5 * * 1" },
     { "path": "/zadania/raporty", "schedule": "0 6 * * 1" },
     { "path": "/zadania/raporty", "schedule": "0 14 * * 5" },

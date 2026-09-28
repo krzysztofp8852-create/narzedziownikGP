@@ -1,5 +1,6 @@
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
+import type { Session } from "./registry";
 import { warsawTime } from "./reports";
 import { isCalendarDay, UUID_PATTERN } from "./validation";
 
@@ -65,6 +66,28 @@ export interface ManagedCompany {
   createdAt: Date;
 }
 
+/** Firma przekroczyła limit narzędzi w progu. Polecenie się wykonało; to tylko ostrzeżenie z propozycją progu. */
+export interface ToolLimitWarning {
+  tier: SubscriptionTier;
+  /** Narzędzia firmy poza wycofanymi. */
+  toolCount: number;
+  /** Najniższy próg, w którym te narzędzia się mieszczą (ponad 1000 plan indywidualny). */
+  suggestedTier: SubscriptionTier;
+}
+
+/** Abonament firmy w ustawieniach właściciela. */
+export interface CompanySubscription {
+  tier: SubscriptionTier;
+  /** Narzędzia firmy poza wycofanymi. */
+  toolCount: number;
+  /** Ostatni opłacony dzień (RRRR-MM-DD). */
+  paidUntil: string | null;
+  /** Pierwszy dzień automatycznego trybu tylko do odczytu, gdy nic nie wpłynie. */
+  readOnlyFrom: string | null;
+  status: SubscriptionStatus;
+  limitWarning: ToolLimitWarning | null;
+}
+
 /** Abonament nowej firmy. */
 export interface NewSubscription {
   tier: TierId;
@@ -119,6 +142,11 @@ export function addDays(day: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Pierwszy dzień automatycznego trybu tylko do odczytu: dzień po 14 dniach od „opłacone do”. */
+export function readOnlyFrom(paidUntil: string): string {
+  return addDays(paidUntil, GRACE_DAYS + 1);
+}
+
 /** Stan abonamentu w chwili `now`, liczony dniami kalendarza w Polsce. */
 export function subscriptionStatus(subscription: { paidUntil: string | null; manualReadOnly: boolean }, now: Date): SubscriptionStatus {
   if (subscription.manualReadOnly) return "tylko_do_odczytu";
@@ -127,6 +155,54 @@ export function subscriptionStatus(subscription: { paidUntil: string | null; man
   if (today > addDays(subscription.paidUntil, GRACE_DAYS)) return "tylko_do_odczytu";
   if (today > subscription.paidUntil) return "po_terminie";
   return "aktywna";
+}
+
+/** Abonament firmy aktora bez danych do faktury, widoczny w transakcji każdego członka firmy. */
+export interface CompanyPlan {
+  tier: TierId;
+  paidUntil: string | null;
+  manualReadOnly: boolean;
+  /** Narzędzia firmy poza wycofanymi. */
+  toolCount: number;
+}
+
+/** Abonament firmy aktora transakcji (przez funkcję w bazie, bo samą tabelę widzi tylko właściciel). */
+export async function currentPlan(sql: Sql): Promise<CompanyPlan> {
+  const [row] = await sql<{ tier: TierId; paid_until: string | null; manual_read_only: boolean; tools: string }>(
+    "select tier, to_char(paid_until, 'YYYY-MM-DD') as paid_until, manual_read_only, tools from app.current_company_plan()",
+  );
+  if (!row) throw new RegistryError("no_access");
+  return { tier: row.tier, paidUntil: row.paid_until, manualReadOnly: row.manual_read_only, toolCount: Number(row.tools) };
+}
+
+/** Ostrzeżenie, gdy narzędzi jest więcej niż limit progu; plan indywidualny nie ma limitu. */
+export function limitWarning(plan: Pick<CompanyPlan, "tier" | "toolCount">): ToolLimitWarning | null {
+  const current = tier(plan.tier);
+  if (current.toolLimit === null || plan.toolCount <= current.toolLimit) return null;
+  const suggestedTier = TIERS.find((candidate) => candidate.toolLimit === null || candidate.toolLimit >= plan.toolCount)!;
+  return { tier: current, toolCount: plan.toolCount, suggestedTier };
+}
+
+/** Ostrzeżenie o limicie po poleceniu, które dodało narzędzia, w jego transakcji. */
+export async function toolLimitWarning(sql: Sql): Promise<ToolLimitWarning | null> {
+  return limitWarning(await currentPlan(sql));
+}
+
+export function requireSubscriptionReader(session: Session) {
+  if (session.role !== "wlasciciel") throw new RegistryError("forbidden");
+}
+
+/** Abonament firmy do ustawień właściciela. */
+export async function companySubscription(sql: Sql, now: Date): Promise<CompanySubscription> {
+  const plan = await currentPlan(sql);
+  return {
+    tier: tier(plan.tier),
+    toolCount: plan.toolCount,
+    paidUntil: plan.paidUntil,
+    readOnlyFrom: plan.paidUntil ? readOnlyFrom(plan.paidUntil) : null,
+    status: subscriptionStatus(plan, now),
+    limitWarning: limitWarning(plan),
+  };
 }
 
 /** Czy aktor transakcji jest super-adminem (według RLS, nie według aplikacji). */
@@ -199,7 +275,7 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
       tier: tier(row.tier),
       toolCount: Number(row.tools ?? 0),
       paidUntil,
-      readOnlyFrom: paidUntil ? addDays(paidUntil, GRACE_DAYS + 1) : null,
+      readOnlyFrom: paidUntil ? readOnlyFrom(paidUntil) : null,
       manualReadOnly,
       status: subscriptionStatus({ paidUntil, manualReadOnly }, now),
       createdAt: new Date(row.created_at),

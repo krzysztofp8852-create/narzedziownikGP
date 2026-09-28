@@ -31,6 +31,11 @@ export function ReportToolForm(props: ReportToolFormProps) {
           <Link href={`/narzedzia/${reported.id}`}>{t("tools.openCard")}</Link>
         </p>
       )}
+      {reported?.limitWarning && (
+        <p role="status" className="form-warning" data-testid="tool-limit-warning">
+          {reported.limitWarning}
+        </p>
+      )}
       <Fields
         key={operationId}
         {...props}

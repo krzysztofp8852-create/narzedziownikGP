@@ -60,7 +60,7 @@ export async function deliverAsSystem(sql: Sql, companyId: string, notifications
   return copies;
 }
 
-function pushCopy(recipientId: string, notificationId: string, notification: NotificationContent): PushCopy {
+export function pushCopy(recipientId: string, notificationId: string, notification: NotificationContent): PushCopy {
   return { recipientId, message: { window: "dzwonek", notificationId, notification } };
 }
 
@@ -121,6 +121,8 @@ function reviveContent(raw: Record<string, unknown>): NotificationContent {
       return { ...content, occurredAt: new Date(content.occurredAt) };
     case "raport_tygodniowy":
     case "raport_piatkowy":
+    case "tylko_do_odczytu_wkrotce":
+    case "tylko_do_odczytu":
       return content;
   }
 }

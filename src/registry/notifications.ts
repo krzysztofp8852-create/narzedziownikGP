@@ -70,6 +70,30 @@ export interface FridayReportNotification {
   report: FridayReport;
 }
 
+/** Właściciel: za 7 dni (albo jutro) firma przejdzie w tryb tylko do odczytu, jeśli nie wpłynie opłata. */
+export interface ReadOnlySoonNotification {
+  kind: "tylko_do_odczytu_wkrotce";
+  /** Z e-mailem: ostrzeżenie ma kopię e-mailową. */
+  recipient: Recipient & { email: string };
+  /** Ostatni opłacony dzień (RRRR-MM-DD). */
+  paidUntil: string;
+  /** Pierwszy dzień trybu tylko do odczytu (RRRR-MM-DD). */
+  readOnlyFrom: string;
+  /** Ile dni zostało do przełączenia (1 = jutro). */
+  daysLeft: number;
+}
+
+/** Właściciel: firma przeszła w tryb tylko do odczytu po terminie płatności albo ręcznie (super-admin). */
+export interface ReadOnlyNotification {
+  kind: "tylko_do_odczytu";
+  recipient: Recipient;
+  reason: "po_terminie" | "reczny";
+  /** Ostatni opłacony dzień (RRRR-MM-DD); null, gdy nic jeszcze nie wpłynęło. */
+  paidUntil: string | null;
+  /** Od kiedy firma jest w trybie (RRRR-MM-DD). */
+  since: string;
+}
+
 /** Powiadomienie dla użytkownika firmy. Trafia do jego dzwonka, a port powiadomień wysyła kopię. */
 export type Notification =
   | ToolsTakenNotification
@@ -77,7 +101,9 @@ export type Notification =
   | ThresholdsExceededNotification
   | MovementRejectedNotification
   | WeeklyReportNotification
-  | FridayReportNotification;
+  | FridayReportNotification
+  | ReadOnlySoonNotification
+  | ReadOnlyNotification;
 
 /**
  * Powiadomienia, których kopię port powiadomień wysyła także e-mailem; pozostałe idą tylko do dzwonka i push.
@@ -86,6 +112,7 @@ export type Notification =
 export type EmailedNotification =
   | ToolsTakenNotification
   | WeeklyReportNotification
+  | ReadOnlySoonNotification
   | (FridayReportNotification & { recipient: Recipient & { email: string } });
 
 /** Rodzaj powiadomienia. */
@@ -126,6 +153,11 @@ export async function notificationsFor(sql: Sql, movement: Movement): Promise<To
   ];
 }
 
+/** Które z dwóch ostrzeżeń przed trybem tylko do odczytu: tydzień przed (także spóźnione) czy dzień przed. */
+export function readOnlyWarning(notification: Pick<ReadOnlySoonNotification, "daysLeft">): "tydzien" | "dzien" {
+  return notification.daysLeft === 1 ? "dzien" : "tydzien";
+}
+
 /** Klucz raportu w dzwonku: adresat dostaje raport z danego dnia najwyżej raz. */
 export function reportKey(kind: ReportKind, day: string): string {
   return `raport_${kind}:${day}`;
@@ -133,7 +165,9 @@ export function reportKey(kind: ReportKind, day: string): string {
 
 /**
  * Klucz zdarzenia: to samo zdarzenie daje adresatowi najwyżej jedno powiadomienie w dzwonku. Zbiorcze
- * nie ma klucza, bo każde narzędzie wchodzi do niego raz, gdy zadanie dzienne wykryje przekroczenie.
+ * nie ma klucza, bo każde narzędzie wchodzi do niego raz, gdy zadanie dzienne wykryje przekroczenie, a ręczne
+ * włączenie trybu tylko do odczytu, bo powiadamia o nim samo przełączenie. Ostrzeżenia przed trybem są dwa
+ * na każdy termin (tydzień i dzień przed), a przełączenie po terminie jedno.
  * W transakcji użytkownika ten sam klucz składa funkcja `app.deliver_notification`.
  */
 export function dedupeKey(notification: Notification): string | null {
@@ -149,5 +183,9 @@ export function dedupeKey(notification: Notification): string | null {
     case "raport_tygodniowy":
     case "raport_piatkowy":
       return reportKey(notification.report.kind, notification.report.day);
+    case "tylko_do_odczytu_wkrotce":
+      return `tylko_do_odczytu_wkrotce:${notification.readOnlyFrom}:${readOnlyWarning(notification)}`;
+    case "tylko_do_odczytu":
+      return notification.reason === "po_terminie" ? `tylko_do_odczytu:${notification.since}` : null;
   }
 }

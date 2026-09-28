@@ -8,15 +8,17 @@ import { canManageSettings, canPrintStickers } from "@/registry/registry";
 import { ServicesSection } from "../lokalizacje/services-section";
 import { TeamSection } from "../zespol/team-section";
 import { SettingsSection } from "./settings-section";
+import { SubscriptionSection } from "./subscription-section";
 
 export const metadata: Metadata = { title: t("settingsPage.title") };
 
-/** Sprawy firmy, które nie są codzienną pracą na tablicy: zespół, serwisy, próg alarmu, naklejki QR. */
+/** Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, zespół, serwisy, próg alarmu, naklejki QR. */
 export default async function SettingsPage() {
   const session = await requireSession();
   if (!canManageSettings(session)) redirect("/");
   const registry = getRegistry().as(session.userId);
-  const [members, locations, settings, stickerCandidates] = await Promise.all([
+  const [subscription, members, locations, settings, stickerCandidates] = await Promise.all([
+    registry.subscription(),
     registry.team(),
     registry.locations(),
     registry.settings(),
@@ -32,6 +34,7 @@ export default async function SettingsPage() {
       </p>
       <h1 className="display page-title">{t("settingsPage.title")}</h1>
       <div className="company-grid">
+        <SubscriptionSection subscription={subscription} />
         <SettingsSection settings={settings} />
         {stickerCandidates && (
           <section className="company-card" aria-labelledby="stickers">

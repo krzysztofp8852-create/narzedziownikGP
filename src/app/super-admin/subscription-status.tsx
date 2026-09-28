@@ -2,7 +2,8 @@ import { formatCalendarDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { ManagedCompany } from "@/registry/registry";
 
-const STATUS_CLASS: Record<ManagedCompany["status"], string> = {
+/** Etykieta stanu abonamentu: aktywna zwykła, oczekująca ostrzeżeniem, tylko do odczytu alarmem. */
+export const STATUS_CLASS: Record<ManagedCompany["status"], string> = {
   aktywna: "tag",
   czeka_na_wplate: "tag tag-pending",
   po_terminie: "tag tag-pending",

@@ -19,6 +19,7 @@ import type { EmailedNotification, ToolsTakenNotification } from "./notification
 import * as push from "./push";
 import type { PushCopy, PushSubscriptionData } from "./push";
 import * as queuedMovements from "./queued-movements";
+import * as readOnly from "./read-only";
 import * as reports from "./reports";
 import type { FridayReport, Report, ReportKind, WeeklyReport } from "./reports";
 import type { RejectedMovement } from "./queued-movements";
@@ -26,7 +27,7 @@ import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import * as siteClosing from "./site-closing";
 import * as subscriptions from "./subscriptions";
-import type { ManagedCompany, NewCompanyInput, NewSubscription, TierId } from "./subscriptions";
+import type { CompanySubscription, ManagedCompany, NewCompanyInput, NewSubscription, TierId, ToolLimitWarning } from "./subscriptions";
 import * as thresholds from "./thresholds";
 import type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 import { generateTemporaryPassword } from "./temporary-password";
@@ -52,7 +53,16 @@ export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPrev
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings } from "./settings";
-export type { InvoiceData, ManagedCompany, NewCompanyInput, SubscriptionStatus, SubscriptionTier, TierId } from "./subscriptions";
+export type {
+  CompanySubscription,
+  InvoiceData,
+  ManagedCompany,
+  NewCompanyInput,
+  SubscriptionStatus,
+  SubscriptionTier,
+  TierId,
+  ToolLimitWarning,
+} from "./subscriptions";
 export { TIERS } from "./subscriptions";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, UUID_PATTERN } from "./validation";
@@ -74,6 +84,7 @@ export type {
   UndoMovementInput,
 } from "./movements";
 export { canMoveEverywhere, canMoveTools, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
+export { readOnlyWarning } from "./notifications";
 export type {
   EmailedNotification,
   FridayReportNotification,
@@ -81,6 +92,8 @@ export type {
   Notification,
   NotificationContent,
   NotificationKind,
+  ReadOnlyNotification,
+  ReadOnlySoonNotification,
   ThresholdExceededNotification,
   ThresholdsExceededNotification,
   ToolsTakenNotification,
@@ -103,7 +116,8 @@ export interface Session {
   fullName: string;
   role: Role;
   mustChangePassword: boolean;
-  company: { id: string; name: string };
+  /** `readOnly`: firma jest w trybie tylko do odczytu (ręcznie albo po 14 dniach od „opłacone do”). */
+  company: { id: string; name: string; readOnly: boolean };
 }
 
 export interface CreateCompanyInput {
@@ -131,6 +145,11 @@ export interface ExportData {
 /** Wynik ruchu z kolejki offline: zapisany albo odrzucony na listę „Do wyjaśnienia”. */
 export type QueuedMovementResult = { status: "registered"; movement: RegisteredMovement } | { status: "rejected"; rejection: RejectedMovement };
 
+/** Wynik polecenia, które dodało narzędzia: ostrzeżenie, gdy firma ma ich więcej niż limit progu. */
+export interface WithLimitWarning {
+  limitWarning: ToolLimitWarning | null;
+}
+
 /** Zapisany ruch z powiadomieniami, które z niego wynikły. */
 export interface RegisteredMovement extends Movement {
   /** Np. dla kierownika, któremu przeniesienie zabrało sprzęt. Są w jego dzwonku, a kopię wysyła port powiadomień. */
@@ -151,7 +170,7 @@ export interface SuperAdminRegistry {
   changeTier(companyId: string, tier: TierId): Promise<void>;
   /** „Opłacone do” (RRRR-MM-DD) po zaksięgowaniu przelewu. */
   setPaidUntil(companyId: string, day: string): Promise<void>;
-  /** Ręczny tryb tylko do odczytu, niezależny od płatności. */
+  /** Ręczny tryb tylko do odczytu, niezależny od płatności. Włączenie trafia do dzwonków właścicieli firmy. */
   setManualReadOnly(companyId: string, on: boolean): Promise<void>;
 }
 
@@ -173,13 +192,23 @@ export interface Registry {
      * i e-mailem (e-mail tylko właściciel). Zwraca, ile firm dostało który raport.
      */
     sendDueReports(): Promise<{ weekly: number; friday: number }>;
+    /**
+     * Zadanie dzienne: właściciele firm dostają ostrzeżenie 7 dni i 1 dzień przed trybem tylko do odczytu
+     * (dzwonek, push i e-mail) i wpis o samym przełączeniu (dzwonek i push), każde raz na termin. Przy ręcznym
+     * trybie nic. Zwraca, ile firm dostało ostrzeżenie, a ile wpis o przełączeniu. Danych firm nic nie kasuje.
+     */
+    notifySubscriptionDeadlines(): Promise<{ warned: number; switched: number }>;
   };
   /**
    * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
    * (RLS), a komuś innemu odmawia (`forbidden`).
    */
   superAdmin(userId: string): SuperAdminRegistry;
-  /** Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. */
+  /**
+   * Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. W trybie tylko do odczytu każde
+   * polecenie zapisu danych firmy odmawia (`read_only`), a zapytania działają. Zapisy spraw samego aktora (hasło,
+   * dzwonek, push) działają zawsze.
+   */
   as(userId: string): {
     session(): Promise<Session | null>;
     /**
@@ -200,7 +229,8 @@ export interface Registry {
     addCategory(input: { name: string; prefix: string }): Promise<Category>;
     /** Kolejny wolny kod w kategorii, np. S-05. */
     suggestCode(categoryId: string): Promise<string>;
-    addTool(input: AddToolInput): Promise<{ toolId: string; code: string }>;
+    /** Ponad limitem progu narzędzie też się dodaje, a wynik ma ostrzeżenie. */
+    addTool(input: AddToolInput): Promise<{ toolId: string; code: string } & WithLimitWarning>;
     editTool(toolId: string, input: EditToolInput): Promise<void>;
     /**
      * Podgląd importu narzędzi z pliku: błędy każdego wiersza (brak nazwy, powtórzony lub zajęty kod,
@@ -211,9 +241,9 @@ export interface Registry {
     /**
      * Zatwierdza import w całości albo wcale: każde narzędzie dostaje ruch „przyjęcie” (źródło
      * `import`) do lokalizacji z pliku, a bez niej na bazę. Wiersz z błędem odrzuca cały import
-     * (`import_invalid`). Tylko właściciel.
+     * (`import_invalid`). Tylko właściciel. Ponad limitem progu import też się zapisuje, a wynik ma ostrzeżenie.
      */
-    importTools(input: ImportToolsInput): Promise<{ imported: number }>;
+    importTools(input: ImportToolsInput): Promise<{ imported: number } & WithLimitWarning>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
     /**
@@ -226,9 +256,10 @@ export interface Registry {
     stickerCandidates(): Promise<StickerCandidate[]>;
     /**
      * Zgłoszenie narzędzia kupionego na budowę. Tylko kierownik, na swoją aktywną budowę: narzędzie
-     * od razu jest tam jako zgłoszone, z kodem nadanym jak przy dodawaniu, i uczestniczy w ruchach.
+     * od razu jest tam jako zgłoszone, z kodem nadanym jak przy dodawaniu, i uczestniczy w ruchach. Ponad
+     * limitem progu wynik ma ostrzeżenie.
      */
-    reportTool(input: ReportToolInput): Promise<{ toolId: string; code: string }>;
+    reportTool(input: ReportToolInput): Promise<{ toolId: string; code: string } & WithLimitWarning>;
     /** Zgłoszenia narzędzi czekające na decyzję, od najstarszego. Tylko właściciel. */
     toolReports(): Promise<ToolReport[]>;
     /** Akceptuje zgłoszenie, uzupełniając kod i wartość. Tylko właściciel. */
@@ -338,6 +369,8 @@ export interface Registry {
     settings(): Promise<CompanySettings>;
     /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
     updateSettings(input: CompanySettings): Promise<void>;
+    /** Abonament firmy: próg z limitem, liczba narzędzi, „opłacone do” i stan. Tylko właściciel. */
+    subscription(): Promise<CompanySubscription>;
   };
 }
 
@@ -407,6 +440,23 @@ export function createRegistry(deps: Deps): Registry {
         }
         return sent;
       },
+      notifySubscriptionDeadlines: async () => {
+        const now = deps.clock.now();
+        const paid = await deps.db.transaction((sql) => readOnly.paidSubscriptions(sql));
+        const result = { warned: 0, switched: 0 };
+        // Każda firma w osobnej transakcji: błąd jednej nie zabiera powiadomień pozostałym.
+        for (const subscription of paid) {
+          try {
+            const { notice, copies, emails } = await deps.db.transaction((sql) => readOnly.notifyDeadline(sql, subscription, now));
+            if (notice === "tylko_do_odczytu_wkrotce") result.warned += 1;
+            if (notice === "tylko_do_odczytu") result.switched += 1;
+            await Promise.all([sendNotifications(deps.notifier, emails), sendPushCopies(deps, copies)]);
+          } catch (error) {
+            console.error(`Nie sprawdzono terminu płatności firmy ${subscription.companyId}`, error);
+          }
+        }
+        return result;
+      },
     }),
     superAdmin: (userId) => {
       /** Transakcja super-admina: RLS widzi jego JWT, a Rejestr najpierw sprawdza rolę. */
@@ -436,21 +486,49 @@ export function createRegistry(deps: Deps): Registry {
           asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { tier: subscriptions.requireTier(tier) })),
         setPaidUntil: (companyId, day) =>
           asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { paidUntil: subscriptions.requirePaidUntil(day) })),
-        setManualReadOnly: (companyId, on) =>
-          asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { manualReadOnly: on === true })),
+        setManualReadOnly: async (companyId, on) => {
+          const copies = await asSuperAdmin((sql) => readOnly.setManualReadOnly(sql, companyId, on === true, deps.clock.now()));
+          await sendPushCopies(deps, copies);
+        },
       };
     },
     as: (userId) => {
-      /** Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego. */
-      const asMember = <T>(fn: (sql: Sql, session: Session) => Promise<T>, opts: { allowPendingPasswordChange?: boolean } = {}) =>
+      /**
+       * Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego.
+       * `access` w trybie tylko do odczytu: `write` (polecenie zapisu danych firmy) od razu odmawia, `read`
+       * (domyślnie) idzie w transakcji, w której baza odrzuci każdy zapis, a `personal` (sprawy samego aktora:
+       * hasło, dzwonek, push) działa jak zawsze.
+       */
+      const asMember = <T>(
+        fn: (sql: Sql, session: Session) => Promise<T>,
+        opts: { allowPendingPasswordChange?: boolean; access?: "read" | "write" | "personal" } = {},
+      ) =>
         withActor(deps.db, userId, async (sql) => {
-          const session = await loadSession(sql, userId);
+          const session = await loadSession(sql, userId, deps.clock.now());
           if (!session) throw new RegistryError("no_access");
           if (session.mustChangePassword && !opts.allowPendingPasswordChange) {
             throw new RegistryError("password_change_required");
           }
-          return fn(sql, session);
+          const access = opts.access ?? "read";
+          if (session.company.readOnly && access !== "personal") {
+            if (access === "write") throw new RegistryError("read_only");
+            await readOnly.enterReadOnly(sql);
+          }
+          try {
+            return await fn(sql, session);
+          } catch (error) {
+            throw readOnly.readOnlyError(error);
+          }
         });
+      /** Polecenie zapisu danych firmy; w trybie tylko do odczytu odmawia (`read_only`). */
+      const asWriter = <T>(fn: (sql: Sql, session: Session) => Promise<T>) => asMember(fn, { access: "write" });
+      /** Zapis spraw samego aktora (dzwonek, push); działa także w trybie tylko do odczytu. */
+      const asPersonal = <T>(fn: (sql: Sql, session: Session) => Promise<T>) => asMember(fn, { access: "personal" });
+      /** Z ostrzeżeniem o limicie narzędzi w progu, w transakcji polecenia, które je dodało. */
+      const withLimitWarning = async <R>(sql: Sql, result: R): Promise<R & WithLimitWarning> => ({
+        ...result,
+        limitWarning: await subscriptions.toolLimitWarning(sql),
+      });
 
       /**
        * Polecenie zapisujące ruch, z jednym ponowieniem: równoległa transakcja mogła zapisać tę samą
@@ -469,7 +547,7 @@ export function createRegistry(deps: Deps): Registry {
               movement ? { result: await result(sql, movement as M), replayed: true } : null,
             );
           const attempt = () =>
-            asMember(async (sql, session) => {
+            asWriter(async (sql, session) => {
               if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
               const replayed = await replay(sql, session);
               if (replayed) return replayed;
@@ -512,7 +590,7 @@ export function createRegistry(deps: Deps): Registry {
       };
 
       return {
-        session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId)),
+        session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId, deps.clock.now())),
         /** Zamienia hasło tymczasowe na własne. Poza tym stanem odmawia, bo nie zna obecnego hasła. */
         changePassword: async (newPassword, { signedInAt }) => {
           if (newPassword.length < MIN_PASSWORD_LENGTH) throw new RegistryError("password_too_short");
@@ -531,7 +609,7 @@ export function createRegistry(deps: Deps): Registry {
               // Hasło zmieniamy przed zatwierdzeniem transakcji: gdy Auth odmówi, flaga zostaje.
               await deps.authAdmin.setPassword(userId, newPassword);
             },
-            { allowPendingPasswordChange: true },
+            { allowPendingPasswordChange: true, access: "personal" },
           );
         },
         setPasswordFromRecoveryLink: async (newPassword, { recoveredAt }) => {
@@ -545,23 +623,23 @@ export function createRegistry(deps: Deps): Registry {
               await sql("update app.users set must_change_password = false where user_id = $1", [userId]);
               await deps.authAdmin.setPassword(userId, newPassword);
             },
-            { allowPendingPasswordChange: true },
+            { allowPendingPasswordChange: true, access: "personal" },
           );
         },
         whereIsWhat: () => asMember((sql, session) => board.whereIsWhat(sql, session, deps.clock.now())),
         toolCatalog: () => asMember((sql) => catalog.toolCatalog(sql)),
         categories: () => asMember((sql) => tools.listCategories(sql)),
         addCategory: (input) =>
-          asMember((sql, session) => {
+          asWriter((sql, session) => {
             tools.requireToolManager(session);
             return tools.addCategory(sql, session, input, deps.clock.now());
           }),
         suggestCode: (categoryId) => asMember((sql) => tools.suggestCode(sql, categoryId)),
         addTool: async (input) => {
           const attempt = () =>
-            asMember((sql, session) => {
+            asWriter(async (sql, session) => {
               tools.requireToolManager(session);
-              return tools.addTool(sql, session, input, deps.clock.now());
+              return withLimitWarning(sql, await tools.addTool(sql, session, input, deps.clock.now()));
             });
           try {
             return await attempt();
@@ -572,7 +650,7 @@ export function createRegistry(deps: Deps): Registry {
           }
         },
         editTool: (toolId, input) =>
-          asMember((sql, session) => {
+          asWriter((sql, session) => {
             tools.requireToolManager(session);
             return tools.editTool(sql, session, toolId, input);
           }),
@@ -582,7 +660,8 @@ export function createRegistry(deps: Deps): Registry {
             return toolImport.previewToolImport(sql, session, rows);
           }),
         importTools: async (input) => {
-          const attempt = () => asMember((sql, session) => toolImport.importTools(sql, session, input, deps.clock.now()));
+          const attempt = () =>
+            asWriter(async (sql, session) => withLimitWarning(sql, await toolImport.importTools(sql, session, input, deps.clock.now())));
           try {
             return await attempt();
           } catch (error) {
@@ -593,7 +672,7 @@ export function createRegistry(deps: Deps): Registry {
         },
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
         printStickers: (selection, print) =>
-          asMember(async (sql, session) => {
+          asWriter(async (sql, session) => {
             stickers.requireStickerPrinter(session);
             return print(await stickers.printStickers(sql, session, selection, deps.clock.now()));
           }),
@@ -603,7 +682,8 @@ export function createRegistry(deps: Deps): Registry {
             return stickers.stickerCandidates(sql);
           }),
         reportTool: async (input) => {
-          const attempt = () => asMember((sql, session) => toolReports.reportTool(sql, session, input, deps.clock.now()));
+          const attempt = () =>
+            asWriter(async (sql, session) => withLimitWarning(sql, await toolReports.reportTool(sql, session, input, deps.clock.now())));
           try {
             return await attempt();
           } catch (error) {
@@ -617,7 +697,7 @@ export function createRegistry(deps: Deps): Registry {
             toolReports.requireToolReviewer(session);
             return toolReports.toolReports(sql);
           }),
-        acceptToolReport: (input) => asMember((sql, session) => toolReports.acceptToolReport(sql, session, input)),
+        acceptToolReport: (input) => asWriter((sql, session) => toolReports.acceptToolReport(sql, session, input)),
         rejectToolReport: movementOnlyCommand(toolReports.rejectToolReport),
         team: () =>
           asMember((sql, session) => {
@@ -626,14 +706,14 @@ export function createRegistry(deps: Deps): Registry {
           }),
         addMember: async (input) => {
           // Uprawnienia sprawdzamy, zanim powstanie konto logowania.
-          const member = await asMember(async (_sql, session) => {
+          const member = await asWriter(async (_sql, session) => {
             team.requireTeamManager(session);
             return team.normalizeNewMember(input);
           });
           const temporaryPassword = generateTemporaryPassword();
           const { userId } = await createAccount(deps, member.email, temporaryPassword);
           try {
-            await asMember((sql, session) => {
+            await asWriter((sql, session) => {
               team.requireTeamManager(session);
               return team.insertMember(sql, session, userId, member, deps.clock.now());
             });
@@ -644,7 +724,7 @@ export function createRegistry(deps: Deps): Registry {
           return { userId, fullName: member.fullName, email: member.email, temporaryPassword };
         },
         resetMemberPassword: (memberId) =>
-          asMember(async (sql, session) => {
+          asWriter(async (sql, session) => {
             team.requireTeamManager(session);
             await team.requireManagedMember(sql, memberId);
             await team.markPasswordTemporary(sql, memberId, deps.clock.now());
@@ -654,7 +734,7 @@ export function createRegistry(deps: Deps): Registry {
             return { temporaryPassword };
           }),
         deactivateMember: (memberId) =>
-          asMember(async (sql, session) => {
+          asWriter(async (sql, session) => {
             team.requireTeamManager(session);
             await team.requireManagedMember(sql, memberId);
             await team.deactivate(sql, memberId);
@@ -673,22 +753,22 @@ export function createRegistry(deps: Deps): Registry {
             return locations.siteManagerCandidates(sql);
           }),
         addSite: (input) =>
-          asMember((sql, session) => {
+          asWriter((sql, session) => {
             locations.requireLocationManager(session);
             return locations.addSite(sql, session, input, deps.clock.now());
           }),
         changeSiteManager: (siteId, managerId) =>
-          asMember((sql, session) => {
+          asWriter((sql, session) => {
             locations.requireLocationManager(session);
             return locations.changeSiteManager(sql, siteId, managerId);
           }),
         addService: (input) =>
-          asMember((sql, session) => {
+          asWriter((sql, session) => {
             locations.requireLocationManager(session);
             return locations.addService(sql, session, input, deps.clock.now());
           }),
         closeSite: async (siteId) => {
-          const attempt = () => asMember((sql, session) => siteClosing.closeSite(sql, session, siteId, deps.clock.now()));
+          const attempt = () => asWriter((sql, session) => siteClosing.closeSite(sql, session, siteId, deps.clock.now()));
           try {
             return await attempt();
           } catch (error) {
@@ -710,7 +790,7 @@ export function createRegistry(deps: Deps): Registry {
             return { status: "registered", movement: await registerMovement(input) };
           } catch (error) {
             if (!queuedMovements.isFinalRejection(error, input)) throw error;
-            const { rejection, copies } = await asMember((sql, session) =>
+            const { rejection, copies } = await asWriter((sql, session) =>
               queuedMovements.recordRejection(sql, session, input, error, deps.clock.now()),
             );
             await sendPushCopies(deps, copies);
@@ -719,7 +799,7 @@ export function createRegistry(deps: Deps): Registry {
         },
         movementsToClarify: () => asMember((sql, session) => queuedMovements.movementsToClarify(sql, session)),
         resolveRejectedMovement: (rejectionId) =>
-          asMember((sql, session) => queuedMovements.resolveRejectedMovement(sql, session, rejectionId, deps.clock.now())),
+          asWriter((sql, session) => queuedMovements.resolveRejectedMovement(sql, session, rejectionId, deps.clock.now())),
         undoMovement: movementOnlyCommand(movements.undoMovement),
         correctTool: movementOnlyCommand(corrections.correctTool),
         markToolLost: movementOnlyCommand(corrections.markToolLost),
@@ -739,11 +819,10 @@ export function createRegistry(deps: Deps): Registry {
           }),
         bell: ({ limit = 50 } = {}) => asMember((sql, session) => bell.bell(sql, session, limit)),
         unreadNotificationCount: () => asMember((sql, session) => bell.unreadCount(sql, session)),
-        markNotificationRead: (notificationId) =>
-          asMember((sql, session) => bell.markRead(sql, session, notificationId, deps.clock.now())),
-        markAllNotificationsRead: () => asMember((sql, session) => bell.markAllRead(sql, session, deps.clock.now())),
-        subscribeToPush: (subscription) => asMember((sql) => push.subscribe(sql, subscription, deps.clock.now())),
-        unsubscribeFromPush: (endpoint) => asMember((sql, session) => push.unsubscribe(sql, session, endpoint)),
+        markNotificationRead: (notificationId) => asPersonal((sql, session) => bell.markRead(sql, session, notificationId, deps.clock.now())),
+        markAllNotificationsRead: () => asPersonal((sql, session) => bell.markAllRead(sql, session, deps.clock.now())),
+        subscribeToPush: (subscription) => asPersonal((sql) => push.subscribe(sql, subscription, deps.clock.now())),
+        unsubscribeFromPush: (endpoint) => asPersonal((sql, session) => push.unsubscribe(sql, session, endpoint)),
         weeklyReport: () => asMember((sql, session) => reports.weeklyReport(sql, session, deps.clock.now())),
         fridayReport: () => asMember((sql, session) => reports.fridayReport(sql, session, deps.clock.now())),
         sentReport: (kind, day) => asMember((sql, session) => reports.sentReport(sql, session, kind, day)),
@@ -753,9 +832,14 @@ export function createRegistry(deps: Deps): Registry {
             return settings.companySettings(sql, session);
           }),
         updateSettings: (input) =>
-          asMember((sql, session) => {
+          asWriter((sql, session) => {
             settings.requireSettingsManager(session);
             return settings.updateSettings(sql, session, input);
+          }),
+        subscription: () =>
+          asMember((sql, session) => {
+            subscriptions.requireSubscriptionReader(session);
+            return subscriptions.companySubscription(sql, deps.clock.now());
           }),
       };
     },
@@ -771,7 +855,7 @@ async function sendReport(deps: Deps, companyId: string, kind: ReportKind, now: 
   const [owner] = await deps.db.transaction((sql) => reports.owners(sql, companyId));
   if (!owner) return false;
   const report = await withActor(deps.db, owner.userId, async (sql) => {
-    const session = await loadSession(sql, owner.userId);
+    const session = await loadSession(sql, owner.userId, now);
     if (!session) throw new RegistryError("no_access");
     return kind === "tygodniowy" ? reports.weeklyReport(sql, session, now) : reports.fridayReport(sql, session, now);
   });
@@ -893,16 +977,21 @@ function createAccount(deps: Deps, email: string, password: string) {
   });
 }
 
-async function loadSession(sql: Sql, userId: string): Promise<Session | null> {
+/** Sesja aktora transakcji (`userId` to jego JWT), z trybem tylko do odczytu firmy w chwili `now`. */
+async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session | null> {
   const [row] = await sql<{
     full_name: string;
     role: Role;
     must_change_password: boolean;
     company_id: string;
     company_name: string;
+    paid_until: string | null;
+    manual_read_only: boolean | null;
   }>(
-    `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name
+    `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name,
+            to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
      from app.users u join app.companies c on c.id = u.company_id
+     left join app.current_company_plan() p on true
      where u.user_id = $1 and u.active`,
     [userId],
   );
@@ -912,6 +1001,10 @@ async function loadSession(sql: Sql, userId: string): Promise<Session | null> {
     fullName: row.full_name,
     role: row.role,
     mustChangePassword: row.must_change_password,
-    company: { id: row.company_id, name: row.company_name },
+    company: {
+      id: row.company_id,
+      name: row.company_name,
+      readOnly: readOnly.isReadOnly({ paidUntil: row.paid_until, manualReadOnly: row.manual_read_only === true }, now),
+    },
   };
 }
