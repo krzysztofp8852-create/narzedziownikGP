@@ -2056,3 +2056,207 @@ a.tool-row:hover .tool-row-name {
 .admin-nav-count {
   margin-left: 6px;
 }
+
+/* Mapa budów i lokalizatorów pod sekcją budów (demo). */
+.tag-demo {
+  vertical-align: middle;
+  color: var(--warning);
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  list-style: none;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-legend-mark {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text);
+}
+
+.map-legend-site {
+  background: var(--brand);
+}
+
+.map-legend-base {
+  background: var(--text);
+  border-radius: 3px;
+}
+
+.map-legend-device {
+  background: var(--accent);
+  border-color: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.site-map {
+  gap: 12px;
+}
+
+.site-map-canvas {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.site-map-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map-pin {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transform: translate(-50%, -100%);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  z-index: 1;
+}
+
+.map-pin-head {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 15px;
+  background: var(--brand);
+  border: 2px solid var(--text);
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.map-pin-base .map-pin-head {
+  border-radius: 4px;
+  background: var(--text);
+  color: var(--surface);
+}
+
+.map-pin-vehicle .map-pin-head {
+  background: var(--surface);
+  min-width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.map-pin-label {
+  max-width: 140px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.92);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-pin[aria-pressed="true"] {
+  z-index: 3;
+}
+
+.map-pin[aria-pressed="true"] .map-pin-head,
+.map-device[aria-pressed="true"] {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.map-device {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--accent);
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+}
+
+.map-device::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: map-ping 2.4s ease-out infinite;
+}
+
+@keyframes map-ping {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-device::after {
+    animation: none;
+  }
+}
+
+.site-map-details {
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.site-map-details a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.site-map-note {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .site-map-canvas {
+    aspect-ratio: 4 / 5;
+  }
+
+  .map-pin-label {
+    display: none;
+  }
+
+  .map-pin[aria-pressed="true"] .map-pin-label {
+    display: block;
+  }
+}

@@ -34,6 +34,7 @@ import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
+import { type MapDevice, type MapPlace, SiteMap } from "./site-map";
 
 export const metadata: Metadata = { title: t("board.title") };
 
@@ -303,6 +304,26 @@ function AddLocationTile({ title, managers, form }: { title: string; managers: S
   );
 }
 
+/**
+ * DEMO: rejestr nie zna jeszcze lokalizatorów, więc „urządzeniami z lokalizatorem” są pierwsze
+ * narzędzia z każdego miejsca.
+ */
+function mapData({ base, sites, vehicles }: WhereIsWhat): { places: MapPlace[]; devices: MapDevice[] } {
+  const places: MapPlace[] = [
+    { id: base.id, kind: "base", name: base.name, toolCount: base.tools.length },
+    ...sites.map((site) => ({ id: site.id, kind: "site" as const, name: site.name, address: site.address, toolCount: site.tools.length })),
+    ...vehicles.map((vehicle) => ({ id: vehicle.id, kind: "vehicle" as const, name: vehicle.name, toolCount: vehicle.tools.length })),
+  ];
+  const tracked = (placeId: string, tools: ToolOnBoard[], count: number) =>
+    tools.slice(0, count).map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, placeId }));
+  const devices = [
+    ...tracked(base.id, base.tools, 2),
+    ...sites.flatMap((site) => tracked(site.id, site.tools, 2)),
+    ...vehicles.flatMap((vehicle) => tracked(vehicle.id, vehicle.tools, 1)),
+  ];
+  return { places, devices };
+}
+
 function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; managers: SiteManagerCandidate[] | null }) {
   // Firma bez pojazdów nie potrzebuje tej sekcji; właściciel widzi ją, żeby dodać pierwszy.
   if (vehicles.length === 0 && !managers) return null;
@@ -437,6 +458,8 @@ export default async function BoardPage(props: PageProps<"/">) {
           <div className="section-head">
             <Link href="/budowy/zakonczone">{t("siteClosing.finishedLink")}</Link>
           </div>
+
+          <SiteMap {...mapData(board)} />
 
           <Vehicles vehicles={vehicles} managers={managers} />
 

@@ -116,6 +116,21 @@
     "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
     "toolReportsLink": "Rozpatrz w zgłoszeniach →"
   },
+  "siteMap": {
+    "title": "Mapa",
+    "demo": "demo",
+    "legendSites": "budowy",
+    "legendBase": "baza",
+    "legendDevices": "lokalizatory",
+    "hint": "Kliknij budowę albo urządzenie z lokalizatorem, żeby zobaczyć szczegóły.",
+    "trackedCount": "z lokalizatorem: {count}",
+    "deviceLabel": "Lokalizator: {code} {name}",
+    "devicePlace": "Według rejestru: {place}",
+    "lastSignal": "ostatni sygnał {minutes} min temu",
+    "battery": "bateria {percent}%",
+    "openTool": "Karta narzędzia →",
+    "note": "Wersja demonstracyjna: położenie budów i sygnał lokalizatorów są przykładowe."
+  },
   "settingsPage": {
     "title": "Ustawienia",
     "back": "← Wróć do tablicy"
