@@ -18,6 +18,7 @@ export default async function ResetPasswordPage(props: PageProps<"/reset-hasla">
         <p>{t("resetPassword.intro")}</p>
       )}
       <ResetPasswordForm />
+      <p className="muted">{t("resetPassword.noEmail")}</p>
       <p className="auth-links">
         <Link href="/logowanie">{t("resetPassword.backToLogin")}</Link>
       </p>

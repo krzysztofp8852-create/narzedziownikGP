@@ -15,7 +15,7 @@ describe("dodawanie osoby do zespołu", () => {
     const { userId, temporaryPassword } = added;
 
     expect(testbed.auth.passwordOf(userId)).toBe(temporaryPassword);
-    expect(added).toEqual({ userId, fullName: "Adam Nowak", email: "adam.nowak@zawbud.pl", temporaryPassword });
+    expect(added).toEqual({ userId, fullName: "Adam Nowak", email: "adam.nowak@zawbud.pl", username: null, temporaryPassword });
     expect(await testbed.registry.as(userId).session()).toEqual({
       userId,
       fullName: "Adam Nowak",
@@ -43,6 +43,7 @@ describe("lista zespołu", () => {
         userId: storekeeper.userId,
         fullName: "Piotr Wiśniewski",
         email: "piotr@zawbud.pl",
+        username: null,
         role: "magazynier",
         active: true,
         mustChangePassword: true,
@@ -51,6 +52,7 @@ describe("lista zespołu", () => {
         userId: manager.userId,
         fullName: "Adam Nowak",
         email: "adam@zawbud.pl",
+        username: null,
         role: "kierownik",
         active: true,
         mustChangePassword: false,

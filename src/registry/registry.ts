@@ -34,7 +34,7 @@ import { generateTemporaryPassword } from "./temporary-password";
 import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as team from "./team";
-import type { NewMemberInput, TeamMember } from "./team";
+import type { AddedMember, NewMemberInput, TeamMember } from "./team";
 import * as stickers from "./stickers";
 import type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
 import * as toolReports from "./tool-reports";
@@ -43,7 +43,7 @@ import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 
-export type Role = "wlasciciel" | "magazynier" | "kierownik";
+export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { CatalogTool } from "./catalog";
@@ -83,7 +83,7 @@ export type {
   RegisterSource,
   UndoMovementInput,
 } from "./movements";
-export { canMoveEverywhere, canMoveTools, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
+export { canMoveEverywhere, canMoveTools, canRegisterMovements, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
 export { readOnlyWarning } from "./notifications";
 export type {
   EmailedNotification,
@@ -105,7 +105,7 @@ export { isReportKind } from "./reports";
 export type { Bell, BellEntry } from "./bell";
 export type { PushMessage, PushSubscriptionData } from "./push";
 export type { RejectedMovement } from "./queued-movements";
-export type { MemberRole, NewMemberInput, TeamMember } from "./team";
+export type { AddedMember, MemberRole, NewMemberInput, TeamMember } from "./team";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
@@ -182,6 +182,12 @@ export interface Registry {
     createCompany(input: CreateCompanyInput): Promise<CreatedCompany>;
     /** Konto super-admina (GP Engineering) z wygenerowanym hasłem, do przekazania raz. */
     createSuperAdmin(input: { email: string }): Promise<{ userId: string; password: string }>;
+    /**
+     * Adresy kont Supabase Auth, na które logowanie próbuje wpuścić z tym loginem, po kolei: e-mail to on sam,
+     * a nazwa użytkownika pracownika to adresy jego kont (ta sama nazwa bywa w kilku firmach). Pusta lista,
+     * gdy login nie jest ani e-mailem, ani nadaną nazwą użytkownika.
+     */
+    signInEmails(login: string): Promise<string[]>;
     /**
      * Zadanie dzienne: narzędzia, które od ostatniego uruchomienia przekroczyły próg dni na budowie
      * (każde raz na pobyt). Kierownik budowy dostaje powiadomienie o każdym, a właściciel jedno zbiorcze.
@@ -269,9 +275,12 @@ export interface Registry {
     rejectToolReport(input: RejectToolReportInput): Promise<Movement>;
     /** Wszystkie osoby w firmie, także dezaktywowane. Tylko właściciel. */
     team(): Promise<TeamMember[]>;
-    /** Zakłada konto kierownika lub magazyniera z hasłem tymczasowym do przekazania osobiście. */
-    addMember(input: NewMemberInput): Promise<{ userId: string; fullName: string; email: string; temporaryPassword: string }>;
-    /** Nowe hasło tymczasowe dla kierownika lub magazyniera; przy logowaniu znowu musi ustawić własne. */
+    /**
+     * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście.
+     * Pracownik dostaje nazwę użytkownika unikalną w firmie (zajęta: `username_taken`), a e-mail może pominąć.
+     */
+    addMember(input: NewMemberInput): Promise<AddedMember>;
+    /** Nowe hasło tymczasowe dla kierownika, magazyniera lub pracownika; przy logowaniu znowu musi ustawić własne. */
     resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
     /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
     deactivateMember(memberId: string): Promise<void>;
@@ -418,6 +427,7 @@ export function createRegistry(deps: Deps): Registry {
         }
         return { userId, password };
       },
+      signInEmails: (login) => deps.db.transaction((sql) => team.signInEmails(sql, login)),
       notifyExceededThresholds: async () => {
         const now = deps.clock.now();
         const companyIds = await deps.db.transaction((sql) => thresholds.companiesWithSites(sql));
@@ -718,12 +728,14 @@ export function createRegistry(deps: Deps): Registry {
           }),
         addMember: async (input) => {
           // Uprawnienia sprawdzamy, zanim powstanie konto logowania.
-          const member = await asWriter(async (_sql, session) => {
+          const member = await asWriter(async (sql, session) => {
             team.requireTeamManager(session);
-            return team.normalizeNewMember(input);
+            const member = team.normalizeNewMember(input);
+            await team.requireFreeUsername(sql, member.username);
+            return member;
           });
           const temporaryPassword = generateTemporaryPassword();
-          const { userId } = await createAccount(deps, member.email, temporaryPassword);
+          const { userId } = await createAccount(deps, team.accountEmail(member), temporaryPassword);
           try {
             await asWriter((sql, session) => {
               team.requireTeamManager(session);
@@ -733,7 +745,7 @@ export function createRegistry(deps: Deps): Registry {
             await deps.authAdmin.deleteUser(userId).catch((cleanupError) => console.error(cleanupError));
             throw error;
           }
-          return { userId, fullName: member.fullName, email: member.email, temporaryPassword };
+          return { userId, fullName: member.fullName, email: member.email, username: member.username, temporaryPassword };
         },
         resetMemberPassword: (memberId) =>
           asWriter(async (sql, session) => {

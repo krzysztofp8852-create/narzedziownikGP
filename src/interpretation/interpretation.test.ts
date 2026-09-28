@@ -328,6 +328,14 @@ describe("co dostaje port interpretacji", () => {
     await expect(interpretation().as(z.nowakId).propose("biorę ".repeat(400))).rejects.toMatchObject({ code: "invalid_input" });
     expect(interpreter.requests).toEqual([]);
   });
+
+  it("pracownik, który nie rejestruje ruchów, nie dostaje propozycji, a tekst nie trafia do portu interpretacji", async () => {
+    const z = await givenZawbud();
+    const workerId = await testbed.givenMember(z.zawbud, "pracownik");
+
+    await expect(interpretation().as(workerId).propose("biorę szlifierkę na Rataje")).rejects.toMatchObject({ code: "forbidden" });
+    expect(interpreter.requests).toEqual([]);
+  });
 });
 
 type Zawbud = Awaited<ReturnType<typeof givenZawbud>>;

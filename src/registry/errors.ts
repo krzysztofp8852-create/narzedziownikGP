@@ -8,6 +8,7 @@ export type RegistryErrorCode =
   | "recovery_expired"
   | "invalid_input"
   | "email_taken"
+  | "username_taken"
   | "not_found"
   | "code_taken"
   | "category_taken"

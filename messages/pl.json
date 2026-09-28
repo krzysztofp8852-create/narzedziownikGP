@@ -12,15 +12,16 @@
   "roles": {
     "wlasciciel": "Właściciel",
     "magazynier": "Magazynier",
-    "kierownik": "Kierownik"
+    "kierownik": "Kierownik",
+    "pracownik": "Pracownik"
   },
   "login": {
     "title": "Logowanie",
-    "email": "E-mail",
+    "login": "E-mail lub nazwa użytkownika",
     "password": "Hasło",
     "submit": "Zaloguj się",
     "submitting": "Logowanie…",
-    "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+    "invalidCredentials": "Nieprawidłowy login lub hasło.",
     "forgotPassword": "Nie pamiętasz hasła?",
     "accountBlocked": "To konto zostało dezaktywowane. Skontaktuj się z właścicielem firmy."
   },
@@ -37,6 +38,7 @@
   "resetPassword": {
     "title": "Reset hasła",
     "intro": "Podaj e-mail, którym się logujesz. Wyślemy na niego link do ustawienia nowego hasła.",
+    "noEmail": "Logujesz się nazwą użytkownika bez e-maila? Poproś właściciela firmy o nowe hasło tymczasowe.",
     "email": "E-mail",
     "submit": "Wyślij link",
     "submitting": "Wysyłanie…",
@@ -117,10 +119,16 @@
     "firstName": "Imię",
     "lastName": "Nazwisko",
     "email": "E-mail",
+    "emailOptional": "E-mail (opcjonalnie)",
+    "username": "Nazwa użytkownika",
+    "usernameHint": "Do logowania, np. jan.kowalski: małe litery bez polskich znaków, cyfry, kropka, łącznik.",
+    "workerHint": "Pracownik widzi, gdzie jest sprzęt, ale nie rejestruje ruchów. Loguje się nazwą użytkownika, więc e-mail nie jest potrzebny.",
     "role": "Rola",
     "submitAdd": "Dodaj osobę",
     "submitting": "Dodawanie…",
     "added": "Dodano: {name} ({email}).",
+    "addedWorker": "Dodano: {name}. Nazwa użytkownika do logowania: {username}.",
+    "loginAs": "Login: {username}",
     "temporaryPassword": "Hasło tymczasowe",
     "passwordHint": "Przekaż je osobiście. Nie zobaczysz go ponownie. Przy pierwszym logowaniu ta osoba ustawi własne hasło.",
     "newPasswordFor": "Nowe hasło tymczasowe dla: {name}",
@@ -152,6 +160,7 @@
     "recovery_expired": "Link do resetu hasła wygasł. Wyślij nowy z ekranu logowania.",
     "invalid_input": "Sprawdź wpisane dane.",
     "email_taken": "Ten e-mail ma już konto.",
+    "username_taken": "Ta nazwa użytkownika jest już zajęta w Twojej firmie.",
     "not_found": "Nie znaleziono.",
     "code_taken": "Ten kod ma już inne narzędzie w firmie.",
     "category_taken": "Kategoria o tej nazwie już istnieje.",

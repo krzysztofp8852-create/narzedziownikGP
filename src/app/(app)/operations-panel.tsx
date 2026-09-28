@@ -54,6 +54,8 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
     ...(newTool ? [["narzedzie", t("board.addTool")] as [Operation, string]] : []),
     ...(reportTool ? [["zgloszenie", t("board.reportTool")] as [Operation, string]] : []),
   ];
+  // Pracownik nie rejestruje ruchów ani nie dodaje narzędzi: nie ma tu nic do zrobienia.
+  if (operations.length === 0) return null;
 
   return (
     <section className="operations" aria-labelledby="operations-title">

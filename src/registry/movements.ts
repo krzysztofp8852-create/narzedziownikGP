@@ -116,12 +116,17 @@ export class ConcurrentMoveError extends Error {}
 
 /** Magazynier i właściciel ruszają sprzęt wszystkich lokalizacji, także bazy do serwisu i z serwisu na bazę. */
 export function canMoveEverywhere(session: Session) {
-  return session.role !== "kierownik";
+  return session.role === "wlasciciel" || session.role === "magazynier";
 }
 
-/** Kierownik rusza tylko sprzęt swoich budów i pojazdów; magazynier i właściciel wszystkich. */
+/** Czy aktor w ogóle rejestruje ruchy: pracownik nie, pozostali w granicach swoich lokalizacji. */
+export function canRegisterMovements(session: Session) {
+  return canMoveEverywhere(session) || session.role === "kierownik";
+}
+
+/** Kierownik rusza tylko sprzęt swoich budów i pojazdów; magazynier i właściciel wszystkich, a pracownik żadnych. */
 export function canMoveTools(session: Session, site: { manager: { id: string } }) {
-  return canMoveEverywhere(session) || site.manager.id === session.userId;
+  return canMoveEverywhere(session) || (session.role === "kierownik" && site.manager.id === session.userId);
 }
 
 /**
@@ -133,7 +138,7 @@ function canRegister(session: Session, kind: RegisteredKind, locations: { from: 
   if (canMoveEverywhere(session)) return true;
   const { managerOf } = ROUTES[kind];
   const place = managerOf && locations[managerOf];
-  return (place?.kind === "budowa" || place?.kind === "pojazd") && place.manager_id === session.userId;
+  return session.role === "kierownik" && (place?.kind === "budowa" || place?.kind === "pojazd") && place.manager_id === session.userId;
 }
 
 /** Na zakończoną budowę i nieaktywny pojazd nic już nie trafia. */

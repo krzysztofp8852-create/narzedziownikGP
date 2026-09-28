@@ -1,11 +1,12 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { canMoveEverywhere, canMoveTools, type Session, type ToolOnBoard, type WhereIsWhat } from "@/registry/registry";
+import { canMoveEverywhere, canMoveTools, canRegisterMovements, type Session, type ToolOnBoard, type WhereIsWhat } from "@/registry/registry";
 import type { ChecklistData, ChecklistPlace, ChecklistTool, Route } from "./checklist";
 
 /**
  * Dane checklist z tablicy: lokalizacje z narzędziami i dla każdego rodzaju ruchu, skąd i dokąd aktor
- * może ruszać sprzęt (najpierw jego budowy i pojazdy). Rodzaju, którego aktor nie rejestruje, nie ma w `routes`.
+ * może ruszać sprzęt (najpierw jego budowy i pojazdy). Rodzaju, którego aktor nie rejestruje, nie ma w `routes`,
+ * a pracownik nie ma żadnego.
  */
 export function checklistData(session: Session, { base, sites, vehicles, services }: WhereIsWhat): ChecklistData {
   const mine = (place: { manager: { id: string } }) => place.manager.id === session.userId;
@@ -24,14 +25,16 @@ export function checklistData(session: Session, { base, sites, vehicles, service
   const everywhere = canMoveEverywhere(session);
   // Do serwisu wysyła się z budowy (i z bazy); z pojazdu sprzęt najpierw wraca na bazę albo na budowę.
   const movableSites = ids(movable.filter((place) => place.kind === "budowa"));
-  const routes: ChecklistData["routes"] = {
-    wydanie: { from: [base.id], to: ids(movable) },
-    zwrot: { from: ids(movable), to: [base.id] },
-    // Przeniesienie rejestruje ten, kto zabiera: z każdej budowy lub pojazdu na te, które prowadzi.
-    przeniesienie: { from: ids(managed), to: ids(movable) },
-    do_serwisu: { from: everywhere ? [base.id, ...movableSites] : movableSites, to: ids(services) },
-    ...(everywhere && { z_serwisu: { from: ids(services), to: [base.id] } satisfies Route }),
-  };
+  const routes: ChecklistData["routes"] = canRegisterMovements(session)
+    ? {
+        wydanie: { from: [base.id], to: ids(movable) },
+        zwrot: { from: ids(movable), to: [base.id] },
+        // Przeniesienie rejestruje ten, kto zabiera: z każdej budowy lub pojazdu na te, które prowadzi.
+        przeniesienie: { from: ids(managed), to: ids(movable) },
+        do_serwisu: { from: everywhere ? [base.id, ...movableSites] : movableSites, to: ids(services) },
+        ...(everywhere && { z_serwisu: { from: ids(services), to: [base.id] } satisfies Route }),
+      }
+    : {};
   return { operationId: randomUUID(), userId: session.userId, places, everywhere, routes };
 }
 
