@@ -125,11 +125,6 @@ export async function checkPhoto(photo: Blob): Promise<IssuePhoto> {
   return { blob: new Blob([photo], { type: signature.type }), extension: signature.extension };
 }
 
-/** Zgłoszenia składa każda rola w firmie. */
-export function canFileIssues(session: Session) {
-  return ["wlasciciel", "magazynier", "kierownik", "pracownik"].includes(session.role);
-}
-
 /**
  * Składa zgłoszenie w transakcji aktora. Zgłoszenie uszkodzenia oznacza narzędzie jako uszkodzone (robi to
  * baza). Zwraca klucz, pod którym trzeba zapisać zdjęcie (null przy ponowieniu i bez zdjęcia), i kopie push
@@ -209,7 +204,7 @@ export async function closeIssue(sql: Sql, session: Session, input: CloseIssueIn
   if (await commentByOperation(sql, input.operationId)) return [];
   const issue = await visibleIssue(sql, input.issueId);
   if (issue.status === "zamkniete") throw new RegistryError("issue_closed");
-  if (!(await closesIssues(sql, session))) throw new RegistryError("forbidden");
+  if (!(await closesIssues(sql))) throw new RegistryError("forbidden");
   // Blokada do końca transakcji: z dwóch równoległych zamknięć drugie zobaczy zamknięte zgłoszenie.
   const [stillOpen] = await sql("select 1 from app.issues where id = $1 and status = 'otwarte' for update", [issue.id]);
   if (!stillOpen) throw new RegistryError("issue_closed");
@@ -249,7 +244,7 @@ export async function issueDetails(sql: Sql, session: Session, issueId: string):
     [issueId],
   );
   const open = row.status === "otwarte";
-  const canClose = open && (await closesIssues(sql, session));
+  const canClose = open && (await closesIssues(sql));
   return {
     ...toSummary(row),
     thread: thread.map((comment) => ({
@@ -268,7 +263,7 @@ export async function issueDetails(sql: Sql, session: Session, issueId: string):
 }
 
 /** Klucz zdjęcia zgłoszenia, które aktor widzi; null, gdy go nie widzi albo zgłoszenie nie ma zdjęcia. */
-export async function photoKey(sql: Sql, issueId: string): Promise<string | null> {
+export async function visiblePhotoKey(sql: Sql, issueId: string): Promise<string | null> {
   if (!UUID_PATTERN.test(issueId)) return null;
   const [row] = await sql<{ photo_path: string | null }>("select photo_path from app.issues where id = $1", [issueId]);
   return row?.photo_path ?? null;
@@ -394,14 +389,9 @@ async function commentByOperation(sql: Sql, operationId: string) {
   return Boolean(row);
 }
 
-/** Właściciel zamyka zawsze, magazynier, gdy widzi zgłoszenia i może je zamykać. */
-async function closesIssues(sql: Sql, session: Session) {
-  if (session.role === "wlasciciel") return true;
-  if (session.role !== "magazynier") return false;
-  const [row] = await sql<{ closes: boolean }>(
-    "select issues_storekeepers and issues_storekeepers_close as closes from app.companies where id = $1",
-    [session.company.id],
-  );
+/** Właściciel zamyka zawsze, magazynier, gdy widzi zgłoszenia i może je zamykać; tę samą regułę stosuje RLS. */
+async function closesIssues(sql: Sql) {
+  const [row] = await sql<{ closes: boolean }>("select app.closes_issues() as closes");
   return row.closes;
 }
 

@@ -108,6 +108,21 @@ describe("zgłoszenie uszkodzenia", () => {
     });
   });
 
+  it("połączenie z bazą jako magazynier nie doda narzędzia od razu uszkodzonego", async () => {
+    const z = await givenZawbud();
+    const [category] = await z.owner.categories();
+
+    await expect(
+      withActor(testbed.db, z.storekeeperId, (sql) =>
+        sql(
+          `insert into app.tools (company_id, code, name, category_id, location_id, located_since, created_at, damaged_since)
+           values ($1, 'W-09', 'Wiertarka', $2, $3, now(), now(), now())`,
+          [z.zawbud.companyId, category.id, z.baseId],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+
   it("ruch z serwisu zdejmuje flagę, a ruch do serwisu nie", async () => {
     const z = await givenZawbud();
     await fileIssue(z.nowakId, { kind: "uszkodzenie", toolId: z.w02, description: "Iskrzy" });
@@ -346,6 +361,15 @@ describe("zdjęcie zgłoszenia", () => {
     expect(new Uint8Array(await read!.arrayBuffer())).toEqual(new Uint8Array(await photo.arrayBuffer()));
     expect(await testbed.registry.as(z.kowalskiId).issuePhoto(issueId)).toBeNull();
     expect([...testbed.photos.photos.keys()]).toEqual([expect.stringContaining(z.zawbud.companyId)]);
+  });
+
+  it("w trybie tylko do odczytu złe zdjęcie też kończy się odmową zapisu", async () => {
+    const z = await givenZawbud();
+    await testbed.registry.superAdmin(await testbed.givenSuperAdmin()).setManualReadOnly(z.zawbud.companyId, true);
+
+    await expect(
+      fileIssue(z.workerId, { kind: "inne", description: "Zdjęcie", photo: new Blob(["?"], { type: "image/jpeg" }) }),
+    ).rejects.toMatchObject({ code: "read_only" });
   });
 
   it("przyjmuje tylko zdjęcia JPG, PNG i WEBP do 4 MB", async () => {

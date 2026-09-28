@@ -42,4 +42,9 @@ z okna, jak przy dzwonku. Kto poza właścicielem i autorem widzi zgłoszenia, u
 - Gdy zapis zdjęcia się uda, a zatwierdzenie transakcji nie i usunięcie też zawiedzie, w kubełku zostaje zdjęcie
   bez zgłoszenia (błąd w logu serwera).
 - Cofnięcie ruchu z serwisu nie przywraca flagi.
+- Ocena „sprawne” zdejmuje flagę także wtedy, gdy narzędzie ma inne otwarte zgłoszenie uszkodzenia: decyduje
+  właściciel, który zna oba.
+- Wpis o zgłoszonym narzędziu jest nieprzeczytany, dopóki ktoś o nim nie zdecyduje (albo właściciel nie oznaczy
+  wszystkich jako przeczytane): licznik mówi, ile spraw czeka na właściciela.
+- Zamkniętego zgłoszenia nie da się komentować; gdy sprawa wraca, powstaje nowe zgłoszenie.
 - Zgłoszenia narzędzi z budów rozpatruje się w oknie 📋; tablica tylko przypomina, ile czeka.

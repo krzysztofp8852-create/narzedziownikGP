@@ -23,13 +23,11 @@ const MAX_BODY_LENGTH = 300;
  * otwiera zgłoszenie (jego wpisy stają się przeczytane) albo zgłoszone narzędzie w oknie 📋.
  */
 export function pushNotification(message: PushMessage): PushNotification {
-  const { title, body } = message.window === "dzwonek" ? notificationText(message.notification) : issueEntryText(message.entry);
-  return {
-    title,
-    body: body.length > MAX_BODY_LENGTH ? `${body.slice(0, MAX_BODY_LENGTH - 1)}…` : body,
-    url: message.window === "dzwonek" ? `/dzwonek/${message.notificationId}` : issueEntryLink(message.entry),
-    tag: message.window === "dzwonek" ? `dzwonek:${message.notificationId}` : `zgloszenia:${message.entryId}`,
-  };
+  const { title, body, url, tag } =
+    message.window === "dzwonek"
+      ? { ...notificationText(message.notification), url: `/dzwonek/${message.notificationId}`, tag: `dzwonek:${message.notificationId}` }
+      : { ...issueEntryText(message.entry), url: issueEntryLink(message.entry), tag: `zgloszenia:${message.entryId}` };
+  return { title, body: body.length > MAX_BODY_LENGTH ? `${body.slice(0, MAX_BODY_LENGTH - 1)}…` : body, url, tag };
 }
 
 /** Usługa push trzyma wiadomość dla wyłączonego telefonu najwyżej dobę; starsze powiadomienie jest w dzwonku. */

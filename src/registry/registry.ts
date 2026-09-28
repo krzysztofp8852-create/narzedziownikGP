@@ -117,7 +117,7 @@ export type {
   IssueSubject,
   IssueSummary,
 } from "./issues";
-export { canFileIssues, ISSUE_KINDS, MAX_ISSUE_TEXT_LENGTH, MAX_PHOTO_BYTES } from "./issues";
+export { ISSUE_KINDS, MAX_ISSUE_TEXT_LENGTH, MAX_PHOTO_BYTES } from "./issues";
 export type { PushMessage, PushSubscriptionData } from "./push";
 export type { RejectedMovement } from "./queued-movements";
 export type { AddedMember, MemberRole, NewMemberInput, TeamMember } from "./team";
@@ -649,11 +649,7 @@ export function createRegistry(deps: Deps): Registry {
        * tę samą operację. Kopie push nowych wpisów okna 📋 idą po zatwierdzeniu.
        */
       const issueCommand = async <I>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<PushCopy[]>, input: I) => {
-        const attempt = () => asWriter((sql, session) => command(sql, session, input, deps.clock.now()));
-        const copies = await attempt().catch((error) => {
-          if (error instanceof tools.ReplayedOperationError) return attempt();
-          throw error;
-        });
+        const copies = await retryOnReplay(() => asWriter((sql, session) => command(sql, session, input, deps.clock.now())));
         await sendPushCopies(deps, copies);
       };
 
@@ -716,20 +712,13 @@ export function createRegistry(deps: Deps): Registry {
             return tools.addCategory(sql, session, input, deps.clock.now());
           }),
         suggestCode: (categoryId) => asMember((sql) => tools.suggestCode(sql, categoryId)),
-        addTool: async (input) => {
-          const attempt = () =>
+        addTool: (input) =>
+          retryOnReplay(() =>
             asWriter(async (sql, session) => {
               tools.requireToolManager(session);
               return withLimitWarning(sql, await tools.addTool(sql, session, input, deps.clock.now()));
-            });
-          try {
-            return await attempt();
-          } catch (error) {
-            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
-            throw error;
-          }
-        },
+            }),
+          ),
         editTool: (toolId, input) =>
           asWriter((sql, session) => {
             tools.requireToolManager(session);
@@ -740,17 +729,10 @@ export function createRegistry(deps: Deps): Registry {
             toolImport.requireImporter(session);
             return toolImport.previewToolImport(sql, session, rows);
           }),
-        importTools: async (input) => {
-          const attempt = () =>
-            asWriter(async (sql, session) => withLimitWarning(sql, await toolImport.importTools(sql, session, input, deps.clock.now())));
-          try {
-            return await attempt();
-          } catch (error) {
-            // Równoległa ponowka już zapisała ten import; drugie podejście odczyta jej wynik.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
-            throw error;
-          }
-        },
+        importTools: (input) =>
+          retryOnReplay(() =>
+            asWriter(async (sql, session) => withLimitWarning(sql, await toolImport.importTools(sql, session, input, deps.clock.now()))),
+          ),
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
         printStickers: (selection, print) =>
           asWriter(async (sql, session) => {
@@ -763,18 +745,14 @@ export function createRegistry(deps: Deps): Registry {
             return stickers.stickerCandidates(sql);
           }),
         reportTool: async (input) => {
-          const attempt = () =>
+          const { result, copies } = await retryOnReplay(() =>
             asWriter(async (sql, session) => {
               const reported = await toolReports.reportTool(sql, session, input, deps.clock.now());
               // Ponowienie niczego nie dubluje w oknie 📋 właścicieli, więc nie daje kopii push.
               const copies = await issues.deliverToolReport(sql, session, reported.toolId, deps.clock.now());
               return { result: await withLimitWarning(sql, reported), copies };
-            });
-          const { result, copies } = await attempt().catch((error) => {
-            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
-            throw error;
-          });
+            }),
+          );
           await sendPushCopies(deps, copies);
           return result;
         },
@@ -786,10 +764,11 @@ export function createRegistry(deps: Deps): Registry {
         acceptToolReport: (input) => asWriter((sql, session) => toolReports.acceptToolReport(sql, session, input)),
         rejectToolReport: movementOnlyCommand(toolReports.rejectToolReport),
         fileIssue: async (input) => {
-          const photo = input.photo ? await issues.checkPhoto(input.photo) : null;
           let savedPhoto: string | null = null;
           const attempt = () =>
             asWriter(async (sql, session) => {
+              // Zdjęcie sprawdzamy dopiero tu: w trybie tylko do odczytu polecenie odmawia, zanim sprawdzi dane.
+              const photo = input.photo ? await issues.checkPhoto(input.photo) : null;
               const filed = await issues.fileIssue(sql, session, input, photo, deps.clock.now());
               // Zdjęcie zapisujemy przed zatwierdzeniem: gdy Storage odmówi, zgłoszenia nie ma.
               if (photo && filed.photoKey) {
@@ -799,11 +778,7 @@ export function createRegistry(deps: Deps): Registry {
               return filed;
             });
           try {
-            const { issueId, copies } = await attempt().catch((error) => {
-              // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
-              if (error instanceof tools.ReplayedOperationError) return attempt();
-              throw error;
-            });
+            const { issueId, copies } = await retryOnReplay(attempt);
             await sendPushCopies(deps, copies);
             return { issueId };
           } catch (error) {
@@ -818,7 +793,7 @@ export function createRegistry(deps: Deps): Registry {
         commentOnIssue: (input) => issueCommand(issues.commentOnIssue, input),
         closeIssue: (input) => issueCommand(issues.closeIssue, input),
         issuePhoto: async (issueId) => {
-          const key = await asMember((sql) => issues.photoKey(sql, issueId));
+          const key = await asMember((sql) => issues.visiblePhotoKey(sql, issueId));
           return key ? deps.photos.read(key) : null;
         },
         unreadIssueEntryCount: () => asMember((sql, session) => issues.unreadCount(sql, session)),
@@ -1010,6 +985,16 @@ async function sendReport(deps: Deps, companyId: string, kind: ReportKind, now: 
   const result = await deps.db.transaction((sql) => reports.deliverReport(sql, companyId, report, now));
   await Promise.all([sendNotifications(deps.notifier, result.emails), sendPushCopies(deps, result.copies)]);
   return result.delivered;
+}
+
+/** Jedno ponowienie, gdy równoległa ponowka tej samej operacji właśnie się zapisała; drugie podejście odczyta jej wynik. */
+async function retryOnReplay<T>(attempt: () => Promise<T>): Promise<T> {
+  try {
+    return await attempt();
+  } catch (error) {
+    if (error instanceof tools.ReplayedOperationError) return attempt();
+    throw error;
+  }
 }
 
 /**

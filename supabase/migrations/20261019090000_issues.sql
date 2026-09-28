@@ -22,6 +22,19 @@ grant update (issues_site_managers, issues_storekeepers, issues_storekeepers_clo
 
 alter table app.tools add column damaged_since timestamptz;
 
+-- Nowe narzędzie jest sprawne: flagę ustawia tylko zgłoszenie uszkodzenia (uprawnienie do zapisu narzędzia
+-- obejmuje wszystkie jego kolumny, więc pilnuje tego wyzwalacz).
+create function app.check_new_tool_not_damaged() returns trigger
+language plpgsql
+as $$
+begin
+  raise exception 'Narzędzie % oznacza jako uszkodzone tylko zgłoszenie uszkodzenia', new.id;
+end
+$$;
+create trigger tools_insert_not_damaged before insert on app.tools
+  for each row when (new.damaged_since is not null)
+  execute function app.check_new_tool_not_damaged();
+
 create table app.issues (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references app.companies (id) on delete restrict,
@@ -233,6 +246,12 @@ create table app.issue_entries (
 create index issue_entries_recipient_idx on app.issue_entries (recipient_id) where read_at is null;
 -- To samo zdarzenie daje adresatowi najwyżej jeden wpis.
 create unique index issue_entries_once_per_event on app.issue_entries (recipient_id, kind, coalesce(comment_id, issue_id, tool_id));
+
+-- Zgłoszenia narzędzi, które już czekają na decyzję, trafiają do okien właścicieli jak nowe.
+insert into app.issue_entries (company_id, recipient_id, kind, tool_id, created_at)
+select t.company_id, u.user_id, 'zgloszenie_narzedzia', t.id, t.created_at
+from app.tools t join app.users u on u.company_id = t.company_id and u.role = 'wlasciciel' and u.active
+where t.registration = 'zgloszone' and t.state <> 'wycofane';
 
 alter table app.issue_entries enable row level security;
 
