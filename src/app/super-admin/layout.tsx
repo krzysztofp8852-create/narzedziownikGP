@@ -2,10 +2,13 @@ import Link from "next/link";
 import { SignOutForm } from "@/components/sign-out-form";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
+import { getRegistry } from "@/lib/registry-instance";
 
-/** Panel GP Engineering: firmy i abonamenty, a docelowo także czat z supportem (#39). */
+/** Panel GP Engineering: firmy i abonamenty oraz czat z supportem z licznikiem wątków z nowymi wiadomościami. */
 export default async function SuperAdminLayout({ children }: LayoutProps<"/super-admin">) {
-  await requireSuperAdmin();
+  const unread = await getRegistry()
+    .superAdmin(await requireSuperAdmin())
+    .unreadSupportThreadCount();
   return (
     <>
       <header className="app-header">
@@ -21,9 +24,17 @@ export default async function SuperAdminLayout({ children }: LayoutProps<"/super
         </div>
         <nav className="admin-nav" aria-label={t("superAdmin.navLabel")}>
           <Link href="/super-admin">{t("superAdmin.navCompanies")}</Link>
-          <span className="muted" aria-disabled="true">
-            {t("superAdmin.navSupport")} <span className="tag">{t("superAdmin.navSoon")}</span>
-          </span>
+          <Link
+            href="/super-admin/czat"
+            aria-label={unread > 0 ? t("superAdmin.navSupportUnread", { count: unread }) : undefined}
+          >
+            {t("superAdmin.navSupport")}
+            {unread > 0 && (
+              <span className="tag tag-unread admin-nav-count" data-testid="support-unread">
+                {unread}
+              </span>
+            )}
+          </Link>
         </nav>
       </header>
       <main className="app-main">{children}</main>

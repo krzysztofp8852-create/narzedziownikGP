@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
-import { formText } from "@/lib/forms";
+import { formPhoto, formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
 import type { IssueKind } from "@/registry/registry";
 
@@ -15,7 +15,6 @@ export interface IssueFormState {
 /** Nowe zgłoszenie z formularza; po zapisie otwiera się jego strona. */
 export async function fileIssue(_prev: IssueFormState, formData: FormData): Promise<IssueFormState> {
   const session = await requireSession();
-  const photo = formData.get("photo");
   let issueId: string;
   try {
     ({ issueId } = await getRegistry()
@@ -26,8 +25,7 @@ export async function fileIssue(_prev: IssueFormState, formData: FormData): Prom
         description: formText(formData, "description"),
         toolId: formText(formData, "toolId") || null,
         locationId: formText(formData, "locationId") || null,
-        // Pusty wybór pliku przychodzi jako pusty plik bez nazwy.
-        photo: photo instanceof Blob && photo.size > 0 ? photo : null,
+        photo: formPhoto(formData),
       }));
   } catch (error) {
     return { error: errorMessage(error) };

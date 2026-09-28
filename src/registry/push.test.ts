@@ -329,3 +329,22 @@ describe("push: kopia wpisu z okna 📋 zgłoszeń", () => {
     ]);
   });
 });
+
+describe("push: odpowiedź supportu w oknie 💬 czatu", () => {
+  it("odpowiedź supportu idzie push do użytkownika; jego wiadomość i automatyczna odpowiedź nie, a ponowienie nie powtarza", async () => {
+    const z = await givenZawbud();
+    const adminId = await testbed.givenSuperAdmin();
+    const phone = browser("nowak");
+    await testbed.registry.as(z.nowakId).subscribeToPush(phone);
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(browser("kowalski"));
+    await testbed.registry.as(z.nowakId).sendSupportMessage({ operationId: randomUUID(), text: "Nie widzę budowy" });
+    expect(testbed.notifier.pushed).toEqual([]);
+    const operationId = randomUUID();
+
+    await testbed.registry.superAdmin(adminId).replyToSupportThread({ operationId, threadId: z.nowakId, text: "Już dodana" });
+    await testbed.registry.superAdmin(adminId).replyToSupportThread({ operationId, threadId: z.nowakId, text: "Już dodana" });
+
+    const reply = (await testbed.registry.as(z.nowakId).supportChat()).messages.at(-1)!;
+    expect(pushedTo()).toEqual([{ endpoint: phone.endpoint, message: { window: "czat", messageId: reply.id, reply: { text: "Już dodana", photo: false } } }]);
+  });
+});

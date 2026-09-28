@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { EmailedNotification } from "../notifications";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore } from "../ports";
 import type { PushMessage, PushSubscriptionData } from "../push";
+import type { UserMessage } from "../support-chat";
 
 /** Zegar ustawiany ręcznie. */
 export class FixedClock implements Clock {
@@ -96,6 +97,8 @@ export class RecordingNotifier implements Notifier {
   readonly pushed: { subscription: PushSubscriptionData; message: PushMessage }[] = [];
   /** Adresy subskrypcji, o których usługa push mówi, że wygasły. */
   readonly expired = new Set<string>();
+  /** E-maile do supportu GP Engineering o wiadomościach użytkowników z czatu. */
+  readonly supportEmails: UserMessage[] = [];
   /** Kolejne wysyłki e-maili kończą się tym błędem, np. gdy dostawca e-maili nie działa. */
   failWith: Error | null = null;
   /** Kolejne wysyłki push kończą się tym błędem, np. gdy usługa push nie odpowiada. */
@@ -113,9 +116,15 @@ export class RecordingNotifier implements Notifier {
     return "sent" as const;
   }
 
+  async sendToSupport(message: UserMessage) {
+    if (this.failWith) throw this.failWith;
+    this.supportEmails.push(message);
+  }
+
   clear() {
     this.sent.length = 0;
     this.pushed.length = 0;
+    this.supportEmails.length = 0;
     this.expired.clear();
     this.failWith = null;
     this.pushFailWith = null;

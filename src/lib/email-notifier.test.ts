@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FridayReport, WeeklyReport } from "@/registry/registry";
-import { notificationEmail } from "./email-notifier";
+import { notificationEmail, supportEmail } from "./email-notifier";
 
 const owner = { userId: "u1", fullName: "Anna Właścicielka", email: "anna@zawbud.test" };
 
@@ -113,5 +113,44 @@ describe("e-mail o zabranym sprzęcie", () => {
 
     expect(email.subject).toBe("Jan Kowalski zabiera S-01 z budowy Winogrady");
     expect(email.text).toContain("jest teraz na pojeździe Bus WX 12345");
+  });
+});
+
+describe("e-mail do supportu o wiadomości z czatu", () => {
+  const message = {
+    messageId: "m1",
+    threadId: "u-nowak",
+    company: { id: "c1", name: "Zawbud" },
+    user: { fullName: "Adam Nowak", role: "kierownik" as const, email: "nowak@zawbud.test" },
+    text: "Nie widzę budowy Rataje",
+    photo: true,
+    screen: "/ruch",
+    appVersion: "0.1.0+abc1234",
+    sentAt: new Date("2026-04-06T08:15:00Z"),
+  };
+
+  it("kto, z jakiej firmy i ekranu pisze, treść i link do wątku w panelu", () => {
+    const email = supportEmail(message, { to: "support@gp-engineering.test", appUrl: "https://narzedziownik.example" });
+
+    expect(email).toMatchObject({ to: "support@gp-engineering.test", subject: "Czat: Adam Nowak (Zawbud): Nie widzę budowy Rataje" });
+    for (const line of [
+      "Firma: Zawbud",
+      "Użytkownik: Adam Nowak, Kierownik, nowak@zawbud.test",
+      "Ekran: /ruch",
+      "Wersja aplikacji: 0.1.0+abc1234",
+      "Nie widzę budowy Rataje",
+      "Do wiadomości jest zdjęcie.",
+      "https://narzedziownik.example/super-admin/czat/u-nowak/otworz",
+    ]) {
+      expect(email.text).toContain(line);
+    }
+  });
+
+  it("samo zdjęcie, bez ekranu i adresu aplikacji", () => {
+    const email = supportEmail({ ...message, text: "", screen: null, appVersion: null }, { to: "support@gp-engineering.test", appUrl: null });
+
+    expect(email.subject).toBe("Czat: Adam Nowak (Zawbud): 📷 Zdjęcie");
+    expect(email.text).toContain("Ekran: —");
+    expect(email.text).not.toContain("/super-admin/czat");
   });
 });

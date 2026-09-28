@@ -151,6 +151,13 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   tylko się dopisuje, a zamknięcie wymaga komentarza. Kto poza właścicielem i autorem widzi zgłoszenia
   (kierownik lokalizacji, magazynier z opcją zamykania), ustawia właściciel; pilnuje tego RLS. Nowe zgłoszenia,
   komentarze, zamknięcia i zgłoszenia narzędzi trafiają do okna 📋 z własnym licznikiem i kopią push.
+- Czat z supportem (💬 w nagłówku, `/czat`, zob. `docs/adr/0016`): właściciel, kierownik i magazynier piszą
+  do GP Engineering (`sendSupportMessage`), jeden wątek na osobę, z tekstem i (albo) zdjęciem lub zrzutem ekranu
+  (prywatny kubełek Storage `zdjecia-czatu`). Wiadomość niesie kontekst: rolę, ekran, z którego otwarto czat,
+  i wersję aplikacji. Po wiadomości, na którą od doby nie odpowiedzieliśmy, baza dopisuje automatyczną odpowiedź,
+  a support dostaje e-mail. Odpowiadamy z panelu super-admina (`/super-admin/czat`, nieprzeczytane na górze);
+  odpowiedź trafia do okna 💬 z licznikiem i kopią push. Pracownik czatu nie ma. Czat działa też w trybie tylko
+  do odczytu. Wątek widzi tylko jego użytkownik i super-admin; pilnuje tego RLS.
 - Wpis tekstem (przycisk „Wpisz tekstem” w operacjach): moduł **Interpretacja** (`src/interpretation/`) zamienia
   zdanie kierownika w Propozycję ruchu. Port interpretacji (OpenAI Responses API ze strukturalnym wyjściem, zob.
   `docs/adr/0005`) dostaje tekst, narzędzia firmy z zapytania Rejestru `toolCatalog` (kod, nazwa, kategoria,
@@ -214,6 +221,9 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Powiadomienia e-mail (np. „Adam Nowak zabiera S-01 z budowy Rataje” dla kierownika, któremu przeniesienie
   zabrało sprzęt) wysyła Resend: `RESEND_API_KEY` i `NOTIFICATIONS_FROM` (adres w domenie zweryfikowanej
   w Resend) w zmiennych Vercel. Bez klucza powiadomienia trafiają tylko do logu serwera.
+- Czat z supportem: wiadomości użytkowników idą e-mailem (Resend) na `SUPPORT_EMAIL`, a stopka okna czatu pokazuje
+  `SUPPORT_PHONE` (bez niego stopki nie ma). Wersja aplikacji w kontekście wiadomości to wersja z `package.json`
+  i skrót commita wdrożenia (`VERCEL_GIT_COMMIT_SHA`). Kubełek `zdjecia-czatu` zakłada migracja.
 - Powiadomienia push (kopia każdego nowego wpisu w dzwonku, zob. `docs/adr/0011`) wymagają pary kluczy VAPID
   (`npx web-push generate-vapid-keys`): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` i `VAPID_SUBJECT` (kontakt dla
   usług push, np. `mailto:powiadomienia@gp-engineering.pl`) w zmiennych Vercel. Bez kluczy włączanie powiadomień

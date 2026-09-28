@@ -2,15 +2,12 @@
 
 import { type FormEvent, startTransition, useActionState, useState } from "react";
 import { t } from "@/i18n/t";
+import { withShrunkPhoto } from "@/lib/shrink-photo";
 import { matchesTool } from "@/lib/tool-search";
 import type { IssueKind } from "@/registry/registry";
 import { fileIssue, type IssueFormState } from "../actions";
 
 const KINDS: IssueKind[] = ["uszkodzenie", "brak", "inne"];
-
-/** Dłuższy bok zdjęcia po zmniejszeniu: wystarczy, żeby zobaczyć pęknięcie, a plik ma kilkaset KB. */
-const PHOTO_MAX_SIDE = 1600;
-const PHOTO_QUALITY = 0.82;
 
 export interface IssueFormProps {
   operationId: string;
@@ -36,14 +33,7 @@ export function IssueForm({ operationId, tools, places, kind: initialKind, toolI
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const photo = formData.get("photo");
-    if (photo instanceof File && photo.size > 0) {
-      setPreparing(true);
-      const smaller = await shrinkPhoto(photo);
-      setPreparing(false);
-      if (smaller) formData.set("photo", smaller, "zdjecie.jpg");
-    }
+    const formData = await withShrunkPhoto(new FormData(event.currentTarget), setPreparing);
     startTransition(() => formAction(formData));
   }
 
@@ -132,23 +122,4 @@ export function IssueForm({ operationId, tools, places, kind: initialKind, toolI
       </div>
     </form>
   );
-}
-
-/**
- * Zdjęcie z telefonu (często kilka MB, na iPhonie HEIC) jako JPG o dłuższym boku najwyżej 1600 px. Gdy
- * przeglądarka nie odczyta pliku, zwraca null i idzie oryginał; serwer sam odrzuci format, którego nie przyjmuje.
- */
-async function shrinkPhoto(photo: File): Promise<Blob | null> {
-  try {
-    const bitmap = await createImageBitmap(photo, { imageOrientation: "from-image" });
-    const scale = Math.min(1, PHOTO_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    return await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", PHOTO_QUALITY));
-  } catch {
-    return null;
-  }
 }

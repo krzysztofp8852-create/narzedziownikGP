@@ -1,3 +1,5 @@
+import { version as packageVersion } from "../../package.json";
+
 function required(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Brak zmiennej środowiskowej ${name} (zob. README)`);
   return value;
@@ -67,6 +69,18 @@ export const serverEnv = {
           subject: required("VAPID_SUBJECT", process.env.VAPID_SUBJECT),
         }
       : null,
+  /** Adres supportu GP Engineering, na który idą wiadomości użytkowników z czatu; bez niego trafiają tylko do logu. */
+  supportEmail: () => process.env.SUPPORT_EMAIL || null,
+  /** Telefon do supportu w stopce okna czatu, np. „+48 600 000 000”; bez niego stopki nie ma. */
+  supportPhone: () => process.env.SUPPORT_PHONE || null,
+  /**
+   * Wersja aplikacji w kontekście wiadomości z czatu: wersja z package.json i skrót commita wdrożenia na Vercelu,
+   * np. „0.1.0+abc1234”.
+   */
+  appVersion: () => {
+    const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+    return commit ? `${packageVersion}+${commit}` : packageVersion;
+  },
   /** Wysyłka e-maili z powiadomieniami przez Resend; bez klucza powiadomienia trafiają tylko do logu. */
   resend: () =>
     process.env.RESEND_API_KEY
