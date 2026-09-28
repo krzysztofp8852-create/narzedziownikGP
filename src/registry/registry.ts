@@ -25,6 +25,8 @@ import type { RejectedMovement } from "./queued-movements";
 import * as settings from "./settings";
 import type { CompanySettings } from "./settings";
 import * as siteClosing from "./site-closing";
+import * as subscriptions from "./subscriptions";
+import type { ManagedCompany, NewCompanyInput, NewSubscription, TierId } from "./subscriptions";
 import * as thresholds from "./thresholds";
 import type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 import { generateTemporaryPassword } from "./temporary-password";
@@ -50,6 +52,8 @@ export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPrev
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings } from "./settings";
+export type { InvoiceData, ManagedCompany, NewCompanyInput, SubscriptionStatus, SubscriptionTier, TierId } from "./subscriptions";
+export { TIERS } from "./subscriptions";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
@@ -133,10 +137,31 @@ export interface RegisteredMovement extends Movement {
   notifications: ToolsTakenNotification[];
 }
 
+/** Polecenia i zapytania super-admina; każde najpierw sprawdza tę rolę w bazie. */
+export interface SuperAdminRegistry {
+  /** Czy ten użytkownik jest super-adminem; nigdy nie odmawia. */
+  isSuperAdmin(): Promise<boolean>;
+  /** Wszystkie firmy z progiem, liczbą narzędzi, „opłacone do” i stanem abonamentu, po nazwie. */
+  companies(): Promise<ManagedCompany[]>;
+  /** Jedna firma albo null, gdy jej nie ma. */
+  company(companyId: string): Promise<ManagedCompany | null>;
+  /** Firma z bazą, abonamentem, danymi do faktury i właścicielem z hasłem tymczasowym. */
+  createCompany(input: NewCompanyInput): Promise<CreatedCompany>;
+  /** Przejście na inny próg abonamentu. */
+  changeTier(companyId: string, tier: TierId): Promise<void>;
+  /** „Opłacone do” (RRRR-MM-DD) po zaksięgowaniu przelewu. */
+  setPaidUntil(companyId: string, day: string): Promise<void>;
+  /** Ręczny tryb tylko do odczytu, niezależny od płatności. */
+  setManualReadOnly(companyId: string, on: boolean): Promise<void>;
+}
+
 export interface Registry {
   /** Aktor systemowy: skrypty i zadania harmonogramu, poza RLS. */
   system(): {
+    /** Firma z bazą i właścicielem, na najniższym progu, bez danych do faktury (skrypty i testy). */
     createCompany(input: CreateCompanyInput): Promise<CreatedCompany>;
+    /** Konto super-admina (GP Engineering) z wygenerowanym hasłem, do przekazania raz. */
+    createSuperAdmin(input: { email: string }): Promise<{ userId: string; password: string }>;
     /**
      * Zadanie dzienne: narzędzia, które od ostatniego uruchomienia przekroczyły próg dni na budowie
      * (każde raz na pobyt). Kierownik budowy dostaje powiadomienie o każdym, a właściciel jedno zbiorcze.
@@ -149,6 +174,11 @@ export interface Registry {
      */
     sendDueReports(): Promise<{ weekly: number; friday: number }>;
   };
+  /**
+   * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
+   * (RLS), a komuś innemu odmawia (`forbidden`).
+   */
+  superAdmin(userId: string): SuperAdminRegistry;
   /** Zalogowany użytkownik; firmę i rolę Rejestr ustala sam, a RLS ich pilnuje. */
   as(userId: string): {
     session(): Promise<Session | null>;
@@ -324,7 +354,25 @@ interface Deps {
 export function createRegistry(deps: Deps): Registry {
   return {
     system: () => ({
-      createCompany: (input) => createCompany(deps, input),
+      createCompany: async (raw) =>
+        createCompany(deps, normalizeNewCompany(raw), { tier: subscriptions.DEFAULT_TIER, paidUntil: null, invoice: null }, (fn) =>
+          deps.db.transaction(fn),
+        ),
+      createSuperAdmin: async ({ email: raw }) => {
+        const email = raw.trim().toLowerCase();
+        if (!EMAIL_PATTERN.test(email)) throw new RegistryError("invalid_input");
+        const password = generateTemporaryPassword();
+        const { userId } = await createAccount(deps, email, password);
+        try {
+          await deps.db.transaction((sql) =>
+            sql("insert into app.super_admins (user_id, created_at) values ($1, $2)", [userId, deps.clock.now()]),
+          );
+        } catch (error) {
+          await deps.authAdmin.deleteUser(userId).catch((cleanupError) => console.error(cleanupError));
+          throw error;
+        }
+        return { userId, password };
+      },
       notifyExceededThresholds: async () => {
         const now = deps.clock.now();
         const companyIds = await deps.db.transaction((sql) => thresholds.companiesWithSites(sql));
@@ -360,6 +408,38 @@ export function createRegistry(deps: Deps): Registry {
         return sent;
       },
     }),
+    superAdmin: (userId) => {
+      /** Transakcja super-admina: RLS widzi jego JWT, a Rejestr najpierw sprawdza rolę. */
+      const asSuperAdmin = <T>(fn: (sql: Sql) => Promise<T>) =>
+        withActor(deps.db, userId, async (sql) => {
+          await subscriptions.requireSuperAdmin(sql);
+          return fn(sql);
+        });
+      return {
+        isSuperAdmin: () => withActor(deps.db, userId, (sql) => subscriptions.isSuperAdmin(sql)),
+        companies: () => asSuperAdmin((sql) => subscriptions.managedCompanies(sql, deps.clock.now())),
+        company: (companyId) =>
+          asSuperAdmin(async (sql) => (await subscriptions.managedCompanies(sql, deps.clock.now(), companyId))[0] ?? null),
+        createCompany: async (raw) => {
+          // Uprawnienia sprawdzamy, zanim powstanie konto logowania.
+          const { input, subscription } = await asSuperAdmin(async () => ({
+            input: normalizeNewCompany(raw),
+            subscription: {
+              tier: subscriptions.requireTier(raw.tier),
+              paidUntil: raw.paidUntil ? subscriptions.requirePaidUntil(raw.paidUntil) : null,
+              invoice: subscriptions.normalizeInvoice(raw.invoice),
+            },
+          }));
+          return createCompany(deps, input, subscription, asSuperAdmin);
+        },
+        changeTier: (companyId, tier) =>
+          asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { tier: subscriptions.requireTier(tier) })),
+        setPaidUntil: (companyId, day) =>
+          asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { paidUntil: subscriptions.requirePaidUntil(day) })),
+        setManualReadOnly: (companyId, on) =>
+          asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { manualReadOnly: on === true })),
+      };
+    },
     as: (userId) => {
       /** Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego. */
       const asMember = <T>(fn: (sql: Sql, session: Session) => Promise<T>, opts: { allowPendingPasswordChange?: boolean } = {}) =>
@@ -753,7 +833,7 @@ export function withActor<T>(db: Db, userId: string, fn: (sql: Sql) => Promise<T
   });
 }
 
-async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<CreatedCompany> {
+function normalizeNewCompany(raw: CreateCompanyInput): CreateCompanyInput {
   const input = {
     name: raw.name.trim(),
     baseName: raw.baseName.trim(),
@@ -762,12 +842,24 @@ async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<Creat
   if (!input.name || !input.baseName || !input.owner.fullName || !EMAIL_PATTERN.test(input.owner.email)) {
     throw new RegistryError("invalid_input");
   }
+  return input;
+}
 
+/**
+ * Zakłada konto logowania właściciela, a potem w jednej transakcji `transaction` (systemowej albo
+ * super-admina) firmę, bazę, właściciela i abonament.
+ */
+async function createCompany(
+  deps: Deps,
+  input: CreateCompanyInput,
+  subscription: NewSubscription,
+  transaction: <T>(fn: (sql: Sql) => Promise<T>) => Promise<T>,
+): Promise<CreatedCompany> {
   const temporaryPassword = generateTemporaryPassword();
   const { userId } = await createAccount(deps, input.owner.email, temporaryPassword);
   const now = deps.clock.now();
   try {
-    const companyId = await deps.db.transaction(async (sql) => {
+    const companyId = await transaction(async (sql) => {
       const [company] = await sql<{ id: string }>(
         "insert into app.companies (name, created_at) values ($1, $2) returning id",
         [input.name, now],
@@ -783,6 +875,7 @@ async function createCompany(deps: Deps, raw: CreateCompanyInput): Promise<Creat
          values ($1, $2, 'wlasciciel', $3, $4, true, $5, $5)`,
         [userId, company.id, input.owner.fullName, input.owner.email, now],
       );
+      await subscriptions.insertSubscription(sql, company.id, subscription);
       return company.id;
     });
     return { companyId, ownerUserId: userId, temporaryPassword };

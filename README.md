@@ -35,15 +35,24 @@ Wpisz do `.env.local` klucze projektu `narzedziownik-test` i wgraj migracje:
 npm run db:push
 ```
 
-### Firma, właściciel i aplikacja
+### Super-admin, firma i aplikacja
 
 ```bash
-npm run company:create -- --name "Zawbud" --owner-email jan@zawbud.pl --owner-name "Jan Kowalski"
+npm run super-admin:create -- --email krzysztof@gp-engineering.pl
 npm run dev
 ```
 
-Skrypt zakłada firmę z bazą i kontem właściciela, a na końcu wypisuje hasło tymczasowe.
-Właściciel loguje się nim na http://localhost:3000 i przy pierwszym logowaniu musi ustawić własne hasło.
+Pierwszy skrypt zakłada konto super-admina (GP Engineering) i wypisuje jego hasło. Po zalogowaniu na
+http://localhost:3000 super-admin trafia do panelu `/super-admin`: zakłada tam firmę z bazą, abonamentem,
+danymi do faktury i kontem właściciela, a na koniec widzi hasło tymczasowe właściciela. Właściciel loguje się
+nim i przy pierwszym logowaniu musi ustawić własne hasło. W panelu super-admin zmienia też próg abonamentu,
+wpisuje „opłacone do” po zaksięgowaniu przelewu i ręcznie włącza tryb tylko do odczytu.
+
+Do testów i szybkiego startu firmę można też założyć skryptem, na najniższym progu i bez danych do faktury:
+
+```bash
+npm run company:create -- --name "Zawbud" --owner-email jan@zawbud.pl --owner-name "Jan Kowalski"
+```
 
 ## Testy
 

@@ -22,6 +22,8 @@ export interface RegistryTestbed {
   signedInNow(): { signedInAt: Date };
   /** Kierownik lub magazynier dodany przez właściciela (z własnym hasłem) do firmy z givenActiveCompany. */
   givenMember(company: GivenCompany, role: MemberRole, fullName?: string): Promise<string>;
+  /** Konto super-admina GP Engineering, założone tak jak robi to skrypt. */
+  givenSuperAdmin(): Promise<string>;
 }
 
 export interface GivenCompany {
@@ -106,6 +108,10 @@ export function setupRegistryTestbed(): RegistryTestbed {
       });
       await registry.as(userId).changePassword(`${role}-haslo-${counter}`, { signedInAt: clock.now() });
       return userId;
+    },
+    async givenSuperAdmin() {
+      counter += 1;
+      return (await registry.system().createSuperAdmin({ email: `super${counter}@gp-engineering.test` })).userId;
     },
   };
 }

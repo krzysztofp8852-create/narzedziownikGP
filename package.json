@@ -16,6 +16,7 @@
     "db:reset": "supabase db reset",
     "db:push": "tsx --env-file-if-exists=.env.local scripts/db-push.mts",
     "company:create": "tsx --env-file-if-exists=.env.local scripts/create-company.mts",
+    "super-admin:create": "tsx --env-file-if-exists=.env.local scripts/create-super-admin.mts",
     "eval:interpretation": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval-interpretation.mts"
   },
   "dependencies": {
