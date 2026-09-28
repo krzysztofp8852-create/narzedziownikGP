@@ -240,8 +240,10 @@ a.button {
   border-bottom: 1px solid var(--border);
 }
 
+/* Na wąskim telefonie ikony schodzą pod nazwę firmy, zamiast poszerzać stronę ponad ekran. */
 .app-header-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -250,10 +252,18 @@ a.button {
   margin: 0 auto;
 }
 
+.app-header-bar > :first-child {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
 .app-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  margin-left: auto;
 }
 
 .icon-button {

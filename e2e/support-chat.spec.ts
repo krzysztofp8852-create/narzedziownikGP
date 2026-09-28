@@ -29,12 +29,12 @@ async function signOut(page: Page) {
 // potem usunąć z aplikacji. Dlatego ten test działa tylko w CI, na jednorazowym Supabase.
 test.skip(!process.env.CI, "tylko w CI: zakłada konto super-admina");
 
-test("właściciel pisze na czacie z ekranu zespołu, dostaje automatyczną odpowiedź, a support odpowiada z panelu", async ({ page }) => {
+test("właściciel pisze na czacie z ekranu historii, dostaje automatyczną odpowiedź, a support odpowiada z panelu", async ({ page }) => {
   const seeded = seed();
 
   await signIn(page, seeded.owner.email, seeded.owner.password);
   await expect(page.getByTestId("company-name")).toHaveText(seeded.companyName);
-  await page.goto("/zespol");
+  await page.goto("/historia");
   await page.getByRole("link", { name: "Czat z supportem" }).click();
   await expect(page.getByRole("heading", { name: "Czat z supportem" })).toBeVisible();
   await page.getByLabel("Wiadomość").fill("Jak dodać drugiego magazyniera?");
@@ -48,7 +48,7 @@ test("właściciel pisze na czacie z ekranu zespołu, dostaje automatyczną odpo
   await expect(page).toHaveURL(/\/super-admin$/);
   await page.getByRole("navigation", { name: "Panel super-admina" }).getByRole("link", { name: /Czat z supportem/ }).click();
   await page.getByTestId("support-thread").filter({ hasText: seeded.companyName }).getByRole("link").click();
-  await expect(page.getByTestId("chat-context").first()).toContainText("ekran /zespol");
+  await expect(page.getByTestId("chat-context").first()).toContainText("ekran /historia");
   await page.getByLabel("Odpowiedź").fill("W Zespole: Dodaj osobę, rola magazynier.");
   await page.getByRole("button", { name: "Odpowiedz" }).click();
   await expect(page.getByTestId("chat-message").last()).toContainText("W Zespole: Dodaj osobę, rola magazynier.");
