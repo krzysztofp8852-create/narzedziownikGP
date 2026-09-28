@@ -33,7 +33,8 @@ export type RegistryErrorCode =
   | "photo_invalid"
   | "issue_closed"
   | "message_required"
-  | "read_only";
+  | "read_only"
+  | "demo_locked";
 
 export class RegistryError extends Error {
   constructor(

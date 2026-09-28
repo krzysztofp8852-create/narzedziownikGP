@@ -2260,3 +2260,239 @@ a.tool-row:hover .tool-row-name {
     display: block;
   }
 }
+
+/* Wersja demo: strona wejścia z wyborem roli i pasek przełączania ról w aplikacji */
+.demo-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px var(--gutter) 48px;
+  display: grid;
+  gap: 24px;
+  align-content: start;
+}
+
+.demo-hero {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.demo-heading {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  text-wrap: balance;
+}
+
+.demo-heading .tag-demo {
+  font-size: 0.9rem;
+}
+
+.demo-lead {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.demo-roles {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .demo-roles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .demo-roles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.demo-role {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.demo-role-head {
+  display: grid;
+  gap: 4px;
+}
+
+.demo-role-summary {
+  font-weight: 600;
+}
+
+.demo-role-points {
+  display: grid;
+  gap: 8px;
+  padding-left: 18px;
+  font-size: 0.95rem;
+}
+
+.demo-role-enter {
+  width: 100%;
+}
+
+.demo-tips {
+  display: grid;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.demo-tips ol {
+  display: grid;
+  gap: 8px;
+  padding-left: 22px;
+}
+
+.demo-contact {
+  font-weight: 700;
+}
+
+.demo-bar {
+  background: var(--warning-soft);
+  border-bottom: 1px solid var(--warning);
+}
+
+.demo-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--gutter);
+  max-width: var(--page-width);
+  margin: 0 auto;
+}
+
+.demo-bar-switch {
+  font-weight: 600;
+}
+
+.demo-bar .button[aria-current] {
+  opacity: 1;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.demo-bar-roles {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius);
+}
+
+.demo-bar-links {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  font-weight: 600;
+}
+
+/* Przewodnik po demo: podświetlenie elementu przyciemnia resztę strony, ale jej nie blokuje. */
+[data-tour] {
+  scroll-margin-top: 20px;
+}
+
+.demo-tour-ring {
+  position: fixed;
+  z-index: 1000;
+  border: 3px solid var(--brand);
+  border-radius: calc(var(--radius) + 4px);
+  /* Większego rozstawu cienia Chrome już nie rysuje. */
+  box-shadow: 0 0 0 200vmax rgb(20 23 28 / 0.45);
+  pointer-events: none;
+}
+
+.demo-tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(20 23 28 / 0.45);
+  pointer-events: none;
+}
+
+.demo-tour-card {
+  position: fixed;
+  z-index: 1001;
+  display: grid;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--brand);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgb(20 23 28 / 0.25);
+  padding: 16px;
+  text-wrap: pretty;
+}
+
+.demo-tour-center {
+  top: 50%;
+  left: 50%;
+  width: min(420px, calc(100vw - 2 * var(--gutter)));
+  transform: translate(-50%, -50%);
+}
+
+.demo-tour-sheet {
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: var(--gutter);
+}
+
+.demo-tour-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.demo-tour-title {
+  font-size: 1.2rem;
+}
+
+.demo-tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.demo-tour-skip {
+  margin-right: auto;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.demo-tour-skip:hover {
+  color: var(--text);
+}
+

@@ -5,6 +5,7 @@ import type { Notifier } from "@/registry/ports";
 import {
   type UserMessage,
   type EmailedNotification,
+  isDemoEmail,
   type ReadOnlySoonNotification,
   readOnlyWarning,
   type Report,
@@ -227,6 +228,8 @@ export function createResendNotifier({
   supportAddress: string | null;
 }): Pick<Notifier, "send" | "sendToSupport"> {
   async function deliver(email: Email, key: string) {
+    // Adresów kont firmy demo nikt nie odbiera.
+    if (isDemoEmail(email.to)) return;
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": key },

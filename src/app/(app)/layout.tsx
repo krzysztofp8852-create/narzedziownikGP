@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { DemoBar } from "@/components/demo-bar";
+import { DemoTour } from "@/components/demo-tour";
 import { OfflineSync } from "@/components/offline-sync";
 import { SignOutForm } from "@/components/sign-out-form";
 import { SupportChatLink } from "@/components/support-chat-link";
@@ -84,11 +87,17 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
           <div className="app-header-actions">
             <OfflineSync userId={session.userId} />
-            <Link href="/zgloszenia" className="button button-quiet icon-button bell-button" aria-label={issuesLabel} title={issuesLabel}>
+            <Link
+              href="/zgloszenia"
+              className="button button-quiet icon-button bell-button"
+              aria-label={issuesLabel}
+              title={issuesLabel}
+              data-tour="issues"
+            >
               <ClipboardIcon />
               <UnreadCount count={unreadIssues} testId="issues-count" />
             </Link>
-            <Link href="/dzwonek" className="button button-quiet icon-button bell-button" aria-label={bellLabel} title={bellLabel}>
+            <Link href="/dzwonek" className="button button-quiet icon-button bell-button" aria-label={bellLabel} title={bellLabel} data-tour="bell">
               <BellIcon />
               <UnreadCount count={unread} testId="bell-count" />
             </Link>
@@ -99,7 +108,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               </SupportChatLink>
             )}
             {canManageSettings(session) && (
-              <Link href="/ustawienia" className="button button-quiet icon-button" aria-label={t("header.settings")} title={t("header.settings")}>
+              <Link
+                href="/ustawienia"
+                className="button button-quiet icon-button"
+                aria-label={t("header.settings")}
+                title={t("header.settings")}
+                data-tour="settings"
+              >
                 <GearIcon />
                 <span className="icon-button-label">{t("header.settings")}</span>
               </Link>
@@ -108,6 +123,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </header>
+      {session.company.demo && <DemoBar role={session.role} />}
       {session.company.readOnly && (
         <div className="read-only-banner" role="status" data-testid="read-only-banner">
           <p>
@@ -116,6 +132,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </div>
       )}
       <main className="app-main">{children}</main>
+      {session.company.demo && (
+        // Nowy przewodnik po przełączeniu roli; parametr adresu czyta dopiero przeglądarka.
+        <Suspense fallback={null}>
+          <DemoTour key={session.userId} role={session.role} />
+        </Suspense>
+      )}
     </>
   );
 }

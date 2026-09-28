@@ -46,13 +46,17 @@ const currentUserIsSuperAdmin = cache(async (): Promise<boolean> => {
 });
 
 /**
- * Sesja członka firmy: bez logowania prowadzi do logowania, super-admina do jego panelu,
- * a bez konta w firmie do „Brak dostępu”.
+ * Sesja członka firmy: bez logowania prowadzi do logowania, super-admina do jego panelu, konto z poprzedniego
+ * demo z powrotem na stronę demo, a bez konta w firmie do „Brak dostępu”.
  */
 export async function requireMember(): Promise<Session> {
-  if (!(await currentUserId())) redirect("/logowanie");
+  const userId = await currentUserId();
+  if (!userId) redirect("/logowanie");
   const session = await currentSession();
-  if (!session) redirect((await currentUserIsSuperAdmin()) ? "/super-admin" : "/brak-dostepu");
+  if (!session) {
+    if (await currentUserIsSuperAdmin()) redirect("/super-admin");
+    redirect((await getRegistry().system().isDemoAccount(userId)) ? "/demo" : "/brak-dostepu");
+  }
   return session;
 }
 

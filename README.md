@@ -54,6 +54,16 @@ Do testów i szybkiego startu firmę można też założyć skryptem, na najniż
 npm run company:create -- --name "Zawbud" --owner-email jan@zawbud.pl --owner-name "Jan Kowalski"
 ```
 
+### Wersja demo dla klientów
+
+```bash
+npm run demo:create
+```
+
+Zakłada firmę demo „DemoBud” (zespół, sprzęt, budowy, busy, serwisy i kilka tygodni historii) i robi z niej
+obecne demo. Link do wysyłania klientom to `/demo`: tam wybiera się rolę i wchodzi bez hasła, a w aplikacji
+role przełącza pasek pod nagłówkiem. Ponowne uruchomienie zakłada świeże demo i odcina poprzednie (zob. ADR 0017).
+
 ## Testy
 
 ```bash

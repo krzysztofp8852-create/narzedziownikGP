@@ -23,7 +23,8 @@
     "submitting": "Logowanie…",
     "invalidCredentials": "Nieprawidłowy login lub hasło.",
     "forgotPassword": "Nie pamiętasz hasła?",
-    "accountBlocked": "To konto zostało dezaktywowane. Skontaktuj się z właścicielem firmy."
+    "accountBlocked": "To konto zostało dezaktywowane. Skontaktuj się z właścicielem firmy.",
+    "demo": "Zobacz wersję demo →"
   },
   "changePassword": {
     "title": "Ustaw własne hasło",
@@ -208,7 +209,8 @@
     "tool_required": "Wybierz narzędzie, które jest uszkodzone.",
     "photo_invalid": "Zdjęcie musi być w formacie JPG, PNG albo WEBP i mieć najwyżej 4 MB.",
     "issue_closed": "To zgłoszenie jest już zamknięte.",
-    "message_required": "Napisz wiadomość albo dołącz zdjęcie."
+    "message_required": "Napisz wiadomość albo dołącz zdjęcie.",
+    "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w zespole działają."
   },
   "days": {
     "one": "{count} dzień",
@@ -1085,6 +1087,118 @@
       "email": "E-mail",
       "role": "Rola",
       "company": "Firma"
+    }
+  },
+  "demo": {
+    "title": "Wersja demo",
+    "heading": "Zobacz NarzędziownikGP w działaniu",
+    "lead": "To przykładowa firma budowlana „DemoBud”: kilkadziesiąt narzędzi, pięć budów, trzy busy, dwa serwisy, dziewięcioosobowy zespół i kilka tygodni historii. Wejdź bez logowania w dowolną rolę. Na każdej stronie przełączysz się na inną paskiem u góry.",
+    "enter": "Wejdź jako {role}",
+    "entering": "Wchodzę…",
+    "person": "W demo: {name}",
+    "unavailable": "Demo jest właśnie odświeżane. Spróbuj ponownie za kilka minut.",
+    "roles": {
+      "wlasciciel": {
+        "summary": "Widzi całą firmę i pilnuje pieniędzy.",
+        "points": "Tablica „Gdzie jest co” z wartością sprzętu w zł i kwotą poza bazą\nAlarmy: co za długo stoi na budowie, co zaginęło, co jest w serwisie\nAkceptuje narzędzia kupione przez kierowników, robi korekty i wycofania\nBudowy, busy, zespół, naklejki QR, import z Excela i raporty"
+      },
+      "kierownik": {
+        "summary": "Rusza sprzęt na swoich budowach i busie.",
+        "points": "Wydania, zwroty, przeniesienia i serwis: checklistą, skanerem QR, tekstem albo głosem\nPowiadomienie w dzwonku, gdy ktoś zabierze mu sprzęt z budowy\nZgłasza narzędzia kupione na budowę i zamyka swoje budowy\nRuchy zapisane bez zasięgu wysyłają się same, gdy wróci sieć"
+      },
+      "magazynier": {
+        "summary": "Obsługuje bazę i serwisy.",
+        "points": "Wydaje i przyjmuje sprzęt dla wszystkich budów i busów\nWysyła narzędzia do serwisu i przyjmuje je z powrotem\nWidzi zgłoszenia braków i uszkodzeń od brygady\nPełna historia ruchów z filtrami i eksportem do Excela"
+      },
+      "pracownik": {
+        "summary": "Sprawdza, gdzie jest sprzęt, i zgłasza problemy.",
+        "points": "Widzi tablicę i karty narzędzi, ale nie rejestruje ruchów\nZgłasza uszkodzenia, braki i inne sprawy, także ze zdjęciem\nWidzi odpowiedzi w wątku zgłoszenia\nLoguje się nazwą użytkownika, bez e-maila"
+      }
+    },
+    "tipsTitle": "Co warto kliknąć",
+    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał.\nJako kierownik: „Nowy ruch”. Wydaj sprzęt z bazy albo napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nDzwonek i 📋 w nagłówku: powiadomienia i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
+    "note": "To wspólne demo: inni oglądający też mogą w nim coś zmienić, a my co jakiś czas przywracamy je do stanu wyjściowego. E-maile z demo nigdzie nie wychodzą.",
+    "contact": "Chcesz takie narzędzie dla swojej firmy? Zadzwoń: {phone}",
+    "bar": {
+      "label": "Demo",
+      "switch": "Zobacz jako:",
+      "about": "Jak działa demo?",
+      "tour": "Przewodnik"
+    },
+    "tour": {
+      "count": "Krok {step} z {count}",
+      "next": "Dalej",
+      "back": "Wstecz",
+      "done": "Zakończ",
+      "skip": "Pomiń przewodnik",
+      "welcome": {
+        "title": "Krótki przewodnik",
+        "text": "W kilku krokach pokażemy, co widać w tej roli i co można tu zrobić. Możesz go pominąć w każdej chwili, a wrócić do niego przyciskiem „Przewodnik” na żółtym pasku."
+      },
+      "roles": {
+        "title": "Przełączanie ról",
+        "text": "Tu w każdej chwili zmienisz rolę bez logowania i zobaczysz tę samą firmę oczami właściciela, kierownika, magazyniera albo pracownika."
+      },
+      "offBase": {
+        "title": "Pieniądze poza bazą",
+        "text": "Tylko właściciel widzi wartości w zł. Ta kwota mówi, ile sprzętu jest teraz na budowach i busach, czyli ile mogłoby zginąć."
+      },
+      "alarms": {
+        "title": "Alarmy",
+        "text": "Czerwony licznik to narzędzia, które stoją na budowie dłużej niż próg dni (w demo 30). Na liście są podświetlone na czerwono."
+      },
+      "alarmTool": {
+        "title": "Karta narzędzia",
+        "text": "Kliknij dowolne narzędzie, np. to z alarmem. Zobaczysz, gdzie jest, od ilu dni, kto za nie odpowiada i całą historię ruchów."
+      },
+      "toolReports": {
+        "title": "Do akceptacji",
+        "text": "Kierownicy dopisują narzędzia kupione na budowie. Właściciel uzupełnia kod i wartość, a potem akceptuje albo odrzuca zgłoszenie."
+      },
+      "operationsOwner": {
+        "title": "Operacje",
+        "text": "Stąd zapiszesz każdy ruch sprzętu, dodasz narzędzie, zaimportujesz listę z Excela i wydrukujesz naklejki QR."
+      },
+      "operationsManager": {
+        "title": "Nowy ruch",
+        "text": "Wydanie, zwrot albo przeniesienie zapiszesz checklistą, skanerem naklejek QR albo zdaniem. Kliknij „Powiedz lub wpisz” i napisz np. „biorę dwie wkrętarki na Tarasy”."
+      },
+      "operationsStorekeeper": {
+        "title": "Obsługa bazy",
+        "text": "Magazynier wydaje i przyjmuje sprzęt dla wszystkich budów i busów, wysyła narzędzia do serwisu i przyjmuje je z powrotem."
+      },
+      "recent": {
+        "title": "Ostatnie ruchy",
+        "text": "Każdy ruch ma autora i godzinę. Własny ruch cofniesz przez 15 minut. Pełna historia z filtrami i eksportem do Excela jest pod „Cała historia”."
+      },
+      "map": {
+        "title": "Mapa",
+        "text": "Baza, budowy, busy i sprzęt z lokalizatorem na jednej mapie. Kliknij pinezkę, żeby zobaczyć szczegóły."
+      },
+      "lost": {
+        "title": "Zaginione",
+        "text": "Narzędzie, które nie wróciło, oznaczasz jako zaginione. Karta pamięta, gdzie było ostatnio i kto za nie odpowiadał."
+      },
+      "issues": {
+        "title": "Zgłoszenia",
+        "text": "Tu trafiają uszkodzenia, braki i inne sprawy od brygady, każda z wątkiem komentarzy. Liczba przy ikonie to nowe wpisy."
+      },
+      "issuesWorker": {
+        "title": "Zgłoś problem",
+        "text": "Pracownik nie rusza sprzętu, ale zgłasza uszkodzenie albo brak, także ze zdjęciem. Otwórz zgłoszenia i kliknij „Nowe zgłoszenie”."
+      },
+      "bell": {
+        "title": "Dzwonek",
+        "text": "Powiadomienia: ktoś zabrał sprzęt z Twojej budowy, ruch zapisany bez zasięgu czeka na wyjaśnienie albo przyszedł raport."
+      },
+      "settings": {
+        "title": "Ustawienia",
+        "text": "Zespół i konta, budowy, busy i serwisy, próg dni alarmu, naklejki QR i abonament."
+      },
+      "finish": {
+        "title": "Gotowe",
+        "text": "Klikaj śmiało, to przykładowe dane. Zajrzyj też do innej roli na żółtym pasku u góry."
+      }
     }
   }
 }

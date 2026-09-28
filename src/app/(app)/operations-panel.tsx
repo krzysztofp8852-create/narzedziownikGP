@@ -58,7 +58,7 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
   if (operations.length === 0) return null;
 
   return (
-    <section className="operations" aria-labelledby="operations-title">
+    <section className="operations" aria-labelledby="operations-title" data-tour="operations">
       <h2 id="operations-title" className="display section-title">
         {t("board.operations")}
       </h2>

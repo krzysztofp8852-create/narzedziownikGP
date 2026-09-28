@@ -48,7 +48,11 @@ function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?: boolea
     <ul className={wide ? "tool-list tool-list-wide" : "tool-list"}>
       {tools.map((tool) => (
         <li key={tool.id}>
-          <Link href={`/narzedzia/${tool.id}`} className={tool.alarm ? "tool-row tool-row-alarm" : "tool-row"}>
+          <Link
+            href={`/narzedzia/${tool.id}`}
+            className={tool.alarm ? "tool-row tool-row-alarm" : "tool-row"}
+            data-tour={tool.alarm ? "alarm-tool" : undefined}
+          >
             <span className="plate">{tool.code}</span>
             <span className="tool-row-name">
               {tool.name}
@@ -113,7 +117,7 @@ function Services({ services }: { services: WhereIsWhat["services"] }) {
 
 function Lost({ lost, lostValue }: Pick<WhereIsWhat, "lost" | "lostValue">) {
   return (
-    <section className="location location-lost" aria-labelledby="board-lost">
+    <section className="location location-lost" aria-labelledby="board-lost" data-tour="lost">
       <div className="location-head">
         <h2 id="board-lost" className="display section-title">
           {t("board.lostTitle")}
@@ -152,7 +156,7 @@ function Lost({ lost, lostValue }: Pick<WhereIsWhat, "lost" | "lostValue">) {
 function ToolReports({ reports }: { reports: ToolReport[] }) {
   if (reports.length === 0) return null;
   return (
-    <section className="location location-reports" aria-labelledby="tool-reports">
+    <section className="location location-reports" aria-labelledby="tool-reports" data-tour="tool-reports">
       <div className="location-head">
         <h2 id="tool-reports" className="display section-title">
           {t("board.toolReportsWaiting", { count: reports.length })}
@@ -165,7 +169,7 @@ function ToolReports({ reports }: { reports: ToolReport[] }) {
 
 function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   return (
-    <section className="recent" aria-labelledby="recent-movements">
+    <section className="recent" aria-labelledby="recent-movements" data-tour="recent">
       <div className="section-head">
         <h2 id="recent-movements" className="display section-title">
           {t("board.recentTitle")}
@@ -396,7 +400,7 @@ export default async function BoardPage(props: PageProps<"/">) {
             <h1 id="board-title" className="display page-title">
               {t("board.title")}
             </h1>
-            <dl className="stats">
+            <dl className="stats" data-tour="stats">
               <div>
                 <dt>{t("board.statBase")}</dt>
                 <dd>{base.tools.length}</dd>
@@ -416,12 +420,12 @@ export default async function BoardPage(props: PageProps<"/">) {
                 </div>
               )}
               {board.offBaseValue !== undefined && (
-                <div>
+                <div data-tour="off-base">
                   <dt>{t("board.statOffBase")}</dt>
                   <dd data-testid="off-base-value">{formatMoney(board.offBaseValue)}</dd>
                 </div>
               )}
-              <div className={board.alarmCount > 0 ? "stat-alarm" : undefined}>
+              <div className={board.alarmCount > 0 ? "stat-alarm" : undefined} data-tour="alarms">
                 <dt>{t("board.statAlarms")}</dt>
                 <dd data-testid="alarm-count">{board.alarmCount}</dd>
               </div>

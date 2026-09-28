@@ -7,6 +7,8 @@ import type { WhereIsWhat } from "./board";
 import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as corrections from "./corrections";
+import * as demo from "./demo";
+import type { DemoAccount } from "./demo";
 import * as history from "./history";
 import * as issues from "./issues";
 import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, IssueSummary } from "./issues";
@@ -143,6 +145,8 @@ export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
 export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
+export type { DemoAccount } from "./demo";
+export { DEMO_EMAIL_DOMAIN, isDemoEmail } from "./demo";
 export { canPrintStickers } from "./stickers";
 
 export interface Session {
@@ -150,8 +154,11 @@ export interface Session {
   fullName: string;
   role: Role;
   mustChangePassword: boolean;
-  /** `readOnly`: firma jest w trybie tylko do odczytu (ręcznie albo po 14 dniach od „opłacone do”). */
-  company: { id: string; name: string; readOnly: boolean };
+  /**
+   * `readOnly`: firma jest w trybie tylko do odczytu (ręcznie albo po 14 dniach od „opłacone do”). `demo`: firma
+   * demo, do której wchodzi się bez hasła ze strony /demo.
+   */
+  company: { id: string; name: string; readOnly: boolean; demo: boolean };
 }
 
 export interface CreateCompanyInput {
@@ -250,6 +257,15 @@ export interface Registry {
      * trybie nic. Zwraca, ile firm dostało ostrzeżenie, a ile wpis o przełączeniu. Danych firm nic nie kasuje.
      */
     notifySubscriptionDeadlines(): Promise<{ warned: number; switched: number }>;
+    /** Konta obecnej firmy demo (włączonej ostatnio), po roli; pusta lista, gdy demo nie założono. */
+    demoAccounts(): Promise<DemoAccount[]>;
+    /** Czy użytkownik ma konto w firmie demo, obecnej albo poprzedniej (wtedy wraca na stronę /demo). */
+    isDemoAccount(userId: string): Promise<boolean>;
+    /**
+     * Firma staje się obecnym demo (skrypt demo, po wypełnieniu jej danymi): abonament opłacony na lata, a konta
+     * poprzednich firm demo są dezaktywowane i mają zablokowane logowanie.
+     */
+    activateDemoCompany(companyId: string): Promise<void>;
   };
   /**
    * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
@@ -487,7 +503,7 @@ export interface Registry {
 export const MIN_PASSWORD_LENGTH = 8;
 const RECOVERY_WINDOW_MS = 60 * 60 * 1000;
 
-interface Deps {
+export interface RegistryDeps {
   db: Db;
   clock: Clock;
   authAdmin: AuthAdmin;
@@ -498,7 +514,7 @@ interface Deps {
   chatPhotos: PhotoStore;
 }
 
-export function createRegistry(deps: Deps): Registry {
+export function createRegistry(deps: RegistryDeps): Registry {
   return {
     system: () => ({
       createCompany: async (raw) =>
@@ -571,6 +587,12 @@ export function createRegistry(deps: Deps): Registry {
           }
         }
         return result;
+      },
+      demoAccounts: () => deps.db.transaction((sql) => demo.demoAccounts(sql)),
+      isDemoAccount: (userId) => deps.db.transaction((sql) => demo.isDemoAccount(sql, userId)),
+      activateDemoCompany: async (companyId) => {
+        const retired = await deps.db.transaction((sql) => demo.activateDemoCompany(sql, companyId, deps.clock.now()));
+        for (const userId of retired) await deps.authAdmin.blockSignIn(userId);
       },
     }),
     superAdmin: (userId) => {
@@ -886,6 +908,7 @@ export function createRegistry(deps: Deps): Registry {
         resetMemberPassword: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);
+            demo.refuseInDemo(session);
             await team.requireManagedMember(sql, memberId);
             await team.markPasswordTemporary(sql, memberId, deps.clock.now());
             const temporaryPassword = generateTemporaryPassword();
@@ -896,6 +919,7 @@ export function createRegistry(deps: Deps): Registry {
         deactivateMember: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);
+            demo.refuseInDemo(session);
             await team.requireManagedMember(sql, memberId);
             await team.deactivate(sql, memberId);
             // Blokada przed zatwierdzeniem: gdy Auth odmówi, osoba zostaje aktywna i można ponowić.
@@ -1070,7 +1094,7 @@ export function createRegistry(deps: Deps): Registry {
  * w dzwonkach idzie w transakcji systemowej, raz na dzień. Kopie push i e-mail wysyła po zatwierdzeniu.
  * Zwraca, czy raport właśnie poszedł.
  */
-async function sendReport(deps: Deps, companyId: string, kind: ReportKind, now: Date): Promise<boolean> {
+async function sendReport(deps: RegistryDeps, companyId: string, kind: ReportKind, now: Date): Promise<boolean> {
   const [owner] = await deps.db.transaction((sql) => reports.owners(sql, companyId));
   if (!owner) return false;
   const report = await withActor(deps.db, owner.userId, async (sql) => {
@@ -1126,7 +1150,7 @@ async function sendNotifications(notifier: Notifier, list: EmailedNotification[]
  * Wysyła kopie push już zapisanych wpisów na przeglądarki adresatów i usuwa subskrypcje, które wygasły.
  * Subskrypcje innych osób czyta transakcja systemowa. Wpis w dzwonku zostaje, więc błąd tylko odnotowujemy.
  */
-async function sendPushCopies(deps: Deps, copies: PushCopy[]) {
+async function sendPushCopies(deps: RegistryDeps, copies: PushCopy[]) {
   if (copies.length === 0) return;
   try {
     const subscriptions = await deps.db.transaction((sql) => push.subscriptionsOf(sql, [...new Set(copies.map((copy) => copy.recipientId))]));
@@ -1180,7 +1204,7 @@ function normalizeNewCompany(raw: CreateCompanyInput): CreateCompanyInput {
  * super-admina) firmę, bazę, właściciela i abonament.
  */
 async function createCompany(
-  deps: Deps,
+  deps: RegistryDeps,
   input: CreateCompanyInput,
   subscription: NewSubscription,
   transaction: <T>(fn: (sql: Sql) => Promise<T>) => Promise<T>,
@@ -1217,7 +1241,7 @@ async function createCompany(
 }
 
 /** Konto logowania; zajęty e-mail (w dowolnej firmie) to błąd Rejestru. */
-function createAccount(deps: Deps, email: string, password: string) {
+function createAccount(deps: RegistryDeps, email: string, password: string) {
   return deps.authAdmin.createUser({ email, password }).catch((error) => {
     throw error instanceof EmailTakenError ? new RegistryError("email_taken") : error;
   });
@@ -1231,10 +1255,11 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     must_change_password: boolean;
     company_id: string;
     company_name: string;
+    company_demo: boolean;
     paid_until: string | null;
     manual_read_only: boolean | null;
   }>(
-    `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name,
+    `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name, c.demo_since is not null as company_demo,
             to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
      from app.users u join app.companies c on c.id = u.company_id
      left join app.current_company_plan() p on true
@@ -1251,6 +1276,7 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
       id: row.company_id,
       name: row.company_name,
       readOnly: readOnly.isReadOnly({ paidUntil: row.paid_until, manualReadOnly: row.manual_read_only === true }, now),
+      demo: row.company_demo,
     },
   };
 }

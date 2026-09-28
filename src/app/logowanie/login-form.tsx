@@ -39,6 +39,9 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       <p className="auth-links">
         <Link href="/reset-hasla">{t("login.forgotPassword")}</Link>
       </p>
+      <p className="auth-links">
+        <Link href="/demo">{t("login.demo")}</Link>
+      </p>
     </form>
   );
 }
