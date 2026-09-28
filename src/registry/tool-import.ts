@@ -44,7 +44,8 @@ export type ImportRowError =
   | "location_unknown"
   /** Tę nazwę ma więcej niż jedna lokalizacja firmy. */
   | "location_ambiguous"
-  | "site_finished";
+  | "site_finished"
+  | "vehicle_inactive";
 
 export interface ImportPreviewRow {
   /** Kod z pliku albo nadany; null, gdy nie da się go ustalić (zły kod, nieznana kategoria). */
@@ -96,8 +97,8 @@ export async function previewToolImport(sql: Sql, session: Session, rows: ToolIm
   requireValidRows(rows);
   const categories = await listCategories(sql);
   const taken = new Set((await sql<{ code: string }>("select code from app.tools")).map(({ code }) => code));
-  const locations = await sql<{ id: string; name: string; kind: LocationKind; status: "aktywna" | "zakonczona" | null }>(
-    "select id, name, kind, status from app.locations",
+  const locations = await sql<{ id: string; name: string; kind: LocationKind; status: "aktywna" | "zakonczona" | null; active: boolean | null }>(
+    "select id, name, kind, status, active from app.locations",
   );
   const base = { ...(await baseLocation(sql, session)), kind: "baza" as const };
 
@@ -128,6 +129,9 @@ export async function previewToolImport(sql: Sql, session: Session, rows: ToolIm
       else if (matches.length > 1) errors.push("location_ambiguous");
       else if (matches[0].status === "zakonczona") {
         errors.push("site_finished");
+        location = null;
+      } else if (matches[0].active === false) {
+        errors.push("vehicle_inactive");
         location = null;
       }
     }

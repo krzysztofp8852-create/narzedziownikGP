@@ -156,6 +156,7 @@ describe("serwisy", () => {
       base: { id: expect.any(String), name: "Baza" },
       sites: [expect.objectContaining({ id: siteId, name: "Rataje", status: "aktywna" })],
       services: [{ id: serviceId, name: "Serwis Hilti Poznań" }],
+      vehicles: [],
     });
     expect((await owner.whereIsWhat()).sites.map((site) => site.id)).toEqual([siteId]);
   });
@@ -189,6 +190,7 @@ describe("tylko właściciel zarządza lokalizacjami", () => {
       base: { id: expect.any(String), name: "Baza" },
       sites: [expect.objectContaining({ id: locationId })],
       services: [],
+      vehicles: [],
     });
   });
 
@@ -269,7 +271,7 @@ describe("izolacja firm w lokalizacjach", () => {
 
     expect((await stranger.whereIsWhat()).sites).toEqual([]);
     const zawbudBase = (await owner.whereIsWhat()).base;
-    expect(await stranger.locations()).toEqual({ base: { id: expect.not.stringMatching(zawbudBase.id), name: "Baza" }, sites: [], services: [] });
+    expect(await stranger.locations()).toEqual({ base: { id: expect.not.stringMatching(zawbudBase.id), name: "Baza" }, sites: [], services: [], vehicles: [] });
     await expect(stranger.changeSiteManager(locationId, budrexManagerId)).rejects.toMatchObject({ code: "not_found" });
     await expect(stranger.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: nowakId })).rejects.toMatchObject({
       code: "invalid_manager",

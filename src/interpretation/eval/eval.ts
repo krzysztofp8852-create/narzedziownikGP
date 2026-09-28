@@ -188,7 +188,7 @@ function evidence(company: EvalCompany, actor: string): InterpretationActor {
       company: { id: "firma", name: company.name, readOnly: false },
     }),
     toolCatalog: async () => catalog,
-    locations: async () => ({ base, sites, services }),
+    locations: async () => ({ base, sites, services, vehicles: [] }),
     registerMovement: async () => {
       throw new Error("Zestaw ewaluacyjny niczego nie zapisuje");
     },

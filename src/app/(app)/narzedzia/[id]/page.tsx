@@ -150,6 +150,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
             places={{
               base: places.base,
               sites: places.sites.filter((site) => site.status === "aktywna" || site.id === card.location.id),
+              vehicles: places.vehicles.filter((vehicle) => vehicle.active || vehicle.id === card.location.id),
               services: places.services,
             }}
             operationIds={{ correct: randomUUID(), lost: randomUUID(), retire: randomUUID() }}

@@ -3,13 +3,20 @@ import type { Movement, RegisteredKind } from "./movements";
 import type { Sql } from "./ports";
 import type { FridayReport, ReportKind, WeeklyReport } from "./reports";
 
+/** Budowa albo pojazd w treści powiadomienia; `kind` nie ma we wpisach sprzed pojazdów, a te dotyczą budów. */
+export interface NotifiedPlace {
+  id: string;
+  name: string;
+  kind?: "budowa" | "pojazd";
+}
+
 /** Adresat powiadomienia: osoba z firmy, w której zaszło zdarzenie. */
 export interface Recipient {
   userId: string;
   fullName: string;
 }
 
-/** Kierownik dowiaduje się, że ktoś zabrał sprzęt z jego budowy i już za niego nie odpowiada. */
+/** Kierownik dowiaduje się, że ktoś zabrał sprzęt z jego budowy albo pojazdu i już za niego nie odpowiada. */
 export interface ToolsTakenNotification {
   kind: "narzedzia_zabrane";
   /** Z e-mailem: to powiadomienie ma kopię e-mailową. */
@@ -17,18 +24,18 @@ export interface ToolsTakenNotification {
   movementId: string;
   /** Kto zabrał. */
   takenBy: string;
-  from: { id: string; name: string };
-  to: { id: string; name: string };
+  from: NotifiedPlace;
+  to: NotifiedPlace;
   tools: { id: string; code: string; name: string }[];
   occurredAt: Date;
 }
 
-/** Kierownik budowy: narzędzie stoi na niej dłużej niż próg dni firmy. */
+/** Kierownik budowy (albo pojazdu z włączonym alarmem): narzędzie stoi na niej dłużej niż próg dni firmy. */
 export interface ThresholdExceededNotification {
   kind: "prog_przekroczony";
   recipient: Recipient;
   tool: { id: string; code: string; name: string };
-  location: { id: string; name: string };
+  location: NotifiedPlace;
   /** Od kiedy narzędzie tam stoi. */
   since: Date;
   thresholdDays: number;
@@ -124,16 +131,17 @@ type WithoutRecipient<N> = N extends unknown ? Omit<N, "recipient"> : never;
 export type NotificationContent = WithoutRecipient<Notification>;
 
 /**
- * Powiadomienia wynikające z ruchu: przy przeniesieniu kierownik budowy źródłowej, o ile to nie on
+ * Powiadomienia wynikające z ruchu: przy przeniesieniu kierownik budowy lub pojazdu źródłowego, o ile to nie on
  * zabrał sprzęt i jego konto jest aktywne. Czyta e-mail adresata w transakcji aktora, więc polega na
  * tym, że RLS pokazuje każdemu w firmie e-maile pozostałych osób.
  */
 export async function notificationsFor(sql: Sql, movement: Movement): Promise<ToolsTakenNotification[]> {
   if (movement.kind !== "przeniesienie" || !movement.from || !movement.to) return [];
-  const [manager] = await sql<{ user_id: string; full_name: string; email: string }>(
-    `select u.user_id, u.full_name, u.email
+  const [manager] = await sql<{ user_id: string; full_name: string; email: string; from_kind: "budowa" | "pojazd"; to_kind: "budowa" | "pojazd" }>(
+    `select u.user_id, u.full_name, u.email, l.kind as from_kind, lt.kind as to_kind
      from app.movements m
      join app.locations l on l.id = m.from_location_id
+     join app.locations lt on lt.id = m.to_location_id
      join app.users u on u.user_id = l.manager_id
      where m.id = $1 and u.user_id <> m.author_id and u.active`,
     [movement.id],
@@ -145,8 +153,8 @@ export async function notificationsFor(sql: Sql, movement: Movement): Promise<To
       recipient: { userId: manager.user_id, fullName: manager.full_name, email: manager.email },
       movementId: movement.id,
       takenBy: movement.author,
-      from: movement.from,
-      to: movement.to,
+      from: { ...movement.from, kind: manager.from_kind },
+      to: { ...movement.to, kind: manager.to_kind },
       tools: movement.tools,
       occurredAt: movement.occurredAt,
     },

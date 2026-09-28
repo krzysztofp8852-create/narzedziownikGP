@@ -66,6 +66,11 @@
     "siteManager": "Kierownik: {name}",
     "managerInactive": "{name} (konto dezaktywowane)",
     "siteEmpty": "Na tej budowie nie ma jeszcze narzędzi.",
+    "vehicleKind": "Pojazd",
+    "vehicleEmpty": "Na tym pojeździe nie ma jeszcze narzędzi.",
+    "vehiclesTitle": "Pojazdy",
+    "addVehicle": "Dodaj pojazd",
+    "vehicleAlarmOff": "bez alarmu po progu",
     "noSites": "Nie ma aktywnych budów.",
     "addSite": "Dodaj budowę",
     "scan": "Skanuj QR",
@@ -85,6 +90,7 @@
     "statBase": "Na bazie",
     "statSites": "Na budowach",
     "statSiteCount": "Budowy",
+    "statVehicles": "Na pojazdach",
     "statOffBase": "Poza bazą",
     "statAlarms": "Alarmy",
     "peopleCount": "{count} aktywne",
@@ -150,9 +156,11 @@
     "code_taken": "Ten kod ma już inne narzędzie w firmie.",
     "category_taken": "Kategoria o tej nazwie już istnieje.",
     "prefix_taken": "Ten prefiks ma już inna kategoria.",
-    "invalid_manager": "Kierownikiem budowy może być tylko aktywny kierownik z Twojej firmy.",
+    "invalid_manager": "Kierownikiem budowy lub pojazdu może być tylko aktywny kierownik z Twojej firmy.",
     "site_finished": "Ta budowa jest zakończona.",
     "site_not_empty": "Na budowie zostały narzędzia. Zwróć je na bazę albo przenieś, zanim ją zamkniesz.",
+    "vehicle_inactive": "Ten pojazd jest nieaktywny.",
+    "vehicle_not_empty": "Na pojeździe zostały narzędzia. Zwróć je na bazę albo przenieś, zanim go dezaktywujesz.",
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
     "movement_conflict": "Ruch odrzucony: stan narzędzi zmienił się w międzyczasie. Nic nie zostało zapisane.",
     "not_undoable": "Tego ruchu nie da się cofnąć. Ewidencję ustawi właściciel korektą.",
@@ -287,6 +295,10 @@
     "goToTeam": "Przejdź do zespołu",
     "submitSite": "Dodaj budowę",
     "siteAdded": "Dodano budowę {name}.",
+    "vehicleName": "Nazwa pojazdu",
+    "vehicleNameHint": "Np. Bus WX 12345. Tak pojazd będzie widoczny na tablicy i w checklistach.",
+    "submitVehicle": "Dodaj pojazd",
+    "vehicleAdded": "Dodano pojazd {name}.",
     "addServiceTitle": "Dodaj serwis",
     "serviceName": "Nazwa serwisu",
     "serviceNameHint": "Np. Serwis Hilti Poznań. Sprzęt w naprawie nie będzie wyglądał na zaginiony.",
@@ -296,9 +308,33 @@
     "services": "Serwisy",
     "noServicesYet": "Firma nie ma jeszcze żadnego serwisu.",
     "newManager": "Nowy kierownik budowy {name}",
+    "newVehicleManager": "Nowy kierownik pojazdu {name}",
     "changeManager": "Zmień kierownika",
     "changing": "Zapisywanie…",
-    "managerChanged": "Zmieniono kierownika."
+    "managerChanged": "Zmieniono kierownika.",
+    "vehicleAlarm": "Alarm po progu dni",
+    "vehicleAlarmHint": "Na pojeździe domyślnie wyłączony: stały zestaw jeździ z brygadą. Włącz, jeśli sprzęt nie powinien w nim zostawać.",
+    "enableAlarm": "Włącz alarm",
+    "disableAlarm": "Wyłącz alarm",
+    "alarmOn": "Alarm po progu dni jest włączony.",
+    "alarmOff": "Alarm po progu dni jest wyłączony.",
+    "deactivateVehicle": "Dezaktywuj pojazd",
+    "deactivateHint": "Np. po sprzedaży busa. Pojazd zniknie z tablicy, a jego historia zostanie.",
+    "deactivateConfirm": "Dezaktywować pojazd {name}? Nie da się go potem przywrócić.",
+    "deactivateEmptyOnly": "Dezaktywować można tylko pusty pojazd. Zwróć sprzęt na bazę albo przenieś.",
+    "deactivating": "Dezaktywowanie…",
+    "deactivateYes": "Tak, dezaktywuj",
+    "cancel": "Anuluj"
+  },
+  "places": {
+    "from": {
+      "budowa": "z budowy {name}",
+      "pojazd": "z pojazdu {name}"
+    },
+    "at": {
+      "budowa": "na budowie {name}",
+      "pojazd": "na pojeździe {name}"
+    }
   },
   "siteStatus": {
     "aktywna": "Aktywna",
@@ -312,9 +348,11 @@
     "noToolsAt": {
       "baza": "Na bazie nie ma narzędzi.",
       "budowa": "Na tej budowie nie ma narzędzi.",
-      "serwis": "W tym serwisie nie ma narzędzi."
+      "serwis": "W tym serwisie nie ma narzędzi.",
+      "pojazd": "Na tym pojeździe nie ma narzędzi."
     },
     "mine": "moja",
+    "vehicle": "pojazd",
     "summary": "{codes} → {place}",
     "confirm": "Zatwierdź ✓",
     "confirming": "Zapisywanie…",
@@ -328,27 +366,27 @@
     "kinds": {
       "wydanie": {
         "from": "Z bazy",
-        "to": "Na budowę",
+        "to": "Na budowę lub pojazd",
         "noFrom": "Nie ma bazy.",
-        "noTo": "Nie ma aktywnej budowy, na którą możesz wydawać sprzęt.",
-        "chooseFrom": "Najpierw wybierz budowę.",
-        "summaryEmpty": "Zaznacz narzędzia i wybierz budowę."
+        "noTo": "Nie ma aktywnej budowy ani pojazdu, na które możesz wydawać sprzęt.",
+        "chooseFrom": "Najpierw wybierz budowę lub pojazd.",
+        "summaryEmpty": "Zaznacz narzędzia i wybierz budowę lub pojazd."
       },
       "zwrot": {
-        "from": "Z budowy",
+        "from": "Z budowy lub pojazdu",
         "to": "Na bazę",
-        "noFrom": "Nie ma budowy, z której możesz zwracać sprzęt.",
+        "noFrom": "Nie ma budowy ani pojazdu, z których możesz zwracać sprzęt.",
         "noTo": "Nie ma bazy.",
-        "chooseFrom": "Najpierw wybierz budowę.",
-        "summaryEmpty": "Wybierz budowę i zaznacz narzędzia."
+        "chooseFrom": "Najpierw wybierz budowę lub pojazd.",
+        "summaryEmpty": "Wybierz budowę lub pojazd i zaznacz narzędzia."
       },
       "przeniesienie": {
-        "from": "Z budowy",
-        "to": "Na budowę",
-        "noFrom": "Nie ma innej aktywnej budowy, z której można zabrać sprzęt.",
-        "noTo": "Nie ma aktywnej budowy, na którą możesz zabierać sprzęt.",
-        "chooseFrom": "Najpierw wybierz budowę, z której zabierasz sprzęt.",
-        "summaryEmpty": "Wybierz budowy i zaznacz narzędzia."
+        "from": "Z budowy lub pojazdu",
+        "to": "Na budowę lub pojazd",
+        "noFrom": "Nie ma innej budowy ani pojazdu, z których można zabrać sprzęt.",
+        "noTo": "Nie ma aktywnej budowy ani pojazdu, na które możesz zabierać sprzęt.",
+        "chooseFrom": "Najpierw wybierz, skąd zabierasz sprzęt.",
+        "summaryEmpty": "Wybierz, skąd i dokąd, i zaznacz narzędzia."
       },
       "do_serwisu": {
         "from": "Skąd",
@@ -472,6 +510,7 @@
     "location": "Gdzie jest naprawdę",
     "baseGroup": "Baza",
     "sitesGroup": "Budowy",
+    "vehiclesGroup": "Pojazdy",
     "servicesGroup": "Serwisy",
     "reason": "Powód",
     "reasonOptional": "Powód (opcjonalnie)",
@@ -585,15 +624,16 @@
       "value_invalid": "Zła wartość „{value}”: wpisz kwotę w zł, np. 3200 albo 3200,50.",
       "location_unknown": "Nieznana lokalizacja „{value}”.",
       "location_ambiguous": "Nazwę „{value}” ma kilka lokalizacji firmy.",
-      "site_finished": "Budowa „{value}” jest zakończona."
+      "site_finished": "Budowa „{value}” jest zakończona.",
+      "vehicle_inactive": "Pojazd „{value}” jest nieaktywny."
     }
   },
   "notifications": {
     "greeting": "Dzień dobry, {name}!",
     "signature": "NarzędziownikGP",
     "toolsTaken": {
-      "subject": "{author} zabiera {codes} z budowy {from}",
-      "lead": "Sprzęt z budowy {from} jest teraz na budowie {to} (przeniósł: {author}, {when}):",
+      "subject": "{author} zabiera {codes} {from}",
+      "lead": "Sprzęt {from} jest teraz {to} (przeniósł: {author}, {when}):",
       "responsibility": "Nie odpowiadasz już za ten sprzęt. Kto go ma i gdzie jest, zobaczysz na tablicy „Gdzie jest co”."
     },
     "readOnlySoon": {
@@ -669,13 +709,13 @@
   "bell": {
     "title": "Dzwonek",
     "back": "← Wróć do tablicy",
-    "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo narzędzie, które stoi za długo.",
+    "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo pojazdu, albo narzędzie, które stoi za długo.",
     "unread": "Nowe",
     "open": "Pokaż",
     "markRead": "Oznacz jako przeczytane",
     "markAllRead": "Oznacz wszystkie jako przeczytane",
-    "toolsTaken": "Sprzęt jest teraz na budowie {to} ({when}). Nie odpowiadasz już za niego.",
-    "thresholdExceeded": "{code} {name} stoi na budowie {place} dłużej niż {days} dni",
+    "toolsTaken": "Sprzęt jest teraz {to} ({when}). Nie odpowiadasz już za niego.",
+    "thresholdExceeded": "{code} {name} stoi {place} dłużej niż {days} dni",
     "thresholdExceededBody": "Jest tam od {since}. Jeśli nie jest już potrzebne, zwróć je na bazę albo przenieś.",
     "thresholdsExceeded": {
       "one": "{count} narzędzie przekroczyło próg {days} dni",

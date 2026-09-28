@@ -6,6 +6,7 @@ import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
+import { VehicleIcon } from "@/components/vehicle-icon";
 import { matchesTool } from "@/lib/tool-search";
 import type { LocationKind, RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
@@ -23,7 +24,7 @@ export interface ChecklistPlace {
   id: string;
   name: string;
   kind: LocationKind;
-  /** Budowa, którą prowadzi aktor. */
+  /** Budowa albo pojazd, które prowadzi aktor. */
   mine: boolean;
   tools: ChecklistTool[];
 }
@@ -53,6 +54,20 @@ export interface ChecklistProps {
   userId: string;
   places: ChecklistPlace[];
   route: Route;
+}
+
+/** Nazwa lokalizacji na liście wyboru; pojazd ma przed nią ikonę. */
+export function PlaceName({ place }: { place: Pick<ChecklistPlace, "kind" | "name"> }) {
+  return (
+    <span className="choice-name">
+      {place.kind === "pojazd" && (
+        <>
+          <VehicleIcon label={t("checklist.vehicle")} />{" "}
+        </>
+      )}
+      {place.name}
+    </span>
+  );
 }
 
 type Step = "from" | "to" | "tools";
@@ -142,7 +157,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
                 checked={place.id === current?.id}
                 onChange={() => choose(side, place.id)}
               />
-              <span className="choice-name">{place.name}</span>
+              <PlaceName place={place} />
               {place.mine && <span className="choice-tag">{t("checklist.mine")}</span>}
             </label>
           ))}

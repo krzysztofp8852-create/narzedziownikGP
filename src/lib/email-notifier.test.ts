@@ -86,3 +86,32 @@ describe("e-mail z ostrzeżeniem przed trybem tylko do odczytu", () => {
     expect(notificationEmail({ ...warning, daysLeft: 1 }).subject).toBe("Jutro NarzędziownikGP przejdzie w tryb tylko do odczytu");
   });
 });
+
+describe("e-mail o zabranym sprzęcie", () => {
+  const taken = {
+    kind: "narzedzia_zabrane" as const,
+    recipient: { userId: "n", fullName: "Adam Nowak", email: "adam@zawbud.test" },
+    movementId: "m1",
+    takenBy: "Jan Kowalski",
+    tools: [{ id: "s01", code: "S-01", name: "Szlifierka kątowa" }],
+    occurredAt: new Date("2026-04-08T10:00:00+02:00"),
+  };
+
+  it("z pojazdu na budowę: nazywa pojazd pojazdem, a budowę budową", () => {
+    const email = notificationEmail({
+      ...taken,
+      from: { id: "b", name: "Bus WX 12345", kind: "pojazd" },
+      to: { id: "r", name: "Rataje", kind: "budowa" },
+    });
+
+    expect(email.subject).toBe("Jan Kowalski zabiera S-01 z pojazdu Bus WX 12345");
+    expect(email.text).toContain("Sprzęt z pojazdu Bus WX 12345 jest teraz na budowie Rataje (przeniósł: Jan Kowalski,");
+  });
+
+  it("wpis sprzed pojazdów, bez rodzaju lokalizacji, dotyczy budów", () => {
+    const email = notificationEmail({ ...taken, from: { id: "w", name: "Winogrady" }, to: { id: "b", name: "Bus WX 12345", kind: "pojazd" } });
+
+    expect(email.subject).toBe("Jan Kowalski zabiera S-01 z budowy Winogrady");
+    expect(email.text).toContain("jest teraz na pojeździe Bus WX 12345");
+  });
+});

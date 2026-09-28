@@ -6,7 +6,7 @@ import { UUID_PATTERN } from "./validation";
 
 export type ToolState = "w_obiegu" | "zaginione" | "wycofane";
 export type ToolRegistration = "zgloszone" | "zaakceptowane";
-export type LocationKind = "baza" | "budowa" | "serwis";
+export type LocationKind = "baza" | "budowa" | "serwis" | "pojazd";
 
 export interface Category {
   id: string;

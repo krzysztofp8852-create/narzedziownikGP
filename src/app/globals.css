@@ -1774,3 +1774,12 @@ a.tool-row:hover .tool-row-name {
   padding: 11px 14px;
   resize: vertical;
 }
+
+/* Ikona pojazdu przy jego nazwie (tablica, checklisty). */
+.vehicle-icon {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+}

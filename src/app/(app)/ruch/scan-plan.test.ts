@@ -124,3 +124,42 @@ describe("podpowiedź rodzaju ruchu dla magazyniera", () => {
     ]);
   });
 });
+
+describe("sprzęt na pojeździe", () => {
+  const B01 = "00000000-0000-4000-8000-000000000005";
+  const K01 = "00000000-0000-4000-8000-000000000006";
+  /** Nowak prowadzi Rataje i bus WX 12345 (z B-01); bus Kowalskiego wiezie K-01. */
+  const withVehicles: ChecklistData = {
+    ...nowak,
+    places: [
+      ...places,
+      { id: "bus-nowaka", name: "Bus WX 12345", kind: "pojazd", mine: true, tools: [tool(B01, "B-01", "Młot udarowy")] },
+      { id: "bus-kowalskiego", name: "Bus WX 67890", kind: "pojazd", mine: false, tools: [tool(K01, "K-01", "Piła")] },
+    ],
+    routes: {
+      wydanie: { from: ["baza"], to: ["rataje", "bus-nowaka"] },
+      zwrot: { from: ["rataje", "bus-nowaka"], to: ["baza"] },
+      przeniesienie: { from: ["rataje", "bus-nowaka", "winogrady", "bus-kowalskiego"], to: ["rataje", "bus-nowaka"] },
+      do_serwisu: { from: ["rataje"], to: ["hilti"] },
+    },
+  };
+
+  it("z własnego pojazdu kierownik zwraca na bazę albo przenosi na budowę; do serwisu wprost nie", () => {
+    expect(brief(withVehicles, [B01])).toEqual([
+      {
+        from: "Bus WX 12345",
+        codes: ["B-01"],
+        kinds: [
+          ["zwrot", ["Magazyn"]],
+          ["przeniesienie", ["Rataje"]],
+        ],
+      },
+    ]);
+  });
+
+  it("z cudzego pojazdu kierownik zabiera do siebie, na budowę albo na swój pojazd", () => {
+    expect(brief(withVehicles, [K01])).toEqual([
+      { from: "Bus WX 67890", codes: ["K-01"], kinds: [["przeniesienie", ["Rataje", "Bus WX 12345"]]] },
+    ]);
+  });
+});

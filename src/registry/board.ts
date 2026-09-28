@@ -1,4 +1,4 @@
-import type { Service, Site } from "./locations";
+import type { Service, Site, Vehicle } from "./locations";
 import * as locations from "./locations";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
@@ -12,7 +12,7 @@ export interface ToolOnBoard {
   name: string;
   registration: ToolRegistration;
   daysInPlace: number;
-  /** Stoi na budowie dłużej niż próg dni firmy. */
+  /** Stoi na budowie (albo pojeździe z włączonym alarmem) dłużej niż próg dni firmy. */
   alarm: boolean;
   /** Wartość w zł; klucz istnieje tylko dla właściciela. */
   value?: number | null;
@@ -33,6 +33,8 @@ export interface WhereIsWhat {
   base: BoardLocation<{ id: string; name: string }>;
   /** Aktywne budowy. */
   sites: BoardLocation<Site>[];
+  /** Aktywne pojazdy; sprzęt na nich jest poza bazą. */
+  vehicles: BoardLocation<Vehicle>[];
   /** Wszystkie serwisy firmy ze sprzętem w naprawie; nie są poza bazą. */
   services: BoardLocation<Service>[];
   /** Zaginione narzędzia, od najdawniej zaginionego. */
@@ -61,6 +63,7 @@ export async function whereIsWhat(sql: Sql, session: Session, now: Date): Promis
   const base = await baseLocation(sql, session);
   const toolsAt = await toolsByLocation(sql, now, withValues);
   const sites = await locations.sites(sql, { activeOnly: true });
+  const vehicles = await locations.vehicles(sql, { activeOnly: true });
   const services = await locations.services(sql);
   const lost = await lostTools(sql, now, withValues);
 
@@ -69,11 +72,13 @@ export async function whereIsWhat(sql: Sql, session: Session, now: Date): Promis
     return { ...location, ...(withValues && { totalValue: sumValues(tools) }), tools };
   };
   const boardSites = sites.map(withTools);
+  const boardVehicles = vehicles.map(withTools);
   return {
-    ...(withValues && { offBaseValue: sumAmounts(boardSites.map((site) => site.totalValue!)) }),
+    ...(withValues && { offBaseValue: sumAmounts([...boardSites, ...boardVehicles].map((place) => place.totalValue!)) }),
     alarmCount: [...toolsAt.values()].flat().filter((tool) => tool.alarm).length,
     base: withTools(base),
     sites: boardSites,
+    vehicles: boardVehicles,
     services: services.map(withTools),
     lost,
     ...(withValues && { lostValue: sumValues(lost) }),
@@ -89,11 +94,12 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
     registration: ToolRegistration;
     location_id: string;
     location_kind: LocationKind;
+    alarm_enabled: boolean | null;
     located_since: Date;
     threshold_days: number;
     value: string | null;
   }>(
-    `select t.id, t.code, t.name, t.registration, t.location_id, l.kind as location_kind, t.located_since,
+    `select t.id, t.code, t.name, t.registration, t.location_id, l.kind as location_kind, l.alarm_enabled, t.located_since,
             co.alarm_threshold_days as threshold_days,
             ${valueColumn(withValues)}
      from app.tools t
@@ -112,7 +118,7 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
       name: row.name,
       registration: row.registration,
       daysInPlace,
-      alarm: hasAlarm(row.location_kind, row.located_since, row.threshold_days, now),
+      alarm: hasAlarm({ kind: row.location_kind, alarmEnabled: row.alarm_enabled }, row.located_since, row.threshold_days, now),
       ...(withValues && { value: parseValue(row.value) }),
     });
     byLocation.set(row.location_id, tools);

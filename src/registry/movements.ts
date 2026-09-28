@@ -24,13 +24,13 @@ export const REGISTERED_KINDS = ["wydanie", "zwrot", "przeniesienie", "do_serwis
 export type RegisteredKind = (typeof REGISTERED_KINDS)[number];
 
 /**
- * Skąd i dokąd prowadzi każdy rodzaj rejestrowanego ruchu, i czyja budowa daje kierownikowi prawo do
- * niego: docelowa (`to`), źródłowa (`from`) albo żadna (ruch tylko dla magazyniera i właściciela).
+ * Skąd i dokąd prowadzi każdy rodzaj rejestrowanego ruchu, i czyja budowa albo pojazd daje kierownikowi
+ * prawo do niego: docelowa (`to`), źródłowa (`from`) albo żadna (ruch tylko dla magazyniera i właściciela).
  */
 const ROUTES: Record<RegisteredKind, { from: readonly LocationKind[]; to: readonly LocationKind[]; managerOf: "from" | "to" | null }> = {
-  wydanie: { from: ["baza"], to: ["budowa"], managerOf: "to" },
-  zwrot: { from: ["budowa"], to: ["baza"], managerOf: "from" },
-  przeniesienie: { from: ["budowa"], to: ["budowa"], managerOf: "to" },
+  wydanie: { from: ["baza"], to: ["budowa", "pojazd"], managerOf: "to" },
+  zwrot: { from: ["budowa", "pojazd"], to: ["baza"], managerOf: "from" },
+  przeniesienie: { from: ["budowa", "pojazd"], to: ["budowa", "pojazd"], managerOf: "to" },
   do_serwisu: { from: ["baza", "budowa"], to: ["serwis"], managerOf: "from" },
   z_serwisu: { from: ["serwis"], to: ["baza"], managerOf: null },
 };
@@ -40,11 +40,11 @@ export interface RegisterMovementInput {
   operationId: string;
   kind: RegisteredKind;
   /**
-   * Gdzie według klienta są teraz wszystkie narzędzia: baza przy wydaniu, budowa przy zwrocie
+   * Gdzie według klienta są teraz wszystkie narzędzia: baza przy wydaniu, budowa lub pojazd przy zwrocie
    * i przeniesieniu, budowa lub baza przy wysłaniu do serwisu, serwis przy przyjęciu z serwisu.
    */
   fromLocationId: string;
-  /** Budowa przy wydaniu i przeniesieniu, serwis przy wysłaniu do serwisu, baza przy zwrocie i z serwisu. */
+  /** Budowa lub pojazd przy wydaniu i przeniesieniu, serwis przy wysłaniu do serwisu, baza przy zwrocie i z serwisu. */
   toLocationId: string;
   toolIds: string[];
   /** Kiedy to się stało na budowie; domyślnie teraz. Ruch z kolejki offline przychodzi później. */
@@ -119,20 +119,27 @@ export function canMoveEverywhere(session: Session) {
   return session.role !== "kierownik";
 }
 
-/** Kierownik rusza tylko sprzęt swoich budów; magazynier i właściciel wszystkich. */
+/** Kierownik rusza tylko sprzęt swoich budów i pojazdów; magazynier i właściciel wszystkich. */
 export function canMoveTools(session: Session, site: { manager: { id: string } }) {
   return canMoveEverywhere(session) || site.manager.id === session.userId;
 }
 
 /**
- * Kierownik rejestruje ruch, gdy jego jest budowa docelowa (wydanie, przeniesienie) albo źródłowa
- * (zwrot, do serwisu). Z bazy do serwisu i z serwisu na bazę ruszają sprzęt magazynier i właściciel.
+ * Kierownik rejestruje ruch, gdy jego jest budowa lub pojazd docelowy (wydanie, przeniesienie) albo
+ * źródłowy (zwrot; do serwisu tylko z budowy). Z bazy do serwisu i z serwisu na bazę ruszają sprzęt
+ * magazynier i właściciel.
  */
 function canRegister(session: Session, kind: RegisteredKind, locations: { from: LocationRow; to: LocationRow }) {
   if (canMoveEverywhere(session)) return true;
   const { managerOf } = ROUTES[kind];
-  const site = managerOf && locations[managerOf];
-  return site?.kind === "budowa" && site.manager_id === session.userId;
+  const place = managerOf && locations[managerOf];
+  return (place?.kind === "budowa" || place?.kind === "pojazd") && place.manager_id === session.userId;
+}
+
+/** Na zakończoną budowę i nieaktywny pojazd nic już nie trafia. */
+export function requireOpen(place: LocationRow) {
+  if (place.kind === "budowa" && place.status !== "aktywna") throw new RegistryError("site_finished");
+  if (place.kind === "pojazd" && !place.active) throw new RegistryError("vehicle_inactive");
 }
 
 /** Cofnąć można tylko ruch zapisany najwyżej tyle temu. */
@@ -147,6 +154,8 @@ export interface LocationRow {
   name: string;
   kind: LocationKind;
   status: "aktywna" | "zakonczona" | null;
+  /** Tylko pojazd: aktywny albo nieaktywny. */
+  active: boolean | null;
   manager_id: string | null;
 }
 
@@ -176,7 +185,7 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
   if (!from || !to || from.id === to.id || !route.from.includes(from.kind) || !route.to.includes(to.kind)) {
     throw new RegistryError("invalid_input");
   }
-  if (to.kind === "budowa" && to.status !== "aktywna") throw new RegistryError("site_finished");
+  requireOpen(to);
   if (!canRegister(session, input.kind, { from, to })) throw new RegistryError("forbidden");
 
   // Ruch zapisujemy przed sprawdzeniem narzędzi: równoległa ponowka tej samej operacji czeka wtedy
@@ -228,8 +237,7 @@ export async function undoMovement(sql: Sql, session: Session, input: UndoMoveme
   if (!REGISTERED_KINDS.includes(original.kind as RegisteredKind)) throw new RegistryError("not_undoable");
   if (now.getTime() - new Date(original.recorded_at).getTime() > UNDO_WINDOW_MS) throw new RegistryError("undo_expired");
   if (original.moved_since) throw new RegistryError("undo_blocked");
-  const back = (await location(sql, original.from_location_id))!;
-  if (back.kind === "budowa" && back.status !== "aktywna") throw new RegistryError("site_finished");
+  requireOpen((await location(sql, original.from_location_id))!);
 
   const movementId = await insertMovement(sql, session, {
     kind: "cofniecie",
@@ -320,7 +328,7 @@ export async function recentMovements(sql: Sql, session: Session, limit: number,
   const rows = await sql<{ id: string; undoable: boolean }>(
     `select m.id,
             m.author_id = $2 and m.kind::text = any($3::text[]) and m.recorded_at >= $4 and not ${MOVED_SINCE}
-            and back.status is distinct from 'zakonczona' as undoable
+            and back.status is distinct from 'zakonczona' and back.active is distinct from false as undoable
      from app.movements m
      left join app.locations back on back.id = m.from_location_id
      order by m.occurred_at desc, m.recorded_at desc, m.sequence_number desc limit $1`,
@@ -403,7 +411,7 @@ export async function movementsByIds(sql: Sql, ids: string[]): Promise<Movement[
 
 export async function location(sql: Sql, id: string): Promise<LocationRow | null> {
   if (!UUID_PATTERN.test(id)) return null;
-  const [row] = await sql<LocationRow>("select id, name, kind, status, manager_id from app.locations where id = $1", [id]);
+  const [row] = await sql<LocationRow>("select id, name, kind, status, active, manager_id from app.locations where id = $1", [id]);
   return row ?? null;
 }
 

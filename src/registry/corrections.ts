@@ -1,5 +1,5 @@
 import { RegistryError } from "./errors";
-import { attachTools, insertMovement, location, type Movement, movementById } from "./movements";
+import { attachTools, insertMovement, location, type Movement, movementById, requireOpen } from "./movements";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import type { ToolState } from "./tools";
@@ -50,10 +50,8 @@ export async function correctTool(sql: Sql, session: Session, input: CorrectTool
   const target = input.locationId === undefined ? await location(sql, tool.locationId) : await location(sql, input.locationId);
   if (!target) throw new RegistryError("invalid_input");
   if (target.id === tool.locationId && state === tool.state) throw new RegistryError("invalid_input");
-  // Na zakończoną budowę nic już nie trafia, a narzędzie w obiegu na niej nie zostaje.
-  if (target.kind === "budowa" && target.status !== "aktywna" && (target.id !== tool.locationId || state === "w_obiegu")) {
-    throw new RegistryError("site_finished");
-  }
+  // Na zakończoną budowę i nieaktywny pojazd nic już nie trafia, a narzędzie w obiegu na nich nie zostaje.
+  if (target.id !== tool.locationId || state === "w_obiegu") requireOpen(target);
 
   const movementId = await insertMovement(sql, session, {
     kind: "korekta",

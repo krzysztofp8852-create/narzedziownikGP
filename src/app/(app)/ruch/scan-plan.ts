@@ -34,7 +34,8 @@ export interface ScanGroup {
 /**
  * Kolejność podpowiedzi według miejsca, w którym narzędzie jest teraz. Z bazy się wydaje, z serwisu
  * przyjmuje na bazę. Z własnej budowy kierownik zwraca, a z cudzej zabiera do siebie; magazynier
- * i właściciel pracują na bazie, więc sprzęt z każdej budowy do nich wraca.
+ * i właściciel pracują na bazie, więc sprzęt z każdej budowy do nich wraca. Z pojazdem tak samo,
+ * tylko do serwisu nie wysyła się z niego wprost.
  */
 function preference(from: ChecklistPlace, everywhere: boolean): RegisteredKind[] {
   switch (from.kind) {
@@ -44,6 +45,8 @@ function preference(from: ChecklistPlace, everywhere: boolean): RegisteredKind[]
       return ["z_serwisu"];
     case "budowa":
       return from.mine || everywhere ? ["zwrot", "przeniesienie", "do_serwisu"] : ["przeniesienie", "zwrot", "do_serwisu"];
+    case "pojazd":
+      return from.mine || everywhere ? ["zwrot", "przeniesienie"] : ["przeniesienie", "zwrot"];
   }
 }
 
