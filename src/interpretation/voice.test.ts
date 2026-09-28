@@ -177,6 +177,16 @@ describe("propozycja ruchu z nagrania", () => {
     expect(transcriber.heard).toHaveLength(0);
   });
 
+  it("nagranie pracownika, który nie rejestruje ruchów, jest odrzucane, zanim trafi do kubełka i transkrypcji", async () => {
+    const z = await givenZawbud();
+    const workerId = await testbed.givenMember(z.zawbud, "pracownik");
+
+    await expect(interpretation().as(workerId).proposeFromRecording(recording())).rejects.toMatchObject({ code: "forbidden" });
+
+    expect(recordings.saved).toHaveLength(0);
+    expect(transcriber.heard).toHaveLength(0);
+  });
+
   it("zapis do kubełka zgłosił błąd, choć nagranie do niego trafiło: nagranie i tak jest usuwane", async () => {
     const z = await givenZawbud();
     recordings.saveFailsAfterWrite = true;

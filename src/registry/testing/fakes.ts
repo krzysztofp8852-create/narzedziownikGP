@@ -60,6 +60,18 @@ export class FakeAuthAdmin implements AuthAdmin {
     return this.passwords.get(userId);
   }
 
+  /** Adres konta logowania (u pracownika bez e-maila techniczny). */
+  emailOf(userId: string) {
+    return this.emails.get(userId);
+  }
+
+  /** Logowanie adresem i hasłem, jak w Supabase Auth: identyfikator konta albo null (złe dane, blokada). */
+  signIn(email: string, password: string): string | null {
+    const userId = [...this.emails].find(([, address]) => address === email.toLowerCase())?.[0];
+    if (!userId || this.passwords.get(userId) !== password || this.blocked.has(userId)) return null;
+    return userId;
+  }
+
   /** Czy logowanie tego konta jest zablokowane. */
   isBlocked(userId: string) {
     return this.blocked.has(userId);

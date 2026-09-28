@@ -12,8 +12,17 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     <form action={action}>
       <input type="hidden" name="next" value={nextPath} />
       <div className="field">
-        <label htmlFor="email">{t("login.email")}</label>
-        <input id="email" name="email" type="email" autoComplete="username" defaultValue={state.email} required />
+        <label htmlFor="login">{t("login.login")}</label>
+        <input
+          id="login"
+          name="login"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          defaultValue={state.login}
+          required
+        />
       </div>
       <div className="field">
         <label htmlFor="password">{t("login.password")}</label>

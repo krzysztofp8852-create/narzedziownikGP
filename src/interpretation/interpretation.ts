@@ -3,10 +3,12 @@ import { RegistryError } from "@/registry/errors";
 import {
   type CatalogTool,
   canMoveTools,
+  canRegisterMovements,
   MAX_TRANSCRIPT_LENGTH,
   type RegisteredMovement,
   type RegisterMovementInput,
   type Registry,
+  type Session,
 } from "@/registry/registry";
 import { PROPOSAL_KINDS, type Proposal, type ProposalKind, type ProposedTool } from "./proposal";
 import { MAX_RECORDING_BYTES, type RecordingStore, recordingType, type Transcriber, TranscriptionFailedError } from "./transcription";
@@ -61,6 +63,16 @@ export interface ConfirmProposalInput extends Omit<RegisterMovementInput, "sourc
   text: string;
 }
 
+/**
+ * Sesja aktora, który w ogóle rejestruje ruchy. Pracownikowi propozycja na nic, więc jego tekst ani nagranie
+ * nie trafiają do dostawców AI.
+ */
+function requireMover(session: Session | null): Session {
+  if (!session) throw new RegistryError("no_access");
+  if (!canRegisterMovements(session)) throw new RegistryError("forbidden");
+  return session;
+}
+
 /** Więcej sztuk z jednej frazy nie bierzemy; to raczej pomyłka niż ruch. */
 const MAX_QUANTITY = 50;
 
@@ -89,8 +101,7 @@ export function createInterpretation({ registry, interpreter, transcriber, recor
          */
         async proposeFromRecording(audio: Blob): Promise<Proposal> {
           if (audio.size === 0 || audio.size > MAX_RECORDING_BYTES || !recordingType(audio)) throw new RegistryError("invalid_input");
-          const session = await actor.session();
-          if (!session) throw new RegistryError("no_access");
+          const session = requireMover(await actor.session());
           const key = `${session.company.id}/${randomUUID()}`;
           let heard: string;
           try {
@@ -113,8 +124,8 @@ export function createInterpretation({ registry, interpreter, transcriber, recor
         async propose(raw: string): Promise<Proposal> {
           const text = raw.trim();
           if (!text || text.length > MAX_TRANSCRIPT_LENGTH) throw new RegistryError("invalid_input");
-          const [session, catalog, locations] = await Promise.all([actor.session(), actor.toolCatalog(), actor.locations()]);
-          if (!session) throw new RegistryError("no_access");
+          const session = requireMover(await actor.session());
+          const [catalog, locations] = await Promise.all([actor.toolCatalog(), actor.locations()]);
           const sites = locations.sites.filter((site) => site.status === "aktywna");
           const interpretation = await interpreter.interpret({
             text,

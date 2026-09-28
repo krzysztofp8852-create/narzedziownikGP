@@ -5,7 +5,7 @@ import { t } from "@/i18n/t";
 import { deactivateMember, type MemberActionState, resetMemberPassword } from "./actions";
 import { TemporaryPassword } from "@/components/temporary-password";
 
-/** Przyciski właściciela przy aktywnym kierowniku lub magazynierze. */
+/** Przyciski właściciela przy aktywnym kierowniku, magazynierze lub pracowniku. */
 export function MemberActions({ memberId, fullName }: { memberId: string; fullName: string }) {
   const [state, setState] = useState<MemberActionState>({});
   const [confirming, setConfirming] = useState(false);

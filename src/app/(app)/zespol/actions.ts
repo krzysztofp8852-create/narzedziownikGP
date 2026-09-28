@@ -5,12 +5,12 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
-import type { MemberRole } from "@/registry/registry";
+import type { AddedMember, MemberRole } from "@/registry/registry";
 
 export interface AddMemberState {
   error?: string;
   /** Hasło tymczasowe do przekazania osobiście; pokazujemy je tylko raz. */
-  added?: { userId: string; fullName: string; email: string; temporaryPassword: string };
+  added?: AddedMember;
 }
 
 export interface MemberActionState {
@@ -27,6 +27,7 @@ export async function addMember(_prev: AddMemberState, formData: FormData): Prom
         firstName: formText(formData, "firstName"),
         lastName: formText(formData, "lastName"),
         email: formText(formData, "email"),
+        username: formText(formData, "username"),
         role: formText(formData, "role") as MemberRole,
       });
     revalidatePath("/");

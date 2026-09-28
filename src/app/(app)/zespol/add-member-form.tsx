@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import type { MemberRole } from "@/registry/registry";
@@ -9,12 +9,19 @@ import { TemporaryPassword } from "@/components/temporary-password";
 
 export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
   const [state, formAction, pending] = useActionState(addMember, {});
+  // Pracownik loguje się nazwą użytkownika, a e-mail może pominąć; pozostali logują się e-mailem.
+  const [role, setRole] = useState(roles[0]);
+  const worker = role === "pracownik";
 
   return (
     <div className="stack-form">
       {state.added && (
         <TemporaryPassword
-          title={t("team.added", { name: state.added.fullName, email: state.added.email })}
+          title={
+            state.added.username
+              ? t("team.addedWorker", { name: state.added.fullName, username: state.added.username })
+              : t("team.added", { name: state.added.fullName, email: state.added.email ?? "" })
+          }
           password={state.added.temporaryPassword}
         />
       )}
@@ -31,20 +38,48 @@ export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
         </div>
         <div className="field-row">
           <div className="field">
-            <label htmlFor="email">{t("team.email")}</label>
-            <input id="email" name="email" type="email" autoComplete="off" required />
-          </div>
-          <div className="field">
             <label htmlFor="role">{t("team.role")}</label>
-            <select id="role" name="role" defaultValue={roles[0]} required>
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {t(`roles.${role}`)}
+            <select id="role" name="role" value={role} onChange={(event) => setRole(event.target.value as MemberRole)} required>
+              {roles.map((option) => (
+                <option key={option} value={option}>
+                  {t(`roles.${option}`)}
                 </option>
               ))}
             </select>
           </div>
+          {worker ? (
+            <div className="field">
+              <label htmlFor="username">{t("team.username")}</label>
+              <input
+                id="username"
+                name="username"
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-describedby="username-hint"
+                required
+              />
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="email">{t("team.email")}</label>
+              <input id="email" name="email" type="email" autoComplete="off" required />
+            </div>
+          )}
         </div>
+        {worker && (
+          <>
+            <p id="username-hint" className="muted">
+              {t("team.usernameHint")}
+            </p>
+            <div className="field">
+              <label htmlFor="email">{t("team.emailOptional")}</label>
+              <input id="email" name="email" type="email" autoComplete="off" />
+            </div>
+            <p className="muted">{t("team.workerHint")}</p>
+          </>
+        )}
         {state.error && (
           <p className="form-error" role="alert">
             {state.error}

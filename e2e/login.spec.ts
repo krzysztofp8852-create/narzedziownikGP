@@ -24,7 +24,7 @@ test("właściciel loguje się hasłem tymczasowym, musi je zmienić i widzi pus
   await page.getByLabel("E-mail").fill(company.email);
   await page.getByLabel("Hasło").fill("zle-haslo-123");
   await page.getByRole("button", { name: "Zaloguj się" }).click();
-  await expect(page.getByText("Nieprawidłowy e-mail lub hasło.")).toBeVisible();
+  await expect(page.getByText("Nieprawidłowy login lub hasło.")).toBeVisible();
 
   await page.getByLabel("Hasło").fill(company.temporaryPassword);
   await page.getByRole("button", { name: "Zaloguj się" }).click();

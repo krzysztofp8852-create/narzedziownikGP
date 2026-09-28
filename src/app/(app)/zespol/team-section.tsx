@@ -27,7 +27,8 @@ export function TeamSection({ session, members }: { session: Session; members: T
                 {member.userId === session.userId && ` · ${t("team.you")}`}
               </span>
             </div>
-            <p className="muted member-email">{member.email}</p>
+            {member.username && <p className="muted member-email">{t("team.loginAs", { username: member.username })}</p>}
+            {member.email && <p className="muted member-email">{member.email}</p>}
             <Status member={member} />
             {member.active && member.role !== "wlasciciel" && (
               <details className="member-more">

@@ -20,7 +20,10 @@ export interface RegistryTestbed {
   givenActiveCompany(name: string, options?: { email?: string; baseName?: string }): Promise<GivenCompany>;
   /** Logowanie „teraz” według zegara testu, do zmiany hasła tymczasowego. */
   signedInNow(): { signedInAt: Date };
-  /** Kierownik lub magazynier dodany przez właściciela (z własnym hasłem) do firmy z givenActiveCompany. */
+  /**
+   * Kierownik, magazynier lub pracownik dodany przez właściciela (z własnym hasłem) do firmy z givenActiveCompany.
+   * Pracownik ma nazwę użytkownika i nie ma e-maila.
+   */
   givenMember(company: GivenCompany, role: MemberRole, fullName?: string): Promise<string>;
   /** Konto super-admina GP Engineering, założone tak jak robi to skrypt. */
   givenSuperAdmin(): Promise<string>;
@@ -103,7 +106,9 @@ export function setupRegistryTestbed(): RegistryTestbed {
       const { userId } = await registry.as(company.ownerId).addMember({
         firstName,
         lastName: lastName.join(" "),
-        email: `${role}${counter}@${company.companyId}.test`,
+        ...(role === "pracownik"
+          ? { email: "", username: `pracownik${counter}` }
+          : { email: `${role}${counter}@${company.companyId}.test` }),
         role,
       });
       await registry.as(userId).changePassword(`${role}-haslo-${counter}`, { signedInAt: clock.now() });
