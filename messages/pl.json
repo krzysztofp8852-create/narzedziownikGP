@@ -1118,7 +1118,7 @@
     "tipsTitle": "Co warto kliknąć",
     "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał.\nJako kierownik: „Nowy ruch”. Wydaj sprzęt z bazy albo napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nDzwonek i 📋 w nagłówku: powiadomienia i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
     "note": "To wspólne demo: inni oglądający też mogą w nim coś zmienić, a my co jakiś czas przywracamy je do stanu wyjściowego. E-maile z demo nigdzie nie wychodzą.",
-    "contact": "Chcesz takie narzędzie dla swojej firmy? Zadzwoń: {phone}",
+    "contact": "Chcesz takie narzędzie dla swojej firmy?",
     "bar": {
       "label": "Demo",
       "switch": "Zobacz jako:",
@@ -1199,6 +1199,8 @@
         "title": "Gotowe",
         "text": "Klikaj śmiało, to przykładowe dane. Zajrzyj też do innej roli na żółtym pasku u góry."
       }
-    }
+    },
+    "contactPhone": "Zadzwoń:",
+    "contactEmail": "Napisz:"
   }
 }
