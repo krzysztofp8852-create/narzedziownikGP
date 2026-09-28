@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { DemoRoleButton } from "@/components/demo-role-button";
 import { DEMO_ROLES } from "@/demo/company";
 import { t } from "@/i18n/t";
-import { serverEnv } from "@/lib/env";
 import { getRegistry } from "@/lib/registry-instance";
 import { enterDemo } from "./actions";
 
@@ -13,13 +12,16 @@ export const dynamic = "force-dynamic";
 
 const lines = (text: string) => text.split("\n");
 
+/** Kontakt handlowy GP Engineering dla oglądających demo. */
+const SALES_PHONE = { label: "576 763 536", href: "tel:+48576763536" };
+const SALES_EMAIL = "kontakt@gp-engineering.pl";
+
 /** Wejście do firmy demo dla zainteresowanych klientów: wybór roli bez logowania. */
 export default async function DemoPage(props: PageProps<"/demo">) {
   const { niedostepne } = await props.searchParams;
   const accounts = await getRegistry().system().demoAccounts();
   const person = (role: string) => accounts.find((account) => account.role === role);
   const available = accounts.length > 0 && !niedostepne;
-  const phone = serverEnv.supportPhone();
   return (
     <div className="demo-page">
       <div className="hazard" aria-hidden />
@@ -81,7 +83,14 @@ export default async function DemoPage(props: PageProps<"/demo">) {
             ))}
           </ol>
           <p className="muted">{t("demo.note")}</p>
-          {phone && <p className="demo-contact">{t("demo.contact", { phone })}</p>}
+          <div className="demo-contact">
+            <p>{t("demo.contact")}</p>
+            <p>
+              {t("demo.contactPhone")} <a href={SALES_PHONE.href}>{SALES_PHONE.label}</a>
+              {" · "}
+              {t("demo.contactEmail")} <a href={`mailto:${SALES_EMAIL}`}>{SALES_EMAIL}</a>
+            </p>
+          </div>
         </section>
       </main>
       <div className="hazard" aria-hidden />

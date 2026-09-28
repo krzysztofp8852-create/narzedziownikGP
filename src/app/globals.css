@@ -2365,6 +2365,8 @@ a.tool-row:hover .tool-row-name {
 }
 
 .demo-contact {
+  display: grid;
+  gap: 4px;
   font-weight: 700;
 }
 
