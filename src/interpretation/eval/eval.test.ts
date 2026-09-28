@@ -53,6 +53,8 @@ describe("zestaw ewaluacyjny", () => {
       kind: "wydanie",
       siteId: siteId(request, "Rataje"),
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02", "S-03"] }],
     }));
 
@@ -80,6 +82,8 @@ describe("zestaw ewaluacyjny", () => {
       kind: "wydanie",
       siteId: siteId(request, "Rataje"),
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [
         { phrase: "szlifierki", quantity: 1, codes: ["S-01"] },
         { phrase: "młot", quantity: 1, codes: ["H-01"] },
@@ -104,6 +108,8 @@ describe("zestaw ewaluacyjny", () => {
         kind: "wydanie",
         siteId: siteId(request, "Rataje"),
         fromSiteId: null,
+        serviceId: null,
+        everything: false,
         mentions: [{ phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02"] }],
       };
     });
@@ -134,6 +140,8 @@ describe("zestaw ewaluacyjny", () => {
       kind: "wydanie",
       siteId: siteId(request, "Rataje"),
       fromSiteId: null,
+      serviceId: null,
+      everything: false,
       mentions: [{ phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02"] }],
     }));
 

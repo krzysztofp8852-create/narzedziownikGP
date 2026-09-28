@@ -35,4 +35,7 @@ lokalizacja) z nazwami aktywnych budów. Nazwisk kierowników ani wartości nie 
   sprawdzić przechowywanie danych w Europie i zerową retencję na koncie OpenAI.
 - Jakości rozumienia slangu nie sprawdzają testy jednostkowe. Zgodnie ze specyfikacją potrzebny jest osobny,
   ręcznie uruchamiany zestaw ewaluacyjny; zmiana promptu albo modelu bez niego to zmiana na ślepo.
-- Wpis tekstem proponuje wydanie, zwrot i przeniesienie. Serwis obsługuje checklista.
+- Wpis tekstem proponuje każdy ruch, który rejestruje checklista: wydanie, zwrot, przeniesienie, wysłanie do serwisu
+  i przyjęcie z serwisu. Serwisy dostawca dostaje pod oznaczeniami SE1, SE2…, tak jak budowy.
+- „Wszystko z …” (np. „zabieram wszystko z Winograd na Rataje”) model zaznacza flagą `everything` bez wymieniania
+  narzędzi; cały sprzęt ze źródła wybiera moduł z ewidencji, a propozycja pokazuje go zaznaczony do odznaczenia.

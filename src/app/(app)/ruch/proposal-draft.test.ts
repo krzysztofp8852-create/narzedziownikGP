@@ -100,3 +100,61 @@ describe("poprawianie propozycji przed ✓", () => {
     expect(codes(plan.addable)).toEqual([]);
   });
 });
+
+describe("serwis i „wszystko z …”", () => {
+  const HILTI = "hilti";
+  const H01 = "00000000-0000-4000-8000-000000000006";
+  /** Magazynier: rusza sprzęt wszędzie; w serwisie Hilti jest młot H-01. */
+  const storekeeper: ChecklistData = {
+    ...nowak,
+    everywhere: true,
+    places: [...places, { id: HILTI, name: "Serwis Hilti", kind: "serwis", mine: false, tools: [tool(H01, "H-01", "Młot Hilti")] }],
+    routes: {
+      ...nowak.routes,
+      do_serwisu: { from: ["baza", "rataje", "winogrady"], to: [HILTI] },
+      z_serwisu: { from: [HILTI], to: ["baza"] },
+    },
+  };
+  const empty: Proposal = { ...issueProposal, tools: [], ambiguities: [], site: null, from: null };
+
+  it("do serwisu: skąd to baza albo budowa, dokąd wybrany serwis", () => {
+    const toService: Proposal = { ...empty, kind: "do_serwisu", site: { id: "baza", name: "Magazyn" }, service: { id: HILTI, name: "Serwis Hilti" } };
+    const draft = { ...startDraft(toService, storekeeper), toolIds: [W01] };
+
+    const plan = planDraft(draft, toService, storekeeper);
+
+    expect(plan.sites.map((site) => site.id)).toEqual(["baza", "rataje", "winogrady"]);
+    expect(plan).toMatchObject({ from: { id: "baza" }, to: { id: HILTI }, ready: true });
+  });
+
+  it("z serwisu: skąd to serwis, a sprzęt wraca na bazę", () => {
+    const fromService: Proposal = { ...empty, kind: "z_serwisu", service: { id: HILTI, name: "Serwis Hilti" } };
+    const draft = { ...startDraft(fromService, storekeeper), toolIds: [H01] };
+
+    const plan = planDraft(draft, fromService, storekeeper);
+
+    expect(plan).toMatchObject({ sites: [], from: { id: HILTI }, to: { id: "baza" }, ready: true });
+  });
+
+  it("„oddaję wszystko z Rataj”: zaznaczony cały sprzęt z Rataj, a usunięty z listy zostaje", () => {
+    const all: Proposal = { ...empty, kind: "zwrot", site: { id: "rataje", name: "Rataje" }, everything: true, tools: [proposed(S02, "S-02", "Szlifierka mała", "wszystko")] };
+    const draft = startDraft(all, nowak);
+
+    expect(codes(planDraft(draft, all, nowak).tools)).toEqual(["S-02"]);
+    const without = planDraft({ ...draft, excluded: [S02] }, all, nowak);
+    expect(without).toMatchObject({ tools: [], ready: false });
+    expect(codes(without.addable)).toEqual(["S-02"]);
+  });
+
+  it("„wszystko” przy przeniesieniu: lista idzie za wybranym miejscem, skąd", () => {
+    const all: Proposal = { ...empty, kind: "przeniesienie", site: { id: "rataje", name: "Rataje" }, everything: true };
+    const draft = startDraft(all, nowak);
+    expect(planDraft(draft, all, nowak)).toMatchObject({ from: null, tools: [], ready: false });
+
+    const plan = planDraft({ ...draft, fromId: "winogrady" }, all, nowak);
+
+    expect(plan.sources.map((place) => place.id)).toEqual(["winogrady"]);
+    expect(plan).toMatchObject({ from: { id: "winogrady" }, to: { id: "rataje" }, ready: true });
+    expect(codes(plan.tools)).toEqual(["Z-01"]);
+  });
+});

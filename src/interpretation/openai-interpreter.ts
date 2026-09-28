@@ -14,12 +14,18 @@ Rodzaj ruchu (kind):
 - "wydanie": sprzęt z bazy (magazynu) na budowę („biorę”, „wydaj”, „zabieram z bazy”, „na Rataje”).
 - "zwrot": sprzęt z budowy na bazę („oddaję”, „zwracam”, „odwożę na bazę”, „wraca na magazyn”).
 - "przeniesienie": sprzęt z jednej budowy na drugą („zabieram z Winograd na Rataje”, „przejmuję z Łazarza”).
+- "do_serwisu": sprzęt do naprawy, z budowy albo z bazy do serwisu („wysyłam do serwisu”, „oddaję do naprawy”, „wiozę do Hilti na przegląd”).
+- "z_serwisu": sprzęt odebrany z serwisu na bazę („odbieram z serwisu”, „wraca z naprawy”, „przywiozłem z serwisu”).
 Gdy zdanie nie przesądza, wybierz "wydanie".
 
 Budowy (site, fromSite) podawaj wyłącznie jako oznaczenie z listy (np. "B2"), nigdy nazwą:
 - site: budowa, na którą trafia sprzęt przy wydaniu i przeniesieniu, albo z której wraca przy zwrocie. Null, gdy nie padła. Słowa „moja budowa”, „do mnie” oznaczają budowę oznaczoną jako moja, jeśli jest jedna.
+- site przy "do_serwisu": budowa, z której sprzęt jedzie do serwisu; null, gdy jedzie z bazy albo budowa nie padła. Przy "z_serwisu" zawsze null.
 - fromSite: tylko przy przeniesieniu, budowa, z której sprzęt jest zabierany, jeśli padła w zdaniu; inaczej null.
+- service: tylko przy "do_serwisu" i "z_serwisu", serwis z listy (oznaczenie, np. "SE1"), do którego sprzęt jedzie albo z którego wraca, jeśli padł w zdaniu; inaczej null.
 Rozpoznawaj odmianę i skróty nazw („z Rataj”, „na Winogradach”, „Łazarz” → „Łazarzu”).
+
+Wszystko (everything): true, gdy ruch dotyczy całego sprzętu z miejsca, skąd jest zabierany, a nie wymienionych narzędzi („zabieram wszystko z Winograd na Rataje”, „oddaję cały sprzęt z Rataj”, „zjeżdżam ze wszystkim z Łazarza”, „odbieram wszystko z serwisu”). Wtedy mentions to pusta lista. Inaczej false.
 
 Narzędzia (mentions): jedna pozycja na każdą wzmiankę o narzędziu w zdaniu.
 - phrase: dosłowny fragment zdania, np. "dwie szlifierki".
@@ -32,11 +38,13 @@ Nie wymyślaj narzędzi ani kodów spoza listy.`;
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["kind", "site", "fromSite", "mentions"],
+  required: ["kind", "site", "fromSite", "service", "everything", "mentions"],
   properties: {
     kind: { type: "string", enum: [...PROPOSAL_KINDS] },
     site: { anyOf: [{ type: "string" }, { type: "null" }] },
     fromSite: { anyOf: [{ type: "string" }, { type: "null" }] },
+    service: { anyOf: [{ type: "string" }, { type: "null" }] },
+    everything: { type: "boolean" },
     mentions: {
       type: "array",
       items: {
@@ -57,12 +65,14 @@ interface ModelAnswer {
   kind: ProposalKind;
   site: string | null;
   fromSite: string | null;
+  service: string | null;
+  everything: boolean;
   mentions: Mention[];
 }
 
 /**
- * Port interpretacji na OpenAI (Responses API ze strukturalnym wyjściem). Budowy dostaje pod krótkimi
- * oznaczeniami (B1, B2…), a narzędzia pod kodami, więc identyfikatory z bazy nie wychodzą poza serwer.
+ * Port interpretacji na OpenAI (Responses API ze strukturalnym wyjściem). Budowy i serwisy dostaje pod krótkimi
+ * oznaczeniami (B1, B2…, SE1, SE2…), a narzędzia pod kodami, więc identyfikatory z bazy nie wychodzą poza serwer.
  * Odpowiedzi nie są przechowywane u dostawcy (`store: false`).
  */
 export function createOpenAIInterpreter({ apiKey, model }: { apiKey: string; model: string }): Interpreter {
@@ -70,9 +80,13 @@ export function createOpenAIInterpreter({ apiKey, model }: { apiKey: string; mod
   return {
     async interpret(request: InterpretRequest): Promise<Interpretation> {
       const refs = request.sites.map((site, index) => ({ ref: `B${index + 1}`, site }));
+      const serviceRefs = request.services.map((service, index) => ({ ref: `SE${index + 1}`, service }));
       const catalog = [
         "Budowy (oznaczenie | nazwa):",
         ...refs.map(({ ref, site }) => `${ref} | ${site.name}${site.mine ? " | moja" : ""}`),
+        "",
+        "Serwisy (oznaczenie | nazwa):",
+        ...serviceRefs.map(({ ref, service }) => `${ref} | ${service.name}`),
         "",
         "Narzędzia (kod | nazwa | kategoria | gdzie jest):",
         ...request.tools.map((tool) => `${tool.code} | ${tool.name} | ${tool.category} | ${tool.location.name}`),
@@ -108,7 +122,9 @@ export function createOpenAIInterpreter({ apiKey, model }: { apiKey: string; mod
         kind: PROPOSAL_KINDS.includes(answer.kind) ? answer.kind : "wydanie",
         siteId: siteId(answer.site),
         fromSiteId: siteId(answer.fromSite),
-        mentions: answer.mentions,
+        serviceId: serviceRefs.find((entry) => entry.ref === answer.service)?.service.id ?? null,
+        everything: answer.everything,
+        mentions: answer.everything ? [] : answer.mentions,
       };
     },
   };

@@ -46,8 +46,8 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
   const operations: [Operation, string][] = [
     // Skaner podpowiada te same ruchy, więc jest tam, gdzie choć jeden z nich.
     ...(movements.length > 0 ? [["skaner", t("board.scan")] as [Operation, string]] : []),
-    // Głos i wpis tekstem proponują wydanie, zwrot albo przeniesienie.
-    ...(textEntry && (checklist.routes.wydanie || checklist.routes.zwrot || checklist.routes.przeniesienie)
+    // Głos i wpis tekstem proponują każdy z tych ruchów.
+    ...(textEntry && movements.length > 0
       ? [["tekst", t(voiceEntry ? "board.voiceEntry" : "board.textEntry")] as [Operation, string]]
       : []),
     ...movements,
