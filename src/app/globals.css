@@ -1454,7 +1454,7 @@ a.tool-row:hover .tool-row-name {
   flex-wrap: wrap;
 }
 
-.section-head a {
+.section-head a:not(.button) {
   color: var(--accent);
   font-weight: 600;
   font-size: 0.95rem;
