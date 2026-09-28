@@ -22,15 +22,19 @@ export function canRecord() {
 interface VoiceRecorderProps {
   /** Nagranie gotowe do wysłania. */
   onRecorded: (audio: Blob) => void;
-  /** Poprzednie nagranie jeszcze się rozpoznaje. */
+  /** System jeszcze odpowiada na poprzednie nagranie albo wpisany tekst: przycisk czeka. */
   busy: boolean;
+  /** Rozpoznaje się właśnie nagranie (a nie wpisany tekst): przycisk mówi „Słucham nagrania…”. */
+  listening?: boolean;
+  /** Podpowiedź pod przyciskiem, zanim ktoś go przytrzyma. */
+  hint?: string;
 }
 
 /**
  * Przycisk „przytrzymaj i mów”: nagrywa, dopóki palec (albo spacja) go trzyma. Mikrofon jest otwarty
  * tylko w czasie nagrania, a nagranie zostaje w pamięci strony do chwili wysłania.
  */
-export function VoiceRecorder({ onRecorded, busy }: VoiceRecorderProps) {
+export function VoiceRecorder({ onRecorded, busy, listening = busy, hint: idleHint = t("voice.hint") }: VoiceRecorderProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
   const [hint, setHint] = useState<string | null>(null);
@@ -137,7 +141,7 @@ export function VoiceRecorder({ onRecorded, busy }: VoiceRecorderProps) {
   const label =
     phase === "recording"
       ? t("voice.recording", { time: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` })
-      : busy
+      : busy && listening
         ? t("voice.listening")
         : t("voice.hold");
 
@@ -164,7 +168,7 @@ export function VoiceRecorder({ onRecorded, busy }: VoiceRecorderProps) {
         {label}
       </button>
       <small id="voice-hint" aria-live="polite">
-        {hint ?? t("voice.hint")}
+        {hint ?? idleHint}
       </small>
     </div>
   );

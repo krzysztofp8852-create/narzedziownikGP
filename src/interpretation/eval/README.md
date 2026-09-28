@@ -2,7 +2,7 @@
 
 Sprawdza, jak prawdziwy port interpretacji (OpenAI, zob. `docs/adr/0005`) rozumie budowlaną polszczyznę:
 slang („szlifa”, „kujak”, „niwela”), liczebniki, niejednoznaczności, przeniesienia, sprzęt w serwisie
-i ruchy do serwisu i z serwisu, „wszystko z …” oraz narzędzia spoza ewidencji. Uruchamiaj go przy każdej zmianie modelu albo promptu
+i ruchy do serwisu i z serwisu, „wszystko z …”, narzędzia spoza ewidencji oraz pytania „gdzie jest …” (ADR 0018). Uruchamiaj go przy każdej zmianie modelu albo promptu
 (`src/interpretation/openai-interpreter.ts`, podpowiedź transkrypcji w `openai-transcriber.ts`). Nie jest częścią CI:
 woła płatne API, a wynik modelu może się różnić między uruchomieniami.
 
@@ -21,10 +21,10 @@ dwóch modeli.
 
 - `companies.ts`: przykładowe ewidencje firm (osoby, baza, budowy, serwisy, narzędzia z miejscem, w którym są).
 - `cases.ts`: przypadki, czyli tekst, ewidencja firmy, kto mówi i oczekiwana Propozycja ruchu.
-- `eval.ts`: runner, a `report.ts` raport do konsoli. Każdy przypadek przechodzi przez moduł Interpretacja (`propose`), tak jak wpis w aplikacji,
-  tylko Rejestr zastępuje ewidencja przypadku w pamięci. Moduł niczego nie zapisuje.
+- `eval.ts`: runner, a `report.ts` raport do konsoli. Każdy przypadek przechodzi przez moduł Interpretacja (`reply`), tak jak wpis
+  w „Powiedz lub wpisz”, tylko Rejestr zastępuje ewidencja przypadku w pamięci. Moduł niczego nie zapisuje.
 
-Raport pokazuje ✓/✗ dla każdego przypadku i przy pudle, które pole się nie zgadza: rodzaj, budowa, skąd,
+Raport pokazuje ✓/✗ dla każdego przypadku i przy pudle, które pole się nie zgadza: ruch czy pytanie, rodzaj, budowa, skąd,
 serwis, narzędzia (kody), pytania „które?” (liczba sztuk i kody kandydatów) i nierozpoznane frazy (nieznane albo ilu
 brakuje). Fraz z tekstu nie porównujemy, bo zależą od modelu. Na końcu jest trafność całości, każdego pola
 i każdego obszaru.
@@ -50,6 +50,9 @@ Dopisz obiekt do `CASES` w `cases.ts`:
   expected: { kind: "wydanie", site: "Winogrady", tools: [], ambiguities: [{ quantity: 1, candidates: ["S-01", "S-02"] }] },
 }
 ```
+
+Pytanie „gdzie jest …” ma `expected: { question: true, tools: [...] }` z kodami wszystkich narzędzi w obiegu, o które pyta,
+bez względu na to, gdzie są. Każdy inny przypadek sprawdza też, że model nie wziął ruchu za pytanie.
 
 `site` i `from` to nazwy lokalizacji z ewidencji (`from` jest opcjonalne), `tools` to kody. Brak `ambiguities`
 i `unrecognized` oznacza, że nie powinno być pytań ani nierozpoznanych fraz. Jeśli przypadek wymaga sprzętu

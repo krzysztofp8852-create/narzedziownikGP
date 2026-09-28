@@ -34,7 +34,9 @@ export type RegistryErrorCode =
   | "issue_closed"
   | "message_required"
   | "read_only"
-  | "demo_locked";
+  | "demo_locked"
+  | "demo_chat"
+  | "demo_push";
 
 export class RegistryError extends Error {
   constructor(

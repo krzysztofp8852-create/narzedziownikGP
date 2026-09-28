@@ -45,6 +45,7 @@ describe("dodawanie narzędzia", () => {
       registration: "zaakceptowane",
       location: { id: base.id, name: "Magazyn Swarzędz", kind: "baza" },
       daysInPlace: 3,
+      responsible: null,
       damagedSince: null,
       lost: null,
       history: [

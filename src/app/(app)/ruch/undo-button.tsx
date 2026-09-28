@@ -2,12 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { t } from "@/i18n/t";
+import { newOperationId } from "@/lib/operation-id";
 import { undoMovement } from "./actions";
 
-/** Cofnięcie własnego ruchu. Identyfikator operacji nadaje serwer przy wyświetleniu listy. */
-export function UndoButton({ movementId, operationId }: { movementId: string; operationId: string }) {
+/**
+ * Cofnięcie własnego ruchu. Identyfikator operacji nadaje serwer przy wyświetleniu listy albo przycisk sam, raz na
+ * ruch (ponowne kliknięcie po zerwanym połączeniu nie cofnie dwa razy). `onUndone`: ruch właśnie cofnięto.
+ */
+export function UndoButton({ movementId, operationId, onUndone }: { movementId: string; operationId?: string; onUndone?: () => void }) {
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const [ownOperationId] = useState(() => operationId ?? newOperationId());
 
   return (
     <span className="undo">
@@ -17,7 +22,9 @@ export function UndoButton({ movementId, operationId }: { movementId: string; op
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            setError((await undoMovement(movementId, operationId)).error);
+            const { error } = await undoMovement(movementId, ownOperationId);
+            setError(error);
+            if (!error) onUndone?.();
           })
         }
       >

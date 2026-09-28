@@ -35,3 +35,26 @@ export interface Proposal {
   ambiguities: { phrase: string; quantity: number; candidates: ProposedTool[] }[];
   unrecognized: ({ phrase: string; reason: "unknown" } | { phrase: string; reason: "unavailable"; missing: number })[];
 }
+
+/** Narzędzie w odpowiedzi na pytanie „gdzie jest …”: gdzie jest teraz, od ilu dni i kto za nie odpowiada. */
+export interface FoundTool {
+  id: string;
+  code: string;
+  name: string;
+  place: { name: string; kind: "baza" | "budowa" | "serwis" | "pojazd" };
+  daysInPlace: number;
+  /** Kierownik budowy albo pojazdu; na bazie i w serwisie nikt. */
+  responsible: string | null;
+}
+
+/** Odpowiedź na pytanie „gdzie jest …” zamiast propozycji ruchu; sama nic nie zapisuje. */
+export interface WhereAnswer {
+  text: string;
+  /** Narzędzia w obiegu, o które pytano, po kodzie. */
+  tools: FoundTool[];
+  /** Frazy, w których nie rozpoznano żadnego narzędzia firmy. */
+  unrecognized: string[];
+}
+
+/** Co system odpowiada na zdanie z „Powiedz lub wpisz”: propozycję ruchu albo, na pytanie, gdzie jest sprzęt. */
+export type Reply = { proposal: Proposal; where?: undefined } | { where: WhereAnswer; proposal?: undefined };

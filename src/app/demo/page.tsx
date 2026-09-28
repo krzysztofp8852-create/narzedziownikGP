@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DemoRoleButton } from "@/components/demo-role-button";
+import { SalesContact } from "@/components/sales-contact";
 import { DEMO_ROLES } from "@/demo/company";
 import { t } from "@/i18n/t";
 import { getRegistry } from "@/lib/registry-instance";
@@ -12,16 +13,13 @@ export const dynamic = "force-dynamic";
 
 const lines = (text: string) => text.split("\n");
 
-/** Kontakt handlowy GP Engineering dla oglądających demo. */
-const SALES_PHONE = { label: "576 763 536", href: "tel:+48576763536" };
-const SALES_EMAIL = "kontakt@gp-engineering.pl";
-
 /** Wejście do firmy demo dla zainteresowanych klientów: wybór roli bez logowania. */
 export default async function DemoPage(props: PageProps<"/demo">) {
   const { niedostepne } = await props.searchParams;
   const accounts = await getRegistry().system().demoAccounts();
   const person = (role: string) => accounts.find((account) => account.role === role);
-  const available = accounts.length > 0 && !niedostepne;
+  // Przyciski wyłącza tylko brak kont; po nieudanym wejściu (`niedostepne`) można spróbować ponownie od razu.
+  const available = accounts.length > 0;
   return (
     <div className="demo-page">
       <div className="hazard" aria-hidden />
@@ -38,7 +36,7 @@ export default async function DemoPage(props: PageProps<"/demo">) {
             {t("demo.heading")} <span className="tag tag-demo">{t("demo.bar.label")}</span>
           </h1>
           <p className="demo-lead">{t("demo.lead")}</p>
-          {!available && (
+          {(!available || niedostepne) && (
             <p className="form-warning" role="status">
               {t("demo.unavailable")}
             </p>
@@ -85,11 +83,7 @@ export default async function DemoPage(props: PageProps<"/demo">) {
           <p className="muted">{t("demo.note")}</p>
           <div className="demo-contact">
             <p>{t("demo.contact")}</p>
-            <p>
-              {t("demo.contactPhone")} <a href={SALES_PHONE.href}>{SALES_PHONE.label}</a>
-              {" · "}
-              {t("demo.contactEmail")} <a href={`mailto:${SALES_EMAIL}`}>{SALES_EMAIL}</a>
-            </p>
+            <SalesContact />
           </div>
         </section>
       </main>

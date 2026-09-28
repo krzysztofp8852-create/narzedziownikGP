@@ -74,3 +74,19 @@ export async function activateDemoCompany(sql: Sql, companyId: string, now: Date
 export function refuseInDemo(session: Session) {
   if (session.company.demo) throw new RegistryError("demo_locked");
 }
+
+/**
+ * Wątek czatu z supportem należy do konta, a konto roli demo dzielą wszyscy oglądający: następny widziałby
+ * wiadomości poprzedniego. W demo czat nie przyjmuje ani nie pokazuje wiadomości.
+ */
+export function refuseChatInDemo(session: Session) {
+  if (session.company.demo) throw new RegistryError("demo_chat");
+}
+
+/**
+ * Push to kopia wpisu z dzwonka konta, a konto roli demo dzielą wszyscy oglądający: telefon jednego dostawałby ruchy
+ * innych i codzienne alarmy także po zmianie demo. W demo powiadomień push nie da się włączyć.
+ */
+export function refusePushInDemo(session: Session) {
+  if (session.company.demo) throw new RegistryError("demo_push");
+}

@@ -60,9 +60,12 @@ npm run company:create -- --name "Zawbud" --owner-email jan@zawbud.pl --owner-na
 npm run demo:create
 ```
 
-Zakłada firmę demo „DemoBud” (zespół, sprzęt, budowy, busy, serwisy i kilka tygodni historii) i robi z niej
-obecne demo. Link do wysyłania klientom to `/demo`: tam wybiera się rolę i wchodzi bez hasła, a w aplikacji
-role przełącza pasek pod nagłówkiem. Ponowne uruchomienie zakłada świeże demo i odcina poprzednie (zob. ADR 0017).
+Zakłada firmę demo „DemoBud” (zespół, sprzęt, budowy, busy, serwisy, kilka tygodni historii, a w dzwonkach alarmy
+i raporty) i robi z niej obecne demo. Link do wysyłania klientom to `/demo`: tam wybiera się rolę i wchodzi bez hasła,
+a w aplikacji role przełącza pasek pod nagłówkiem (na stronie, którą widzi każda rola, oglądający na niej zostaje).
+Wylogowanie z demo wraca na `/demo`. Konto roli dzielą wszyscy oglądający, więc czat z supportem pokazuje w demo
+tylko kontakt handlowy, a powiadomień push nie da się włączyć. Ponowne uruchomienie zakłada świeże demo i odcina
+poprzednie (zob. ADR 0017).
 
 ## Testy
 
@@ -125,7 +128,9 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   nagłówkach. Rejestr robi podgląd (`previewToolImport`: błędy każdego wiersza, kody nadane wierszom bez kodu
   według kategorii, nic nie zapisuje) i zatwierdzenie (`importTools`): jedna transakcja, wszystko albo nic,
   z identyfikatorem operacji klienta (`app.tool_imports`). Każde narzędzie dostaje ruch `przyjecie` ze źródłem
-  `import` do lokalizacji z pliku (baza, aktywna budowa, serwis), a bez niej na bazę.
+  `import` do lokalizacji z pliku (baza, aktywna budowa, serwis), a bez niej na bazę. Strona importu daje
+  przykładowy plik XLSX (`/narzedzia/import/przyklad`, `src/import/sample.ts`) z nagłówkami, które mapowanie
+  rozpoznaje, i kategoriami oraz lokalizacjami tej firmy.
 - Tablica (`whereIsWhat`): baza z „nieużywane X dni”, aktywne budowy z alarmem po progu dni firmy,
   sekcje „W serwisie” i „Zaginione” oraz liczba alarmów. Wartości narzędzi, sumy lokalizacji, kwotę
   poza bazą (tylko budowy) i sumę zaginionych dostaje wyłącznie właściciel: dla innych ról zapytanie
@@ -138,8 +143,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   w lokalizacji źródłowej, cała transakcja się wycofuje. „Od X dni” liczy się od czasu zdarzenia
   ostatniego ruchu.
 - Cofnięcie i korekta bez edycji historii: autor cofa własne wydanie lub zwrot (`undoMovement`) w ciągu 15 minut
-  od czasu zapisu, jeśli żadne z narzędzi nie ruszyło się później. Cofnięcie to nowy ruch z odnośnikiem
-  do oryginału, który przez to jest „cofnięty”; narzędzia wracają z „od X dni” sprzed cofniętego ruchu.
+  od czasu zapisu, jeśli żadne z narzędzi nie ruszyło się później: z listy ostatnich ruchów albo od razu z komunikatu
+  „Zapisano” pod checklistą, skanerem i propozycją. Cofnięcie to nowy ruch z odnośnikiem
+  do oryginału, który przez to jest „cofnięty”; narzędzia wracają z „od X dni” sprzed cofniętego ruchu, a po cofnięciu
+  ruchu z serwisu także z flagą „uszkodzone”, którą ten ruch zdjął.
   Właściciel robi korektę (`correctTool`: faktyczna lokalizacja i stan, powód obowiązkowy), oznacza
   zaginięcie (`markToolLost`: data, ostatnia lokalizacja i kierownik budowy) i wycofuje narzędzie
   (`retireTool`). Zaginione i wycofane znikają z tablicy i checklist, karta z historią zostaje;
@@ -161,13 +168,18 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   tylko się dopisuje, a zamknięcie wymaga komentarza. Kto poza właścicielem i autorem widzi zgłoszenia
   (kierownik lokalizacji, magazynier z opcją zamykania), ustawia właściciel; pilnuje tego RLS. Nowe zgłoszenia,
   komentarze, zamknięcia i zgłoszenia narzędzi trafiają do okna 📋 z własnym licznikiem i kopią push.
+- Wyszukiwanie (lupa w nagłówku, `/szukaj`, zob. `docs/adr/0018`): każda rola sprawdza, gdzie jest narzędzie, od ilu
+  dni i kto za nie odpowiada. Pole zawęża listę od razu (kod, nazwa, marka, model, kategoria), a „Przytrzymaj i mów”
+  pyta głosem („gdzie jest niwelator?”): nagranie idzie przez transkrypcję i Interpretację (`findFromRecording`),
+  które zwracają narzędzia, o które pytano. Karta narzędzia mówi, kto za nie odpowiada (kierownik budowy albo pojazdu).
 - Czat z supportem (💬 w nagłówku, `/czat`, zob. `docs/adr/0016`): właściciel, kierownik i magazynier piszą
   do GP Engineering (`sendSupportMessage`), jeden wątek na osobę, z tekstem i (albo) zdjęciem lub zrzutem ekranu
   (prywatny kubełek Storage `zdjecia-czatu`). Wiadomość niesie kontekst: rolę, ekran, z którego otwarto czat,
   i wersję aplikacji. Po wiadomości, na którą od doby nie odpowiedzieliśmy, baza dopisuje automatyczną odpowiedź,
   a support dostaje e-mail. Odpowiadamy z panelu super-admina (`/super-admin/czat`, nieprzeczytane na górze);
   odpowiedź trafia do okna 💬 z licznikiem i kopią push. Pracownik czatu nie ma. Czat działa też w trybie tylko
-  do odczytu. Wątek widzi tylko jego użytkownik i super-admin; pilnuje tego RLS.
+  do odczytu. Wątek widzi tylko jego użytkownik i super-admin; pilnuje tego RLS. W firmie demo okno 💬 pokazuje tylko
+  informację i kontakt handlowy, a Rejestr odmawia wiadomości (`demo_chat`), bo konto roli dzielą wszyscy oglądający.
 - Wpis tekstem (przycisk „Wpisz tekstem” w operacjach): moduł **Interpretacja** (`src/interpretation/`) zamienia
   zdanie kierownika w Propozycję ruchu. Port interpretacji (OpenAI Responses API ze strukturalnym wyjściem, zob.
   `docs/adr/0005`) dostaje tekst, narzędzia firmy z zapytania Rejestru `toolCatalog` (kod, nazwa, kategoria,
@@ -175,7 +187,8 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   wszystkich pasujących. Moduł sam wybiera egzemplarze dostępne tam, skąd ruch zabiera sprzęt: liczebnik bierze
   tyle, ile trzeba, nadmiar kandydatów to pytanie z przyciskami, a brak to nierozpoznana fraza. Propozycję
   kierownik poprawia (rodzaj, budowa, narzędzia) i zatwierdza ✓; moduł nigdy nie zapisuje, a ✓ to zwykłe
-  `registerMovement` ze źródłem `glos` i tekstem wpisu, który widać w historii i eksporcie.
+  `registerMovement` ze źródłem `glos` i tekstem wpisu, który widać w historii i eksporcie. Na pytanie („gdzie jest
+  niwelator?”) zamiast propozycji przychodzi odpowiedź z narzędziami, miejscem, dniami i odpowiedzialnym.
 - Głos (przycisk „Powiedz lub wpisz”, gdy jest dostawca transkrypcji): kierownik przytrzymuje „Przytrzymaj i mów”
   (MediaRecorder: webm/Opus na Androidzie, mp4 na iPhonie, najwyżej minuta), a nagranie idzie do akcji serwera.
   `proposeFromRecording` modułu Interpretacja kładzie je do prywatnego kubełka Supabase Storage `nagrania`
@@ -197,7 +210,7 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   ekranu głównego Androida i iPhone'a (ikony w `public/icons`, rysuje je `npx tsx scripts/generate-icons.mts`).
   Service worker trzyma w telefonie pliki interfejsu, stronę „Brak sieci” i ostatnio pobraną tablicę tej
   osoby; bez zasięgu tablica otwiera się z kopii z informacją, z której godziny są dane. Wylogowanie kasuje
-  kopię. Pełne otwarcie strony bez sieci działa tylko w zbudowanej aplikacji (`next dev` nie ożywia strony
+  kopię i kończy tylko sesję tej przeglądarki (inne urządzenia tego konta zostają zalogowane). Pełne otwarcie strony bez sieci działa tylko w zbudowanej aplikacji (`next dev` nie ożywia strony
   bez połączenia z HMR).
 - Lokalizacje: baza (jedna na firmę), budowy (adres, jeden kierownik, status `aktywna`/`zakończona`)
   i serwisy. Dodaje je i zmienia kierownika aktywnej budowy tylko właściciel. Kierownikiem budowy może być tylko
@@ -238,7 +251,7 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   (`npx web-push generate-vapid-keys`): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` i `VAPID_SUBJECT` (kontakt dla
   usług push, np. `mailto:powiadomienia@gp-engineering.pl`) w zmiennych Vercel. Bez kluczy włączanie powiadomień
   w dzwonku się nie pokazuje, a kopie push trafiają tylko do logu serwera. Wymiana kluczy unieważnia wszystkie
-  subskrypcje.
+  subskrypcje. W firmie demo push jest wyłączony: włączania nie ma, a kopie na konta demo nie wychodzą.
 - Wpis tekstem wymaga `OPENAI_API_KEY` (OpenAI API bez trenowania na danych i bez przechowywania odpowiedzi,
   zob. `docs/adr/0005`) w zmiennych Vercel; model domyślnie `gpt-5.4-mini`, inny w `OPENAI_MODEL`. Bez klucza przycisk „Wpisz tekstem” się nie pokazuje. Lokalnie i w teście dymnym
   `TEXT_ENTRY_INTERPRETER=slowa` włącza interpretację słowami kluczowymi bez AI.

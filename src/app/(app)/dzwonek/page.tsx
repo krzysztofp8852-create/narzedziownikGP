@@ -15,8 +15,9 @@ export const metadata: Metadata = { title: t("bell.title") };
 export default async function BellPage() {
   const session = await requireSession();
   const { unread, entries } = await getRegistry().as(session.userId).bell();
-  // Bez kluczy VAPID serwer nie wyśle pusha, więc nie ma czego włączać.
-  const vapidPublicKey = serverEnv.webPush()?.publicKey ?? null;
+  // Bez kluczy VAPID serwer nie wyśle pusha, więc nie ma czego włączać. W demo konto roli dzielą wszyscy oglądający,
+  // więc telefon jednego dostawałby wpisy dzwonka innych.
+  const vapidPublicKey = session.company.demo ? null : (serverEnv.webPush()?.publicKey ?? null);
 
   return (
     <>

@@ -40,6 +40,20 @@ async function whereIs(z: Zawbud, toolId: string) {
   return (await z.owner.toolCard(toolId))!.location;
 }
 
+describe("kto odpowiada za narzędzie", () => {
+  it("karta narzędzia mówi, kto za nie teraz odpowiada: kierownik budowy albo pojazdu, a na bazie nikt", async () => {
+    const z = await givenZawbud();
+    const worker = testbed.registry.as(await testbed.givenMember(z.zawbud, "pracownik", "Marek Zieliński"));
+    expect((await worker.toolCard(z.s01))!.responsible).toBeNull();
+
+    await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.s01]);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.kowalskiBusId, [z.s02]);
+
+    expect((await worker.toolCard(z.s01))!.responsible).toEqual({ fullName: "Adam Nowak", active: true });
+    expect((await worker.toolCard(z.s02))!.responsible).toEqual({ fullName: "Jan Kowalski", active: true });
+  });
+});
+
 describe("dodawanie pojazdu", () => {
   it("właściciel dodaje pojazd z kierownikiem: jest aktywny, z alarmem wyłączonym, na liście lokalizacji i na tablicy", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");

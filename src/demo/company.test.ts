@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { isRegistryError } from "@/registry/errors";
 import { setupRegistryTestbed, START } from "@/registry/testing/harness";
 import { createDemoCompany, DEMO_COMPANY_NAME } from "./company";
 
 const bed = setupRegistryTestbed();
+const DAY = 24 * 60 * 60 * 1000;
 
 const demo = (now = START) =>
   createDemoCompany({ db: bed.db, authAdmin: bed.auth, photos: bed.photos, chatPhotos: bed.chatPhotos }, { now });
@@ -54,6 +56,35 @@ describe("firma demo", () => {
     expect(await bed.registry.as(worker.userId).issues()).toHaveLength(1);
   });
 
+  it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
+    await demo();
+    const [owner, manager] = await bed.registry.system().demoAccounts();
+    const kinds = async (userId: string) => (await bed.registry.as(userId).bell()).entries.map((entry) => entry.notification.kind);
+
+    expect(await kinds(owner.userId)).toEqual(expect.arrayContaining(["progi_przekroczone", "raport_tygodniowy", "raport_piatkowy"]));
+    expect(await kinds(manager.userId)).toEqual(expect.arrayContaining(["prog_przekroczony", "raport_piatkowy"]));
+    // Raporty tylko z ostatnich dwóch tygodni.
+    expect((await kinds(owner.userId)).filter((kind) => kind === "raport_tygodniowy")).toHaveLength(2);
+  });
+
+  it("zadania harmonogramu scenariusza nie dotykają innych firm", async () => {
+    const zawbud = await bed.givenActiveCompany("Zawbud");
+    const nowakId = await bed.givenMember(zawbud, "kierownik", "Adam Nowak");
+    const registry = bed.registry.as(zawbud.ownerId);
+    const { locationId: siteId } = await registry.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: nowakId });
+    const category = await registry.addCategory({ name: "Szlifierki", prefix: "S" });
+    const { toolId } = await registry.addTool({ operationId: randomUUID(), code: "S-01", name: "Szlifierka", categoryId: category.id });
+    const { base } = await registry.whereIsWhat();
+    await bed.registry
+      .as(nowakId)
+      .registerMovement({ operationId: randomUUID(), kind: "wydanie", fromLocationId: base.id, toLocationId: siteId, toolIds: [toolId], source: "checklista" });
+
+    await demo(new Date(START.getTime() + 40 * DAY));
+
+    expect((await registry.bell()).entries).toEqual([]);
+    expect((await bed.registry.as(nowakId).bell()).entries).toEqual([]);
+  });
+
   it("nie pozwala odebrać wejścia do roli następnym oglądającym", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();
@@ -63,6 +94,51 @@ describe("firma demo", () => {
       const error = await attempt.catch((caught: unknown) => caught);
       expect(isRegistryError(error) && error.code).toBe("demo_locked");
     }
+  });
+
+  it("czat z supportem i push są wyłączone, bo konto roli dzielą wszyscy oglądający", async () => {
+    await demo();
+    const [, manager] = await bed.registry.system().demoAccounts();
+    const registry = bed.registry.as(manager.userId);
+
+    await expect(registry.sendSupportMessage({ operationId: randomUUID(), text: "Mój numer: 600 100 200" })).rejects.toMatchObject({
+      code: "demo_chat",
+    });
+    await expect(registry.supportChat()).rejects.toMatchObject({ code: "demo_chat" });
+    expect(await registry.unreadSupportReplyCount()).toBe(0);
+    await expect(
+      registry.subscribeToPush({ endpoint: "https://fcm.googleapis.com/fcm/send/demo", keys: { p256dh: "klucz", auth: "sekret" } }),
+    ).rejects.toMatchObject({ code: "demo_push" });
+    expect(bed.notifier.supportEmails).toEqual([]);
+  });
+
+  it("subskrypcja push konta demo sprzed wyłączenia push nie dostaje kopii wpisów dzwonka", async () => {
+    const { companyId } = await demo();
+    const [, marek, anna] = await bed.registry.system().demoAccounts();
+    await bed.db.transaction((sql) =>
+      sql("insert into app.push_subscriptions (endpoint, company_id, user_id, p256dh, auth, created_at) values ($1, $2, $3, 'klucz', 'sekret', $4)", [
+        "https://fcm.googleapis.com/fcm/send/marek",
+        companyId,
+        marek.userId,
+        START,
+      ]),
+    );
+    // Anna zabiera sprzęt z budowy Marka: Marek ma wpis w dzwonku, ale bez kopii na telefon.
+    const { sites } = await bed.registry.as(anna.userId).whereIsWhat();
+    const tarasy = sites.find((site) => site.manager.id === marek.userId && site.tools.length > 0)!;
+    const annas = sites.find((site) => site.manager.id === anna.userId)!;
+    const unread = await bed.registry.as(marek.userId).unreadNotificationCount();
+    await bed.registry.as(anna.userId).registerMovement({
+      operationId: randomUUID(),
+      kind: "przeniesienie",
+      fromLocationId: tarasy.id,
+      toLocationId: annas.id,
+      toolIds: [tarasy.tools[0].id],
+      source: "checklista",
+    });
+
+    expect(await bed.registry.as(marek.userId).unreadNotificationCount()).toBe(unread + 1);
+    expect(bed.notifier.pushed).toEqual([]);
   });
 
   it("nowe demo zastępuje poprzednie: stare konta tracą dostęp", async () => {

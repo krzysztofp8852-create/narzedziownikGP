@@ -13,8 +13,11 @@ import { canUseSupportChat } from "@/registry/registry";
 export async function GET(request: NextRequest) {
   const session = await requireSession();
   if (!canUseSupportChat(session)) redirect("/");
-  await getRegistry().as(session.userId).markSupportChatRead();
-  revalidatePath("/", "layout");
+  // W demo okno 💬 nie pokazuje wspólnego wątku, więc nie ma czego czytać.
+  if (!session.company.demo) {
+    await getRegistry().as(session.userId).markSupportChatRead();
+    revalidatePath("/", "layout");
+  }
   const screen = screenFromQuery(request.nextUrl.searchParams.get("ekran"));
   redirect(screen ? `/czat?ekran=${encodeURIComponent(screen)}#napisz` : "/czat#napisz");
 }

@@ -2,6 +2,7 @@
 import type { CaseResult, CheckField } from "./eval";
 
 const FIELD_LABELS: Record<CheckField, string> = {
+  question: "ruch czy pytanie",
   kind: "rodzaj",
   site: "budowa",
   service: "serwis",

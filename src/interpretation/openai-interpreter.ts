@@ -7,7 +7,7 @@ import { PROPOSAL_KINDS, type ProposalKind } from "./proposal";
 export const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 
 const SYSTEM = `Jesteś częścią aplikacji do ewidencji narzędzi małej firmy budowlanej w Polsce.
-Kierownik budowy albo magazynier pisze jedno zdanie o tym, co zabiera lub oddaje, np. „biorę dwie szlifierki i młot na Rataje”.
+Kierownik budowy albo magazynier pisze jedno zdanie o tym, co zabiera lub oddaje, np. „biorę dwie szlifierki i młot na Rataje”, albo pyta, gdzie jest sprzęt, np. „gdzie jest niwelator?”.
 Twoje zadanie: zrozumieć zdanie i dopasować je do narzędzi i budów firmy. Nic nie zapisujesz; człowiek zatwierdzi wynik.
 
 Rodzaj ruchu (kind):
@@ -25,6 +25,8 @@ Budowy (site, fromSite) podawaj wyłącznie jako oznaczenie z listy (np. "B2"), 
 - service: tylko przy "do_serwisu" i "z_serwisu", serwis z listy (oznaczenie, np. "SE1"), do którego sprzęt jedzie albo z którego wraca, jeśli padł w zdaniu; inaczej null.
 Rozpoznawaj odmianę i skróty nazw („z Rataj”, „na Winogradach”, „Łazarz” → „Łazarzu”).
 
+Pytanie (question): true, gdy zdanie nie opisuje ruchu, tylko pyta, gdzie jest sprzęt albo kto go ma („gdzie jest niwelator?”, „gdzie są szlifierki”, „kto ma młot Hilti”, „szukam agregatu”). Wtedy mentions to narzędzia, o które pyta, z tymi samymi zasadami co przy ruchu (np. „duży flex” to tylko szlifierki 230 mm), kind "wydanie", site, fromSite i service null, everything false. Zdanie z budową, na którą albo z której jedzie sprzęt, to ruch także bez czasownika („na moją budowę agregat”): false.
+
 Wszystko (everything): true, gdy ruch dotyczy całego sprzętu z miejsca, skąd jest zabierany, a nie wymienionych narzędzi („zabieram wszystko z Winograd na Rataje”, „oddaję cały sprzęt z Rataj”, „zjeżdżam ze wszystkim z Łazarza”, „odbieram wszystko z serwisu”). Wtedy mentions to pusta lista. Inaczej false.
 
 Narzędzia (mentions): jedna pozycja na każdą wzmiankę o narzędziu w zdaniu.
@@ -38,8 +40,9 @@ Nie wymyślaj narzędzi ani kodów spoza listy.`;
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["kind", "site", "fromSite", "service", "everything", "mentions"],
+  required: ["question", "kind", "site", "fromSite", "service", "everything", "mentions"],
   properties: {
+    question: { type: "boolean" },
     kind: { type: "string", enum: [...PROPOSAL_KINDS] },
     site: { anyOf: [{ type: "string" }, { type: "null" }] },
     fromSite: { anyOf: [{ type: "string" }, { type: "null" }] },
@@ -62,6 +65,7 @@ const SCHEMA = {
 };
 
 interface ModelAnswer {
+  question: boolean;
   kind: ProposalKind;
   site: string | null;
   fromSite: string | null;
@@ -123,8 +127,9 @@ export function createOpenAIInterpreter({ apiKey, model }: { apiKey: string; mod
         siteId: siteId(answer.site),
         fromSiteId: siteId(answer.fromSite),
         serviceId: serviceRefs.find((entry) => entry.ref === answer.service)?.service.id ?? null,
-        everything: answer.everything,
-        mentions: answer.everything ? [] : answer.mentions,
+        everything: answer.everything && !answer.question,
+        mentions: answer.everything && !answer.question ? [] : answer.mentions,
+        whereIs: answer.question,
       };
     },
   };

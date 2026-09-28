@@ -186,4 +186,31 @@ describe("zestaw ewaluacyjny", () => {
         "oczekiwane „skąd” to nieznana lokalizacja Łazarz; nie ma narzędzia S-09; nie ma narzędzia W-01",
     );
   });
+
+  it("zdanie o ruchu wzięte za pytanie „gdzie jest …” to pudło, a pytanie ocenia się po narzędziach, o które pyta", async () => {
+    const question = (whereIs: boolean) =>
+      new StubInterpreter(() => ({
+        kind: "wydanie",
+        siteId: null,
+        fromSiteId: null,
+        serviceId: null,
+        everything: false,
+        mentions: [{ phrase: "szlifierki", quantity: 2, codes: ["S-01", "S-02", "S-03"] }],
+        whereIs,
+      }));
+    const where: EvalCase = {
+      id: "pytania-01",
+      tags: ["pytania"],
+      company: zawbud,
+      text: "gdzie są szlifierki",
+      expected: { question: true, tools: ["S-01", "S-02", "S-03"] },
+    };
+    const ports = { transcriber: noTranscriber, loadRecording: noRecordings };
+
+    const [movementAsQuestion] = await runEval([twoGrinders], { ...ports, interpreter: question(true) });
+    const [answered] = await runEval([where], { ...ports, interpreter: question(true) });
+
+    expect(movementAsQuestion).toMatchObject({ passed: false, checks: [{ field: "question", expected: "ruch", actual: "pytanie", passed: false }] });
+    expect(answered).toMatchObject({ passed: true, checks: [{ field: "question", passed: true }, { field: "tools", passed: true }] });
+  });
 });

@@ -4,7 +4,7 @@ import { refresh, revalidatePath } from "next/cache";
 import { conflictText } from "@/i18n/movement-text";
 import { t } from "@/i18n/t";
 import { InterpretationFailedError } from "@/interpretation/interpretation";
-import type { Proposal, ProposalKind } from "@/interpretation/proposal";
+import type { Proposal, ProposalKind, WhereAnswer } from "@/interpretation/proposal";
 import { TranscriptionFailedError } from "@/interpretation/transcription";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
@@ -19,8 +19,11 @@ export interface ChecklistState {
   error?: string;
   /** Przy odrzuceniu z powodu zmienionego stanu: co i gdzie jest teraz. */
   conflicts?: string[];
-  /** Zapisany ruch: operacja, którą checklista, skaner albo propozycja właśnie zatwierdziły, i kogo o nim powiadomiono. */
-  done?: { operationId: string; notified: string[] };
+  /**
+   * Zapisany ruch: operacja, którą checklista, skaner albo propozycja właśnie zatwierdziły, ruch (do cofnięcia z komunikatu)
+   * i kogo o nim powiadomiono.
+   */
+  done?: { operationId: string; movementId: string; notified: string[] };
 }
 
 export async function registerMovement(_prev: ChecklistState, formData: FormData): Promise<ChecklistState> {
@@ -59,6 +62,7 @@ async function saveMovement(
 ): Promise<ChecklistState> {
   const operationId = formText(formData, "operationId");
   let notified: string[];
+  let movementId: string;
   try {
     const movement = await save({
       operationId,
@@ -67,6 +71,7 @@ async function saveMovement(
       toolIds: formData.getAll("toolId").filter((id): id is string => typeof id === "string"),
     });
     notified = movement.notifications.map((notification) => notification.recipient.fullName);
+    movementId = movement.id;
   } catch (error) {
     if (!(error instanceof MovementConflictError)) return { error: errorMessage(error) };
     // Checklista, skaner i propozycja pokażą od razu bieżący stan narzędzi.
@@ -77,14 +82,15 @@ async function saveMovement(
     };
   }
   revalidatePath("/");
-  return { done: { operationId, notified } };
+  return { done: { operationId, movementId, notified } };
 }
 
-/** Propozycja ruchu z wpisanego zdania. Nic nie zapisuje. */
-export async function proposeMovement(text: string): Promise<{ proposal?: Proposal; error?: string }> {
+/** Propozycja ruchu z wpisanego zdania albo, na pytanie „gdzie jest …”, odpowiedź, gdzie jest sprzęt. Nic nie zapisuje. */
+export async function proposeMovement(text: string): Promise<{ proposal?: Proposal; where?: WhereAnswer; error?: string }> {
   const session = await requireSession();
   try {
-    return { proposal: await getInterpretation().as(session.userId).propose(text) };
+    const { proposal, where } = await getInterpretation().as(session.userId).reply(text);
+    return { proposal, where };
   } catch (error) {
     if (!(error instanceof InterpretationFailedError)) return { error: errorMessage(error) };
     console.error(error);
@@ -93,18 +99,21 @@ export async function proposeMovement(text: string): Promise<{ proposal?: Propos
 }
 
 /**
- * Propozycja ruchu z nagrania: transkrypcja, a potem ta sama interpretacja co przy wpisie tekstem. Nic
- * nie zapisuje; nagranie znika z kubełka nagrań zaraz po transkrypcji. `text`: rozpoznany tekst, także gdy
- * interpretacja się nie udała, żeby kierownik mógł go poprawić i wysłać bez mówienia od nowa.
+ * Propozycja ruchu (albo odpowiedź „gdzie jest …”) z nagrania: transkrypcja, a potem ta sama interpretacja co przy
+ * wpisie tekstem. Nic nie zapisuje; nagranie znika z kubełka nagrań zaraz po transkrypcji. `text`: rozpoznany tekst,
+ * także gdy interpretacja się nie udała, żeby kierownik mógł go poprawić i wysłać bez mówienia od nowa.
  */
-export async function proposeFromRecording(formData: FormData): Promise<{ text?: string; proposal?: Proposal; error?: string }> {
-  const { text, proposal, error } = await hearRecording(formData);
-  return { text, proposal, error };
+export async function proposeFromRecording(
+  formData: FormData,
+): Promise<{ text?: string; proposal?: Proposal; where?: WhereAnswer; error?: string }> {
+  const { text, proposal, where, error } = await hearRecording(formData);
+  return { text, proposal, where, error };
 }
 
 /**
  * Nagranie z kolejki offline telefonu: jak `proposeFromRecording`, ale mówi telefonowi, czy nagranie może
  * już zniknąć (rozpoznane albo bez szans na rozpoznanie), czy ma poczekać na ponowienie (np. awaria dostawcy).
+ * Pytanie „gdzie jest …” sprzed godzin nie ma już aktualnej odpowiedzi: telefon dostaje sam tekst do wysłania.
  */
 export async function transcribeQueuedRecording(formData: FormData): Promise<TranscribeOutcome> {
   const { retry, text, proposal, error } = await hearRecording(formData);
@@ -114,13 +123,15 @@ export async function transcribeQueuedRecording(formData: FormData): Promise<Tra
 }
 
 /** `retry`: nagranie nie zostało rozpoznane z powodu, który może minąć (dostawca transkrypcji, kubełek, awaria). */
-async function hearRecording(formData: FormData): Promise<{ text?: string; proposal?: Proposal; error?: string; retry: boolean }> {
+async function hearRecording(
+  formData: FormData,
+): Promise<{ text?: string; proposal?: Proposal; where?: WhereAnswer; error?: string; retry: boolean }> {
   const session = await requireSession();
   const audio = formData.get("audio");
   if (!(audio instanceof Blob)) return { error: t("voice.invalid"), retry: false };
   try {
-    const proposal = await getInterpretation().as(session.userId).proposeFromRecording(audio);
-    return { text: proposal.text, proposal, retry: false };
+    const { text, proposal, where } = await getInterpretation().as(session.userId).replyToRecording(audio);
+    return { text, proposal, where, retry: false };
   } catch (error) {
     if (error instanceof TranscriptionFailedError) {
       if (error.reason === "silence") return { error: t("voice.silence"), retry: false };

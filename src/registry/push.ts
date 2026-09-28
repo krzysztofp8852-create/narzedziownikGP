@@ -49,10 +49,20 @@ export async function unsubscribe(sql: Sql, session: Session, endpoint: string):
   await sql("delete from app.push_subscriptions where endpoint = $1 and user_id = $2", [endpoint, session.userId]);
 }
 
-/** Subskrypcje adresatów, w transakcji systemowej (poza RLS). */
+/**
+ * Subskrypcje adresatów, w transakcji systemowej (poza RLS). Bez kont firm demo: tych nikt nie ma na własność,
+ * a subskrypcja sprzed wyłączenia push w demo nie może dalej dostawać kopii.
+ */
 export async function subscriptionsOf(sql: Sql, userIds: string[]): Promise<(PushSubscriptionData & { userId: string })[]> {
   const rows = await sql<{ endpoint: string; user_id: string; p256dh: string; auth: string }>(
-    "select endpoint, user_id, p256dh, auth from app.push_subscriptions where user_id = any($1::uuid[]) order by created_at",
+    `select s.endpoint, s.user_id, s.p256dh, s.auth
+     from app.push_subscriptions s
+     where s.user_id = any($1::uuid[])
+       and not exists (
+         select 1 from app.users u join app.companies c on c.id = u.company_id
+         where u.user_id = s.user_id and c.demo_since is not null
+       )
+     order by s.created_at`,
     [userIds],
   );
   return rows.map((row) => ({ userId: row.user_id, endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }));

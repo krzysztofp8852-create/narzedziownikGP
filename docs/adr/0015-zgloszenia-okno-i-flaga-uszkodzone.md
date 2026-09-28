@@ -41,7 +41,9 @@ z okna, jak przy dzwonku. Kto poza właścicielem i autorem widzi zgłoszenia, u
 - Nowa osoba w firmie nie dostaje wpisów o zgłoszeniach sprzed swojego konta, ale widzi je na liście.
 - Gdy zapis zdjęcia się uda, a zatwierdzenie transakcji nie i usunięcie też zawiedzie, w kubełku zostaje zdjęcie
   bez zgłoszenia (błąd w logu serwera).
-- Cofnięcie ruchu z serwisu nie przywraca flagi.
+- Cofnięcie ruchu z serwisu przywraca flagę z chwili przed tym ruchem (migracja `undo_restores_damage`: narzędzie
+  ruchu z serwisu pamięta datę flagi, a ustawia ją tylko wyzwalacz). Pierwotnie cofnięcie jej nie przywracało,
+  choć zgłoszenie uszkodzenia było dalej otwarte.
 - Ocena „sprawne” zdejmuje flagę także wtedy, gdy narzędzie ma inne otwarte zgłoszenie uszkodzenia: decyduje
   właściciel, który zna oba.
 - Wpis o zgłoszonym narzędziu jest nieprzeczytany, dopóki ktoś o nim nie zdecyduje (albo właściciel nie oznaczy

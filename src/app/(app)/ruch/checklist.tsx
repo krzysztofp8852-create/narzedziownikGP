@@ -101,7 +101,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
     const summary = submittedSummary.current;
     const result = await sendOrQueue(() => registerMovement(prev, formData), queuedFromForm(formData, { userId, summary }));
-    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified };
+    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified, movementId: result.done.movementId };
     if (done) {
       setSelectedIds([]);
       setQuery("");
@@ -250,7 +250,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
         <p className="checklist-summary-text" data-testid="checklist-summary">
           {ready ? summary : t(`checklist.kinds.${kind}.summaryEmpty`)}
         </p>
-        <DamagedWarnings tools={selected} />
+        <DamagedWarnings tools={selected} kind={kind} />
         <div className="form-actions">
           <button className="button" type="submit" disabled={!ready || pending}>
             {pending ? t("checklist.confirming") : t("checklist.confirm")}
@@ -266,10 +266,23 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
   );
 }
 
-/** Ostrzeżenie przy zatwierdzaniu ruchu z narzędziem zgłoszonym jako uszkodzone; ruchu nie blokuje. */
-export function DamagedWarnings({ tools }: { tools: Pick<ChecklistTool, "id" | "code" | "damagedSince">[] }) {
+/**
+ * Ostrzeżenie przy zatwierdzaniu ruchu z narzędziem zgłoszonym jako uszkodzone; ruchu nie blokuje. Do serwisu
+ * uszkodzone narzędzie jedzie właśnie po to, więc tam nic nie mówimy, a przy przyjęciu z serwisu tylko to, że
+ * flaga zniknie.
+ */
+export function DamagedWarnings({ tools, kind }: { tools: Pick<ChecklistTool, "id" | "code" | "damagedSince">[]; kind: RegisteredKind }) {
   const damaged = tools.filter((tool) => tool.damagedSince);
-  if (damaged.length === 0) return null;
+  if (damaged.length === 0 || kind === "do_serwisu") return null;
+  if (kind === "z_serwisu") {
+    return (
+      <ul className="form-info damaged-warnings" role="status" data-testid="damaged-info">
+        {damaged.map((tool) => (
+          <li key={tool.id}>{t("checklist.damagedFromService", { code: tool.code })}</li>
+        ))}
+      </ul>
+    );
+  }
   const now = new Date();
   return (
     <ul className="form-warning damaged-warnings" role="status" data-testid="damaged-warning">

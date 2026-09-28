@@ -19,6 +19,15 @@ function GearIcon() {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
 function BellIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -87,6 +96,16 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
           <div className="app-header-actions">
             <OfflineSync userId={session.userId} />
+            <Link
+              href="/szukaj"
+              className="button button-quiet icon-button"
+              aria-label={t("header.search")}
+              title={t("header.search")}
+              data-tour="search"
+            >
+              <SearchIcon />
+              <span className="icon-button-label">{t("header.searchShort")}</span>
+            </Link>
             <Link
               href="/zgloszenia"
               className="button button-quiet icon-button bell-button"

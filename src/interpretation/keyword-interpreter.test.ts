@@ -28,6 +28,7 @@ describe("interpretacja słowami kluczowymi (bez AI, lokalnie i w teście dymnym
         { phrase: "dwie szlifierki", quantity: 2, codes: ["S-01", "S-02"] },
         { phrase: "młot", quantity: 1, codes: ["H-01"] },
       ],
+      whereIs: false,
     });
   });
 
@@ -63,6 +64,16 @@ describe("interpretacja słowami kluczowymi (bez AI, lokalnie i w teście dymnym
       serviceId: null,
       everything: true,
       mentions: [],
+      whereIs: false,
     });
+  });
+
+  it("„gdzie jest młot?” i „kto ma s-02”: pytanie, gdzie jest sprzęt, a nie ruch", async () => {
+    expect(await keywordInterpreter.interpret(request("gdzie jest młot?"))).toMatchObject({
+      whereIs: true,
+      mentions: [{ phrase: "młot", codes: ["H-01"] }],
+    });
+    expect(await keywordInterpreter.interpret(request("Kto ma S-02"))).toMatchObject({ whereIs: true, mentions: [{ codes: ["S-02"] }] });
+    expect(await keywordInterpreter.interpret(request("biorę młot na Rataje"))).toMatchObject({ whereIs: false });
   });
 });

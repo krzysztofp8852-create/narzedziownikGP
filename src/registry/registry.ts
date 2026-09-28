@@ -252,6 +252,13 @@ export interface Registry {
      */
     sendDueReports(): Promise<{ weekly: number; friday: number }>;
     /**
+     * Zadanie dzienne progów dni (jak `notifyExceededThresholds`) tylko dla jednej firmy: scenariusz demo przechodzi
+     * z nim przez swoje dni, żeby dzwonek miał alarmy. Inne firmy nic nie dostają.
+     */
+    notifyCompanyExceededThresholds(companyId: string): Promise<{ tools: number }>;
+    /** Raporty, na które przyszła pora (jak `sendDueReports`), tylko dla jednej firmy (scenariusz demo). */
+    sendCompanyDueReports(companyId: string): Promise<{ weekly: number; friday: number }>;
+    /**
      * Zadanie dzienne: właściciele firm dostają ostrzeżenie 7 dni i 1 dzień przed trybem tylko do odczytu
      * (dzwonek, push i e-mail) i wpis o samym przełączeniu (dzwonek i push), każde raz na termin. Przy ręcznym
      * trybie nic. Zwraca, ile firm dostało ostrzeżenie, a ile wpis o przełączeniu. Danych firm nic nie kasuje.
@@ -291,7 +298,10 @@ export interface Registry {
      * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
      */
     whereIsWhat(): Promise<WhereIsWhat>;
-    /** Narzędzia w obiegu z kategorią i lokalizacją, bez wartości (dla interpretacji tekstu). */
+    /**
+     * Narzędzia w obiegu z kategorią, marką, lokalizacją, dniami w niej i odpowiedzialnym kierownikiem, bez wartości
+     * (dla interpretacji tekstu i wyszukiwania).
+     */
     toolCatalog(): Promise<CatalogTool[]>;
     categories(): Promise<Category[]>;
     addCategory(input: { name: string; prefix: string }): Promise<Category>;
@@ -460,7 +470,8 @@ export interface Registry {
     markAllNotificationsRead(): Promise<void>;
     /**
      * Włącza powiadomienia push w przeglądarce aktora: każdy nowy wpis w jego dzwonku przyjdzie tam jako kopia.
-     * Tylko adresy znanych usług push. Przeglądarka, która należała do kogoś innego, przechodzi na aktora.
+     * Tylko adresy znanych usług push. Przeglądarka, która należała do kogoś innego, przechodzi na aktora. W firmie
+     * demo odmawia (`demo_push`), a kopie na konta firm demo nie wychodzą.
      */
     subscribeToPush(subscription: PushSubscriptionData): Promise<void>;
     /** Wyłącza powiadomienia push w tej przeglądarce aktora (np. przy wylogowaniu). Cudzej nie rusza. */
@@ -468,16 +479,17 @@ export interface Registry {
     /**
      * Wiadomość na czacie z supportem, z tekstem i (albo) zdjęciem, i kontekstem (ekran, wersja aplikacji). Tylko
      * właściciel, kierownik i magazynier, także w trybie tylko do odczytu. Po pierwszej wiadomości (i po każdej,
-     * na którą od doby nie odpowiedzieliśmy) przychodzi automatyczna odpowiedź. Support dostaje e-mail.
+     * na którą od doby nie odpowiedzieliśmy) przychodzi automatyczna odpowiedź. Support dostaje e-mail. W firmie
+     * demo odmawia (`demo_chat`), bo konto roli dzielą wszyscy oglądający.
      */
     sendSupportMessage(input: SupportMessageInput): Promise<void>;
-    /** Okno 💬: wątek aktora z supportem, od najstarszej wiadomości. */
+    /** Okno 💬: wątek aktora z supportem, od najstarszej wiadomości. W firmie demo odmawia (`demo_chat`). */
     supportChat(): Promise<SupportChat>;
     /** Liczba nieprzeczytanych odpowiedzi supportu (licznik 💬 w nagłówku); automatyczne się nie liczą. */
     unreadSupportReplyCount(): Promise<number>;
     /** Otwarcie okna 💬: odpowiedzi są przeczytane. */
     markSupportChatRead(): Promise<void>;
-    /** Zdjęcie z wątku aktora; null, gdy go nie ma albo wiadomość jest z cudzego wątku. */
+    /** Zdjęcie z wątku aktora; null, gdy go nie ma, wiadomość jest z cudzego wątku albo to firma demo. */
     supportPhoto(messageId: string): Promise<Blob | null>;
     /**
      * Raport tygodniowy firmy w tej chwili: narzędzia ponad progiem, zaginione, kwota poza bazą wobec raportu
@@ -544,9 +556,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         // Każda firma w osobnej transakcji: błąd jednej nie zabiera powiadomień pozostałym.
         for (const companyId of companyIds) {
           try {
-            const result = await deps.db.transaction((sql) => thresholds.notifyExceededThresholds(sql, companyId, now));
-            tools += result.tools;
-            await sendPushCopies(deps, result.copies);
+            tools += await notifyThresholds(deps, companyId, now);
           } catch (error) {
             console.error(`Nie sprawdzono progów dni firmy ${companyId}`, error);
           }
@@ -556,21 +566,17 @@ export function createRegistry(deps: RegistryDeps): Registry {
       sendDueReports: async () => {
         const now = deps.clock.now();
         const sent = { weekly: 0, friday: 0 };
-        const due = reports.dueReports(now);
-        if (due.length === 0) return sent;
+        if (reports.dueReports(now).length === 0) return sent;
         const companyIds = await deps.db.transaction((sql) => reports.companies(sql));
-        // Każdy raport każdej firmy osobno: błąd jednego nie zabiera pozostałych.
         for (const companyId of companyIds) {
-          for (const { kind } of due) {
-            try {
-              if (await sendReport(deps, companyId, kind, now)) sent[kind === "tygodniowy" ? "weekly" : "friday"] += 1;
-            } catch (error) {
-              console.error(`Nie wysłano raportu (${kind}) firmy ${companyId}`, error);
-            }
-          }
+          const result = await sendDueReportsOf(deps, companyId, now);
+          sent.weekly += result.weekly;
+          sent.friday += result.friday;
         }
         return sent;
       },
+      notifyCompanyExceededThresholds: async (companyId) => ({ tools: await notifyThresholds(deps, companyId, deps.clock.now()) }),
+      sendCompanyDueReports: (companyId) => sendDueReportsOf(deps, companyId, deps.clock.now()),
       notifySubscriptionDeadlines: async () => {
         const now = deps.clock.now();
         const paid = await deps.db.transaction((sql) => readOnly.paidSubscriptions(sql));
@@ -794,7 +800,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
           );
         },
         whereIsWhat: () => asMember((sql, session) => board.whereIsWhat(sql, session, deps.clock.now())),
-        toolCatalog: () => asMember((sql) => catalog.toolCatalog(sql)),
+        toolCatalog: () => asMember((sql) => catalog.toolCatalog(sql, deps.clock.now())),
         categories: () => asMember((sql) => tools.listCategories(sql)),
         addCategory: (input) =>
           asWriter((sql, session) => {
@@ -1026,7 +1032,11 @@ export function createRegistry(deps: RegistryDeps): Registry {
         unreadNotificationCount: () => asMember((sql, session) => bell.unreadCount(sql, session)),
         markNotificationRead: (notificationId) => asPersonal((sql, session) => bell.markRead(sql, session, notificationId, deps.clock.now())),
         markAllNotificationsRead: () => asPersonal((sql, session) => bell.markAllRead(sql, session, deps.clock.now())),
-        subscribeToPush: (subscription) => asPersonal((sql) => push.subscribe(sql, subscription, deps.clock.now())),
+        subscribeToPush: (subscription) =>
+          asPersonal((sql, session) => {
+            demo.refusePushInDemo(session);
+            return push.subscribe(sql, subscription, deps.clock.now());
+          }),
         unsubscribeFromPush: (endpoint) => asPersonal((sql, session) => push.unsubscribe(sql, session, endpoint)),
         sendSupportMessage: async (input) => {
           const sent = await savingPhoto(deps.chatPhotos, (save) =>
@@ -1034,6 +1044,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
               // Czat działa także w trybie tylko do odczytu: zablokowany użytkownik musi móc do nas napisać.
               asPersonal(async (sql, session) => {
                 supportChat.requireSupportChatUser(session);
+                demo.refuseChatInDemo(session);
                 const content = await supportChat.checkMessage(input);
                 const sent = await supportChat.sendMessage(sql, session, input, content, deps.clock.now());
                 if (sent?.photoKey && content.photo) await save(sent.photoKey, content.photo.blob);
@@ -1047,12 +1058,14 @@ export function createRegistry(deps: RegistryDeps): Registry {
         supportChat: () =>
           asMember((sql, session) => {
             supportChat.requireSupportChatUser(session);
+            demo.refuseChatInDemo(session);
             return supportChat.chat(sql, session);
           }),
         unreadSupportReplyCount: () =>
-          asMember((sql, session) => {
+          asMember(async (sql, session) => {
             supportChat.requireSupportChatUser(session);
-            return supportChat.unreadReplyCount(sql, session);
+            // W demo okno 💬 nie pokazuje wspólnego wątku, więc nie ma czego liczyć.
+            return session.company.demo ? 0 : supportChat.unreadReplyCount(sql, session);
           }),
         markSupportChatRead: () =>
           asPersonal((sql, session) => {
@@ -1060,9 +1073,10 @@ export function createRegistry(deps: RegistryDeps): Registry {
             return supportChat.markRead(sql, session.userId, "uzytkownik");
           }),
         supportPhoto: async (messageId) => {
-          const key = await asMember((sql, session) => {
+          const key = await asMember(async (sql, session) => {
             supportChat.requireSupportChatUser(session);
-            return supportChat.visiblePhotoKey(sql, messageId);
+            // Wspólnego wątku demo nikt nie ogląda, także jego zdjęć.
+            return session.company.demo ? null : supportChat.visiblePhotoKey(sql, messageId);
           });
           return key ? deps.chatPhotos.read(key) : null;
         },
@@ -1087,6 +1101,26 @@ export function createRegistry(deps: RegistryDeps): Registry {
       };
     },
   };
+}
+
+/** Progi dni jednej firmy w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę nowych przekroczeń. */
+async function notifyThresholds(deps: RegistryDeps, companyId: string, now: Date): Promise<number> {
+  const result = await deps.db.transaction((sql) => thresholds.notifyExceededThresholds(sql, companyId, now));
+  await sendPushCopies(deps, result.copies);
+  return result.tools;
+}
+
+/** Raporty jednej firmy, na które przyszła pora. Każdy osobno: błąd jednego nie zabiera pozostałych. */
+async function sendDueReportsOf(deps: RegistryDeps, companyId: string, now: Date): Promise<{ weekly: number; friday: number }> {
+  const sent = { weekly: 0, friday: 0 };
+  for (const { kind } of reports.dueReports(now)) {
+    try {
+      if (await sendReport(deps, companyId, kind, now)) sent[kind === "tygodniowy" ? "weekly" : "friday"] += 1;
+    } catch (error) {
+      console.error(`Nie wysłano raportu (${kind}) firmy ${companyId}`, error);
+    }
+  }
+  return sent;
 }
 
 /**
