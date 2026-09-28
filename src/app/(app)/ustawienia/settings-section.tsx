@@ -1,5 +1,6 @@
 import { t } from "@/i18n/t";
 import { type CompanySettings, MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
+import { IssueVisibilityForm } from "./issue-visibility-form";
 import { SettingsForm } from "./settings-form";
 
 /** Próg alarmu w ustawieniach właściciela. */
@@ -10,6 +11,18 @@ export function SettingsSection({ settings }: { settings: CompanySettings }) {
         {t("settings.title")}
       </h2>
       <SettingsForm settings={settings} maxDays={MAX_ALARM_THRESHOLD_DAYS} />
+    </section>
+  );
+}
+
+/** Kto poza właścicielem i autorem widzi zgłoszenia, i czy magazynier je zamyka. */
+export function IssueSettingsSection({ settings }: { settings: CompanySettings }) {
+  return (
+    <section className="company-card" aria-labelledby="issue-settings">
+      <h2 id="issue-settings" className="display section-title">
+        {t("issueSettings.title")}
+      </h2>
+      <IssueVisibilityForm visibility={settings.issueVisibility} />
     </section>
   );
 }

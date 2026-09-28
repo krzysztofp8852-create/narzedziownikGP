@@ -6,7 +6,9 @@ import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
+import { DamagedIcon } from "@/components/damaged-icon";
 import { VehicleIcon } from "@/components/vehicle-icon";
+import { damagedAgo } from "@/lib/issue-text";
 import { matchesTool } from "@/lib/tool-search";
 import type { LocationKind, RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
@@ -17,6 +19,8 @@ export interface ChecklistTool {
   code: string;
   name: string;
   daysInPlace: number;
+  /** Od kiedy (ISO) narzędzie jest zgłoszone jako uszkodzone; brak albo null, gdy jest sprawne. */
+  damagedSince?: string | null;
 }
 
 /** Lokalizacja z narzędziami, które w niej są. */
@@ -199,7 +203,14 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
                       aria-label={t("checklist.toolLabel", { code: tool.code, name: tool.name })}
                     />
                     <span className="plate">{tool.code}</span>
-                    <span className="tool-row-name">{tool.name}</span>
+                    <span className="tool-row-name">
+                      {tool.name}
+                      {tool.damagedSince && (
+                        <span className="tag tag-damaged">
+                          <DamagedIcon /> {t("board.damaged")}
+                        </span>
+                      )}
+                    </span>
                     <span className="tool-row-days">{formatDays(tool.daysInPlace)}</span>
                   </label>
                 </li>
@@ -239,6 +250,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
         <p className="checklist-summary-text" data-testid="checklist-summary">
           {ready ? summary : t(`checklist.kinds.${kind}.summaryEmpty`)}
         </p>
+        <DamagedWarnings tools={selected} />
         <div className="form-actions">
           <button className="button" type="submit" disabled={!ready || pending}>
             {pending ? t("checklist.confirming") : t("checklist.confirm")}
@@ -251,5 +263,21 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
         </div>
       </div>
     </form>
+  );
+}
+
+/** Ostrzeżenie przy zatwierdzaniu ruchu z narzędziem zgłoszonym jako uszkodzone; ruchu nie blokuje. */
+export function DamagedWarnings({ tools }: { tools: Pick<ChecklistTool, "id" | "code" | "damagedSince">[] }) {
+  const damaged = tools.filter((tool) => tool.damagedSince);
+  if (damaged.length === 0) return null;
+  const now = new Date();
+  return (
+    <ul className="form-warning damaged-warnings" role="status" data-testid="damaged-warning">
+      {damaged.map((tool) => (
+        <li key={tool.id}>
+          <DamagedIcon /> {t("checklist.damagedWarning", { code: tool.code, ago: damagedAgo(new Date(tool.damagedSince!), now) })}
+        </li>
+      ))}
+    </ul>
   );
 }

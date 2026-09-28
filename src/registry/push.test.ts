@@ -255,3 +255,77 @@ describe("push: subskrypcje", () => {
     }
   });
 });
+
+describe("push: kopia wpisu z okna 📋 zgłoszeń", () => {
+  it("pracownik zgłasza uszkodzenie S-01: właściciel dostaje push z wpisem okna zgłoszeń, autor nie", async () => {
+    const z = await givenZawbud();
+    const workerId = await testbed.givenMember(z.zawbud, "pracownik", "Marek Zieliński");
+    const ownerPhone = browser("wlasciciel");
+    await z.owner.subscribeToPush(ownerPhone);
+    await testbed.registry.as(workerId).subscribeToPush(browser("pracownik"));
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+
+    const { issueId } = await testbed.registry
+      .as(workerId)
+      .fileIssue({ operationId: randomUUID(), kind: "uszkodzenie", toolId: z.s01, description: "Tarcza bije" });
+
+    expect(pushedTo()).toEqual([
+      {
+        endpoint: ownerPhone.endpoint,
+        message: {
+          window: "zgloszenia",
+          entryId: expect.any(String),
+          entry: {
+            kind: "zgloszenie",
+            issueId,
+            issue: { kind: "uszkodzenie", tool: { code: "S-01", name: "Szlifierka kątowa" }, place: "Winogrady" },
+            author: "Marek Zieliński",
+            text: "Tarcza bije",
+          },
+        },
+      },
+    ]);
+    expect(testbed.notifier.sent).toEqual([]);
+  });
+
+  it("komentarz i zamknięcie idą push do autora; ponowienie komentarza nie wysyła drugi raz", async () => {
+    const z = await givenZawbud();
+    const phone = browser("nowak");
+    await testbed.registry.as(z.nowakId).subscribeToPush(phone);
+    const { issueId } = await testbed.registry
+      .as(z.nowakId)
+      .fileIssue({ operationId: randomUUID(), kind: "inne", locationId: z.ratajeId, description: "Brakuje kasków" });
+    const operationId = randomUUID();
+
+    await z.owner.commentOnIssue({ operationId, issueId, text: "Zamówione" });
+    await z.owner.commentOnIssue({ operationId, issueId, text: "Zamówione" });
+    await z.owner.closeIssue({ operationId: randomUUID(), issueId, comment: "Są w kontenerze" });
+
+    expect(pushedTo().map(({ endpoint, message }) => [endpoint, message.window === "zgloszenia" && message.entry.kind])).toEqual([
+      [phone.endpoint, "komentarz"],
+      [phone.endpoint, "zamkniecie"],
+    ]);
+  });
+
+  it("zgłoszone narzędzie z budowy: właściciel dostaje push, a ponowienie zgłoszenia go nie powtarza", async () => {
+    const z = await givenZawbud();
+    const ownerPhone = browser("wlasciciel");
+    await z.owner.subscribeToPush(ownerPhone);
+    const [category] = await z.owner.categories();
+    const input = { operationId: randomUUID(), siteId: z.ratajeId, name: "Młot Hilti", categoryId: category.id };
+
+    const { toolId, code } = await testbed.registry.as(z.nowakId).reportTool(input);
+    await testbed.registry.as(z.nowakId).reportTool(input);
+
+    expect(pushedTo()).toEqual([
+      {
+        endpoint: ownerPhone.endpoint,
+        message: {
+          window: "zgloszenia",
+          entryId: expect.any(String),
+          entry: { kind: "zgloszenie_narzedzia", toolId, code, name: "Młot Hilti", place: "Rataje", author: "Adam Nowak" },
+        },
+      },
+    ]);
+  });
+});

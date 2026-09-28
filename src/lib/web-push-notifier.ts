@@ -2,6 +2,7 @@ import webpush from "web-push";
 import type { Notifier } from "@/registry/ports";
 import type { PushMessage } from "@/registry/registry";
 import { notificationText } from "./bell-text";
+import { issueEntryLink, issueEntryText } from "./issue-text";
 
 /** Treść powiadomienia push, którą service worker (public/sw.js) pokazuje na telefonie. */
 export interface PushNotification {
@@ -17,17 +18,16 @@ export interface PushNotification {
 const MAX_BODY_LENGTH = 300;
 
 /**
- * Powiadomienie push z wpisu dzwonka: ten sam tekst co w dzwonku. Kliknięcie otwiera wpis tak jak „Pokaż”
- * (oznacza go jako przeczytany i prowadzi tam, dokąd wpis odsyła).
+ * Powiadomienie push z wpisu dzwonka albo okna 📋 zgłoszeń: ten sam tekst co w oknie. Kliknięcie wpisu dzwonka
+ * otwiera go tak jak „Pokaż” (oznacza go jako przeczytany i prowadzi tam, dokąd wpis odsyła), a wpisu zgłoszeń
+ * otwiera zgłoszenie (jego wpisy stają się przeczytane) albo zgłoszone narzędzie w oknie 📋.
  */
 export function pushNotification(message: PushMessage): PushNotification {
-  const { title, body } = notificationText(message.notification);
-  return {
-    title,
-    body: body.length > MAX_BODY_LENGTH ? `${body.slice(0, MAX_BODY_LENGTH - 1)}…` : body,
-    url: `/dzwonek/${message.notificationId}`,
-    tag: `dzwonek:${message.notificationId}`,
-  };
+  const { title, body, url, tag } =
+    message.window === "dzwonek"
+      ? { ...notificationText(message.notification), url: `/dzwonek/${message.notificationId}`, tag: `dzwonek:${message.notificationId}` }
+      : { ...issueEntryText(message.entry), url: issueEntryLink(message.entry), tag: `zgloszenia:${message.entryId}` };
+  return { title, body: body.length > MAX_BODY_LENGTH ? `${body.slice(0, MAX_BODY_LENGTH - 1)}…` : body, url, tag };
 }
 
 /** Usługa push trzyma wiadomość dla wyłączonego telefonu najwyżej dobę; starsze powiadomienie jest w dzwonku. */

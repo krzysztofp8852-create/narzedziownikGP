@@ -38,6 +38,17 @@ export interface Notifier {
   push(subscription: PushSubscriptionData, message: PushMessage): Promise<"sent" | "expired">;
 }
 
+/**
+ * Zdjęcia zgłoszeń w prywatnym kubełku (Supabase Storage). Zapisuje i czyta je tylko serwer, a Rejestr pokazuje
+ * zdjęcie tylko temu, kto widzi zgłoszenie.
+ */
+export interface PhotoStore {
+  save(key: string, photo: Blob): Promise<void>;
+  /** Zdjęcie albo null, gdy go nie ma. */
+  read(key: string): Promise<Blob | null>;
+  remove(key: string): Promise<void>;
+}
+
 export class EmailTakenError extends Error {
   constructor(email: string) {
     super(`E-mail ${email} ma już konto`);

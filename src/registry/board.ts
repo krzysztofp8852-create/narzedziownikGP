@@ -16,6 +16,8 @@ export interface ToolOnBoard {
   alarm: boolean;
   /** Wartość w zł; klucz istnieje tylko dla właściciela. */
   value?: number | null;
+  /** Od kiedy narzędzie jest zgłoszone jako uszkodzone; null, gdy jest sprawne. Nie blokuje ruchów. */
+  damagedSince: Date | null;
 }
 
 /** Lokalizacja na tablicy z narzędziami w obiegu, które w niej są. */
@@ -98,8 +100,9 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
     located_since: Date;
     threshold_days: number;
     value: string | null;
+    damaged_since: Date | null;
   }>(
-    `select t.id, t.code, t.name, t.registration, t.location_id, l.kind as location_kind, l.alarm_enabled, t.located_since,
+    `select t.id, t.code, t.name, t.registration, t.location_id, l.kind as location_kind, l.alarm_enabled, t.located_since, t.damaged_since,
             co.alarm_threshold_days as threshold_days,
             ${valueColumn(withValues)}
      from app.tools t
@@ -120,6 +123,7 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
       daysInPlace,
       alarm: hasAlarm({ kind: row.location_kind, alarmEnabled: row.alarm_enabled }, row.located_since, row.threshold_days, now),
       ...(withValues && { value: parseValue(row.value) }),
+      damagedSince: row.damaged_since && new Date(row.damaged_since),
     });
     byLocation.set(row.location_id, tools);
   }

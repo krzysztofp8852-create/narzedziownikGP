@@ -10,7 +10,7 @@ import type { ReadyRecording } from "@/lib/offline/queue";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import { type ChecklistState, confirmProposal, proposeFromRecording, proposeMovement } from "./actions";
-import { type ChecklistData, PlaceName } from "./checklist";
+import { type ChecklistData, DamagedWarnings, PlaceName } from "./checklist";
 import { type DoneMovement, MovementResult } from "./movement-result";
 import { type Draft, planDraft, startDraft } from "./proposal-draft";
 import { canRecord, VoiceRecorder } from "./voice-recorder";
@@ -455,6 +455,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
         {t(`movementKind.${draft.kind}`)}:{" "}
         {!plan.site ? t("textEntry.chooseSite") : plan.open > 0 ? t("textEntry.answerQuestions") : summary}
       </p>
+      <DamagedWarnings tools={plan.tools} />
       <MovementResult done={null} state={state} refreshedHint={t("checklist.conflictRefreshed")} />
       <div className="form-actions">
         <button className="button" type="submit" disabled={!plan.ready || pending}>

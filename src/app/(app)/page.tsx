@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { DamagedIcon } from "@/components/damaged-icon";
 import { MovementEntry } from "@/components/movement-entry";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { VehicleIcon } from "@/components/vehicle-icon";
@@ -20,7 +21,6 @@ import {
   canReportTools,
   canReviewToolReports,
   canSeeValues,
-  type Category,
   type RecentMovement,
   type Session,
   type SiteManagerCandidate,
@@ -31,7 +31,6 @@ import {
 import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
 import { AddSiteForm, AddVehicleForm, ChangeManagerForm, DeactivateVehicleForm, VehicleAlarmForm } from "./lokalizacje/location-forms";
 import { BoardSnapshot } from "./board-snapshot";
-import { ToolReportReview } from "./narzedzia/tool-report-review";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
@@ -53,6 +52,11 @@ function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?: boolea
             <span className="tool-row-name">
               {tool.name}
               {tool.registration === "zgloszone" && <span className="tag tag-reported">{t("board.reported")}</span>}
+              {tool.damagedSince && (
+                <span className="tag tag-damaged">
+                  <DamagedIcon /> {t("board.damaged")}
+                </span>
+              )}
               {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
             </span>
             <span className="tool-row-meta">
@@ -143,23 +147,17 @@ function Lost({ lost, lostValue }: Pick<WhereIsWhat, "lost" | "lostValue">) {
   );
 }
 
-/** Zgłoszenia narzędzi czekające na decyzję właściciela; bez zgłoszeń sekcji nie ma. */
-function ToolReports({ reports, categories }: { reports: ToolReport[]; categories: Category[] }) {
+/** Zgłoszenia narzędzi czekające na decyzję właściciela: rozpatruje je w oknie 📋; bez zgłoszeń sekcji nie ma. */
+function ToolReports({ reports }: { reports: ToolReport[] }) {
   if (reports.length === 0) return null;
   return (
     <section className="location location-reports" aria-labelledby="tool-reports">
       <div className="location-head">
         <h2 id="tool-reports" className="display section-title">
-          {t("toolReports.title")}
+          {t("board.toolReportsWaiting", { count: reports.length })}
         </h2>
-        <span className="location-count">{t("board.toolCount", { count: reports.length })}</span>
+        <Link href="/zgloszenia#zgloszone-narzedzia">{t("board.toolReportsLink")}</Link>
       </div>
-      <p className="muted">{t("toolReports.intro")}</p>
-      <ul className="tool-reports">
-        {reports.map((report) => (
-          <ToolReportReview key={report.id} report={report} categories={categories} operationId={randomUUID()} />
-        ))}
-      </ul>
     </section>
   );
 }
@@ -409,7 +407,7 @@ export default async function BoardPage(props: PageProps<"/">) {
             </dl>
           </div>
 
-          <ToolReports reports={reports} categories={categories ?? []} />
+          <ToolReports reports={reports} />
 
           <section className="location" aria-labelledby="location-base">
             <div className="location-head">

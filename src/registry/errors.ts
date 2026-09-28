@@ -27,6 +27,11 @@ export type RegistryErrorCode =
   | "import_invalid"
   | "not_reported"
   | "no_stickers"
+  | "description_required"
+  | "comment_required"
+  | "tool_required"
+  | "photo_invalid"
+  | "issue_closed"
   | "read_only";
 
 export class RegistryError extends Error {

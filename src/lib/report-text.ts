@@ -130,7 +130,7 @@ function weeklySections(report: WeeklyReport): ReportSection[] {
         detail: t("reports.toolReportsItem", { place: tool.location.name, name: tool.reportedBy, days: formatDays(tool.daysWaiting) }),
       })),
       empty: t("reports.toolReportsEmpty"),
-      ...(report.toolReports.length > 0 && { link: { href: "/", label: t("reports.toolReportsLink") } }),
+      ...(report.toolReports.length > 0 && { link: { href: "/zgloszenia#zgloszone-narzedzia", label: t("reports.toolReportsLink") } }),
     },
     {
       title: t("reports.longestUnused"),

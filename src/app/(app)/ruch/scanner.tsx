@@ -8,7 +8,7 @@ import type { RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
 import { CameraScanner } from "./camera-scanner";
 import { readSticker } from "@/stickers/url";
-import { type ChecklistData, type ChecklistPlace, type ChecklistTool, PlaceName } from "./checklist";
+import { type ChecklistData, type ChecklistPlace, type ChecklistTool, DamagedWarnings, PlaceName } from "./checklist";
 import { type DoneMovement, MovementResult } from "./movement-result";
 import { findToolByCode, planScan, type ScanGroup, type ScanOption } from "./scan-plan";
 
@@ -279,6 +279,7 @@ function ScanGroupForm({ group, choice, pending, onChoose, onRemove, onSubmit }:
           <p className="checklist-summary-text" data-testid="scan-summary">
             {t(`movementKind.${option.kind}`)}: {to ? summary : t("scanner.chooseTo")}
           </p>
+          <DamagedWarnings tools={tools} />
           <div className="form-actions">
             <button className="button" type="submit" disabled={!to || pending}>
               {pending ? t("checklist.confirming") : t("checklist.confirm")}

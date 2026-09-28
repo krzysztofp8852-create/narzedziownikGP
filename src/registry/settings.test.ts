@@ -8,11 +8,11 @@ describe("ustawienia firmy", () => {
   it("nowa firma ma próg alarmu 30 dni, a właściciel go zmienia", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const owner = testbed.registry.as(zawbud.ownerId);
-    expect(await owner.settings()).toEqual({ alarmThresholdDays: 30 });
+    expect(await owner.settings()).toMatchObject({ alarmThresholdDays: 30 });
 
     await owner.updateSettings({ alarmThresholdDays: 45 });
 
-    expect(await owner.settings()).toEqual({ alarmThresholdDays: 45 });
+    expect(await owner.settings()).toMatchObject({ alarmThresholdDays: 45 });
   });
 
   it("odrzuca próg spoza 1–365 dni i niecałkowity", async () => {
@@ -24,7 +24,7 @@ describe("ustawienia firmy", () => {
         code: "invalid_input",
       });
     }
-    expect(await owner.settings()).toEqual({ alarmThresholdDays: 30 });
+    expect(await owner.settings()).toMatchObject({ alarmThresholdDays: 30 });
   });
 
   it("kierownik i magazynier nie widzą ani nie zmieniają ustawień, a zmiana nie dotyka innej firmy", async () => {
@@ -38,8 +38,8 @@ describe("ustawienia firmy", () => {
 
     await testbed.registry.as(zawbud.ownerId).updateSettings({ alarmThresholdDays: 60 });
 
-    expect(await testbed.registry.as(zawbud.ownerId).settings()).toEqual({ alarmThresholdDays: 60 });
-    expect(await testbed.registry.as(budrex.ownerId).settings()).toEqual({ alarmThresholdDays: 30 });
+    expect(await testbed.registry.as(zawbud.ownerId).settings()).toMatchObject({ alarmThresholdDays: 60 });
+    expect(await testbed.registry.as(budrex.ownerId).settings()).toMatchObject({ alarmThresholdDays: 30 });
   });
 
   it("połączenie z bazą jako magazynier nie zmienia progu firmy", async () => {
@@ -48,6 +48,6 @@ describe("ustawienia firmy", () => {
 
     await withActor(testbed.db, storekeeperId, (sql) => sql("update app.companies set alarm_threshold_days = 5"));
 
-    expect(await testbed.registry.as(zawbud.ownerId).settings()).toEqual({ alarmThresholdDays: 30 });
+    expect(await testbed.registry.as(zawbud.ownerId).settings()).toMatchObject({ alarmThresholdDays: 30 });
   });
 });

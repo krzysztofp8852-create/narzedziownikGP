@@ -1,4 +1,5 @@
 import { RegistryError } from "./errors";
+import type { IssueEntry } from "./issues";
 import type { NotificationContent } from "./notifications";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
@@ -10,10 +11,12 @@ export interface PushSubscriptionData {
 }
 
 /**
- * Kopia wpisu wysyłana push: skąd pochodzi (okno, które otwiera kliknięcie) i dane wpisu. Na razie tylko
- * 🔔 dzwonek; wpisy 📋 zgłoszeń i 💬 czatu dołączą tu jako kolejne okna.
+ * Kopia wpisu wysyłana push: skąd pochodzi (okno, które otwiera kliknięcie) i dane wpisu: 🔔 dzwonek albo
+ * 📋 zgłoszenia. Wpisy 💬 czatu dołączą tu jako kolejne okno.
  */
-export type PushMessage = { window: "dzwonek"; notificationId: string; notification: NotificationContent };
+export type PushMessage =
+  | { window: "dzwonek"; notificationId: string; notification: NotificationContent }
+  | { window: "zgloszenia"; entryId: string; entry: IssueEntry };
 
 /** Kopia push dla adresata; wysyła ją port powiadomień po zatwierdzeniu transakcji. */
 export interface PushCopy {

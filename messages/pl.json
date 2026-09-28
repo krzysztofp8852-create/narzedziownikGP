@@ -55,7 +55,9 @@
     "logout": "Wyloguj",
     "settings": "Ustawienia",
     "bell": "Dzwonek",
-    "bellUnread": "Dzwonek, nieprzeczytane: {count}"
+    "bellUnread": "Dzwonek, nieprzeczytane: {count}",
+    "issues": "Zgłoszenia",
+    "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -107,7 +109,10 @@
     "lostEmpty": "Nie ma zaginionych narzędzi.",
     "lostFor": "zaginione od {days}",
     "reportTool": "Zgłoś narzędzie",
-    "reported": "zgłoszone"
+    "reported": "zgłoszone",
+    "damaged": "uszkodzone",
+    "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
+    "toolReportsLink": "Rozpatrz w zgłoszeniach →"
   },
   "settingsPage": {
     "title": "Ustawienia",
@@ -180,7 +185,12 @@
     "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane.",
     "not_reported": "To zgłoszenie jest już rozpatrzone.",
     "no_stickers": "Nie ma narzędzi do oklejenia: każde w obiegu ma już wydrukowaną naklejkę.",
-    "read_only": "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy. Tablica, historia i eksport działają normalnie."
+    "read_only": "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy. Tablica, historia i eksport działają normalnie.",
+    "description_required": "Opisz, co się stało.",
+    "comment_required": "Wpisz komentarz.",
+    "tool_required": "Wybierz narzędzie, które jest uszkodzone.",
+    "photo_invalid": "Zdjęcie musi być w formacie JPG, PNG albo WEBP i mieć najwyżej 4 MB.",
+    "issue_closed": "To zgłoszenie jest już zamknięte."
   },
   "days": {
     "one": "{count} dzień",
@@ -264,7 +274,10 @@
     "lostNoResponsible": "Bez odpowiedzialnego kierownika",
     "ownerActions": "Korekta, zaginięcie, wycofanie",
     "ownerActionsHint": "Historia się nie zmienia: każda zmiana to nowy wpis w historii.",
-    "outOfCirculation": "{state}, ostatnio: {place}"
+    "outOfCirculation": "{state}, ostatnio: {place}",
+    "reportDamage": "Zgłoś uszkodzenie",
+    "reportOther": "Zgłoś brak albo inną sprawę",
+    "damaged": "Zgłoszone jako uszkodzone {ago}. Ruchy działają; flagę zdejmie przyjęcie z serwisu albo właściciel."
   },
   "toolState": {
     "w_obiegu": "W obiegu",
@@ -413,7 +426,8 @@
         "chooseFrom": "Najpierw wybierz serwis.",
         "summaryEmpty": "Wybierz serwis i zaznacz narzędzia."
       }
-    }
+    },
+    "damagedWarning": "{code} zgłoszone jako uszkodzone {ago}. Ruch i tak się zapisze."
   },
   "textEntry": {
     "label": "Co zabierasz albo oddajesz?",
@@ -804,7 +818,7 @@
     "toolReports": "Zgłoszenia narzędzi do decyzji",
     "toolReportsEmpty": "Nie ma zgłoszeń czekających na decyzję.",
     "toolReportsItem": "{place} · zgłosił: {name} · czeka {days}",
-    "toolReportsLink": "Rozpatrz na tablicy →",
+    "toolReportsLink": "Rozpatrz w zgłoszeniach →",
     "longestUnused": "Najdłużej nieużywane na bazie",
     "longestUnusedEmpty": "Na bazie nie ma sprzętu.",
     "longestUnusedItem": "nie wyjeżdżało od {days}",
@@ -892,5 +906,105 @@
     "czeka_na_wplate": "Czeka na wpłatę",
     "po_terminie": "Po terminie",
     "tylko_do_odczytu": "Tylko do odczytu"
+  },
+  "damagedAgo": {
+    "today": "dziś",
+    "yesterday": "wczoraj",
+    "days": "{days} dni temu"
+  },
+  "issues": {
+    "title": "Zgłoszenia",
+    "back": "← Wróć do tablicy",
+    "backToList": "← Wróć do zgłoszeń",
+    "intro": "Uszkodzenia, braki i inne sprawy do właściciela. Nowe zgłoszenia, komentarze i zamknięcia trafiają tutaj.",
+    "new": "Nowe zgłoszenie",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "open": "Otwarte",
+    "closed": "Zamknięte",
+    "openEmpty": "Nie ma otwartych zgłoszeń.",
+    "empty": "Nie ma jeszcze żadnych zgłoszeń. Uszkodzony sprzęt zgłosisz też z karty narzędzia, np. po zeskanowaniu naklejki.",
+    "unread": "Nowe: {count}",
+    "reportedBy": "{author}, {when}",
+    "comments": "komentarze: {count}",
+    "kind": {
+      "uszkodzenie": "Uszkodzenie",
+      "brak": "Brak / zaginięcie",
+      "inne": "Inne"
+    },
+    "kindHint": {
+      "uszkodzenie": "Narzędzie od razu dostanie czerwoną flagę „uszkodzone”. Nie blokuje ruchów.",
+      "brak": "Stan narzędzia się nie zmieni; o zaginięciu decyduje właściciel.",
+      "inne": "Każda inna sprawa do właściciela."
+    },
+    "status": {
+      "otwarte": "otwarte",
+      "zamkniete": "zamknięte"
+    },
+    "subjectTool": "{code} {name}",
+    "form": {
+      "kind": "Rodzaj",
+      "tool": "Narzędzie",
+      "toolRequired": "Narzędzie (obowiązkowe przy uszkodzeniu)",
+      "toolPlaceholder": "Wybierz narzędzie",
+      "toolNone": "Bez narzędzia",
+      "location": "Lokalizacja",
+      "locationNone": "Bez lokalizacji",
+      "subjectHint": "Wybierz narzędzie albo lokalizację, jeśli sprawa ich dotyczy.",
+      "description": "Opis",
+      "descriptionPlaceholder": "np. nie trzyma udaru, iskrzy przy włączaniu",
+      "photo": "Zdjęcie (opcjonalnie)",
+      "photoHint": "Zrób zdjęcie telefonem albo wybierz z galerii.",
+      "photoPreparing": "Przygotowuję zdjęcie…",
+      "submit": "Wyślij zgłoszenie",
+      "submitting": "Wysyłanie…"
+    },
+    "details": {
+      "reportedBy": "Zgłosił(a): {author}, {when}",
+      "tool": "Narzędzie",
+      "location": "Lokalizacja",
+      "photo": "Zdjęcie do zgłoszenia",
+      "closedBy": "Zamknięte {when}, {name}",
+      "toolWorking": "Właściciel uznał narzędzie za sprawne.",
+      "thread": "Komentarze",
+      "threadEmpty": "Nie ma jeszcze komentarzy.",
+      "closing": "zamknięcie"
+    },
+    "comment": {
+      "label": "Komentarz",
+      "placeholder": "np. odłożyłem do kontenera, jutro jedzie do serwisu",
+      "submit": "Dodaj komentarz",
+      "submitting": "Zapisywanie…"
+    },
+    "close": {
+      "title": "Zamknij zgłoszenie",
+      "label": "Komentarz zamykający",
+      "placeholder": "np. wymienione szczotki, działa",
+      "toolWorking": "Narzędzie jest sprawne: zdejmij flagę „uszkodzone”",
+      "submit": "Zamknij z tym komentarzem",
+      "submitting": "Zamykanie…"
+    },
+    "entry": {
+      "zgloszenie": "Nowe zgłoszenie: {subject}",
+      "komentarz": "Komentarz do zgłoszenia: {subject}",
+      "zamkniecie": "Zgłoszenie zamknięte: {subject}",
+      "body": "{author}: {text}",
+      "toolReport": "Zgłoszone narzędzie: {code} {name}",
+      "toolReportBody": "{author}, {place}. Zaakceptuj je albo odrzuć w oknie zgłoszeń."
+    },
+    "subject": {
+      "tool": "{kind} {code} {name}",
+      "place": "{kind}, {place}",
+      "none": "{kind}"
+    }
+  },
+  "issueSettings": {
+    "title": "Kto widzi zgłoszenia",
+    "intro": "Właściciel widzi wszystkie zgłoszenia, a autor swoje. Kto widzi zgłoszenie, ten je komentuje; kierownik go nie zamyka.",
+    "siteManagers": "Kierownik lokalizacji, której dotyczy zgłoszenie",
+    "storekeepers": "Magazynier (wszystkie zgłoszenia)",
+    "storekeepersClose": "Magazynier może zamykać zgłoszenia",
+    "submit": "Zapisz",
+    "submitting": "Zapisywanie…",
+    "saved": "Zapisano."
   }
 }

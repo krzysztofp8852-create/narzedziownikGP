@@ -16,7 +16,7 @@ export function ToolReportReview({ report, categories, operationId }: { report: 
   const [rejected, reject, rejecting] = useActionState(rejectToolReport.bind(null, report.id), {});
 
   return (
-    <li className="tool-report">
+    <li className="tool-report" id={`narzedzie-${report.id}`}>
       <div className="tool-report-head">
         <Link href={`/narzedzia/${report.id}`} className="tool-row">
           <span className="plate">{report.code}</span>

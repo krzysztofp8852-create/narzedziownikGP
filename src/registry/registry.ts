@@ -5,9 +5,11 @@ import * as catalog from "./catalog";
 import type { CatalogTool } from "./catalog";
 import type { WhereIsWhat } from "./board";
 import { RegistryError } from "./errors";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type Sql } from "./ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as corrections from "./corrections";
 import * as history from "./history";
+import * as issues from "./issues";
+import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, IssueSummary } from "./issues";
 import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 import type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 import * as locations from "./locations";
@@ -52,7 +54,7 @@ export { canManageTools, canSeeValues } from "./tools";
 export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
-export type { CompanySettings } from "./settings";
+export type { CompanySettings, IssueVisibility } from "./settings";
 export type {
   CompanySubscription,
   InvoiceData,
@@ -103,6 +105,19 @@ export type {
 export type { FridayReport, Report, ReportKind, WeeklyReport } from "./reports";
 export { isReportKind } from "./reports";
 export type { Bell, BellEntry } from "./bell";
+export type {
+  CloseIssueInput,
+  CommentOnIssueInput,
+  FileIssueInput,
+  Issue,
+  IssueComment,
+  IssueEntry,
+  IssueKind,
+  IssueStatus,
+  IssueSubject,
+  IssueSummary,
+} from "./issues";
+export { ISSUE_KINDS, MAX_ISSUE_TEXT_LENGTH, MAX_PHOTO_BYTES } from "./issues";
 export type { PushMessage, PushSubscriptionData } from "./push";
 export type { RejectedMovement } from "./queued-movements";
 export type { AddedMember, MemberRole, NewMemberInput, TeamMember } from "./team";
@@ -273,6 +288,33 @@ export interface Registry {
     acceptToolReport(input: AcceptToolReportInput): Promise<void>;
     /** Odrzuca zgłoszenie z komentarzem: narzędzie jest wycofane, historia zostaje. Tylko właściciel. */
     rejectToolReport(input: RejectToolReportInput): Promise<Movement>;
+    /**
+     * Zgłoszenie do właściciela: uszkodzenie (z narzędziem w obiegu, które od razu dostaje flagę „uszkodzone”),
+     * brak lub zaginięcie (stan narzędzia się nie zmienia) albo inna sprawa, z opisem i opcjonalnym zdjęciem.
+     * Składa je każda rola. Trafia do okna 📋 każdego, kto je widzi, poza autorem, z kopią push.
+     */
+    fileIssue(input: FileIssueInput): Promise<{ issueId: string }>;
+    /**
+     * Zgłoszenia, które aktor widzi: właściciel wszystkie, autor swoje, a kierownik lokalizacji i magazynier
+     * według ustawień firmy. Otwarte przed zamkniętymi, od najnowszego.
+     */
+    issues(): Promise<IssueSummary[]>;
+    /** Zgłoszenie z wątkiem albo null, gdy aktor go nie widzi. */
+    issue(issueId: string): Promise<Issue | null>;
+    /** Komentarz pod otwartym zgłoszeniem; komentuje każdy, kto je widzi. Wątek tylko się dopisuje. */
+    commentOnIssue(input: CommentOnIssueInput): Promise<void>;
+    /**
+     * Zamyka zgłoszenie komentarzem. Właściciel zawsze (przy uszkodzeniu może uznać narzędzie za sprawne,
+     * co zdejmuje flagę), magazynier tylko za zgodą w ustawieniach, kierownik i pracownik nigdy.
+     */
+    closeIssue(input: CloseIssueInput): Promise<void>;
+    /** Zdjęcie zgłoszenia, które aktor widzi; null, gdy go nie widzi albo zgłoszenie nie ma zdjęcia. */
+    issuePhoto(issueId: string): Promise<Blob | null>;
+    /** Liczba nieprzeczytanych wpisów okna 📋 (licznik w nagłówku). */
+    unreadIssueEntryCount(): Promise<number>;
+    /** Otwarcie zgłoszenia: jego wpisy w oknie 📋 aktora są przeczytane. */
+    markIssueRead(issueId: string): Promise<void>;
+    markAllIssueEntriesRead(): Promise<void>;
     /** Wszystkie osoby w firmie, także dezaktywowane. Tylko właściciel. */
     team(): Promise<TeamMember[]>;
     /**
@@ -388,8 +430,11 @@ export interface Registry {
     sentReport(kind: ReportKind, day: string): Promise<Report | null>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
-    /** Zmienia ustawienia firmy, np. próg dni alarmu (1–365). Tylko właściciel. */
-    updateSettings(input: CompanySettings): Promise<void>;
+    /**
+     * Zmienia podane ustawienia firmy: próg dni alarmu (1–365) i kto widzi zgłoszenia (zamykać może tylko
+     * magazynier, który je widzi). Pominięte zostają bez zmian. Tylko właściciel.
+     */
+    updateSettings(input: Partial<CompanySettings>): Promise<void>;
     /** Abonament firmy: próg z limitem, liczba narzędzi, „opłacone do” i stan. Tylko właściciel. */
     subscription(): Promise<CompanySubscription>;
   };
@@ -403,6 +448,7 @@ interface Deps {
   clock: Clock;
   authAdmin: AuthAdmin;
   notifier: Notifier;
+  photos: PhotoStore;
 }
 
 export function createRegistry(deps: Deps): Registry {
@@ -598,6 +644,15 @@ export function createRegistry(deps: Deps): Registry {
         async (input: I) =>
           (await movementCommand(command, async (_sql, movement: M) => movement)(input)).result;
 
+      /**
+       * Wpis w wątku zgłoszenia (komentarz, zamknięcie), z jednym ponowieniem, gdy równoległa ponowka zapisała
+       * tę samą operację. Kopie push nowych wpisów okna 📋 idą po zatwierdzeniu.
+       */
+      const issueCommand = async <I>(command: (sql: Sql, session: Session, input: I, now: Date) => Promise<PushCopy[]>, input: I) => {
+        const copies = await retryOnReplay(() => asWriter((sql, session) => command(sql, session, input, deps.clock.now())));
+        await sendPushCopies(deps, copies);
+      };
+
       const registerMovement = async (input: RegisterMovementInput): Promise<RegisteredMovement> => {
         // Kopie push nowych wpisów dzwonka z podejścia, które się zatwierdziło.
         let copies: PushCopy[] = [];
@@ -657,20 +712,13 @@ export function createRegistry(deps: Deps): Registry {
             return tools.addCategory(sql, session, input, deps.clock.now());
           }),
         suggestCode: (categoryId) => asMember((sql) => tools.suggestCode(sql, categoryId)),
-        addTool: async (input) => {
-          const attempt = () =>
+        addTool: (input) =>
+          retryOnReplay(() =>
             asWriter(async (sql, session) => {
               tools.requireToolManager(session);
               return withLimitWarning(sql, await tools.addTool(sql, session, input, deps.clock.now()));
-            });
-          try {
-            return await attempt();
-          } catch (error) {
-            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
-            throw error;
-          }
-        },
+            }),
+          ),
         editTool: (toolId, input) =>
           asWriter((sql, session) => {
             tools.requireToolManager(session);
@@ -681,17 +729,10 @@ export function createRegistry(deps: Deps): Registry {
             toolImport.requireImporter(session);
             return toolImport.previewToolImport(sql, session, rows);
           }),
-        importTools: async (input) => {
-          const attempt = () =>
-            asWriter(async (sql, session) => withLimitWarning(sql, await toolImport.importTools(sql, session, input, deps.clock.now())));
-          try {
-            return await attempt();
-          } catch (error) {
-            // Równoległa ponowka już zapisała ten import; drugie podejście odczyta jej wynik.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
-            throw error;
-          }
-        },
+        importTools: (input) =>
+          retryOnReplay(() =>
+            asWriter(async (sql, session) => withLimitWarning(sql, await toolImport.importTools(sql, session, input, deps.clock.now()))),
+          ),
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
         printStickers: (selection, print) =>
           asWriter(async (sql, session) => {
@@ -704,15 +745,16 @@ export function createRegistry(deps: Deps): Registry {
             return stickers.stickerCandidates(sql);
           }),
         reportTool: async (input) => {
-          const attempt = () =>
-            asWriter(async (sql, session) => withLimitWarning(sql, await toolReports.reportTool(sql, session, input, deps.clock.now())));
-          try {
-            return await attempt();
-          } catch (error) {
-            // Równoległa ponowka już zapisała tę operację; drugie podejście odczyta jej wynik.
-            if (error instanceof tools.ReplayedOperationError) return attempt();
-            throw error;
-          }
+          const { result, copies } = await retryOnReplay(() =>
+            asWriter(async (sql, session) => {
+              const reported = await toolReports.reportTool(sql, session, input, deps.clock.now());
+              // Ponowienie niczego nie dubluje w oknie 📋 właścicieli, więc nie daje kopii push.
+              const copies = await issues.deliverToolReport(sql, session, reported.toolId, deps.clock.now());
+              return { result: await withLimitWarning(sql, reported), copies };
+            }),
+          );
+          await sendPushCopies(deps, copies);
+          return result;
         },
         toolReports: () =>
           asMember((sql, session) => {
@@ -721,6 +763,42 @@ export function createRegistry(deps: Deps): Registry {
           }),
         acceptToolReport: (input) => asWriter((sql, session) => toolReports.acceptToolReport(sql, session, input)),
         rejectToolReport: movementOnlyCommand(toolReports.rejectToolReport),
+        fileIssue: async (input) => {
+          let savedPhoto: string | null = null;
+          const attempt = () =>
+            asWriter(async (sql, session) => {
+              // Zdjęcie sprawdzamy dopiero tu: w trybie tylko do odczytu polecenie odmawia, zanim sprawdzi dane.
+              const photo = input.photo ? await issues.checkPhoto(input.photo) : null;
+              const filed = await issues.fileIssue(sql, session, input, photo, deps.clock.now());
+              // Zdjęcie zapisujemy przed zatwierdzeniem: gdy Storage odmówi, zgłoszenia nie ma.
+              if (photo && filed.photoKey) {
+                await deps.photos.save(filed.photoKey, photo.blob);
+                savedPhoto = filed.photoKey;
+              }
+              return filed;
+            });
+          try {
+            const { issueId, copies } = await retryOnReplay(attempt);
+            await sendPushCopies(deps, copies);
+            return { issueId };
+          } catch (error) {
+            // Transakcja się nie zatwierdziła, więc zdjęcie nie ma zgłoszenia.
+            const orphan = savedPhoto as string | null;
+            if (orphan) await deps.photos.remove(orphan).catch((cleanupError) => console.error(cleanupError));
+            throw error;
+          }
+        },
+        issues: () => asMember((sql, session) => issues.listIssues(sql, session)),
+        issue: (issueId) => asMember((sql, session) => issues.issueDetails(sql, session, issueId)),
+        commentOnIssue: (input) => issueCommand(issues.commentOnIssue, input),
+        closeIssue: (input) => issueCommand(issues.closeIssue, input),
+        issuePhoto: async (issueId) => {
+          const key = await asMember((sql) => issues.visiblePhotoKey(sql, issueId));
+          return key ? deps.photos.read(key) : null;
+        },
+        unreadIssueEntryCount: () => asMember((sql, session) => issues.unreadCount(sql, session)),
+        markIssueRead: (issueId) => asPersonal((sql, session) => issues.markIssueRead(sql, session, issueId, deps.clock.now())),
+        markAllIssueEntriesRead: () => asPersonal((sql, session) => issues.markAllRead(sql, session, deps.clock.now())),
         team: () =>
           asMember((sql, session) => {
             team.requireTeamManager(session);
@@ -907,6 +985,16 @@ async function sendReport(deps: Deps, companyId: string, kind: ReportKind, now: 
   const result = await deps.db.transaction((sql) => reports.deliverReport(sql, companyId, report, now));
   await Promise.all([sendNotifications(deps.notifier, result.emails), sendPushCopies(deps, result.copies)]);
   return result.delivered;
+}
+
+/** Jedno ponowienie, gdy równoległa ponowka tej samej operacji właśnie się zapisała; drugie podejście odczyta jej wynik. */
+async function retryOnReplay<T>(attempt: () => Promise<T>): Promise<T> {
+  try {
+    return await attempt();
+  } catch (error) {
+    if (error instanceof tools.ReplayedOperationError) return attempt();
+    throw error;
+  }
 }
 
 /**
