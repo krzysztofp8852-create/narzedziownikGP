@@ -414,6 +414,27 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   return { companyId: company.companyId };
 }
 
+/** Tyle po ostatnim wejściu do demo oglądający raczej już skończył; wcześniej zadanie godzinowe demo nie odświeża. */
+const IDLE_BEFORE_REFRESH_MS = 30 * MINUTE_MS;
+
+export type DemoRefresh = { refreshed: true; companyId: string } | { refreshed: false; reason: "unused" | "in_use" };
+
+/**
+ * Zadanie godzinowe (`/zadania/demo`): świeże demo w miejsce obecnego, jeśli ktoś do niego wszedł, a od ostatniego
+ * wejścia minęło pół godziny, żeby nie wyrzucić oglądającego w trakcie. Demo, do którego nikt nie wszedł, zostaje:
+ * każde nowe zostawia w bazie firmę z kontami. Bez demo zakłada pierwsze.
+ */
+export async function refreshUsedDemo(deps: DemoCompanyDeps, { now = new Date() }: { now?: Date } = {}): Promise<DemoRefresh> {
+  const registry = createRegistry({ ...deps, clock: { now: () => now }, notifier: silentNotifier });
+  const use = await registry.system().demoUse();
+  if (use) {
+    if (!use.lastEntryAt) return { refreshed: false, reason: "unused" };
+    if (now.getTime() - use.lastEntryAt.getTime() < IDLE_BEFORE_REFRESH_MS) return { refreshed: false, reason: "in_use" };
+  }
+  const { companyId } = await createDemoCompany(deps, { now });
+  return { refreshed: true, companyId };
+}
+
 /** Role, między którymi przełącza strona /demo, w kolejności pokazywania. */
 export const DEMO_ROLES = ["wlasciciel", "kierownik", "magazynier", "pracownik"] as const;
 export type DemoRole = (typeof DEMO_ROLES)[number];

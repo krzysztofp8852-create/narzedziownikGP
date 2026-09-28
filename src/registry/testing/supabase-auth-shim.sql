@@ -12,7 +12,8 @@ grant usage on schema auth to anon, authenticated, service_role;
 
 create table auth.users (
   id uuid primary key,
-  email text unique
+  email text unique,
+  last_sign_in_at timestamptz
 );
 
 create function auth.uid() returns uuid
