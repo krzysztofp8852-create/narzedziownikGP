@@ -34,6 +34,25 @@ export async function demoAccounts(sql: Sql): Promise<DemoAccount[]> {
     .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
 }
 
+/** Użycie obecnego demo: kiedy ktoś ostatnio do niego wszedł (null: jeszcze nikt). */
+export interface DemoUse {
+  lastEntryAt: Date | null;
+}
+
+/**
+ * Kiedy ktoś ostatnio wszedł do obecnego demo, w dowolnej roli. Wejście (także przełączenie roli paskiem demo) to
+ * logowanie w Supabase Auth, więc zostaje w `auth.users.last_sign_in_at` kont firmy. Null, gdy demo nie założono.
+ */
+export async function demoUse(sql: Sql): Promise<DemoUse | null> {
+  const [row] = await sql<{ last_entry_at: Date | null }>(
+    `select max(a.last_sign_in_at) as last_entry_at
+     from app.users u join auth.users a on a.id = u.user_id
+     where u.company_id = (select id from app.companies where demo_since is not null order by demo_since desc limit 1)
+     having count(*) > 0`,
+  );
+  return row ? { lastEntryAt: row.last_entry_at } : null;
+}
+
 /** Czy to konto firmy demo, także poprzedniego demo (już dezaktywowane). */
 export async function isDemoAccount(sql: Sql, userId: string): Promise<boolean> {
   const [row] = await sql<{ demo: boolean }>(

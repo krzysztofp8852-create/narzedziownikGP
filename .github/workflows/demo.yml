@@ -1,0 +1,28 @@
+name: Demo
+
+# Co godzinę świeże demo, jeśli ktoś był w obecnym i skończył oglądać (zob. src/app/zadania/demo/route.ts).
+# Vercel Hobby puszcza cron najwyżej raz dziennie, więc godzinowy harmonogram jest tutaj. Minuta inna niż :00,
+# bo o pełnych godzinach GitHub opóźnia albo gubi uruchomienia.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: demo
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Odświeżenie używanego demo
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 330 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://narzedziownik-gp.vercel.app/zadania/demo

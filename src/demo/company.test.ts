@@ -2,13 +2,26 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { isRegistryError } from "@/registry/errors";
 import { setupRegistryTestbed, START } from "@/registry/testing/harness";
-import { createDemoCompany, DEMO_COMPANY_NAME } from "./company";
+import { createDemoCompany, DEMO_COMPANY_NAME, refreshUsedDemo } from "./company";
 
 const bed = setupRegistryTestbed();
 const DAY = 24 * 60 * 60 * 1000;
+const MINUTE = 60 * 1000;
 
-const demo = (now = START) =>
-  createDemoCompany({ db: bed.db, authAdmin: bed.auth, photos: bed.photos, chatPhotos: bed.chatPhotos }, { now });
+const deps = () => ({ db: bed.db, authAdmin: bed.auth, photos: bed.photos, chatPhotos: bed.chatPhotos });
+const demo = (now = START) => createDemoCompany(deps(), { now });
+const refresh = (now: Date) => refreshUsedDemo(deps(), { now });
+const minutesAfterStart = (minutes: number) => new Date(START.getTime() + minutes * MINUTE);
+
+/** Wejście do demo w roli tego konta (strona /demo albo pasek demo): Supabase Auth zapisuje chwilę logowania. */
+const enter = (userId: string, at: Date) =>
+  bed.db.transaction((sql) => sql("update auth.users set last_sign_in_at = $2 where id = $1", [userId, at]));
+
+/** Firma obecnego demo. */
+const currentDemoCompany = async () => {
+  const [owner] = await bed.registry.system().demoAccounts();
+  return (await bed.registry.as(owner.userId).session())?.company.id;
+};
 
 describe("firma demo", () => {
   it("ma konto każdej roli, do którego można wejść od razu", async () => {
@@ -153,9 +166,39 @@ describe("firma demo", () => {
     expect(await bed.registry.system().isDemoAccount(previousOwner.userId)).toBe(true);
   });
 
+  it("zadanie godzinowe nie zmienia demo, do którego nikt nie wszedł", async () => {
+    const { companyId } = await demo();
+
+    expect(await refresh(minutesAfterStart(5 * 60))).toEqual({ refreshed: false, reason: "unused" });
+    expect(await currentDemoCompany()).toBe(companyId);
+  });
+
+  it("zadanie godzinowe odświeża demo pół godziny po ostatnim wejściu, a nie w trakcie oglądania", async () => {
+    const { companyId } = await demo();
+    const [owner, manager] = await bed.registry.system().demoAccounts();
+    await enter(owner.userId, minutesAfterStart(10));
+    // Przełączenie roli paskiem demo to kolejne wejście.
+    await enter(manager.userId, minutesAfterStart(25));
+
+    expect(await refresh(minutesAfterStart(50))).toEqual({ refreshed: false, reason: "in_use" });
+    expect(await currentDemoCompany()).toBe(companyId);
+
+    const refreshed = await refresh(minutesAfterStart(56));
+    expect(refreshed).toEqual({ refreshed: true, companyId: expect.any(String) });
+    expect(await currentDemoCompany()).not.toBe(companyId);
+    expect(await bed.registry.as(manager.userId).session()).toBeNull();
+    expect(await bed.registry.system().demoUse()).toEqual({ lastEntryAt: null });
+  });
+
+  it("zadanie godzinowe zakłada demo, gdy go jeszcze nie ma", async () => {
+    expect(await refresh(START)).toEqual({ refreshed: true, companyId: expect.any(String) });
+    expect(await bed.registry.system().demoAccounts()).toHaveLength(9);
+  });
+
   it("bez firmy demo nie ma kont demo", async () => {
     const zawbud = await bed.givenActiveCompany("Zawbud");
     expect(await bed.registry.system().demoAccounts()).toEqual([]);
     expect(await bed.registry.system().isDemoAccount(zawbud.ownerId)).toBe(false);
+    expect(await bed.registry.system().demoUse()).toBeNull();
   });
 });

@@ -8,7 +8,7 @@ import { RegistryError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as corrections from "./corrections";
 import * as demo from "./demo";
-import type { DemoAccount } from "./demo";
+import type { DemoAccount, DemoUse } from "./demo";
 import * as history from "./history";
 import * as issues from "./issues";
 import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, IssueSummary } from "./issues";
@@ -145,7 +145,7 @@ export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
 export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
-export type { DemoAccount } from "./demo";
+export type { DemoAccount, DemoUse } from "./demo";
 export { DEMO_EMAIL_DOMAIN, isDemoEmail } from "./demo";
 export { canPrintStickers } from "./stickers";
 
@@ -266,6 +266,8 @@ export interface Registry {
     notifySubscriptionDeadlines(): Promise<{ warned: number; switched: number }>;
     /** Konta obecnej firmy demo (włączonej ostatnio), po roli; pusta lista, gdy demo nie założono. */
     demoAccounts(): Promise<DemoAccount[]>;
+    /** Kiedy ktoś ostatnio wszedł do obecnego demo (zadanie godzinowe odświeża tylko używane); null, gdy demo nie założono. */
+    demoUse(): Promise<DemoUse | null>;
     /** Czy użytkownik ma konto w firmie demo, obecnej albo poprzedniej (wtedy wraca na stronę /demo). */
     isDemoAccount(userId: string): Promise<boolean>;
     /**
@@ -595,6 +597,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         return result;
       },
       demoAccounts: () => deps.db.transaction((sql) => demo.demoAccounts(sql)),
+      demoUse: () => deps.db.transaction((sql) => demo.demoUse(sql)),
       isDemoAccount: (userId) => deps.db.transaction((sql) => demo.isDemoAccount(sql, userId)),
       activateDemoCompany: async (companyId) => {
         const retired = await deps.db.transaction((sql) => demo.activateDemoCompany(sql, companyId, deps.clock.now()));

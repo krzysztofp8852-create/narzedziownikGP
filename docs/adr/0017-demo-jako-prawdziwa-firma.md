@@ -21,6 +21,11 @@ oglądającego (np. PGlite w pamięci) nie działa na Vercelu, gdzie kolejne ż�
   robi to, co harmonogram z `vercel.json`, ale tylko dla tej firmy (`notifyCompanyExceededThresholds`,
   `sendCompanyDueReports`): codziennie progi dni, a w ostatnich dwóch tygodniach raporty. Świeże demo ma więc
   w dzwonku alarmy i raporty, zanim przyjdzie pierwszy cron.
+- Co godzinę zadanie `/zadania/demo` zakłada świeże demo, jeśli ktoś wszedł do obecnego (wejście i przełączenie roli
+  to logowanie, widać je w `auth.users.last_sign_in_at`), a od ostatniego wejścia minęło pół godziny. Do nieużywanego
+  demo nie robi nic, bo każde nowe zostawia w bazie firmę z dziewięcioma kontami, a pół godziny chroni oglądającego
+  przed wyrzuceniem w trakcie. Harmonogram jest w GitHub Actions (`.github/workflows/demo.yml`, ten sam
+  `CRON_SECRET`), bo Vercel Hobby puszcza cron najwyżej raz dziennie.
 - `/demo` jest publiczne. Wybór roli loguje przeglądarkę na konto demo tej roli jednorazowym linkiem logowania,
   który serwer tworzy kluczem service_role i od razu wykorzystuje; hasła kont demo nikomu nie są potrzebne. W firmie
   demo pasek pod nagłówkiem przełącza role tą samą drogą i zostaje na bieżącej stronie, jeśli widzi ją każda rola
@@ -44,7 +49,9 @@ oglądającego (np. PGlite w pamięci) nie działa na Vercelu, gdzie kolejne ż�
 
 ## Konsekwencje
 
-- Oglądający dzielą jedno demo i widzą nawzajem swoje zmiany; świeże demo to kolejne `npm run demo:create`.
+- Oglądający dzielą jedno demo i widzą nawzajem swoje zmiany do najbliższego odświeżenia (najpóźniej około półtorej
+  godziny po ostatnim wejściu); od razu świeże demo daje `npm run demo:create`. Kto ogląda jedną rolę dłużej niż pół
+  godziny bez przełączania, może trafić na odświeżenie i wrócić na `/demo`.
 - Każde demo zostawia w bazie nieaktywną firmę z kontami (także w panelu super-admina).
 - Czatu z supportem ani powiadomień push nie da się w demo wypróbować; oglądający dostaje kontakt handlowy.
   Wątki z wcześniejszych demo zostają w panelu super-admina.
