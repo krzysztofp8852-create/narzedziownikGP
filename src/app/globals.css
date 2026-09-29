@@ -2636,6 +2636,173 @@ a.tool-row:hover .tool-row-name {
 }
 
 
+/* Samouczek nowego użytkownika: karta nad tablicą, dopóki go nie pominięto ani nie ukończono. */
+.tutorial {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--brand);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+  text-wrap: pretty;
+}
+
+.tutorial-head {
+  display: grid;
+  gap: 6px;
+}
+
+.tutorial-kicker {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tutorial-title {
+  font-size: 1.3rem;
+}
+
+.tutorial-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+}
+
+.tutorial-progress progress {
+  flex: 1;
+  max-width: 240px;
+  height: 10px;
+  appearance: none;
+  border: none;
+  border-radius: 5px;
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--border);
+  overflow: hidden;
+}
+
+.tutorial-progress progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+.tutorial-progress progress::-webkit-progress-value {
+  background: var(--success);
+}
+
+.tutorial-progress progress::-moz-progress-bar {
+  background: var(--success);
+}
+
+.tutorial-steps {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.tutorial-step {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tutorial-step-done {
+  background: var(--success-soft);
+  border-color: var(--success-soft);
+}
+
+.tutorial-step-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  font-weight: 700;
+}
+
+.tutorial-step-done .tutorial-step-mark {
+  background: var(--success);
+  border-color: var(--success);
+  color: #ffffff;
+}
+
+.tutorial-step-body {
+  display: grid;
+  gap: 4px;
+}
+
+.tutorial-step-body a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tutorial-step-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 1rem;
+}
+
+.tag-done {
+  background: var(--success-soft);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.tutorial-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.tutorial-dot-on {
+  background: var(--brand);
+}
+
+.tutorial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tutorial-skip {
+  margin-right: auto;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.tutorial-skip:hover {
+  color: var(--text);
+}
+
+.tutorial-reopen {
+  font-size: 0.9rem;
+}
+
 /* Terminy na karcie narzędzia: przegląd, kalibracja, badanie UDT, gwarancja. Po terminie czerwony pasek jak alarm. */
 .deadlines {
   list-style: none;

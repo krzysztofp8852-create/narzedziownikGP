@@ -35,6 +35,10 @@ _Avoid_: strona główna (to tablica)
 Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje oglądających. Wizyta to jedna przeglądarka, także po przełączeniu roli. Zostaje po usunięciu firmy demo.
 _Avoid_: analityka, śledzenie
 
+**Samouczek**:
+Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Startuje sam po pierwszym logowaniu, dopóki go nie pominięto ani nie ukończono; potem otwiera się znakiem „?” w nagłówku. Pracownik i firma demo go nie mają.
+_Avoid_: onboarding (to wdrożenie), tutorial, przewodnik (to przewodnik po tablicy w demo)
+
 **Super-admin**:
 Globalna rola dostawcy (GP Engineering) poza firmami: zakłada firmy, pilnuje abonamentów, odpowiada na czacie z supportem.
 _Avoid_: support (jako nazwa roli), administrator

@@ -9,7 +9,7 @@ import { SupportChatLink } from "@/components/support-chat-link";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageSettings, canUseSupportChat } from "@/registry/registry";
+import { canManageSettings, canUseSupportChat, hasTutorial } from "@/registry/registry";
 
 function GearIcon() {
   return (
@@ -47,6 +47,16 @@ function ClipboardIcon() {
       <path d="M12 16h4" />
       <path d="M8 11h.01" />
       <path d="M8 16h.01" />
+    </svg>
+  );
+}
+
+function HelpIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <path d="M12 17h.01" />
     </svg>
   );
 }
@@ -126,6 +136,16 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 <ChatIcon />
                 <UnreadCount count={unreadChat} testId="chat-count" />
               </SupportChatLink>
+            )}
+            {hasTutorial(session) && (
+              <Link
+                href="/samouczek"
+                className="button button-quiet icon-button"
+                aria-label={t("header.tutorial")}
+                title={t("header.tutorial")}
+              >
+                <HelpIcon />
+              </Link>
             )}
             {canManageSettings(session) && (
               <Link

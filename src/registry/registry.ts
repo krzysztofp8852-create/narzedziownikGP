@@ -51,6 +51,8 @@ import * as toolReports from "./tool-reports";
 import type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
+import * as tutorial from "./tutorial";
+import type { Tutorial, TutorialOutcome } from "./tutorial";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
@@ -179,6 +181,8 @@ export type { DemoAccount, DemoUse } from "./demo";
 export { DEMO_EMAIL_DOMAIN, isDemoEmail, LOGGED_DEMO_COMMANDS } from "./demo";
 export type { DemoDevice, DemoEvent, DemoVisit, LoggedDemoCommand } from "./demo";
 export { canPrintStickers } from "./stickers";
+export type { FirstStep, FirstStepId, Tutorial, TutorialOutcome } from "./tutorial";
+export { hasTutorial } from "./tutorial";
 
 export interface Session {
   userId: string;
@@ -585,6 +589,16 @@ export interface Registry {
     updateSettings(input: Partial<CompanySettings>): Promise<void>;
     /** Abonament firmy: próg z limitem, liczba narzędzi, „opłacone do” i stan. Tylko właściciel. */
     subscription(): Promise<CompanySubscription>;
+    /**
+     * Samouczek aktora: czy już się zamknął (pominięty albo ukończony), a u właściciela pierwsze kroki z faktycznym
+     * stanem firmy (kierownik, budowa, narzędzia, wydrukowana naklejka). null dla pracownika i w firmie demo.
+     */
+    tutorial(): Promise<Tutorial | null>;
+    /**
+     * Zamyka samouczek aktora (pominięty albo ukończony): potem nie startuje sam, ale można go otworzyć ponownie.
+     * Nic poza tym nie zapisuje; działa także w trybie tylko do odczytu. Pracownikowi i w demo odmawia (`forbidden`).
+     */
+    closeTutorial(outcome: TutorialOutcome): Promise<void>;
   };
 }
 
@@ -1246,6 +1260,8 @@ export function createRegistry(deps: RegistryDeps): Registry {
             subscriptions.requireSubscriptionReader(session);
             return subscriptions.companySubscription(sql, deps.clock.now());
           }),
+        tutorial: () => asMember((sql, session) => tutorial.tutorial(sql, session)),
+        closeTutorial: (outcome) => asPersonal((sql, session) => tutorial.closeTutorial(sql, session, outcome)),
       });
     },
   };

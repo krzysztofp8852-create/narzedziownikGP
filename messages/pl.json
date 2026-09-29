@@ -62,7 +62,8 @@
     "issues": "Zgłoszenia",
     "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
     "chat": "Czat z supportem",
-    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}"
+    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}",
+    "tutorial": "Samouczek"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -1601,5 +1602,96 @@
     "nav": {
       "contact": "Kontakt"
     }
+  },
+  "tutorial": {
+    "title": "Samouczek",
+    "skip": "Pomiń samouczek",
+    "done": "Gotowe",
+    "next": "Dalej",
+    "back": "Wstecz",
+    "count": "Krok {step} z {count}",
+    "reopen": "Samouczek otworzysz ponownie znakiem „?” w nagłówku.",
+    "firstSteps": {
+      "title": "Pierwsze kroki",
+      "intro": "Od tych czterech rzeczy zaczyna każda firma. Kroki odhaczają się same, gdy dana rzecz już jest w firmie.",
+      "progress": "Zrobione: {done} z {count}",
+      "doneTag": "zrobione",
+      "kierownik": {
+        "title": "Dodaj kierownika",
+        "text": "W ustawieniach, w sekcji „Zespół”, załóż konto kierownika. Hasło tymczasowe przekażesz mu osobiście.",
+        "link": "Przejdź do zespołu"
+      },
+      "budowa": {
+        "title": "Dodaj budowę",
+        "text": "Na tablicy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada.",
+        "link": "Przejdź do budów"
+      },
+      "narzedzia": {
+        "title": "Dodaj narzędzia",
+        "text": "Pojedynczo przyciskiem „Dodaj narzędzie” w operacjach na tablicy albo całą listę naraz z pliku Excel.",
+        "link": "Zaimportuj z Excela"
+      },
+      "naklejki": {
+        "title": "Wydrukuj naklejki QR",
+        "text": "Naklejka z kodem QR na każdym narzędziu: zeskanowana telefonem od razu pokazuje kartę i podpowiada ruch.",
+        "link": "Przejdź do naklejek"
+      }
+    },
+    "movements": {
+      "title": "Jak zapisać ruch sprzętu",
+      "introKierownik": {
+        "title": "Ruchy na Twoich budowach",
+        "text": "Każde przemieszczenie sprzętu na Twoje budowy i pojazdy albo z nich zapisujesz w „Operacje” na tablicy. Trwa to kilka sekund, a właściciel od razu widzi, gdzie co jest."
+      },
+      "introMagazynier": {
+        "title": "Obsługa bazy",
+        "text": "Wydajesz i przyjmujesz sprzęt na bazie dla wszystkich budów i pojazdów w firmie. Każdy ruch zapisujesz w „Operacje” na tablicy, a kierownicy od razu widzą, co do nich jedzie."
+      },
+      "issue": {
+        "title": "Wydanie z bazy",
+        "text": "„Wydaj z bazy”: zaznacz narzędzia, które wyjeżdżają, i wybierz budowę lub pojazd, na który jadą."
+      },
+      "return": {
+        "title": "Zwrot na bazę",
+        "text": "„Zwróć na bazę”: wybierz budowę lub pojazd, z którego sprzęt wraca, i zaznacz narzędzia."
+      },
+      "transferKierownik": {
+        "title": "Przeniesienie",
+        "text": "„Przenieś”: sprzęt jedzie z innej budowy lub pojazdu na Twoją, z pominięciem bazy. Zapisuje ten, kto zabiera, a kierownik, od którego sprzęt wyjechał, dostaje powiadomienie."
+      },
+      "transferMagazynier": {
+        "title": "Przeniesienie",
+        "text": "„Przenieś”: sprzęt jedzie z budowy lub pojazdu na inną budowę lub pojazd, z pominięciem bazy. Zapiszesz je dla każdej budowy, a kierownik, od którego sprzęt wyjechał, dostaje powiadomienie."
+      },
+      "service": {
+        "title": "Serwis",
+        "text": "„Do serwisu” wysyła zepsuty sprzęt do punktu naprawy, a „Z serwisu” przyjmuje go z powrotem na bazę. Sprzęt w serwisie nie liczy się do sprzętu poza bazą."
+      },
+      "summary": {
+        "title": "Podsumowanie przed zapisem",
+        "text": "Na dole formularza widać, co się zapisze, np. „S-01, H-03 → Rataje”. Sprawdź je i kliknij „Zatwierdź ✓”. Dopiero wtedy ruch trafia do historii."
+      },
+      "undo": {
+        "title": "Cofnięcie w ciągu 15 minut",
+        "text": "Pomyłka? Własny ruch cofniesz przyciskiem „Cofnij” zaraz po zapisie albo w „Ostatnie ruchy”, przez 15 minut. Oryginał zostaje w historii jako cofnięty."
+      },
+      "scan": {
+        "title": "Skaner QR",
+        "text": "„Skanuj QR”: zeskanuj aparatem telefonu naklejki na narzędziach, kilka pod rząd. Rodzaj ruchu podpowiemy na podstawie tego, gdzie sprzęt jest teraz."
+      },
+      "voice": {
+        "title": "Głosem albo zdaniem",
+        "text": "Kliknij „Powiedz lub wpisz”, przytrzymaj „Przytrzymaj i mów” i powiedz np. „biorę dwie szlifierki na Rataje”. Pokażemy, co zrozumieliśmy, a nic się nie zapisze, dopóki nie zatwierdzisz ✓."
+      },
+      "typing": {
+        "title": "Zwykłym zdaniem",
+        "text": "Kliknij „Wpisz tekstem” i napisz np. „biorę dwie szlifierki na Rataje”. Pokażemy, co zrozumieliśmy, a nic się nie zapisze, dopóki nie zatwierdzisz ✓."
+      },
+      "finish": {
+        "title": "Gotowe",
+        "text": "To wszystko, czego potrzebujesz na co dzień. Samouczek niczego nie zapisał: ruchy pojawią się dopiero wtedy, gdy sam je zatwierdzisz."
+      }
+    },
+    "backToBoard": "← Wróć do tablicy"
   }
 }
