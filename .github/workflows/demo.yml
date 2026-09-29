@@ -23,6 +23,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl --fail-with-body --silent --show-error --max-time 330 \
+          # --max-redirs 0: przekierowanie domeny kończy zadanie błędem zamiast cichego „sukcesu” bez odświeżenia.
+          curl --fail-with-body --silent --show-error --max-time 330 --location --max-redirs 0 \
             -H "Authorization: Bearer $CRON_SECRET" \
-            https://narzedziownik-gp.vercel.app/zadania/demo
+            https://narzedziownikgp.pl/zadania/demo
