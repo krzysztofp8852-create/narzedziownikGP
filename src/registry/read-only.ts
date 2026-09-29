@@ -3,10 +3,9 @@ import { RegistryError } from "./errors";
 import type { EmailedNotification, Notification, NotificationContent, ReadOnlyNotification } from "./notifications";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
-import { owners, warsawTime } from "./reports";
+import { owners } from "./reports";
 import { type CompanyPlan, readOnlyFrom, subscriptionStatus, updateSubscription } from "./subscriptions";
-import { DAY_MS } from "./tools";
-import { UUID_PATTERN } from "./validation";
+import { daysBetween, UUID_PATTERN, warsawTime } from "./validation";
 
 /** SQLSTATE zapisu w transakcji READ ONLY. */
 const READ_ONLY_SQL_TRANSACTION = "25006";
@@ -116,9 +115,4 @@ export async function setManualReadOnly(sql: Sql, companyId: string, on: boolean
     [companyId, JSON.stringify(content), now],
   );
   return rows.map((row) => pushCopy(row.owner_id, row.notification_id, content));
-}
-
-/** Ile dni od `from` do `to` (RRRR-MM-DD). */
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
 }

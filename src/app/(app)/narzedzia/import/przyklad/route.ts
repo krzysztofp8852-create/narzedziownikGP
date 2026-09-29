@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { formatDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { sampleImportFile } from "@/import/sample";
 import { requireSession } from "@/lib/auth";
@@ -15,6 +16,7 @@ export async function GET() {
     categories,
     base: locations.base.name,
     sites: locations.sites.filter((site) => site.status === "aktywna").map((site) => site.name),
+    today: formatDay(new Date()),
   });
   return new Response(new Uint8Array(file), {
     headers: {

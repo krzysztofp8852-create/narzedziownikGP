@@ -54,8 +54,9 @@ export default async function ReportPage(props: PageProps<"/raporty/[kind]/[day]
           {section.items.length === 0 && section.empty && <p className="empty">{section.empty}</p>}
           {section.items.length > 0 && (
             <ul className="tool-list">
-              {section.items.map((item) => (
-                <li key={item.toolId}>
+              {section.items.map((item, itemIndex) => (
+                // Narzędzie bywa w sekcji terminów kilka razy (np. przegląd i gwarancja).
+                <li key={`${item.toolId}:${itemIndex}`}>
                   <Link href={`/narzedzia/${item.toolId}`} className="tool-row report-row">
                     <span className="plate">{item.code}</span>
                     <span className="tool-row-name">

@@ -8,6 +8,7 @@ import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { nextDeadlineText } from "@/lib/deadline-text";
 import { historySearch } from "@/lib/history-filters";
 import { damagedAgo } from "@/lib/issue-text";
 import { getRegistry } from "@/lib/registry-instance";
@@ -17,6 +18,7 @@ import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
 import { ToolCorrections } from "./tool-corrections";
+import { ToolDeadlines } from "./tool-deadlines";
 
 export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Promise<Metadata> {
   const { card } = await loadToolCard((await props.params).id);
@@ -69,6 +71,13 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
             })}
           </p>
         )}
+        {card.nextDeadline && (
+          <p data-testid="tool-next-deadline">
+            <a href="#terminy" className={card.nextDeadline.overdue ? "text-danger" : undefined}>
+              {t("deadlines.nearest", { text: nextDeadlineText(card.nextDeadline) })}
+            </a>
+          </p>
+        )}
       </section>
 
       {card.damagedSince && (
@@ -113,6 +122,8 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
           ))}
         </dl>
       </section>
+
+      <ToolDeadlines session={session} card={card} />
 
       {canManageTools(session) && (
         <details className="panel">

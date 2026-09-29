@@ -43,8 +43,9 @@ export interface Notifier {
 }
 
 /**
- * Zdjęcia w prywatnym kubełku (Supabase Storage): osobno zgłoszeń i czatu z supportem. Zapisuje i czyta je tylko
- * serwer, a Rejestr pokazuje zdjęcie tylko temu, kto widzi zgłoszenie albo wątek czatu.
+ * Pliki w prywatnym kubełku (Supabase Storage): osobno zdjęcia zgłoszeń, zdjęcia czatu z supportem i dokumenty terminów
+ * narzędzi (zdjęcia i PDF). Zapisuje i czyta je tylko serwer, a Rejestr pokazuje plik tylko temu, kto widzi zgłoszenie,
+ * wątek czatu albo dokument.
  */
 export interface PhotoStore {
   save(key: string, photo: Blob): Promise<void>;

@@ -1,9 +1,10 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { formatDay } from "@/i18n/dates";
 import type { Clock, Notifier } from "@/registry/ports";
 import { createRegistry, DEMO_EMAIL_DOMAIN, type MemberRole, type RegisteredKind, type RegistryDeps } from "@/registry/registry";
 
 /** Z czego demo korzysta w Rejestrze; zegar i powiadomienia ma własne. */
-export type DemoCompanyDeps = Pick<RegistryDeps, "db" | "authAdmin" | "photos" | "chatPhotos">;
+export type DemoCompanyDeps = Pick<RegistryDeps, "db" | "authAdmin" | "photos" | "chatPhotos" | "documents">;
 
 export const DEMO_COMPANY_NAME = "DemoBud Sp. z o.o.";
 
@@ -36,18 +37,18 @@ class ScenarioClock implements Clock {
 const REPORT_DAYS = 14;
 
 /**
- * Uruchomienia harmonogramu z `vercel.json` (UTC) po `from` i najpóźniej w `to`: progi dni codziennie o 5:00, raporty
- * w poniedziałek o 5:00 i 6:00 oraz w piątek o 14:00 i 15:00 (Rejestr sam sprawdza, czy w Polsce już pora).
+ * Uruchomienia harmonogramu z `vercel.json` (UTC) po `from` i najpóźniej w `to`: progi dni i terminy codziennie o 5:00,
+ * raporty w poniedziałek o 5:00 i 6:00 oraz w piątek o 14:00 i 15:00 (Rejestr sam sprawdza, czy w Polsce już pora).
  */
-function scheduledRuns(from: Date, to: Date): { at: Date; thresholds: boolean; reports: boolean }[] {
-  const runs: { at: Date; thresholds: boolean; reports: boolean }[] = [];
+function scheduledRuns(from: Date, to: Date): { at: Date; daily: boolean; reports: boolean }[] {
+  const runs: { at: Date; daily: boolean; reports: boolean }[] = [];
   const hour = new Date(from);
   hour.setUTCMinutes(0, 0, 0);
   for (hour.setUTCHours(hour.getUTCHours() + 1); hour.getTime() <= to.getTime(); hour.setUTCHours(hour.getUTCHours() + 1)) {
     const [utcHour, weekday] = [hour.getUTCHours(), hour.getUTCDay()];
-    const thresholds = utcHour === 5;
+    const daily = utcHour === 5;
     const reports = (weekday === 1 && (utcHour === 5 || utcHour === 6)) || (weekday === 5 && (utcHour === 14 || utcHour === 15));
-    if (thresholds || reports) runs.push({ at: new Date(hour), thresholds, reports });
+    if (daily || reports) runs.push({ at: new Date(hour), daily, reports });
   }
   return runs;
 }
@@ -159,7 +160,8 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
 /**
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
- * do wyjaśnienia, alarmy i raporty w dzwonkach), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr,
+ * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, alarmy, przypomnienia i raporty w dzwonkach), a potem
+ * robi z niej obecne demo. Każdy wpis idzie przez Rejestr,
  * więc dane są takie, jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed
  * kilkudziesięciu minut.
  */
@@ -186,14 +188,17 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   });
   /**
    * Zegar idzie do `when`, a po drodze firma dostaje to, co w tym czasie dałby jej harmonogram (`vercel.json`):
-   * codzienne sprawdzenie progów dni i, w ostatnich dwóch tygodniach, raporty. Dzwonek wygląda wtedy jak u firmy,
-   * która pracuje od tygodni. Tylko ta firma: zadania dla wszystkich firm (`notifyExceededThresholds`,
-   * `sendDueReports`) wysłałyby alarmy i raporty klientom.
+   * codzienne sprawdzenie progów dni i terminów i, w ostatnich dwóch tygodniach, raporty. Dzwonek wygląda wtedy jak
+   * u firmy, która pracuje od tygodni. Tylko ta firma: zadania dla wszystkich firm (`notifyExceededThresholds`,
+   * `notifyDueDeadlines`, `sendDueReports`) wysłałyby alarmy, przypomnienia i raporty klientom.
    */
   const advanceTo = async (when: Date) => {
     for (const run of scheduledRuns(clock.now(), when)) {
       clock.set(run.at);
-      if (run.thresholds) await registry.system().notifyCompanyExceededThresholds(company.companyId);
+      if (run.daily) {
+        await registry.system().notifyCompanyExceededThresholds(company.companyId);
+        await registry.system().notifyCompanyDueDeadlines(company.companyId);
+      }
       if (run.reports && now.getTime() - run.at.getTime() < REPORT_DAYS * DAY_MS) {
         await registry.system().sendCompanyDueReports(company.companyId);
       }
@@ -239,6 +244,20 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
     tools[key] = toolId;
   }
   await owner.printStickers({ unlabeled: true }, async () => null);
+
+  // Terminy: kalibracja niwelatora na Tarasach za kilka dni, kalibracja po terminie na Suchym Lesie, przeglądy
+  // i gwarancje. Przegląd młotowiertarki TE 30 wpisze magazynier, gdy wróci z serwisu.
+  const dayFromNow = (days: number) => formatDay(new Date(now.getTime() + days * DAY_MS));
+  const deadline = (key: string, kind: "przeglad" | "kalibracja" | "gwarancja", days: number, cycleMonths: number | null = null, note: string | null = null) =>
+    owner.addDeadline({ toolId: tools[key], kind, dueOn: dayFromNow(days), cycleMonths, note });
+  await deadline("rugby", "kalibracja", 5, 12, "Świadectwo wzorcowania z laboratorium Leica");
+  await deadline("n24", "kalibracja", -3, 12);
+  await deadline("eu22i", "przeglad", 20, 6, "Wymiana oleju i świec, sprawdzenie gniazd");
+  await deadline("dd150", "przeglad", 120, 12);
+  await deadline("dd150", "gwarancja", 210);
+  await deadline("apr3020", "przeglad", 45, 12);
+  await deadline("te30", "gwarancja", 25);
+  const { deadlineId: te30Inspection } = await deadline("te30", "przeglad", -14, 12);
 
   await advanceTo(daysAgo(46, 10));
   const { base } = await owner.locations();
@@ -331,6 +350,8 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   await move("pawel", daysAgo(17, 9, 0), "wydanie", "base", "jezyce", ["te1000", "hm1307", "dch273", "protec", "blp33", "fsz"]);
   await move("pawel", daysAgo(15, 13, 40), "do_serwisu", "jezyce", "swarzedz", ["hm1307"]);
   await move("krzysztof", daysAgo(13, 11, 0), "z_serwisu", "hilti", "base", ["te30"]);
+  await advanceTo(daysAgo(13, 11, 5));
+  await as("krzysztof").completeDeadline({ operationId: randomUUID(), deadlineId: te30Inspection, doneOn: formatDay(clock.now()) });
   await move("marek", daysAgo(12, 7, 20), "wydanie", "base", "komorniki", ["te30"]);
 
   await advanceTo(daysAgo(11, 16, 0));

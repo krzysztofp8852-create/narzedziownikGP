@@ -1,3 +1,4 @@
+import { type DeadlineSummary, deadlineSummaries, NO_DEADLINES } from "./deadlines";
 import type { Service, Site, Vehicle } from "./locations";
 import * as locations from "./locations";
 import type { Sql } from "./ports";
@@ -5,8 +6,8 @@ import type { Session } from "./registry";
 import { hasAlarm } from "./thresholds";
 import { baseLocation, canSeeValues, daysSince, type LocationKind, type ToolRegistration } from "./tools";
 
-/** Narzędzie widoczne na tablicy. */
-export interface ToolOnBoard {
+/** Narzędzie widoczne na tablicy, z najbliższym terminem i trwającą gwarancją. */
+export interface ToolOnBoard extends DeadlineSummary {
   id: string;
   code: string;
   name: string;
@@ -111,6 +112,7 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
      ${valueJoin(withValues)}
      where t.state = 'w_obiegu' order by t.code`,
   );
+  const deadlines = await deadlineSummaries(sql, now);
   const byLocation = new Map<string, ToolOnBoard[]>();
   for (const row of rows) {
     const tools = byLocation.get(row.location_id) ?? [];
@@ -124,6 +126,7 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
       alarm: hasAlarm({ kind: row.location_kind, alarmEnabled: row.alarm_enabled }, row.located_since, row.threshold_days, now),
       ...(withValues && { value: parseValue(row.value) }),
       damagedSince: row.damaged_since && new Date(row.damaged_since),
+      ...(deadlines.get(row.id) ?? NO_DEADLINES),
     });
     byLocation.set(row.location_id, tools);
   }

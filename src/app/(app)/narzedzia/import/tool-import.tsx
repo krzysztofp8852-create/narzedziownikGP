@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { type ColumnMapping, guessMapping, IMPORT_FIELDS, type ImportField, mapRows } from "@/import/columns";
 import { readSheetFile, type Sheet, SheetError } from "@/import/sheet";
+import { formatCalendarDay } from "@/i18n/dates";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { newOperationId } from "@/lib/operation-id";
@@ -23,6 +24,8 @@ const ERROR_FIELD: Record<ImportRowError, ImportField | null> = {
   location_ambiguous: "location",
   site_finished: "location",
   vehicle_inactive: "location",
+  inspection_invalid: "inspectionDue",
+  warranty_invalid: "warrantyUntil",
 };
 
 /** Wgranie pliku, mapowanie kolumn, podgląd z błędami i zatwierdzenie importu. */
@@ -210,6 +213,8 @@ export function ToolImport(props: { operationId: string }) {
                       <th scope="col" className="import-number">
                         {t("tools.value")}
                       </th>
+                      <th scope="col">{t("tools.inspectionDue")}</th>
+                      <th scope="col">{t("tools.warrantyUntil")}</th>
                       <th scope="col">{t("import.problems")}</th>
                     </tr>
                   </thead>
@@ -225,6 +230,8 @@ export function ToolImport(props: { operationId: string }) {
                         <td>{row.category?.name}</td>
                         <td>{row.location?.name}</td>
                         <td className="import-number">{row.value !== null && formatMoney(row.value)}</td>
+                        <td>{row.inspectionDue && formatCalendarDay(row.inspectionDue)}</td>
+                        <td>{row.warrantyUntil && formatCalendarDay(row.warrantyUntil)}</td>
                         <td>
                           {row.errors.length > 0 && (
                             <ul className="import-errors">

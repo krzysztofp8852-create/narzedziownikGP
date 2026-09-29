@@ -31,6 +31,8 @@ export type RegistryErrorCode =
   | "comment_required"
   | "tool_required"
   | "photo_invalid"
+  | "deadline_taken"
+  | "document_invalid"
   | "issue_closed"
   | "message_required"
   | "read_only"
@@ -50,4 +52,13 @@ export class RegistryError extends Error {
 
 export function isRegistryError(error: unknown): error is RegistryError {
   return error instanceof RegistryError;
+}
+
+/** Ta sama operacja klienta właśnie zapisała się w równoległej transakcji; ponowienie zwróci jej wynik. */
+export class ReplayedOperationError extends Error {}
+
+/** Czy błąd bazy to naruszenie tego ograniczenia unikalności (także przy wyścigu dwóch zapisów). */
+export function isUniqueViolation(error: unknown, constraint: string) {
+  const { code, constraint: violated } = error as { code?: string; constraint?: string };
+  return code === "23505" && violated === constraint;
 }

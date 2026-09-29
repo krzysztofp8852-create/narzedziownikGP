@@ -1,7 +1,7 @@
-import { RegistryError } from "./errors";
+import { isUniqueViolation, RegistryError, ReplayedOperationError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
-import { isUniqueViolation, type LocationKind, ReplayedOperationError, type ToolState } from "./tools";
+import type { LocationKind, ToolState } from "./tools";
 import { UUID_PATTERN } from "./validation";
 
 export type MovementKind =

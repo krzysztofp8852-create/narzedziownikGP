@@ -1,6 +1,7 @@
 import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { NotificationContent } from "@/registry/registry";
+import { deadlineKindName, deadlineKindWord, deadlineWhen } from "./deadline-text";
 import { historySearch } from "./history-filters";
 import { placeAt, placeFrom } from "./place-text";
 import { reportLink, reportText } from "./report-text";
@@ -55,6 +56,21 @@ export function notificationText(notification: NotificationContent): { title: st
           from: formatCalendarDay(notification.readOnlyFrom),
         }),
       };
+    case "terminy": {
+      const [only] = notification.deadlines;
+      if (notification.deadlines.length === 1) {
+        return {
+          title: t("bell.deadline", { kind: deadlineKindName(only.kind), code: only.tool.code, name: only.tool.name, when: deadlineWhen(only) }),
+          body: t("bell.deadlineBody", { place: placeAt(only.location) }),
+        };
+      }
+      return {
+        title: t("bell.deadlines", { count: notification.deadlines.length }),
+        body: notification.deadlines
+          .map((deadline) => t("bell.deadlineItem", { code: deadline.tool.code, kind: deadlineKindWord(deadline.kind), when: deadlineWhen(deadline) }))
+          .join(" · "),
+      };
+    }
     case "tylko_do_odczytu":
       return {
         title: t("bell.readOnly"),
@@ -66,7 +82,7 @@ export function notificationText(notification: NotificationContent): { title: st
   }
 }
 
-/** Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica albo abonament w ustawieniach. */
+/** Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica, terminy albo abonament w ustawieniach. */
 export function notificationLink(notification: NotificationContent): string {
   switch (notification.kind) {
     case "narzedzia_zabrane":
@@ -85,6 +101,8 @@ export function notificationLink(notification: NotificationContent): string {
     case "tylko_do_odczytu_wkrotce":
     case "tylko_do_odczytu":
       return "/ustawienia";
+    case "terminy":
+      return notification.deadlines.length === 1 ? `/narzedzia/${notification.deadlines[0].tool.id}#terminy` : "/terminy";
   }
 }
 

@@ -21,9 +21,38 @@ function ascii(bytes: Uint8Array, from: number, to: number) {
 
 /** Zdjęcie JPG, PNG albo WEBP do 4 MB; inaczej `photo_invalid`. */
 export async function checkPhoto(photo: Blob): Promise<CheckedPhoto> {
-  if (!(photo instanceof Blob) || photo.size === 0 || photo.size > MAX_PHOTO_BYTES) throw new RegistryError("photo_invalid");
-  const head = new Uint8Array(await photo.slice(0, 12).arrayBuffer());
-  const signature = PHOTO_SIGNATURES.find(({ matches }) => matches(head));
-  if (!signature) throw new RegistryError("photo_invalid");
-  return { blob: new Blob([photo], { type: signature.type }), extension: signature.extension };
+  return recognize(photo, PHOTO_SIGNATURES, MAX_PHOTO_BYTES, "photo_invalid");
+}
+
+/** Plik o jednym ze znanych formatów (po pierwszych bajtach) i najwyżej `maxBytes`, z typem z treści; inaczej `error`. */
+async function recognize<E extends string>(
+  file: Blob,
+  signatures: { type: string; extension: E; matches: (head: Uint8Array) => boolean }[],
+  maxBytes: number,
+  error: "photo_invalid" | "document_invalid",
+): Promise<{ blob: Blob; extension: E }> {
+  if (!(file instanceof Blob) || file.size === 0 || file.size > maxBytes) throw new RegistryError(error);
+  const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const signature = signatures.find(({ matches }) => matches(head));
+  if (!signature) throw new RegistryError(error);
+  return { blob: new Blob([file], { type: signature.type }), extension: signature.extension };
+}
+
+/** Dokumenty terminów narzędzi: PDF albo zdjęcie JPG, PNG, WEBP do 4 MB. */
+const MAX_DOCUMENT_BYTES = 4 * 1024 * 1024;
+
+/** Rozpoznany dokument: typ z treści pliku, a nie z nagłówka przeglądarki. */
+export interface CheckedDocument {
+  blob: Blob;
+  extension: CheckedPhoto["extension"] | "pdf";
+}
+
+const DOCUMENT_SIGNATURES = [
+  ...PHOTO_SIGNATURES,
+  { type: "application/pdf", extension: "pdf" as const, matches: (h: Uint8Array) => ascii(h, 0, 5) === "%PDF-" },
+];
+
+/** PDF albo zdjęcie JPG, PNG, WEBP do 4 MB; inaczej `document_invalid`. */
+export async function checkDocument(file: Blob): Promise<CheckedDocument> {
+  return recognize<CheckedDocument["extension"]>(file, DOCUMENT_SIGNATURES, MAX_DOCUMENT_BYTES, "document_invalid");
 }

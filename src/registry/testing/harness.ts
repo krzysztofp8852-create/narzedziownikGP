@@ -17,6 +17,8 @@ export interface RegistryTestbed {
   photos: MemoryPhotoStore;
   /** Kubełek zdjęć z czatu z supportem. */
   chatPhotos: MemoryPhotoStore;
+  /** Kubełek dokumentów terminów narzędzi. */
+  documents: MemoryPhotoStore;
   db: Db;
   /** Firma z bazą i właścicielem, założona tak jak robi to skrypt. */
   givenCompany(name: string, options?: { email?: string; fullName?: string; baseName?: string }): Promise<GivenCompany>;
@@ -52,6 +54,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
   const notifier = new RecordingNotifier();
   const photos = new MemoryPhotoStore();
   const chatPhotos = new MemoryPhotoStore();
+  const documents = new MemoryPhotoStore();
   let db: Db & { close(): Promise<void> };
   let auth: FakeAuthAdmin;
   let registry: Registry;
@@ -59,7 +62,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
   beforeAll(async () => {
     db = await openTestDb();
     auth = new FakeAuthAdmin(db);
-    registry = createRegistry({ db, clock, authAdmin: auth, notifier, photos, chatPhotos });
+    registry = createRegistry({ db, clock, authAdmin: auth, notifier, photos, chatPhotos, documents });
   });
 
   beforeEach(async () => {
@@ -68,6 +71,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
     notifier.clear();
     photos.clear();
     chatPhotos.clear();
+    documents.clear();
     clock.set(START);
   });
 
@@ -103,6 +107,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
     notifier,
     photos,
     chatPhotos,
+    documents,
     givenCompany,
     signedInNow: () => ({ signedInAt: clock.now() }),
     async givenActiveCompany(name, options = {}) {

@@ -67,6 +67,45 @@ describe("powiadomienie push z wpisu dzwonka", () => {
   });
 });
 
+describe("powiadomienie push o terminach", () => {
+  const calibration = {
+    id: "d1",
+    kind: "kalibracja" as const,
+    dueOn: "2026-03-13",
+    overdue: false,
+    tool: { id: "n01", code: "N-01", name: "Niwelator laserowy" },
+    location: { id: "r", name: "Rataje", kind: "budowa" as const },
+  };
+
+  it("jeden termin: co, kiedy i gdzie jest teraz sprzęt", () => {
+    expect(pushNotification({ window: "dzwonek", notificationId: "t-1", notification: { kind: "terminy", deadlines: [calibration] } })).toEqual({
+      title: "Kalibracja N-01 Niwelator laserowy: termin 13.03.2026",
+      body: "Sprzęt jest teraz na budowie Rataje.",
+      url: "/dzwonek/t-1",
+      tag: "dzwonek:t-1",
+    });
+  });
+
+  it("kilka terminów: ile, a w treści każdy z kodem, także po terminie i koniec gwarancji", () => {
+    const push = pushNotification({
+      window: "dzwonek",
+      notificationId: "t-2",
+      notification: {
+        kind: "terminy",
+        deadlines: [
+          { ...calibration, id: "d0", kind: "przeglad", dueOn: "2026-02-20", overdue: true, tool: { id: "h01", code: "H-01", name: "Młot" } },
+          calibration,
+          { ...calibration, id: "d2", kind: "gwarancja", dueOn: "2026-03-14", location: { id: "b", name: "Magazyn", kind: "baza" } },
+        ],
+      },
+    });
+    expect(push).toMatchObject({
+      title: "Terminy sprzętu: 3",
+      body: "H-01: przegląd, po terminie (20.02.2026) · N-01: kalibracja, termin 13.03.2026 · N-01: gwarancja, koniec 14.03.2026",
+    });
+  });
+});
+
 describe("powiadomienie push z wpisu okna 📋 zgłoszeń", () => {
   it("nowe zgłoszenie uszkodzenia: czego dotyczy, kto i co napisał, a kliknięcie otwiera zgłoszenie", () => {
     expect(

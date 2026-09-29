@@ -1,8 +1,9 @@
-import { RegistryError, type RegistryErrorCode } from "./errors";
+import { type DeadlineSummary, summarizeDeadlines, type ToolDeadline, toolDeadlines } from "./deadlines";
+import { isUniqueViolation, RegistryError, type RegistryErrorCode, ReplayedOperationError } from "./errors";
 import type { MovementKind, MovementSource } from "./movements";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
-import { UUID_PATTERN } from "./validation";
+import { UUID_PATTERN, warsawTime } from "./validation";
 
 export type ToolState = "w_obiegu" | "zaginione" | "wycofane";
 export type ToolRegistration = "zgloszone" | "zaakceptowane";
@@ -35,7 +36,7 @@ export interface AddToolInput extends ToolFields {
 /** Zmiany karty: pominięte pola zostają bez zmian, null czyści pole. */
 export type EditToolInput = Partial<ToolFields>;
 
-export interface ToolCard {
+export interface ToolCard extends DeadlineSummary {
   id: string;
   code: string;
   name: string;
@@ -55,6 +56,8 @@ export interface ToolCard {
   damagedSince: Date | null;
   /** Przy zaginionym narzędziu: kiedy zaginęło, gdzie było ostatnio i kto za nie odpowiadał. */
   lost: LostTool | null;
+  /** Przeglądy, kalibracje, badania UDT i gwarancja, od najbliższego terminu. */
+  deadlines: ToolDeadline[];
   history: HistoryEntry[];
 }
 
@@ -205,8 +208,6 @@ export async function intake(
   return { toolId: tool.id, code };
 }
 
-/** Ta sama operacja klienta właśnie zapisała się w równoległej transakcji; ponowienie zwróci jej wynik. */
-export class ReplayedOperationError extends Error {}
 
 export async function baseLocation(sql: Sql, session: Session): Promise<{ id: string; name: string }> {
   const [base] = await sql<{ id: string; name: string }>(
@@ -381,6 +382,7 @@ export async function toolCard(
         )
       : [];
 
+  const deadlines = await toolDeadlines(sql, toolId, now);
   return {
     id: row.id,
     code: row.code,
@@ -405,6 +407,8 @@ export async function toolCard(
           reason: lost.reason,
         }
       : null,
+    deadlines,
+    ...summarizeDeadlines(deadlines, warsawTime(now).day),
     history: history.map((entry) => ({
       kind: entry.kind,
       source: entry.source,
@@ -436,10 +440,6 @@ export async function uniqueOr<T>(query: Promise<T>): Promise<T> {
   }
 }
 
-export function isUniqueViolation(error: unknown, constraint: string) {
-  const { code, constraint: violated } = error as { code?: string; constraint?: string };
-  return code === "23505" && violated === constraint;
-}
 
 export function daysSince(since: Date, now: Date) {
   return Math.max(0, Math.floor((now.getTime() - new Date(since).getTime()) / DAY_MS));

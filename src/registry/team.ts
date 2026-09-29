@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
 import type { Role, Session } from "./registry";
-import { isUniqueViolation } from "./tools";
+import { isUniqueViolation } from "./errors";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 
 /** Role, które właściciel nadaje osobom w zespole. */

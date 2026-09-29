@@ -11,7 +11,7 @@ import { ToolFinder } from "./tool-finder";
 export const metadata: Metadata = { title: t("search.title") };
 
 /**
- * Lupa w nagłówku: gdzie jest narzędzie, od ilu dni i kto za nie odpowiada, dla każdej roli. Lista to tablica
+ * Lupa w nagłówku: gdzie jest narzędzie, od ilu dni, kto za nie odpowiada i najbliższy termin, dla każdej roli. Lista to tablica
  * (także serwisy i zaginione) z kategorią, marką i modelem z ewidencji, bez wartości w zł. `?q=` wypełnia pole.
  */
 export default async function SearchPage(props: PageProps<"/szukaj">) {
@@ -35,6 +35,7 @@ export default async function SearchPage(props: PageProps<"/szukaj">) {
       responsible,
       damaged: tool.damagedSince !== null,
       alarm: tool.alarm,
+      nextDeadline: tool.nextDeadline,
     });
   const tools: SearchTool[] = [
     ...board.base.tools.map(at({ name: board.base.name, kind: "baza" }, null)),

@@ -8,8 +8,8 @@ import type { RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
 import { CameraScanner } from "./camera-scanner";
 import { readSticker } from "@/stickers/url";
-import { type ChecklistData, type ChecklistPlace, type ChecklistTool, DamagedWarnings, PlaceName } from "./checklist";
-import { type DoneMovement, MovementResult } from "./movement-result";
+import { type ChecklistData, type ChecklistPlace, type ChecklistTool, DamagedWarnings, DeadlineHints, PlaceName, serviceFollowUp } from "./checklist";
+import { type DoneMovement, type FollowUpTool, MovementResult } from "./movement-result";
 import { findToolByCode, planScan, type ScanGroup, type ScanOption } from "./scan-plan";
 
 /** Co wybrano w grupie zamiast podpowiedzi: rodzaj ruchu i dokąd. */
@@ -22,6 +22,8 @@ interface Submitted {
   fromId: string;
   toolIds: string[];
   summary: string;
+  /** Narzędzia z serwisu z przeglądem do wpisania. */
+  followUp: FollowUpTool[];
 }
 
 /**
@@ -44,7 +46,10 @@ export function Scanner({ data }: { data: ChecklistData }) {
     const sent = submitted.current;
     const summary = sent?.summary ?? "";
     const result = await sendOrQueue(() => registerMovement(prev, formData), queuedFromForm(formData, { userId: data.userId, summary }));
-    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified, movementId: result.done.movementId };
+    const done =
+      result === "queued"
+        ? { summary, notified: [], queued: true }
+        : result.done && { summary, notified: result.done.notified, movementId: result.done.movementId, followUp: sent?.followUp };
     if (done && sent) {
       operationIds.current.delete(sent.signature);
       setScannedIds((ids) => ids.filter((id) => !sent.toolIds.includes(id)));
@@ -202,6 +207,7 @@ function ScanGroupForm({ group, choice, pending, onChoose, onRemove, onSubmit }:
           fromId: from.id,
           toolIds: tools.map((tool) => tool.id),
           summary,
+          followUp: serviceFollowUp(tools, option.kind),
         });
       }}
     >
@@ -280,6 +286,7 @@ function ScanGroupForm({ group, choice, pending, onChoose, onRemove, onSubmit }:
             {t(`movementKind.${option.kind}`)}: {to ? summary : t("scanner.chooseTo")}
           </p>
           <DamagedWarnings tools={tools} kind={option.kind} />
+          <DeadlineHints tools={tools} kind={option.kind} />
           <div className="form-actions">
             <button className="button" type="submit" disabled={!to || pending}>
               {pending ? t("checklist.confirming") : t("checklist.confirm")}

@@ -2,7 +2,8 @@ import { formatCalendarDay } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney, formatMoneyChange } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import type { FridayReport, Report, ReportKind, WeeklyReport } from "@/registry/registry";
+import { type FridayReport, type Report, type ReportKind, UPCOMING_DAYS, type WeeklyReport } from "@/registry/registry";
+import { upcomingDeadlineText } from "./deadline-text";
 
 /** Nagłówek i jedno zdanie raportu: w dzwonku i w pushu. */
 export function reportText(report: Report): { title: string; body: string } {
@@ -16,11 +17,12 @@ function weeklyText(report: WeeklyReport): { title: string; body: string } {
       report.offBaseChange === null
         ? t("reports.bell.weekly", { value })
         : t("reports.bell.weeklyChange", { value, change: formatMoneyChange(report.offBaseChange) }),
-    body: t("reports.bell.weeklyBody", {
-      over: report.overThreshold.length,
-      lost: report.lost.length,
-      reports: report.toolReports.length,
-    }),
+    body:
+      t("reports.bell.weeklyBody", {
+        over: report.overThreshold.length,
+        lost: report.lost.length,
+        reports: report.toolReports.length,
+      }) + (report.deadlines?.length ? t("reports.bell.weeklyDeadlines", { count: report.deadlines.length }) : ""),
   };
 }
 
@@ -121,6 +123,22 @@ function weeklySections(report: WeeklyReport): ReportSection[] {
       })),
       empty: t("reports.lostEmpty"),
     },
+    // Raporty sprzed terminów nie mają tej sekcji.
+    ...(report.deadlines
+      ? [
+          {
+            title: t("reports.deadlines", { days: UPCOMING_DAYS }),
+            items: report.deadlines.map((deadline) => ({
+              toolId: deadline.tool.id,
+              code: deadline.tool.code,
+              name: deadline.tool.name,
+              detail: upcomingDeadlineText(deadline),
+            })),
+            empty: t("reports.deadlinesEmpty", { days: UPCOMING_DAYS }),
+            ...(report.deadlines.length > 0 && { link: { href: "/terminy", label: t("reports.deadlinesLink") } }),
+          },
+        ]
+      : []),
     {
       title: t("reports.toolReports"),
       items: report.toolReports.map((tool) => ({

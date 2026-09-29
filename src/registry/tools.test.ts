@@ -30,7 +30,19 @@ describe("dodawanie narzędzia", () => {
 
     const { base } = await owner.whereIsWhat();
     expect(base.tools).toEqual([
-      { id: toolId, code: "H-03", name: "Młot udarowy", registration: "zaakceptowane", daysInPlace: 3, alarm: false, value: 3200, damagedSince: null },
+      {
+        id: toolId,
+        code: "H-03",
+        name: "Młot udarowy",
+        registration: "zaakceptowane",
+        daysInPlace: 3,
+        alarm: false,
+        value: 3200,
+        damagedSince: null,
+        nextDeadline: null,
+        nextInspection: null,
+        warrantyUntil: null,
+      },
     ]);
     expect(await owner.toolCard(toolId)).toEqual({
       id: toolId,
@@ -48,6 +60,10 @@ describe("dodawanie narzędzia", () => {
       responsible: null,
       damagedSince: null,
       lost: null,
+      deadlines: [],
+      nextDeadline: null,
+      nextInspection: null,
+      warrantyUntil: null,
       history: [
         {
           kind: "przyjecie",

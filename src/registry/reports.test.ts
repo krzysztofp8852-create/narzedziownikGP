@@ -103,6 +103,7 @@ describe("raport tygodniowy: zawartość", () => {
         { id: reported.toolId, code: "S-04", name: "Wiertarka Makita", location: { id: z.ratajeId, name: "Rataje" }, reportedBy: "Adam Nowak", daysWaiting: 4 },
       ],
       longestUnused: [{ id: z.s03, code: "S-03", name: "Szlifierka duża", days: 34 }],
+      deadlines: [],
     };
     expect(await bellOf(z.zawbud.ownerId)).toEqual([{ kind: "raport_tygodniowy", report: expected }]);
     expect(await z.owner.sentReport("tygodniowy", "2026-04-06")).toEqual(expected);
