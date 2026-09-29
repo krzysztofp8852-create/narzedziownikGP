@@ -1468,11 +1468,16 @@
     "description": "Wiesz, gdzie jest każde narzędzie, a system sam mówi, co leży za długo poza bazą. Naklejki QR, ruchy z telefonu, alarmy i raporty dla małej firmy budowlanej.",
     "signIn": "Zaloguj się",
     "hero": {
-      "heading": "Wiesz, gdzie jest każde narzędzie, a system sam mówi, co leży za długo poza bazą",
-      "lead": "Ewidencja sprzętu dla małej firmy budowlanej. Baza, budowy, pojazdy i serwisy w jednym miejscu, a ruchy zapisuje kierownik w telefonie, skanem, głosem albo z listy.",
+      "headingLead": "Wiesz, gdzie jest każde narzędzie,",
+      "headingRest": "a system sam mówi, co leży za długo poza bazą",
+      "lead": "Ewidencja sprzętu dla małej firmy budowlanej: baza, budowy, pojazdy i serwisy w jednym miejscu, w telefonie kierownika.",
       "demo": "Zobacz demo",
       "pricing": "Cennik",
-      "demoNote": "Demo bez rejestracji i bez hasła, na przykładowej firmie."
+      "pins": {
+        "rataje": "Budowa Rataje · 23 dni",
+        "tarasy": "Osiedle Tarasy · 18 narzędzi",
+        "polna": "Budowa Polna · 9 narzędzi"
+      }
     },
     "preview": {
       "label": "Przykład z tablicy właściciela",
@@ -1482,6 +1487,20 @@
     },
     "features": {
       "title": "Co dostajesz",
+      "groups": {
+        "watch": {
+          "title": "Pilnuje za Ciebie",
+          "code": "P"
+        },
+        "field": {
+          "title": "Działa na budowie",
+          "code": "B"
+        },
+        "team": {
+          "title": "Cała firma w jednym miejscu",
+          "code": "F"
+        }
+      },
       "alarms": {
         "title": "Alarm po progu dni",
         "text": "Ustalasz, ile dni sprzęt może stać na budowie. Po tym czasie narzędzie świeci na czerwono na tablicy, a Ty dostajesz powiadomienie."
@@ -1530,7 +1549,12 @@
     "support": {
       "title": "Pomoc zawsze pod ręką",
       "text": "W programie jest okno czatu z supportem GP Engineering. Nie szukasz numeru ani adresu e-mail: piszesz, co się dzieje, a odpowiedź przychodzi w tym samym miejscu, z powiadomieniem na telefon.",
-      "point": "Zawsze jest ktoś, kto pomoże."
+      "point": "Zawsze jest ktoś, kto pomoże.",
+      "chatTitle": "Czat z supportem",
+      "chatQuestion": "Skaner nie łapie naklejki na młocie H-03.",
+      "chatAnswer": "Sprawdźmy razem. Wyślij zdjęcie naklejki, zobaczymy, czy nie jest zabrudzona albo porysowana.",
+      "chatFrom": "GP Engineering",
+      "chatYou": "Ty"
     },
     "steps": {
       "title": "Jak to działa",
@@ -1566,10 +1590,13 @@
     },
     "contact": {
       "title": "Porozmawiajmy",
-      "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojego sprzętu? Zadzwoń albo napisz."
+      "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojego sprzętu? Zadzwoń albo napisz. Demo otworzysz od razu, bez rejestracji i bez hasła."
     },
     "footer": {
       "product": "NarzędziownikGP to program firmy GP Engineering."
+    },
+    "nav": {
+      "contact": "Kontakt"
     }
   }
 }

@@ -2701,87 +2701,64 @@ a.tool-row:hover .tool-row-name {
   gap: 8px;
 }
 
-/* Strona o programie (pod „/” bez logowania) */
+/* Strona o programie (pod „/” bez logowania). Jasna makieta miasteczka, pinezki budów, krój z tablic budowy. */
 .landing {
+  --ground: #f6f5f7;
+  --pin: #e2483d;
+  --hazard-stripes: repeating-linear-gradient(-45deg, var(--brand) 0 12px, var(--brand-ink) 12px 24px);
+  --survey-grid:
+    linear-gradient(rgb(20 23 28 / 0.045) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgb(20 23 28 / 0.045) 1px, transparent 1px) 0 0 / 32px 32px;
+  --content-width: 1180px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  background: var(--ground);
 }
 
-.landing-header,
-.landing-main,
-.landing-footer {
-  width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding-left: var(--gutter);
-  padding-right: var(--gutter);
-}
-
-.landing-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 14px;
-  padding-bottom: 14px;
-}
-
-.landing-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 20px;
-  font-weight: 600;
-}
-
-.landing-nav a {
-  color: var(--accent);
-  text-decoration: none;
-  padding: 6px 0;
-}
-
-.landing-nav a:hover {
-  text-decoration: underline;
-}
-
-.landing-main {
-  flex: 1;
-  display: grid;
-  gap: 48px;
-  padding-top: 24px;
-  padding-bottom: 56px;
-}
-
-.landing-hero {
-  display: grid;
-  gap: 28px;
-  align-items: center;
-}
-
-@media (min-width: 900px) {
-  .landing-hero {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    gap: 48px;
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing) {
+    scroll-behavior: smooth;
   }
 }
 
-.landing-hero-text {
-  display: grid;
-  gap: 16px;
+.landing-hazard {
+  height: 8px;
+  background: var(--hazard-stripes);
 }
 
-.landing-heading {
-  font-size: clamp(1.9rem, 5vw, 3rem);
-  line-height: 1.1;
+.landing-section-title,
+.landing-heading,
+.landing-price strong,
+.landing h3,
+.landing h4 {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.landing-section-title {
+  font-size: clamp(2rem, 4.5vw, 3rem);
   text-wrap: balance;
 }
 
 .landing-lead {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: var(--text-muted);
+  max-width: 60ch;
   text-wrap: pretty;
-  max-width: 680px;
+}
+
+.landing .button {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    transform 120ms ease;
+}
+
+.landing .button:active {
+  transform: translateY(1px);
 }
 
 .landing-actions {
@@ -2791,23 +2768,212 @@ a.tool-row:hover .tool-row-name {
 }
 
 .landing-actions .button {
-  min-height: 52px;
-  padding-left: 24px;
-  padding-right: 24px;
+  min-height: 54px;
+  padding-left: 26px;
+  padding-right: 26px;
+  font-size: 1.05rem;
 }
 
 .landing-actions .button-quiet {
   border-width: 2px;
+  border-color: var(--brand-ink);
 }
 
+/* Nagłówek strony i hero: na komputerze makieta pod całością, na telefonie pas mapy między tekstem a kartą. */
+.landing-top {
+  position: relative;
+  isolation: isolate;
+}
+
+.landing-header,
+.landing-hero,
+.landing-main,
+.landing-contact-inner,
+.landing-footer {
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+.landing-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  min-height: 68px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.landing-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  font-weight: 600;
+}
+
+.landing-nav a {
+  color: var(--accent);
+  text-decoration: none;
+  padding: 6px 0;
+  text-underline-offset: 4px;
+}
+
+.landing-nav a:hover {
+  text-decoration: underline;
+}
+
+.landing-hero {
+  display: grid;
+  gap: 0;
+  padding-top: 20px;
+}
+
+.landing-hero-text {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 18px;
+}
+
+.landing-heading {
+  font-size: clamp(2.4rem, 6.4vw, 3.7rem);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.landing-heading span {
+  display: block;
+  margin-top: 0.18em;
+  font-size: 0.62em;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #3d4350;
+}
+
+.landing-map {
+  position: relative;
+  height: 380px;
+  margin: 8px calc(var(--gutter) * -1) 0;
+  overflow: hidden;
+  background: var(--ground);
+}
+
+/* Mapa przechodzi w tło strony, żeby nie miała ostrej krawędzi. */
+.landing-map::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(var(--ground), transparent 22%, transparent 70%, var(--ground));
+}
+
+.landing-map-photo {
+  object-fit: cover;
+}
+
+.landing-map-pins {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.landing-pin-shadow {
+  fill: rgb(60 40 50 / 0.22);
+}
+
+.landing-pin-stem {
+  stroke: #b8342b;
+  stroke-width: 3;
+}
+
+.landing-pin-pulse {
+  fill: none;
+  stroke: var(--pin);
+  stroke-width: 4;
+  opacity: 0;
+}
+
+/* Podpisy są za małe na wąskim pasie mapy w telefonie; tam mówi karta tablicy. */
+.landing-pin-label {
+  display: none;
+}
+
+.landing-pin-label rect {
+  fill: #ffffff;
+  stroke: rgb(20 23 28 / 0.12);
+  stroke-width: 2;
+}
+
+.landing-pin-label text {
+  font: 600 28px var(--font-body), sans-serif;
+  fill: var(--text);
+}
+
+.landing-pin-label-alarm rect {
+  fill: var(--danger);
+  stroke: none;
+}
+
+.landing-pin-label-alarm text {
+  fill: #ffffff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-pin {
+    animation: landing-pin-drop 700ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+    animation-delay: var(--pin-delay, 0ms);
+  }
+
+  .landing-pin-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: landing-pin-pulse 2.4s ease-out 1s infinite;
+  }
+}
+
+@keyframes landing-pin-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes landing-pin-pulse {
+  from {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+/* Karta tablicy wchodzi na mapę jak dymek do pinezki. */
 .landing-preview {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 12px;
-  background: var(--surface);
+  margin-top: -96px;
+  background: rgb(255 255 255 / 0.94);
   border: 1px solid var(--border);
-  border-top: 4px solid var(--brand);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(40 44 60 / 0.06),
+    0 18px 40px -18px rgb(40 44 60 / 0.35);
   padding: 18px;
 }
 
@@ -2821,7 +2987,9 @@ a.tool-row:hover .tool-row-name {
 }
 
 .landing-preview-total strong {
-  font-size: 1.6rem;
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .landing-preview ul {
@@ -2843,115 +3011,411 @@ a.tool-row:hover .tool-row-name {
   min-width: 0;
 }
 
-.landing-preview-tool .muted {
-  font-size: 0.9rem;
+.landing-preview-tool .muted,
+.landing-preview figcaption {
+  font-size: 0.88rem;
 }
 
-.landing-preview figcaption {
-  font-size: 0.85rem;
+@media (min-width: 900px) {
+  .landing-top {
+    min-height: min(860px, 100dvh);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .landing-hero {
+    flex: 1;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: center;
+    gap: 40px;
+    padding-top: 24px;
+    padding-bottom: 48px;
+  }
+
+  .landing-hero-text {
+    max-width: 660px;
+    padding-bottom: 96px;
+  }
+
+  .landing-map {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    height: auto;
+    margin: 0;
+  }
+
+  /* Tekst stoi na jasnym polu makiety, a dół mapy przechodzi w tło strony. */
+  .landing-map::after {
+    background:
+      linear-gradient(90deg, var(--ground) 0%, rgb(246 245 247 / 0.92) 26%, rgb(246 245 247 / 0.4) 44%, transparent 58%),
+      linear-gradient(transparent 72%, var(--ground));
+  }
+
+  .landing-pin-label {
+    display: block;
+  }
+
+  .landing-preview {
+    align-self: end;
+    justify-self: end;
+    width: min(100%, 400px);
+    margin-top: 0;
+  }
+}
+
+/* Treść */
+.landing-main {
+  flex: 1;
+  display: grid;
+  gap: 88px;
+  padding-top: 64px;
+  padding-bottom: 96px;
 }
 
 .landing-section {
   display: grid;
+  gap: 20px;
+}
+
+/* Funkcje jak legenda na planie: grupa po lewej, pozycje z kodami jak na naklejkach. */
+.landing-feature-group {
+  display: grid;
   gap: 16px;
+  padding-top: 20px;
+  border-top: 2px solid var(--brand-ink);
 }
 
-.landing-section-title {
-  font-size: clamp(1.5rem, 3.5vw, 2rem);
+.landing-feature-group > h3 {
+  font-size: 1.6rem;
 }
 
-.landing-features,
-.landing-plans {
+.landing-feature-group ul {
   list-style: none;
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 0 32px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
 }
 
-.landing-features li,
-.landing-plans li,
-.landing-implementation {
+.landing-feature-group li {
   display: grid;
-  gap: 6px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 14px;
   align-content: start;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-feature-group li .plate {
+  grid-row: span 2;
+  align-self: start;
+  margin-top: 2px;
+}
+
+.landing-feature-group h4 {
+  font-size: 1.3rem;
+}
+
+.landing-feature-group li p {
+  color: var(--text-muted);
+  max-width: 52ch;
+}
+
+@media (min-width: 900px) {
+  .landing-feature-group {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .landing-feature-group > h3 {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+  }
+}
+
+/* Pomoc: tekst i próbka rozmowy z czatu. */
+.landing-support {
+  gap: 28px;
+  align-items: center;
+  background: var(--surface) var(--survey-grid);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 22px;
+}
+
+.landing-support-text {
+  display: grid;
+  gap: 14px;
+}
+
+.landing-support-text p {
+  max-width: 58ch;
+  font-size: 1.08rem;
+}
+
+.landing-support-text .landing-support-point {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.landing-chat {
+  display: grid;
+  gap: 12px;
+  background: var(--ground);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 18px 40px -24px rgb(40 44 60 / 0.4);
+}
+
+.landing-chat figcaption {
+  font-weight: 700;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-chat-message {
+  display: grid;
+  gap: 2px;
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 12px 12px 12px 4px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
 }
 
-.landing-features h3,
-.landing-steps h3,
-.landing-plans h3,
-.landing-implementation h3 {
-  font-size: 1.15rem;
+.landing-chat-message small {
+  font-weight: 700;
+  color: var(--text-muted);
 }
 
-.landing-support {
+.landing-chat-mine {
+  justify-self: end;
+  border-radius: 12px 12px 4px 12px;
   background: var(--accent-soft);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 22px;
-  gap: 10px;
+  border-color: transparent;
 }
 
-.landing-support p {
-  max-width: 760px;
-  font-size: 1.05rem;
+@media (min-width: 900px) {
+  .landing-support {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 48px;
+    padding: 44px;
+  }
 }
 
+/* Kroki jak odcinki drogi: przerywana linia i paliki z numerami. */
 .landing-steps {
   list-style: none;
   counter-reset: step;
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 0;
 }
 
 .landing-steps li {
   counter-increment: step;
+  position: relative;
   display: grid;
   gap: 6px;
   align-content: start;
+  padding: 0 0 28px 64px;
 }
 
 .landing-steps li::before {
   content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
   background: var(--brand);
   color: var(--brand-ink);
+  font-family: var(--font-display), var(--font-body), sans-serif;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
+  box-shadow: inset 0 -4px 0 rgb(20 23 28 / 0.18);
+}
+
+.landing-steps li::after {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 52px;
+  bottom: 6px;
+  border-left: 3px dashed var(--border-strong);
+}
+
+.landing-steps li:last-child::after {
+  display: none;
+}
+
+.landing-steps h3 {
+  font-size: 1.4rem;
+  padding-top: 8px;
+}
+
+.landing-steps p {
+  color: var(--text-muted);
+  max-width: 40ch;
+}
+
+@media (min-width: 900px) {
+  .landing-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 28px;
+  }
+
+  .landing-steps li {
+    padding: 64px 0 0;
+  }
+
+  .landing-steps li::after {
+    left: 56px;
+    right: -20px;
+    top: 21px;
+    bottom: auto;
+    border-left: 0;
+    border-top: 3px dashed var(--border-strong);
+  }
+}
+
+/* Cennik jak zestawienie w specyfikacji: progi w jednej tabeli, pod nią obowiązkowa pozycja wdrożenia. */
+.landing-plans {
+  list-style: none;
+  display: grid;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .landing-plans li {
-  border-top: 4px solid var(--accent);
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 20px 22px;
+  border-top: 1px solid var(--border);
+}
+
+.landing-plans li:first-child {
+  border-top: 0;
+}
+
+.landing-plans h3 {
+  font-size: 1.6rem;
+}
+
+.landing-plan-limit {
+  font-weight: 600;
+}
+
+.landing-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-top: 6px;
 }
 
 .landing-price strong {
-  font-size: 1.8rem;
+  font-size: 2.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.landing-price span {
+  color: var(--text-muted);
+}
+
+@media (min-width: 720px) {
+  .landing-plans {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .landing-plans li {
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .landing-plans li:first-child {
+    border-left: 0;
+  }
 }
 
 .landing-implementation {
-  border-top: 4px solid var(--brand);
-  max-width: 760px;
+  position: relative;
+  display: grid;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 20px 22px 20px 36px;
+  overflow: hidden;
 }
 
+.landing-implementation::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: var(--hazard-stripes);
+}
+
+.landing-implementation h3 {
+  font-size: 1.6rem;
+}
+
+.landing-implementation > p:last-child {
+  max-width: 70ch;
+}
+
+@media (min-width: 900px) {
+  .landing-implementation {
+    grid-template-columns: 200px auto minmax(0, 1fr);
+    align-items: center;
+    gap: 28px;
+  }
+
+  .landing-implementation .landing-price {
+    margin-top: 0;
+  }
+}
+
+/* Kontakt: pas w kolorze marki na koniec strony. */
 .landing-contact {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px;
-  gap: 12px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-top: 8px solid transparent;
+  border-image: var(--hazard-stripes) 8;
+}
+
+.landing-contact-inner {
+  display: grid;
+  gap: 14px;
+  padding-top: 56px;
+  padding-bottom: 60px;
+}
+
+.landing-contact-inner > p {
+  max-width: 58ch;
+  font-size: 1.1rem;
 }
 
 .landing-sales {
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+}
+
+.landing-sales a {
+  text-underline-offset: 4px;
 }
 
 .landing-footer {
@@ -2960,8 +3424,7 @@ a.tool-row:hover .tool-row-name {
   align-items: center;
   justify-content: space-between;
   gap: 8px 20px;
-  padding-top: 20px;
-  padding-bottom: 24px;
-  border-top: 1px solid var(--border);
+  padding-top: 22px;
+  padding-bottom: 26px;
   color: var(--text-muted);
 }

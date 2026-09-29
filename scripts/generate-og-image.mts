@@ -26,7 +26,7 @@ const page = `<!DOCTYPE html>
   p { margin: 0; font-size: 32px; color: #c9ced6; }
 </style>
 <div class="brand">${pl.app.nameLead}<span>${pl.app.nameMark}</span></div>
-<h1>${pl.landing.hero.heading}</h1>
+<h1>${pl.landing.hero.headingLead} ${pl.landing.hero.headingRest}</h1>
 <p>${pl.app.description}</p>`;
 
 const browser = await chromium.launch();

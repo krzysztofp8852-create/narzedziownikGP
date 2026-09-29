@@ -116,7 +116,8 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Kod narzędzia przy dodawaniu nadaje Rejestr: prefiks kategorii i kolejny wolny numer (np. `H-05`).
   Alarm „za długo na budowie” liczy dni od ostatniego ruchu względem jednego progu firmy, który
   właściciel ustawia w Ustawieniach (`/ustawienia`).
-- `src/app/`: strona o programie z cennikiem (`/o-programie`, niezalogowany widzi ją pod `/`, zob. `docs/adr/0021`),
+- `src/app/`: strona o programie z cennikiem (`/o-programie`, niezalogowany widzi ją pod `/`, zob. `docs/adr/0021`;
+  makietę miasteczka w tle nagłówka rysuje `npx tsx scripts/generate-hero-map.mts`),
   logowanie (`/logowanie`), wymuszona zmiana hasła tymczasowego (`/zmien-haslo`),
   reset hasła przez e-mail (`/reset-hasla` → link → `/auth/confirm` → `/nowe-haslo`),
   tablica „Gdzie jest co” (`/`), karta narzędzia z edycją (`/narzedzia/<id>`) i ustawienia właściciela
