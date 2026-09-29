@@ -11,7 +11,7 @@ import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
 import type { AddDocumentInput, CompleteDeadlineInput, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
 import * as demo from "./demo";
-import type { DemoAccount, DemoUse } from "./demo";
+import type { DemoAccount, DemoDevice, DemoUse, DemoVisit } from "./demo";
 import * as history from "./history";
 import * as issues from "./issues";
 import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, IssueSummary } from "./issues";
@@ -176,7 +176,8 @@ export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, Too
 export { canReportTools, canReviewToolReports } from "./tool-reports";
 export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
 export type { DemoAccount, DemoUse } from "./demo";
-export { DEMO_EMAIL_DOMAIN, isDemoEmail } from "./demo";
+export { DEMO_EMAIL_DOMAIN, isDemoEmail, LOGGED_DEMO_COMMANDS } from "./demo";
+export type { DemoDevice, DemoEvent, DemoVisit, LoggedDemoCommand } from "./demo";
 export { canPrintStickers } from "./stickers";
 
 export interface Session {
@@ -255,6 +256,8 @@ export interface SuperAdminRegistry {
   replyToSupportThread(input: SupportReplyInput): Promise<void>;
   /** Zdjęcie z dowolnego wątku; null, gdy go nie ma. */
   supportPhoto(messageId: string): Promise<Blob | null>;
+  /** Dziennik demo: wizyty z ostatnich 30 dni (wejścia do ról, ekrany i akcje), od najnowszej. */
+  demoVisits(): Promise<DemoVisit[]>;
 }
 
 export interface Registry {
@@ -308,10 +311,17 @@ export interface Registry {
     /** Czy użytkownik ma konto w firmie demo, obecnej albo poprzedniej (wtedy wraca na stronę /demo). */
     isDemoAccount(userId: string): Promise<boolean>;
     /**
-     * Firma staje się obecnym demo (skrypt demo, po wypełnieniu jej danymi): abonament opłacony na lata, a konta
-     * poprzednich firm demo są dezaktywowane i mają zablokowane logowanie.
+     * Firma staje się obecnym demo (skrypt demo, po wypełnieniu jej danymi): abonament opłacony na lata, a poprzednie
+     * firmy demo znikają w całości, z kontami logowania i plikami. Zwraca, ile ich usunięto.
      */
-    activateDemoCompany(companyId: string): Promise<void>;
+    activateDemoCompany(companyId: string): Promise<{ purged: number }>;
+    /**
+     * Wejście do roli obecnego demo (strona /demo albo pasek demo) do dziennika demo. `sessionId`: nowa sesja Supabase
+     * Auth, `previousSessionId`: sesja tej przeglądarki sprzed przełączenia roli. Poza obecnym demo nic nie zapisuje.
+     */
+    recordDemoEntry(entry: { userId: string; sessionId: string | null; previousSessionId: string | null; switched: boolean; device: DemoDevice }): Promise<void>;
+    /** Ekran obecnego demo otwarty w tej sesji, do dziennika demo. Poza obecnym demo nic nie zapisuje. */
+    recordDemoPage(page: { userId: string; sessionId: string | null; path: string }): Promise<void>;
   };
   /**
    * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
@@ -683,7 +693,21 @@ export function createRegistry(deps: RegistryDeps): Registry {
       activateDemoCompany: async (companyId) => {
         const retired = await deps.db.transaction((sql) => demo.activateDemoCompany(sql, companyId, deps.clock.now()));
         for (const userId of retired) await deps.authAdmin.blockSignIn(userId);
+        const companyIds = await deps.db.transaction((sql) => demo.retiredDemoCompanies(sql));
+        let purged = 0;
+        // Każda firma w osobnej transakcji: błąd jednej zostawia ją (z zablokowanymi kontami) do następnego demo.
+        for (const retiredId of companyIds) {
+          try {
+            await purgeDemoCompany(deps, retiredId);
+            purged += 1;
+          } catch (error) {
+            console.error(`Nie usunięto poprzedniej firmy demo ${retiredId}`, error);
+          }
+        }
+        return { purged };
       },
+      recordDemoEntry: (entry) => deps.db.transaction((sql) => demo.recordDemoEntry(sql, entry, deps.clock.now())),
+      recordDemoPage: (page) => deps.db.transaction((sql) => demo.recordDemoPage(sql, page, deps.clock.now())),
     }),
     superAdmin: (userId) => {
       /** Transakcja super-admina: RLS widzi jego JWT, a Rejestr najpierw sprawdza rolę. */
@@ -738,9 +762,12 @@ export function createRegistry(deps: RegistryDeps): Registry {
           const key = await asSuperAdmin((sql) => supportChat.visiblePhotoKey(sql, messageId));
           return key ? deps.chatPhotos.read(key) : null;
         },
+        demoVisits: () => asSuperAdmin((sql) => demo.demoVisits(sql, deps.clock.now())),
       };
     },
     as: (userId) => {
+      /** Czy aktor jest kontem firmy demo; ustala to pierwsza transakcja polecenia (sesja aktora się nie zmienia). */
+      const actor = { demo: false };
       /**
        * Transakcja członka firmy. Bez `allowPendingPasswordChange` wymaga zmienionego hasła tymczasowego.
        * `access` w trybie tylko do odczytu: `write` (polecenie zapisu danych firmy) od razu odmawia, `read`
@@ -754,6 +781,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         withActor(deps.db, userId, async (sql) => {
           const session = await loadSession(sql, userId, deps.clock.now());
           if (!session) throw new RegistryError("no_access");
+          actor.demo = session.company.demo;
           if (session.mustChangePassword && !opts.allowPendingPasswordChange) {
             throw new RegistryError("password_change_required");
           }
@@ -846,7 +874,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         return result;
       };
 
-      return {
+      return loggingDemoCommands(deps, userId, actor, {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId, deps.clock.now())),
         /** Zamienia hasło tymczasowe na własne. Poza tym stanem odmawia, bo nie zna obecnego hasła. */
         changePassword: async (newPassword, { signedInAt }) => {
@@ -1218,9 +1246,47 @@ export function createRegistry(deps: RegistryDeps): Registry {
             subscriptions.requireSubscriptionReader(session);
             return subscriptions.companySubscription(sql, deps.clock.now());
           }),
-      };
+      });
     },
   };
+}
+
+type MemberRegistry = ReturnType<Registry["as"]>;
+
+/**
+ * Polecenia członka firmy, które po udanym wykonaniu na koncie demo trafiają do dziennika demo. Zwykłe firmy nie płacą
+ * za to niczym: czy aktor jest w demo, wie już transakcja polecenia. Błąd zapisu dziennika nie psuje polecenia.
+ */
+function loggingDemoCommands(deps: RegistryDeps, userId: string, actor: { demo: boolean }, member: MemberRegistry): MemberRegistry {
+  const logged: Record<string, unknown> = { ...member };
+  for (const command of demo.LOGGED_DEMO_COMMANDS) {
+    const run = member[command] as (...args: unknown[]) => Promise<unknown>;
+    logged[command] = async (...args: unknown[]) => {
+      const result = await run(...args);
+      if (actor.demo) {
+        await deps.db
+          .transaction((sql) => demo.recordDemoAction(sql, { userId, command }, deps.clock.now()))
+          .catch((error) => console.error(`Nie zapisano akcji demo ${command}`, error));
+      }
+      return result;
+    };
+  }
+  return logged as unknown as MemberRegistry;
+}
+
+/**
+ * Usuwa zastąpioną firmę demo w jednej transakcji, a po niej jej pliki i konta logowania. Plik albo konto, którego
+ * nie udało się usunąć, zostaje osierocone, ale nikogo nie wpuszcza: danych firmy już nie ma.
+ */
+async function purgeDemoCompany(deps: RegistryDeps, companyId: string) {
+  const purged = await deps.db.transaction((sql) => demo.purgeDemoCompany(sql, companyId));
+  const cleanups = [
+    ...purged.photoKeys.map((key) => () => deps.photos.remove(key)),
+    ...purged.chatPhotoKeys.map((key) => () => deps.chatPhotos.remove(key)),
+    ...purged.documentKeys.map((key) => () => deps.documents.remove(key)),
+    ...purged.userIds.map((userId) => () => deps.authAdmin.deleteUser(userId)),
+  ];
+  for (const cleanup of cleanups) await cleanup().catch((error) => console.error(`Po usunięciu firmy demo ${companyId}`, error));
 }
 
 /** Progi dni jednej firmy w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę nowych przekroczeń. */

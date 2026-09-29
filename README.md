@@ -64,8 +64,9 @@ Zakłada firmę demo „DemoBud” (zespół, sprzęt, budowy, busy, serwisy, ki
 i raporty) i robi z niej obecne demo. Link do wysyłania klientom to `/demo`: tam wybiera się rolę i wchodzi bez hasła,
 a w aplikacji role przełącza pasek pod nagłówkiem (na stronie, którą widzi każda rola, oglądający na niej zostaje).
 Wylogowanie z demo wraca na `/demo`. Konto roli dzielą wszyscy oglądający, więc czat z supportem pokazuje w demo
-tylko kontakt handlowy, a powiadomień push nie da się włączyć. Ponowne uruchomienie zakłada świeże demo i odcina
-poprzednie (zob. ADR 0017).
+tylko kontakt handlowy, a powiadomień push nie da się włączyć. Ponowne uruchomienie zakłada świeże demo, a poprzednie
+usuwa w całości, z kontami i plikami (zob. ADR 0017 i 0020). Kto wchodził do demo i co tam robił, super-admin widzi
+w panelu: `/super-admin/demo` (wizyty z 30 dni: role, urządzenie, ekrany i akcje).
 
 Co godzinę (GitHub Actions, `.github/workflows/demo.yml`) zadanie `/zadania/demo` robi to samo, jeśli ktoś był
 w demo, a od ostatniego wejścia minęło pół godziny; nieużywanego demo nie zmienia. Workflow potrzebuje sekretu

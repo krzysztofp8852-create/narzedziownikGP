@@ -163,9 +163,12 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
  * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, alarmy, przypomnienia i raporty w dzwonkach), a potem
  * robi z niej obecne demo. Każdy wpis idzie przez Rejestr,
  * więc dane są takie, jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed
- * kilkudziesięciu minut.
+ * kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
-export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date() }: { now?: Date } = {}): Promise<{ companyId: string }> {
+export async function createDemoCompany(
+  deps: DemoCompanyDeps,
+  { now = new Date() }: { now?: Date } = {},
+): Promise<{ companyId: string; purged: number }> {
   const daysAgo = (days: number, hour: number, minute = 0) => {
     // Godziny pracy w Polsce (UTC+1 albo UTC+2); godzina w tę czy we w tę nie ma w demo znaczenia.
     const day = new Date(now.getTime() - days * DAY_MS);
@@ -431,14 +434,14 @@ export async function createDemoCompany(deps: DemoCompanyDeps, { now = new Date(
   await move("pawel", minutesAgo(25), "zwrot", "busPawel", "base", ["dtw300"]);
 
   await advanceTo(now);
-  await registry.system().activateDemoCompany(company.companyId);
-  return { companyId: company.companyId };
+  const { purged } = await registry.system().activateDemoCompany(company.companyId);
+  return { companyId: company.companyId, purged };
 }
 
 /** Tyle po ostatnim wejściu do demo oglądający raczej już skończył; wcześniej zadanie godzinowe demo nie odświeża. */
 const IDLE_BEFORE_REFRESH_MS = 30 * MINUTE_MS;
 
-export type DemoRefresh = { refreshed: true; companyId: string } | { refreshed: false; reason: "unused" | "in_use" };
+export type DemoRefresh = { refreshed: true; companyId: string; purged: number } | { refreshed: false; reason: "unused" | "in_use" };
 
 /**
  * Zadanie godzinowe (`/zadania/demo`): świeże demo w miejsce obecnego, jeśli ktoś do niego wszedł, a od ostatniego
@@ -452,8 +455,8 @@ export async function refreshUsedDemo(deps: DemoCompanyDeps, { now = new Date() 
     if (!use.lastEntryAt) return { refreshed: false, reason: "unused" };
     if (now.getTime() - use.lastEntryAt.getTime() < IDLE_BEFORE_REFRESH_MS) return { refreshed: false, reason: "in_use" };
   }
-  const { companyId } = await createDemoCompany(deps, { now });
-  return { refreshed: true, companyId };
+  const { companyId, purged } = await createDemoCompany(deps, { now });
+  return { refreshed: true, companyId, purged };
 }
 
 /** Role, między którymi przełącza strona /demo, w kolejności pokazywania. */

@@ -657,6 +657,21 @@ a.tool-row:hover .tool-row-name {
   font-variant-numeric: tabular-nums;
 }
 
+/* Dziennik demo (super-admin) */
+.demo-event {
+  align-items: center;
+}
+
+.demo-event-action {
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+
+.demo-event-path {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
 /* Ostatnie ruchy */
 .movements {
   list-style: none;
