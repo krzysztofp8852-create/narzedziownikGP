@@ -5,9 +5,12 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LegalLinks } from "@/components/legal-links";
 import { SalesContact } from "@/components/sales-contact";
-import { formatMoney } from "@/i18n/money";
+import { formatMoney, formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { serverEnv } from "@/lib/env";
 import { type PriceText, pricing } from "@/lib/pricing-text";
+import { jsonLdScript, landingStructuredData } from "@/lib/structured-data";
+import { IMPLEMENTATION_FEE, TIERS } from "@/registry/subscriptions";
 import { HERO_MAP } from "./hero-map";
 import mapa from "./mapa.jpg";
 
@@ -38,6 +41,8 @@ const FEATURE_GROUPS = [
   { id: "team", features: ["workers", "issues", "import", "chat"] },
 ] as const;
 const STEPS = ["import", "stickers", "movements", "alarms"] as const;
+/** Pytania, które właściciel firmy wpisuje w wyszukiwarkę, zanim kupi program. */
+const FAQ = ["what", "install", "stickers", "offline", "deadlines", "roles", "import", "price", "data", "demo"] as const;
 
 /** Pinezki z podpisem; alarmowa pulsuje. */
 const PIN_LABELS = { rataje: "landing.hero.pins.rataje", tarasy: "landing.hero.pins.tarasy", polna: "landing.hero.pins.polna" } as const;
@@ -50,7 +55,7 @@ function HeroMap() {
   const { width, height, pins } = HERO_MAP;
   return (
     <div className="landing-map" aria-hidden>
-      <Image src={mapa} alt="" fill priority sizes="100vw" placeholder="blur" className="landing-map-photo" />
+      <Image src={mapa} alt="" fill preload sizes="100vw" placeholder="blur" className="landing-map-photo" />
       {/* Ten sam kadr co `object-fit: cover` zdjęcia, więc pinezki stoją na swoich budowach. */}
       <svg className="landing-map-pins" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid slice">
         <defs>
@@ -118,6 +123,17 @@ function BoardPreview() {
   );
 }
 
+/** Odpowiedź o cenie z najtańszego progu i wdrożenia, tych samych co w cenniku. */
+function faqAnswer(question: (typeof FAQ)[number]) {
+  if (question !== "price") return t(`landing.faq.${question}.answer`);
+  const [cheapest] = TIERS;
+  return t("landing.faq.price.answer", {
+    price: formatPrice(cheapest.yearlyPrice),
+    limit: cheapest.toolLimit,
+    implementation: formatPrice(IMPLEMENTATION_FEE),
+  });
+}
+
 function Price({ price, period }: PriceText) {
   return (
     <p className="landing-price">
@@ -129,9 +145,11 @@ function Price({ price, period }: PriceText) {
 /** Strona o programie dla właściciela firmy budowlanej: co program robi, cennik, demo i kontakt. */
 export default function LandingPage() {
   const { plans, implementation } = pricing();
+  const siteUrl = serverEnv.siteUrl();
   return (
     // `data-signed-out`: service worker po tym poznaje, że pod `/` nie ma już tablicy tej sesji (ADR 0021).
     <div className={`landing ${display.variable}`} data-signed-out>
+      {siteUrl && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(landingStructuredData(siteUrl)) }} />}
       <div className="landing-hazard" aria-hidden />
       <div className="landing-top">
         <header className="landing-header">
@@ -144,6 +162,7 @@ export default function LandingPage() {
           </div>
           <nav className="landing-nav">
             <a href="#cennik">{t("landing.hero.pricing")}</a>
+            <a href="#pytania">{t("landing.nav.faq")}</a>
             <a href="#kontakt">{t("landing.nav.contact")}</a>
             <Link href="/logowanie">{t("landing.signIn")}</Link>
           </nav>
@@ -245,6 +264,20 @@ export default function LandingPage() {
             <Price {...implementation} />
             <p>{t("landing.pricing.implementationText")}</p>
           </div>
+        </section>
+
+        <section className="landing-section" aria-labelledby="pytania">
+          <h2 id="pytania" className="landing-section-title">
+            {t("landing.faq.title")}
+          </h2>
+          <dl className="landing-faq">
+            {FAQ.map((question) => (
+              <div key={question}>
+                <dt>{t(`landing.faq.${question}.question`)}</dt>
+                <dd>{faqAnswer(question)}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </main>
 

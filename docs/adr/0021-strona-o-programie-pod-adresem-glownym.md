@@ -21,6 +21,10 @@ Zalogowany pod `/` ma dalej tablicę, a adres z naklejki QR dalej ma prowadzić 
   o programie `index`. `robots.txt` i `sitemap.xml` są dostępne bez sesji. Adres w mapie strony i w podglądzie
   linku bierzemy z `APP_URL`, a bez niego z adresu produkcji na Vercelu. Obrazek podglądu `public/og.png` rysuje
   `scripts/generate-og-image.mts`.
+- Strona o programie ma dane strukturalne JSON-LD (`src/lib/structured-data.ts`): dostawca ze stopki, witryna pod
+  nazwą programu i program z cenami progów z `TIERS`. Sekcja „Pytania i odpowiedzi” odpowiada na to, co właściciel
+  wpisuje w wyszukiwarkę; bez znaczników FAQPage, bo Google pokazuje je tylko stronom urzędów i serwisów o zdrowiu.
+  Search Console weryfikuje domenę rekordem DNS albo znacznikiem z `GOOGLE_SITE_VERIFICATION`.
 - Service worker (ADR 0010) otwiera `/` jak tablicę. Stronę o programie poznaje po znaku `data-signed-out` i traktuje
   jak przekierowanie: kasuje kopię i nie zapisuje strony o programie w jej miejsce. Inna strona bez tablicy (bez
   `data-fetched-at`, np. przerwane renderowanie) zostawia starą kopię. Bez sieci i bez kopii niezalogowany zobaczy

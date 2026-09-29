@@ -1589,6 +1589,49 @@
       "implementationPeriod": "netto, jednorazowo",
       "implementationText": "Obowiązkowe na start, przy każdym progu. Obejmuje szkolenie z programu dla Ciebie i zespołu: na miejscu w Twojej firmie albo zdalnie, do wyboru."
     },
+    "faq": {
+      "title": "Pytania i odpowiedzi",
+      "what": {
+        "question": "Co to jest NarzędziownikGP?",
+        "answer": "Program do ewidencji narzędzi i sprzętu dla firm budowlanych. Każde narzędzie ma kod i naklejkę QR, a wydania i zwroty między bazą, budowami, pojazdami i serwisem zapisujesz telefonem. Widzisz, gdzie jest sprzęt, ile jest wart i co stoi za długo poza bazą."
+      },
+      "install": {
+        "question": "Czy trzeba instalować aplikację?",
+        "answer": "Nie. Program działa w przeglądarce na telefonie, tablecie i komputerze. Na telefonie dodajesz go do ekranu głównego i otwierasz jak zwykłą aplikację."
+      },
+      "stickers": {
+        "question": "Czy potrzebuję drukarki etykiet albo czytnika kodów?",
+        "answer": "Nie. Naklejki z kodami QR drukujesz na zwykłej drukarce, na arkuszach A4 z gotowymi etykietami. Kod skanujesz aparatem telefonu."
+      },
+      "offline": {
+        "question": "Co, jeśli na budowie nie ma zasięgu?",
+        "answer": "Wydanie albo zwrot zapisany bez internetu czeka w telefonie i wyśle się sam, gdy wróci sieć. Ostatni stan tablicy widać także bez zasięgu."
+      },
+      "deadlines": {
+        "question": "Czy program przypomina o przeglądach i kalibracjach?",
+        "answer": "Tak. Przy narzędziu zapisujesz termin przeglądu, kalibracji, badania UDT albo koniec gwarancji, z cyklem w miesiącach, i dołączasz świadectwo albo protokół. Tydzień przed terminem przychodzi przypomnienie, a poniedziałkowy raport pokazuje terminy z najbliższego miesiąca."
+      },
+      "roles": {
+        "question": "Kto w firmie z czego korzysta?",
+        "answer": "Właściciel widzi całą firmę i wartość sprzętu. Kierownik zapisuje ruchy na swoich budowach i pojazdach, magazynier obsługuje bazę. Pracownik sprawdza, gdzie jest sprzęt, i zgłasza uszkodzenia, a loguje się nazwą użytkownika, bez e-maila."
+      },
+      "import": {
+        "question": "Jak przenieść obecną listę narzędzi?",
+        "answer": "Wczytujesz swój arkusz Excela z listą sprzętu, a narzędzia trafiają do ewidencji z kodami i wartościami. Wdrożenie obejmuje szkolenie dla Ciebie i zespołu, na miejscu albo zdalnie."
+      },
+      "price": {
+        "question": "Ile kosztuje program do ewidencji narzędzi?",
+        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok. Na start jest jednorazowe wdrożenie ze szkoleniem za {implementation} netto. Kont dla zespołu zakładasz bez limitu."
+      },
+      "data": {
+        "question": "Gdzie są przechowywane dane?",
+        "answer": "W Unii Europejskiej: baza danych i pliki w Irlandii, serwery programu we Frankfurcie. Szczegóły są w polityce prywatności i w umowie powierzenia przetwarzania danych."
+      },
+      "demo": {
+        "question": "Czy mogę sprawdzić program przed zakupem?",
+        "answer": "Tak. Demo z przykładową firmą budowlaną otworzysz od razu, bez rejestracji i hasła, jako właściciel, kierownik, magazynier albo pracownik."
+      }
+    },
     "contact": {
       "title": "Porozmawiajmy",
       "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojego sprzętu? Zadzwoń albo napisz. Demo otworzysz od razu, bez rejestracji i bez hasła."
@@ -1600,7 +1643,8 @@
       "companyRegistry": "Sąd Rejonowy w Kaliszu, V Wydział Gospodarczy KRS · KRS 0001262659 · NIP 6211856675 · kapitał zakładowy 5 000 zł"
     },
     "nav": {
-      "contact": "Kontakt"
+      "contact": "Kontakt",
+      "faq": "Pytania"
     }
   },
   "tutorial": {

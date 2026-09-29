@@ -9,6 +9,7 @@ const body = Barlow({ variable: "--font-body", subsets: ["latin", "latin-ext"], 
 const plate = JetBrains_Mono({ variable: "--font-plate", subsets: ["latin", "latin-ext"], weight: ["700"] });
 
 const siteUrl = serverEnv.siteUrl();
+const googleSiteVerification = serverEnv.googleSiteVerification();
 
 export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
   description: t("app.description"),
   // W wyszukiwarce tylko strona o programie (ona sama to nadpisuje); aplikacji i demo tam nie ma.
   robots: { index: false },
+  verification: googleSiteVerification ? { google: googleSiteVerification } : undefined,
   openGraph: { siteName: t("app.name"), locale: "pl_PL", images: [{ url: "/og.png", width: 1200, height: 630 }] },
   // iPhone: aplikacja dodana do ekranu głównego otwiera się bez paska Safari, pod nazwą NarzędziownikGP.
   appleWebApp: { capable: true, title: t("app.name"), statusBarStyle: "default" },
