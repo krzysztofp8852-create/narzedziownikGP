@@ -21,6 +21,13 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   await expect(pricing).toContainText("5 000 zł netto, jednorazowo");
   await expect(pricing).toContainText("na miejscu w Twojej firmie albo zdalnie");
 
+  // Pytania, które wpisuje się w wyszukiwarkę; cena w odpowiedzi z tego samego cennika.
+  await page.getByRole("link", { name: "Pytania" }).click();
+  const faq = page.getByRole("region", { name: "Pytania i odpowiedzi" });
+  await expect(faq.getByRole("term")).toHaveCount(10);
+  await expect(faq).toContainText("do 150 narzędzi kosztuje 300 zł netto za rok");
+  await expect(faq).toContainText("wdrożenie ze szkoleniem za 5 000 zł netto");
+
   const contact = page.getByRole("region", { name: "Porozmawiajmy" });
   await expect(contact.getByRole("link", { name: "576 763 536" })).toHaveAttribute("href", "tel:+48576763536");
   await expect(contact.getByRole("link", { name: "kontakt@gp-engineering.pl" })).toHaveAttribute("href", "mailto:kontakt@gp-engineering.pl");

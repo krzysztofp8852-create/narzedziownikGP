@@ -25,6 +25,8 @@ export const serverEnv = {
    */
   siteUrl: () =>
     serverEnv.appUrl() ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null),
+  /** Kod z Google Search Console (weryfikacja tagiem HTML) do `<meta name="google-site-verification">`. */
+  googleSiteVerification: () => process.env.GOOGLE_SITE_VERIFICATION || null,
   /**
    * Interpretacja wpisu tekstem: klucz OpenAI API (model z `OPENAI_MODEL`, domyślnie gpt-5.4-mini), a lokalnie
    * i w teście dymnym `TEXT_ENTRY_INTERPRETER=slowa` (słowa kluczowe bez AI). Bez żadnego z nich wpis tekstem
