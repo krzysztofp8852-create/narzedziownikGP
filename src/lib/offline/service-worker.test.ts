@@ -239,6 +239,31 @@ describe("tablica bez sieci", () => {
     expect(await worker.cached(BOARD_CACHE, "/")).toBeUndefined();
   });
 
+  it("zapomina tablicę, gdy bez sesji pod adresem tablicy przychodzi strona o programie, i nie podaje jej bez sieci", async () => {
+    const worker = startWorker({
+      network: async (url) => (url.endsWith("/offline") ? html("Brak sieci") : boardPage("2026-09-27T12:00:00.000Z")),
+    });
+    await worker.install();
+    await worker.request("/", { mode: "navigate" });
+
+    worker.setNetwork(async () => html('<div class="landing" data-signed-out><h1>Wiesz, gdzie jest każde narzędzie</h1></div>'));
+    await worker.request("/", { mode: "navigate" });
+    expect(await worker.cached(BOARD_CACHE, "/")).toBeUndefined();
+
+    worker.setNetwork(offline);
+    expect(await (await worker.request("/", { mode: "navigate" }))!.text()).toContain("Brak sieci");
+  });
+
+  it("nie zastępuje kopii stroną bez tablicy, np. gdy renderowanie przerwał błąd", async () => {
+    const worker = startWorker({ network: async () => boardPage("2026-09-27T12:00:00.000Z") });
+    await worker.request("/", { mode: "navigate" });
+    worker.setNetwork(async () => html("<h1>Coś poszło nie tak</h1>"));
+    await worker.request("/", { mode: "navigate" });
+
+    worker.setNetwork(offline);
+    expect(await (await worker.request("/", { mode: "navigate" }))!.text()).toContain("2026-09-27T12:00:00.000Z");
+  });
+
   it("nie zastępuje kopii stroną błędu serwera", async () => {
     const worker = startWorker({ network: async () => boardPage("2026-09-27T12:00:00.000Z") });
     await worker.request("/", { mode: "navigate" });

@@ -1462,5 +1462,141 @@
     },
     "contactPhone": "Zadzwoń:",
     "contactEmail": "Napisz:"
+  },
+  "landing": {
+    "title": "NarzędziownikGP: ewidencja narzędzi dla firm budowlanych",
+    "description": "Wiesz, gdzie jest każde narzędzie, a system sam mówi, co leży za długo poza bazą. Naklejki QR, ruchy z telefonu, alarmy i raporty dla małej firmy budowlanej.",
+    "signIn": "Zaloguj się",
+    "hero": {
+      "headingLead": "Wiesz, gdzie jest każde narzędzie,",
+      "headingRest": "a system sam mówi, co leży za długo poza bazą",
+      "lead": "Ewidencja sprzętu dla małej firmy budowlanej: baza, budowy, pojazdy i serwisy w jednym miejscu, w telefonie kierownika.",
+      "demo": "Zobacz demo",
+      "pricing": "Cennik",
+      "pins": {
+        "rataje": "Budowa Rataje · 23 dni",
+        "tarasy": "Osiedle Tarasy · 18 narzędzi",
+        "polna": "Budowa Polna · 9 narzędzi"
+      }
+    },
+    "preview": {
+      "label": "Przykład z tablicy właściciela",
+      "outside": "Poza bazą",
+      "rows": "H-03|Młot Hilti|Budowa Rataje|23 dni\nN-01|Niwelator Bosch|Bus brygady 2|9 dni\nS-07|Szlifierka Makita|Serwis Narzędzia-Pol|4 dni",
+      "alarm": "za długo"
+    },
+    "features": {
+      "title": "Co dostajesz",
+      "groups": {
+        "watch": {
+          "title": "Pilnuje za Ciebie",
+          "code": "P"
+        },
+        "field": {
+          "title": "Działa na budowie",
+          "code": "B"
+        },
+        "team": {
+          "title": "Cała firma w jednym miejscu",
+          "code": "F"
+        }
+      },
+      "alarms": {
+        "title": "Alarm po progu dni",
+        "text": "Ustalasz, ile dni sprzęt może stać na budowie. Po tym czasie narzędzie świeci na czerwono na tablicy, a Ty dostajesz powiadomienie."
+      },
+      "reports": {
+        "title": "Raport w piątek i w poniedziałek",
+        "text": "W piątek o 16:00 lista sprzętu poza bazą przed weekendem. W poniedziałek o 7:00 podsumowanie tygodnia z terminami przeglądów i kalibracji na najbliższy miesiąc."
+      },
+      "value": {
+        "title": "Wartość sprzętu poza bazą w zł",
+        "text": "Widzisz, ile pieniędzy w sprzęcie jest teraz na budowach i pojazdach. Kwoty widzi tylko właściciel."
+      },
+      "voice": {
+        "title": "Wpis głosem i tekstem",
+        "text": "Kierownik mówi „biorę dwie szlifierki na Rataje”, a system przygotowuje propozycję ruchu do zatwierdzenia. Bez szukania po listach."
+      },
+      "offline": {
+        "title": "Działa bez zasięgu",
+        "text": "Ruch zapisany w piwnicy albo w polu wyśle się sam, gdy wróci sieć. Ostatni stan tablicy widać też bez internetu."
+      },
+      "stickers": {
+        "title": "Naklejki QR",
+        "text": "Drukujesz naklejki z kodami na zwykłych arkuszach. Skan telefonem otwiera kartę narzędzia albo dodaje je do wydania."
+      },
+      "places": {
+        "title": "Pojazdy i serwisy jako lokalizacje",
+        "text": "Sprzęt na busie brygady albo w naprawie nie znika z oczu. Wiesz, który serwis ma szlifierkę i od kiedy."
+      },
+      "workers": {
+        "title": "Konta pracowników bez e-maila",
+        "text": "Pracownik loguje się nazwą użytkownika, którą mu nadasz. Sprawdza, gdzie jest sprzęt, i zgłasza problemy, ale niczego nie przesunie."
+      },
+      "issues": {
+        "title": "Zgłoszenia uszkodzeń",
+        "text": "Pracownik zgłasza uszkodzenie albo brak ze zdjęciem z telefonu. Narzędzie dostaje znak „uszkodzone”, a Ty wątek do ustaleń."
+      },
+      "import": {
+        "title": "Import z Excela",
+        "text": "Masz listę sprzętu w arkuszu? Wczytujesz ją raz i narzędzia są w ewidencji, z kodami i wartościami."
+      },
+      "chat": {
+        "title": "Czat z supportem w aplikacji",
+        "text": "Pytanie albo problem piszesz od razu w programie, także ze zrzutem ekranu. Odpowiedź przychodzi w tym samym oknie."
+      }
+    },
+    "support": {
+      "title": "Pomoc zawsze pod ręką",
+      "text": "W programie jest okno czatu z supportem GP Engineering. Nie szukasz numeru ani adresu e-mail: piszesz, co się dzieje, a odpowiedź przychodzi w tym samym miejscu, z powiadomieniem na telefon.",
+      "point": "Zawsze jest ktoś, kto pomoże.",
+      "chatTitle": "Czat z supportem",
+      "chatQuestion": "Skaner nie łapie naklejki na młocie H-03.",
+      "chatAnswer": "Sprawdźmy razem. Wyślij zdjęcie naklejki, zobaczymy, czy nie jest zabrudzona albo porysowana.",
+      "chatFrom": "GP Engineering",
+      "chatYou": "Ty"
+    },
+    "steps": {
+      "title": "Jak to działa",
+      "import": {
+        "title": "Import z Excela",
+        "text": "Wczytujesz swoją listę sprzętu. Każde narzędzie dostaje kod, np. H-03."
+      },
+      "stickers": {
+        "title": "Naklejki QR",
+        "text": "Drukujesz naklejki i przyklejasz je na sprzęt."
+      },
+      "movements": {
+        "title": "Ruchy z telefonu",
+        "text": "Kierownicy i magazynier zapisują wydania i zwroty skanem, głosem albo z listy."
+      },
+      "alarms": {
+        "title": "Alarmy i raporty",
+        "text": "System sam pilnuje, co stoi za długo, i co tydzień wysyła podsumowanie."
+      }
+    },
+    "pricing": {
+      "title": "Cennik",
+      "lead": "Płacisz za liczbę narzędzi w ewidencji. Kont dla zespołu zakładasz, ile potrzebujesz.",
+      "upTo": "do {limit} narzędzi",
+      "above": "ponad {limit} narzędzi",
+      "perYear": "netto za rok",
+      "customPrice": "Wycena",
+      "customPeriod": "ustalana z Tobą",
+      "accounts": "Konta dla zespołu bez limitu",
+      "implementationTitle": "Wdrożenie",
+      "implementationPeriod": "netto, jednorazowo",
+      "implementationText": "Obowiązkowe na start, przy każdym progu. Obejmuje szkolenie z programu dla Ciebie i zespołu: na miejscu w Twojej firmie albo zdalnie, do wyboru."
+    },
+    "contact": {
+      "title": "Porozmawiajmy",
+      "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojego sprzętu? Zadzwoń albo napisz. Demo otworzysz od razu, bez rejestracji i bez hasła."
+    },
+    "footer": {
+      "product": "NarzędziownikGP to program firmy GP Engineering."
+    },
+    "nav": {
+      "contact": "Kontakt"
+    }
   }
 }

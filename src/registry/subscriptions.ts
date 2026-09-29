@@ -26,6 +26,9 @@ export const TIERS = [
 
 export type TierId = (typeof TIERS)[number]["id"];
 
+/** Wdrożenie: obowiązkowe, jednorazowe, w zł netto; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. */
+export const IMPLEMENTATION_FEE = 5000;
+
 /** Próg firm założonych bez wyboru progu (skryptem). */
 export const DEFAULT_TIER: TierId = "maly";
 

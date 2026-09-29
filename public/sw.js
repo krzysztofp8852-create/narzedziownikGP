@@ -7,6 +7,8 @@ const STATIC_CACHE = "ngp-interfejs-v1";
 const BOARD_CACHE = "ngp-tablica";
 const BOARD = "/";
 const OFFLINE_PAGE = "/offline";
+/** Znak strony o programie, którą bez sesji dostaje się pod adresem tablicy (src/app/o-programie/page.tsx). */
+const SIGNED_OUT_MARK = "data-signed-out";
 const STATIC_PREFIX = "/_next/static/";
 const BELL = "/dzwonek";
 const APP_NAME = "NarzędziownikGP";
@@ -185,14 +187,17 @@ function fetchedAtOf(page) {
 }
 
 /**
- * Zapisuje świeżą tablicę, gdy są już w telefonie pliki interfejsu, do których odsyła. Przekierowanie znaczy, że tablica
- * nie jest już dostępna dla tej sesji (wylogowanie, zablokowane konto, zmiana hasła), więc kopia poprzedniej
- * osoby znika. Błąd serwera zostawia starą kopię.
+ * Zapisuje świeżą tablicę, gdy są już w telefonie pliki interfejsu, do których odsyła. Przekierowanie albo strona
+ * o programie (bez sesji jest pod `/`, ADR 0021) znaczy, że tablica nie jest już dostępna dla tej sesji (wylogowanie,
+ * zablokowane konto, zmiana hasła), więc kopia poprzedniej osoby znika. Błąd serwera i inna strona bez tablicy
+ * zostawiają starą kopię.
  */
 async function storeBoard(response) {
   if (response.type === "opaqueredirect" || response.redirected) return forgetBoard();
   if (!response.ok) return;
   const page = await response.clone().text();
+  if (page.includes(SIGNED_OUT_MARK)) return forgetBoard();
+  if (!fetchedAtOf(page)) return;
   // Bez wszystkich plików nowej wersji (np. zasięg zniknął w trakcie) zostaje stara kopia z jej plikami.
   if (!(await storeAssets(assetsOf(page)))) return;
   const cache = await caches.open(BOARD_CACHE);

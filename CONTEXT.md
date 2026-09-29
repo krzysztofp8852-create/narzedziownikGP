@@ -27,6 +27,10 @@ _Avoid_: robotnik, użytkownik (jako nazwa roli)
 Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie, które znika w całości; co godzinę demo, w którym ktoś był i skończył oglądać, zastępuje świeże.
 _Avoid_: konto testowe, piaskownica
 
+**Strona o programie**:
+Publiczna strona dla właściciela firmy budowlanej z funkcjami, cennikiem, wejściem do demo i kontaktem handlowym. Niezalogowany widzi ją pod adresem głównym, zalogowany ma tam tablicę.
+_Avoid_: strona główna (to tablica)
+
 **Dziennik demo**:
 Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje oglądających. Wizyta to jedna przeglądarka, także po przełączeniu roli. Zostaje po usunięciu firmy demo.
 _Avoid_: analityka, śledzenie
@@ -173,6 +177,10 @@ _Avoid_: kontakt, helpdesk
 
 **Próg abonamentu**:
 Pakiet firmy z limitem liczby narzędzi. Konta nie wchodzą do limitu.
+
+**Wdrożenie**:
+Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie.
+_Avoid_: opłata aktywacyjna, onboarding
 
 **Tryb tylko do odczytu**:
 Stan firmy, w którym zapisy są zablokowane (poza czatem z supportem), a podgląd i eksport działają.

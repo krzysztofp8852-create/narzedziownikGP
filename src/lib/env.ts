@@ -20,6 +20,12 @@ export const serverEnv = {
    */
   appUrl: () => process.env.APP_URL || null,
   /**
+   * Publiczny adres strony o programie dla wyszukiwarek i podglądu linku: `APP_URL`, a bez niego adres produkcji
+   * na Vercelu. Lokalnie null.
+   */
+  siteUrl: () =>
+    serverEnv.appUrl() ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null),
+  /**
    * Interpretacja wpisu tekstem: klucz OpenAI API (model z `OPENAI_MODEL`, domyślnie gpt-5.4-mini), a lokalnie
    * i w teście dymnym `TEXT_ENTRY_INTERPRETER=slowa` (słowa kluczowe bez AI). Bez żadnego z nich wpis tekstem
    * jest wyłączony.

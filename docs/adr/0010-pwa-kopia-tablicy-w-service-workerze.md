@@ -28,7 +28,7 @@ właściciel, więc w pamięci telefonu kierownika też nie mogą się znaleźć
   w tle (w sesji tej samej osoby) razem z plikami, które strona już pobrała.
 - Kopia jednej osoby nie trafia do następnej: wylogowanie kasuje ją przed wysłaniem akcji, strona logowania
   (widać ją tylko bez sesji) przy otwarciu, a service worker, gdy otwarcie tablicy kończy się przekierowaniem
-  (koniec sesji, zablokowane konto).
+  (koniec sesji, zablokowane konto) albo stroną bez tablicy (strona o programie bez sesji, ADR 0021).
 - Nową kopię zapisujemy dopiero, gdy w telefonie są wszystkie pliki, do których odsyła; inaczej zostaje stara.
   Po nowym wdrożeniu (inne pliki w HTML tablicy) service worker usuwa pliki, których nie używa nowa tablica ani
   strona „Brak sieci”, żeby pamięć telefonu nie rosła. Aplikacja prosi o trwałą pamięć
