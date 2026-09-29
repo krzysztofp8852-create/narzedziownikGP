@@ -1,8 +1,11 @@
+import { LEGAL_PATHS } from "@/legal/documents";
+
 /** Strona o programie, którą niezalogowany widzi pod adresem głównym. */
 export const LANDING_PATH = "/o-programie";
 
 // Do demo wchodzi się bez logowania. Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika. „Brak sieci” service worker
 // pobiera przy instalacji, także przed zalogowaniem. Stronę o programie, robots.txt i mapę strony czytają wyszukiwarki.
+// Regulamin, politykę prywatności i umowę powierzenia czyta się przed założeniem konta.
 const PUBLIC_PATHS = [
   LANDING_PATH,
   "/demo",
@@ -17,6 +20,7 @@ const PUBLIC_PATHS = [
   "/offline",
   "/robots.txt",
   "/sitemap.xml",
+  ...LEGAL_PATHS,
 ];
 
 /**

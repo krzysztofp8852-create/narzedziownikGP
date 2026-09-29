@@ -3,6 +3,7 @@ import { Barlow_Condensed } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { LegalLinks } from "@/components/legal-links";
 import { SalesContact } from "@/components/sales-contact";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -277,6 +278,7 @@ export default function LandingPage() {
           <Link href="/demo">{t("landing.hero.demo")}</Link>
           <Link href="/logowanie">{t("landing.signIn")}</Link>
         </nav>
+        <LegalLinks className="landing-nav" />
       </footer>
     </div>
   );

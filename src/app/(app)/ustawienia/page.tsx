@@ -7,12 +7,15 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canManageSettings, canPrintStickers } from "@/registry/registry";
 import { ServicesSection } from "../lokalizacje/services-section";
 import { TeamSection } from "../zespol/team-section";
-import { IssueSettingsSection, SettingsSection } from "./settings-section";
+import { IssueSettingsSection, LegalSection, SettingsSection } from "./settings-section";
 import { SubscriptionSection } from "./subscription-section";
 
 export const metadata: Metadata = { title: t("settingsPage.title") };
 
-/** Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, zespół, serwisy, próg alarmu, kto widzi zgłoszenia, naklejki QR. */
+/**
+ * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, zespół, serwisy, próg alarmu, kto widzi zgłoszenia, naklejki QR,
+ * dokumenty prawne.
+ */
 export default async function SettingsPage() {
   const session = await requireSession();
   if (!canManageSettings(session)) redirect("/");
@@ -54,6 +57,7 @@ export default async function SettingsPage() {
         )}
         <ServicesSection services={locations.services} />
         <TeamSection session={session} members={members} />
+        <LegalSection />
       </div>
     </>
   );

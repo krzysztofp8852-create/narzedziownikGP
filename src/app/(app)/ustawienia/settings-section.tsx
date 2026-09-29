@@ -1,3 +1,4 @@
+import { LegalLinks } from "@/components/legal-links";
 import { t } from "@/i18n/t";
 import { type CompanySettings, MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
 import { IssueVisibilityForm } from "./issue-visibility-form";
@@ -23,6 +24,19 @@ export function IssueSettingsSection({ settings }: { settings: CompanySettings }
         {t("issueSettings.title")}
       </h2>
       <IssueVisibilityForm visibility={settings.issueVisibility} />
+    </section>
+  );
+}
+
+/** Regulamin, polityka prywatności i umowa powierzenia: właściciel informuje na ich podstawie swoich ludzi. */
+export function LegalSection() {
+  return (
+    <section className="company-card" aria-labelledby="legal">
+      <h2 id="legal" className="display section-title">
+        {t("legal.settingsTitle")}
+      </h2>
+      <p className="muted">{t("legal.settingsHint")}</p>
+      <LegalLinks />
     </section>
   );
 }

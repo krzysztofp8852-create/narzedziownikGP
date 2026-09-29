@@ -188,3 +188,11 @@ _Avoid_: opłata aktywacyjna, onboarding
 
 **Tryb tylko do odczytu**:
 Stan firmy, w którym zapisy są zablokowane (poza czatem z supportem), a podgląd i eksport działają.
+
+**Dokumenty prawne**:
+Regulamin usługi, polityka prywatności i umowa powierzenia. Otwierają się bez logowania, z logowania, ze strony o programie i z ustawień. Dopóki nie przejrzy ich prawnik, są oznaczone jako projekt. Firma nazywa się w nich „Klient” (regulamin) albo „Administrator” (umowa powierzenia), jak w umowach; w programie i w kodzie zostaje firma.
+_Avoid_: warunki, RODO (jako nazwa dokumentu)
+
+**Umowa powierzenia**:
+Umowa, w której firma (administrator danych swoich ludzi i tego, co zapisuje w programie) powierza ich przetwarzanie GP Engineering (podmiot przetwarzający). Zawiera się ją razem z umową o usługę.
+_Avoid_: DPA, umowa RODO

@@ -3610,3 +3610,83 @@ a.tool-row:hover .tool-row-name {
 .landing-company strong {
   color: var(--text);
 }
+
+/* Dokumenty prawne: regulamin, polityka prywatności, umowa powierzenia */
+.legal-main {
+  flex: 1;
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 24px var(--gutter) 48px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.legal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: 0.95rem;
+}
+
+.legal-links a,
+.legal-document a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.auth-legal-links {
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.legal-document {
+  display: grid;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px 20px;
+  overflow-wrap: anywhere;
+}
+
+.legal-document h2 {
+  font-size: 1.15rem;
+  margin-top: 16px;
+  scroll-margin-top: 16px;
+}
+
+.legal-document h3 {
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.legal-document ol,
+.legal-document ul {
+  display: grid;
+  gap: 6px;
+  padding-left: 1.5em;
+}
+
+.legal-document li > ul {
+  margin-top: 6px;
+}
+
+.legal-draft {
+  padding: 12px 14px;
+  background: var(--warning-soft);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius);
+  color: var(--warning);
+  font-weight: 600;
+}

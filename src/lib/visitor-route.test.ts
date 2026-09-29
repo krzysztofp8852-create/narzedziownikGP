@@ -36,4 +36,10 @@ describe("dokąd trafia wejście na adres aplikacji", () => {
       expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });
     }
   });
+
+  it("regulamin, polityka prywatności i umowa powierzenia otwierają się bez logowania", () => {
+    for (const path of ["/regulamin", "/polityka-prywatnosci", "/umowa-powierzenia"]) {
+      expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });
+    }
+  });
 });

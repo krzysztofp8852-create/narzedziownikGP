@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { t } from "@/i18n/t";
+import { LegalLinks } from "./legal-links";
 
-/** Wspólna oprawa stron przed wejściem do aplikacji (logowanie, zmiana hasła, brak dostępu). */
+/** Wspólna oprawa stron przed wejściem do aplikacji (logowanie, zmiana hasła, brak dostępu), z odnośnikami do dokumentów prawnych. */
 export function AuthShell({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="auth-page">
@@ -20,6 +21,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
           </h1>
           {children}
         </section>
+        <LegalLinks className="legal-links auth-legal-links" />
       </main>
       <div className="hazard" aria-hidden />
     </div>

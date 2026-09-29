@@ -1693,5 +1693,18 @@
       }
     },
     "backToBoard": "← Wróć do tablicy"
+  },
+  "legal": {
+    "nav": "Dokumenty prawne",
+    "documents": {
+      "regulamin": "Regulamin",
+      "polityka-prywatnosci": "Polityka prywatności",
+      "umowa-powierzenia": "Umowa powierzenia"
+    },
+    "version": "Wersja z {date}",
+    "draft": "Projekt dokumentu. Treść czeka na przegląd prawnika i może się zmienić przed zawarciem umowy.",
+    "back": "← Wróć",
+    "settingsTitle": "Dokumenty prawne",
+    "settingsHint": "Regulamin usługi, polityka prywatności i umowa powierzenia przetwarzania danych osobowych Twoich ludzi. Przydadzą się, gdy informujesz pracowników o przetwarzaniu ich danych."
   }
 }
