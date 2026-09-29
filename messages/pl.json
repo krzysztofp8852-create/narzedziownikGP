@@ -1593,7 +1593,10 @@
       "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojego sprzętu? Zadzwoń albo napisz. Demo otworzysz od razu, bez rejestracji i bez hasła."
     },
     "footer": {
-      "product": "NarzędziownikGP to program firmy GP Engineering."
+      "product": "NarzędziownikGP to program firmy GP Engineering.",
+      "companyName": "GP Engineering sp. z o.o.",
+      "companyAddress": "ul. Piłsudskiego 6, 63-700 Krotoszyn",
+      "companyRegistry": "Sąd Rejonowy w Kaliszu, V Wydział Gospodarczy KRS · KRS 0001262659 · NIP 6211856675 · kapitał zakładowy 5 000 zł"
     },
     "nav": {
       "contact": "Kontakt"
