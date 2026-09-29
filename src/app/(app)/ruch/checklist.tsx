@@ -6,13 +6,15 @@ import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
+import { formatCalendarDay } from "@/i18n/dates";
 import { DamagedIcon } from "@/components/damaged-icon";
 import { VehicleIcon } from "@/components/vehicle-icon";
+import { deadlineKindName, deadlineKindWord } from "@/lib/deadline-text";
 import { damagedAgo } from "@/lib/issue-text";
 import { matchesTool } from "@/lib/tool-search";
-import type { LocationKind, RegisteredKind } from "@/registry/registry";
+import type { LocationKind, NextDeadline, RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
-import { type DoneMovement, MovementResult } from "./movement-result";
+import { type DoneMovement, type FollowUpTool, MovementResult } from "./movement-result";
 
 export interface ChecklistTool {
   id: string;
@@ -21,6 +23,10 @@ export interface ChecklistTool {
   daysInPlace: number;
   /** Od kiedy (ISO) narzędzie jest zgłoszone jako uszkodzone; brak albo null, gdy jest sprawne. */
   damagedSince?: string | null;
+  /** Ostatni dzień trwającej gwarancji (RRRR-MM-DD): przy wysłaniu do serwisu, żeby nie płacić za naprawę gwarancyjną. */
+  warrantyUntil?: string | null;
+  /** Najbliższy przegląd, kalibracja albo badanie UDT: po powrocie z serwisu wpisuje się jego wykonanie. */
+  nextInspection?: NextDeadline | null;
 }
 
 /** Lokalizacja z narzędziami, które w niej są. */
@@ -97,11 +103,15 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // Tekst podsumowania z chwili wysłania: po zapisie zaznaczenie się czyści, a komunikat zostaje.
   const submittedSummary = useRef("");
+  const submittedTools = useRef<ChecklistTool[]>([]);
   const [done, setDone] = useState<DoneMovement | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
     const summary = submittedSummary.current;
     const result = await sendOrQueue(() => registerMovement(prev, formData), queuedFromForm(formData, { userId, summary }));
-    const done = result === "queued" ? { summary, notified: [], queued: true } : result.done && { summary, notified: result.done.notified, movementId: result.done.movementId };
+    const done =
+      result === "queued"
+        ? { summary, notified: [], queued: true }
+        : result.done && { summary, notified: result.done.notified, movementId: result.done.movementId, followUp: serviceFollowUp(submittedTools.current, kind) };
     if (done) {
       setSelectedIds([]);
       setQuery("");
@@ -227,6 +237,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
   const submit = submitKeepingValues(formAction);
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     submittedSummary.current = summary;
+    submittedTools.current = selected;
     submit(event);
   }
 
@@ -251,6 +262,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
           {ready ? summary : t(`checklist.kinds.${kind}.summaryEmpty`)}
         </p>
         <DamagedWarnings tools={selected} kind={kind} />
+        <DeadlineHints tools={selected} kind={kind} />
         <div className="form-actions">
           <button className="button" type="submit" disabled={!ready || pending}>
             {pending ? t("checklist.confirming") : t("checklist.confirm")}
@@ -293,4 +305,48 @@ export function DamagedWarnings({ tools, kind }: { tools: Pick<ChecklistTool, "i
       ))}
     </ul>
   );
+}
+
+/**
+ * Podpowiedzi z terminów przy zatwierdzaniu ruchu; niczego nie blokują. Do serwisu: gwarancja, żeby nie płacić za
+ * naprawę gwarancyjną. Wydanie i przeniesienie: przegląd po terminie. Z serwisu: wpisanie wykonanego przeglądu.
+ */
+export function DeadlineHints({ tools, kind }: { tools: Pick<ChecklistTool, "id" | "code" | "warrantyUntil" | "nextInspection">[]; kind: RegisteredKind }) {
+  const lines =
+    kind === "do_serwisu"
+      ? tools.flatMap((tool) => (tool.warrantyUntil ? [{ id: tool.id, text: t("checklist.warranty", { code: tool.code, day: formatCalendarDay(tool.warrantyUntil) }) }] : []))
+      : kind === "z_serwisu"
+        ? tools.flatMap((tool) =>
+            tool.nextInspection ? [{ id: tool.id, text: t("checklist.inspectionAfterService", { code: tool.code, kind: deadlineKindWord(tool.nextInspection.kind) }) }] : [],
+          )
+        : kind === "wydanie" || kind === "przeniesienie"
+          ? tools.flatMap((tool) =>
+              tool.nextInspection?.overdue
+                ? [
+                    {
+                      id: tool.id,
+                      text: t("checklist.inspectionOverdue", {
+                        code: tool.code,
+                        kind: deadlineKindName(tool.nextInspection.kind),
+                        day: formatCalendarDay(tool.nextInspection.dueOn),
+                      }),
+                    },
+                  ]
+                : [],
+            )
+          : [];
+  if (lines.length === 0) return null;
+  const warning = kind === "wydanie" || kind === "przeniesienie";
+  return (
+    <ul className={warning ? "form-warning damaged-warnings" : "form-info damaged-warnings"} role="status" data-testid="deadline-hints">
+      {lines.map((line) => (
+        <li key={line.id}>{line.text}</li>
+      ))}
+    </ul>
+  );
+}
+
+/** Narzędzia, którym po przyjęciu z serwisu warto wpisać wykonany przegląd; przy innych ruchach żadne. */
+export function serviceFollowUp(tools: Pick<ChecklistTool, "id" | "code" | "nextInspection">[], kind: RegisteredKind): FollowUpTool[] {
+  return kind === "z_serwisu" ? tools.filter((tool) => tool.nextInspection).map((tool) => ({ id: tool.id, code: tool.code })) : [];
 }

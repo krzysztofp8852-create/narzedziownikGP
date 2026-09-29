@@ -1,7 +1,7 @@
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
-import { warsawTime } from "./reports";
+import { warsawTime } from "./validation";
 import { isCalendarDay, UUID_PATTERN } from "./validation";
 
 /**

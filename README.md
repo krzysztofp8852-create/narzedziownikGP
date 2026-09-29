@@ -264,7 +264,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   Scribe (`ELEVENLABS_API_KEY`, model `scribe_v2`, inny w `ELEVENLABS_MODEL`). Kubełek `nagrania` zakłada
   migracja. Lokalnie i w teście dymnym `TRANSCRIPTION_PROVIDER=staly` z `TRANSCRIPTION_FIXED_TEXT` udaje
   transkrypcję stałym tekstem.
-- Zadania harmonogramu: Vercel Cron z `vercel.json` (codziennie o 5:00 UTC `/zadania/progi`, a raporty
+- Dokumenty terminów (świadectwa, protokoły, karty gwarancyjne, faktury) leżą w prywatnym kubełku
+  `dokumenty-narzedzi`, który zakłada migracja, obok kubełków zdjęć zgłoszeń i czatu.
+- Zadania harmonogramu: Vercel Cron z `vercel.json` (codziennie o 5:00 UTC `/zadania/progi` i przypomnienia
+  o terminach `/zadania/terminy`, a raporty
   `/zadania/raporty` w poniedziałek o 5:00 i 6:00 UTC oraz w piątek o 14:00 i 15:00 UTC, bo 7:00 i 16:00 czasu
   polskiego wypadają zimą i latem o różnych godzinach UTC) wymaga `CRON_SECRET` w zmiennych Vercel; bez niego
   zadanie odpowiada 401. Godzinowe odświeżanie demo `/zadania/demo` uruchamia GitHub Actions (Vercel Hobby puszcza

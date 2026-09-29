@@ -39,5 +39,13 @@ export function checklistData(session: Session, { base, sites, vehicles, service
 }
 
 function toChecklistTool(tool: ToolOnBoard): ChecklistTool {
-  return { id: tool.id, code: tool.code, name: tool.name, daysInPlace: tool.daysInPlace, damagedSince: tool.damagedSince?.toISOString() ?? null };
+  return {
+    id: tool.id,
+    code: tool.code,
+    name: tool.name,
+    daysInPlace: tool.daysInPlace,
+    damagedSince: tool.damagedSince?.toISOString() ?? null,
+    warrantyUntil: tool.warrantyUntil,
+    nextInspection: tool.nextInspection,
+  };
 }

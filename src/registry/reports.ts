@@ -1,5 +1,6 @@
 import { whereIsWhat } from "./board";
 import { deliverAsSystem } from "./bell";
+import { type UpcomingDeadline, upcomingDeadlines } from "./deadlines";
 import { RegistryError } from "./errors";
 import { type EmailedNotification, type Notification, type Recipient, reportKey } from "./notifications";
 import type { Sql } from "./ports";
@@ -7,6 +8,7 @@ import type { PushCopy } from "./push";
 import type { Session } from "./registry";
 import { toolReports } from "./tool-reports";
 import { daysSince, type LocationKind } from "./tools";
+import { warsawTime } from "./validation";
 
 export const REPORT_KINDS = ["tygodniowy", "piatkowy"] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
@@ -44,6 +46,8 @@ export interface WeeklyReport {
   toolReports: { id: string; code: string; name: string; location: { id: string; name: string }; reportedBy: string; daysWaiting: number }[];
   /** Narzędzia na bazie najdłużej bez wyjazdu, od najdłużej. */
   longestUnused: { id: string; code: string; name: string; days: number }[];
+  /** Terminy w najbliższych 30 dniach i te po terminie, od najwcześniejszego; brak w raportach sprzed terminów. */
+  deadlines?: UpcomingDeadline[];
 }
 
 /** Krótka lista sprzętu poza bazą przed weekendem, w piątek o 16:00. */
@@ -66,30 +70,12 @@ export type Report = WeeklyReport | FridayReport;
 /** Ile narzędzi najdłużej nieużywanych pokazuje raport tygodniowy. */
 const LONGEST_UNUSED_COUNT = 5;
 
-const TIME_ZONE = "Europe/Warsaw";
-
 /** Pora raportów: dzień tygodnia (1 = poniedziałek) i godzina czasu polskiego. */
 const SCHEDULE: Record<ReportKind, { weekday: number; hour: number }> = {
   tygodniowy: { weekday: 1, hour: 7 },
   piatkowy: { weekday: 5, hour: 16 },
 };
 
-const warsawParts = new Intl.DateTimeFormat("en-US", {
-  timeZone: TIME_ZONE,
-  hourCycle: "h23",
-  weekday: "short",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "numeric",
-});
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/** Dzień (RRRR-MM-DD), dzień tygodnia (0 = niedziela) i godzina w Polsce, także przy zmianie czasu. */
-export function warsawTime(at: Date): { day: string; weekday: number; hour: number } {
-  const parts = Object.fromEntries(warsawParts.formatToParts(at).map((part) => [part.type, part.value]));
-  return { day: `${parts.year}-${parts.month}-${parts.day}`, weekday: WEEKDAYS.indexOf(parts.weekday), hour: Number(parts.hour) };
-}
 
 /**
  * Raporty, na które przyszła pora: od godziny raportu do końca tego dnia w Polsce. Harmonogram uruchamia
@@ -123,8 +109,8 @@ export function requireFridayReportReader(session: Session) {
 }
 
 /**
- * Raport tygodniowy firmy aktora w danej chwili, z tych samych danych co tablica „Gdzie jest co”. Kwotę poza
- * bazą porównuje z raportem z poniedziałku poprzedniego tygodnia. Tylko właściciel (wartości w zł).
+ * Raport tygodniowy firmy aktora w danej chwili, z tych samych danych co tablica „Gdzie jest co”, i terminy sprzętu.
+ * Kwotę poza bazą porównuje z raportem z poniedziałku poprzedniego tygodnia. Tylko właściciel (wartości w zł).
  */
 export async function weeklyReport(sql: Sql, session: Session, now: Date): Promise<WeeklyReport> {
   requireWeeklyReportReader(session);
@@ -182,6 +168,7 @@ export async function weeklyReport(sql: Sql, session: Session, now: Date): Promi
       .sort((a, b) => b.daysInPlace - a.daysInPlace || a.code.localeCompare(b.code))
       .slice(0, LONGEST_UNUSED_COUNT)
       .map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, days: tool.daysInPlace })),
+    deadlines: await upcomingDeadlines(sql, now),
   };
 }
 

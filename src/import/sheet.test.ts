@@ -63,7 +63,20 @@ describe("odczyt pliku", () => {
 
 describe("mapowanie kolumn", () => {
   it("rozpoznaje nagłówki bez względu na wielkość liter i polskie znaki, a nieznane pomija", () => {
-    const mapping = guessMapping(["Nr seryjny", "NAZWA", "Kategoria", "Uwagi", "Wartość (zł)", "Budowa", "Kod", "Marka", "Model", "Nazwa"]);
+    const mapping = guessMapping([
+      "Nr seryjny",
+      "NAZWA",
+      "Kategoria",
+      "Uwagi",
+      "Wartość (zł)",
+      "Budowa",
+      "Kod",
+      "Marka",
+      "Model",
+      "Nazwa",
+      "Data przeglądu",
+      "Koniec gwarancji",
+    ]);
 
     expect(mapping).toEqual({
       code: 6,
@@ -74,7 +87,10 @@ describe("mapowanie kolumn", () => {
       serialNumber: 0,
       value: 4,
       location: 5,
+      inspectionDue: 10,
+      warrantyUntil: 11,
     });
+    expect(guessMapping(["Nazwa", "Następny przegląd", "Gwarancja do"])).toMatchObject({ inspectionDue: 1, warrantyUntil: 2 });
   });
 
   it("wiersze pliku stają się polami karty; pola bez kolumny zostają puste", () => {

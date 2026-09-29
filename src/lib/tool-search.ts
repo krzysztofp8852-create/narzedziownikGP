@@ -1,4 +1,5 @@
 import type { FoundTool } from "@/interpretation/proposal";
+import type { NextDeadline } from "@/registry/registry";
 
 /** Małe litery, bez polskich znaków i bez kresek w kodach: „s01” znajdzie S-01, „szlifierka” Szlifierkę. */
 function normalize(text: string) {
@@ -34,7 +35,7 @@ export function matchesTool(tool: Searchable, query: string) {
 }
 
 /**
- * Narzędzie na liście wyszukiwania: gdzie jest i dane, po których się go szuka, z flagami z tablicy. Przy zaginionym
+ * Narzędzie na liście wyszukiwania: gdzie jest i dane, po których się go szuka, z flagami i najbliższym terminem z tablicy. Przy zaginionym
  * (`lost`) miejsce to to, gdzie było ostatnio, a dni liczą się od zaginięcia.
  */
 export interface SearchTool extends Omit<FoundTool, "place"> {
@@ -46,4 +47,6 @@ export interface SearchTool extends Omit<FoundTool, "place"> {
   lost?: boolean;
   damaged?: boolean;
   alarm?: boolean;
+  /** Najbliższy przegląd, kalibracja, badanie UDT albo koniec gwarancji. */
+  nextDeadline?: NextDeadline | null;
 }

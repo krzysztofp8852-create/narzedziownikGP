@@ -9,6 +9,7 @@ describe("przykładowy plik importu", () => {
       categories: [{ name: "Wiertarki i młoty" }, { name: "Szlifierki" }, { name: "Pomiarowe" }],
       base: "Magazyn Swarzędz",
       sites: ["Rataje"],
+      today: "2026-03-02",
     });
     const sheet = await readSheetFile({ name: "narzedzia-przyklad.xlsx", data: new Uint8Array(file).buffer });
     const mapping = guessMapping(sheet.headers);
@@ -19,10 +20,16 @@ describe("przykładowy plik importu", () => {
       { name: "Szlifierka kątowa 125 mm", category: "Szlifierki", location: "Magazyn Swarzędz", code: "" },
       { name: "Niwelator laserowy", category: "Pomiarowe", location: "", code: "" },
     ]);
+    // Terminy w przykładzie są za kilka miesięcy od dziś, w zapisie, który ludzie wpisują w Excelu.
+    expect(mapRows(sheet, mapping).map(({ inspectionDue, warrantyUntil }) => [inspectionDue, warrantyUntil])).toEqual([
+      ["2.09.2026", "2.03.2028"],
+      ["", ""],
+      ["2.06.2026", "2.03.2027"],
+    ]);
   });
 
   it("bez pasującej kategorii bierze kolejne kategorie firmy", async () => {
-    const file = await sampleImportFile({ categories: [{ name: "Elektronarzędzia" }], base: "Baza", sites: [] });
+    const file = await sampleImportFile({ categories: [{ name: "Elektronarzędzia" }], base: "Baza", sites: [], today: "2026-03-02" });
     const sheet = await readSheetFile({ name: "narzedzia-przyklad.xlsx", data: new Uint8Array(file).buffer });
 
     expect(mapRows(sheet, guessMapping(sheet.headers)).map((row) => [row.category, row.location])).toEqual([

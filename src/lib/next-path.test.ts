@@ -16,7 +16,7 @@ describe("powrót po zalogowaniu", () => {
 
 describe("strona po zmianie roli w demo", () => {
   it("zostaje na stronie, którą widzi każda rola", () => {
-    for (const path of ["/", "/historia", "/zgloszenia", "/dzwonek", "/szukaj", "/narzedzia/3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102"]) {
+    for (const path of ["/", "/historia", "/zgloszenia", "/dzwonek", "/szukaj", "/terminy", "/narzedzia/3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102"]) {
       expect(demoReturnPath(path)).toBe(path);
     }
     expect(demoReturnPath("/historia?osoba=1")).toBe("/historia");

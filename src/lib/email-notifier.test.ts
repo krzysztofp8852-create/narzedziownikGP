@@ -59,6 +59,43 @@ describe("e-mail z raportem", () => {
     expect(email.html).toContain('href="https://narzedziownik.example/raporty/tygodniowy/2026-04-06"');
   });
 
+  it("tygodniowy z terminami: po terminie i z najbliższych 30 dni, z miejscem i kierownikiem; raport sprzed terminów bez tej sekcji", () => {
+    const deadlines: WeeklyReport["deadlines"] = [
+      {
+        id: "d1",
+        kind: "przeglad",
+        dueOn: "2026-03-30",
+        daysLeft: -7,
+        overdue: true,
+        tool: { id: "h01", code: "H-01", name: "Młotowiertarka" },
+        location: { id: "b", name: "Magazyn", kind: "baza" },
+        responsible: null,
+      },
+      {
+        id: "d2",
+        kind: "kalibracja",
+        dueOn: "2026-04-20",
+        daysLeft: 14,
+        overdue: false,
+        tool: { id: "n01", code: "N-01", name: "Niwelator" },
+        location: { id: "r", name: "Rataje", kind: "budowa" },
+        responsible: "Adam Nowak",
+      },
+    ];
+
+    const email = plain(notificationEmail({ kind: "raport_tygodniowy", recipient: owner, report: { ...weekly, deadlines } }));
+    const empty = plain(notificationEmail({ kind: "raport_tygodniowy", recipient: owner, report: { ...weekly, deadlines: [] } }));
+    const old = plain(notificationEmail({ kind: "raport_tygodniowy", recipient: owner, report: weekly }));
+
+    expect(email.text).toContain(
+      "TERMINY W NAJBLIŻSZYCH 30 DNIACH I PO TERMINIE\n" +
+        "- H-01 Młotowiertarka: Przegląd: po terminie (30.03.2026) · na bazie Magazyn\n" +
+        "- N-01 Niwelator: Kalibracja: termin 20.04.2026 · na budowie Rataje · kierownik: Adam Nowak",
+    );
+    expect(empty.text).toContain("TERMINY W NAJBLIŻSZYCH 30 DNIACH I PO TERMINIE\nW najbliższych 30 dniach nie ma terminów.");
+    expect(old.text).not.toContain("TERMINY");
+  });
+
   it("piątkowy: lista po budowach z kierownikiem; bez adresu aplikacji bez linku", () => {
     const email = plain(notificationEmail({ kind: "raport_piatkowy", recipient: owner, report: friday }));
 

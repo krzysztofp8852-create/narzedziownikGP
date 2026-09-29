@@ -11,3 +11,25 @@ export function isCalendarDay(text: string) {
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
+
+/** Ile dni kalendarza od `from` do `to` (RRRR-MM-DD); ujemne, gdy `to` jest wcześniej. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / (24 * 60 * 60 * 1000));
+}
+
+const warsawParts = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Europe/Warsaw",
+  hourCycle: "h23",
+  weekday: "short",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "numeric",
+});
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Dzień (RRRR-MM-DD), dzień tygodnia (0 = niedziela) i godzina w Polsce, także przy zmianie czasu. */
+export function warsawTime(at: Date): { day: string; weekday: number; hour: number } {
+  const parts = Object.fromEntries(warsawParts.formatToParts(at).map((part) => [part.type, part.value]));
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, weekday: WEEKDAYS.indexOf(parts.weekday), hour: Number(parts.hour) };
+}

@@ -4,7 +4,7 @@ import { type CheckedPhoto, checkPhoto } from "./photos";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
 import type { Role, Session } from "./registry";
-import { isUniqueViolation, ReplayedOperationError } from "./tools";
+import { isUniqueViolation, ReplayedOperationError } from "./errors";
 import { UUID_PATTERN } from "./validation";
 
 export const MAX_SUPPORT_MESSAGE_LENGTH = 2000;

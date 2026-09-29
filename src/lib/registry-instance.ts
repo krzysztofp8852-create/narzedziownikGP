@@ -2,7 +2,7 @@ import { createPgDb } from "@/registry/pg-db";
 import { type Notifier, systemClock } from "@/registry/ports";
 import { createRegistry, type Registry, type RegistryDeps } from "@/registry/registry";
 import { createSupabaseAuthAdmin } from "@/registry/supabase-auth-admin";
-import { CHAT_PHOTOS_BUCKET, createSupabasePhotoStore, ISSUE_PHOTOS_BUCKET } from "@/registry/supabase-photo-store";
+import { CHAT_PHOTOS_BUCKET, createSupabasePhotoStore, DEADLINE_DOCUMENTS_BUCKET, ISSUE_PHOTOS_BUCKET } from "@/registry/supabase-photo-store";
 import { createResendNotifier, logNotifier } from "./email-notifier";
 import { publicEnv, serverEnv } from "./env";
 import { createWebPushChannel, logPush } from "./web-push-notifier";
@@ -10,7 +10,7 @@ import { SUPABASE_ROOT_CA } from "./supabase-root-ca";
 
 let registry: Registry | undefined;
 
-/** Rejestr na prawdziwej bazie, Supabase Auth i Storage (zdjęcia zgłoszeń i czatu) i powiadomieniach e-mail i push. Wspólny dla aplikacji i skryptów. */
+/** Rejestr na prawdziwej bazie, Supabase Auth i Storage (zdjęcia zgłoszeń i czatu, dokumenty terminów) i powiadomieniach e-mail i push. Wspólny dla aplikacji i skryptów. */
 export function getRegistry(): Registry {
   registry ??= createRegistry(registryDeps());
   return registry;
@@ -25,6 +25,7 @@ export function registryDeps(): RegistryDeps {
     notifier: notifier(),
     photos: createSupabasePhotoStore(publicEnv.supabaseUrl(), serverEnv.supabaseServiceRoleKey(), ISSUE_PHOTOS_BUCKET),
     chatPhotos: createSupabasePhotoStore(publicEnv.supabaseUrl(), serverEnv.supabaseServiceRoleKey(), CHAT_PHOTOS_BUCKET),
+    documents: createSupabasePhotoStore(publicEnv.supabaseUrl(), serverEnv.supabaseServiceRoleKey(), DEADLINE_DOCUMENTS_BUCKET),
   };
 }
 

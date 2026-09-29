@@ -69,6 +69,8 @@ describe("podgląd importu", () => {
       serialNumber: null,
       value: 1200.5,
       location: { id: expect.any(String), name: "Magazyn Swarzędz", kind: "baza" },
+      inspectionDue: null,
+      warrantyUntil: null,
       errors: [],
     });
     expect(await toolCount(z.zawbud)).toBe(1);
@@ -150,7 +152,19 @@ describe("zatwierdzenie importu", () => {
     expect(result).toEqual({ imported: 4, limitWarning: null });
     const board = await z.owner.whereIsWhat();
     expect(board.base.tools).toEqual([
-      { id: expect.any(String), code: "H-01", name: "Młot Hilti", registration: "zaakceptowane", daysInPlace: 2, alarm: false, value: 3200, damagedSince: null },
+      {
+        id: expect.any(String),
+        code: "H-01",
+        name: "Młot Hilti",
+        registration: "zaakceptowane",
+        daysInPlace: 2,
+        alarm: false,
+        value: 3200,
+        damagedSince: null,
+        nextDeadline: null,
+        nextInspection: null,
+        warrantyUntil: null,
+      },
     ]);
     expect(board.sites[0].tools.map((tool) => [tool.code, tool.name, tool.daysInPlace, tool.value])).toEqual([
       ["H-03", "Młot Makita", 2, null],
@@ -226,6 +240,42 @@ describe("zatwierdzenie importu", () => {
 
     expect([first, second, third]).toEqual([{ imported: 2, limitWarning: null }, { imported: 2, limitWarning: null }, { imported: 2, limitWarning: null }]);
     expect((await z.owner.whereIsWhat()).base.tools.map((tool) => tool.code)).toEqual(["H-01", "H-02"]);
+  });
+});
+
+describe("terminy z pliku", () => {
+  it("data przeglądu i koniec gwarancji z pliku stają się terminami narzędzia, a zła data to błąd wiersza", async () => {
+    const z = await givenZawbud();
+    const rows: ToolImportRow[] = [
+      { code: "H-01", name: "Młot Hilti", category: "Młoty", inspectionDue: "2026-09-30", warrantyUntil: "15.04.2027" },
+      { code: "H-02", name: "Młot Bosch", category: "Młoty", inspectionDue: " ", warrantyUntil: "" },
+      { code: "S-01", name: "Szlifierka", category: "S", inspectionDue: "1/3/2026", warrantyUntil: "5-06-2028" },
+      { code: "S-02", name: "Szlifierka mała", category: "S", inspectionDue: "30.02.2026", warrantyUntil: "za rok" },
+    ];
+
+    const preview = await z.owner.previewToolImport(rows);
+
+    expect(preview.rows.map((row) => [row.inspectionDue, row.warrantyUntil, row.errors])).toEqual([
+      ["2026-09-30", "2027-04-15", []],
+      [null, null, []],
+      ["2026-03-01", "2028-06-05", []],
+      [null, null, ["inspection_invalid", "warranty_invalid"]],
+    ]);
+
+    await z.owner.importTools({ operationId: randomUUID(), rows: rows.slice(0, 3) });
+
+    const tools = (await z.owner.whereIsWhat()).base.tools;
+    const deadlinesOf = async (code: string) =>
+      (await z.owner.toolCard(tools.find((tool) => tool.code === code)!.id))?.deadlines.map((deadline) => [deadline.kind, deadline.dueOn, deadline.cycleMonths]);
+    expect(await deadlinesOf("H-01")).toEqual([
+      ["przeglad", "2026-09-30", null],
+      ["gwarancja", "2027-04-15", null],
+    ]);
+    expect(await deadlinesOf("H-02")).toEqual([]);
+    expect(await deadlinesOf("S-01")).toEqual([
+      ["przeglad", "2026-03-01", null],
+      ["gwarancja", "2028-06-05", null],
+    ]);
   });
 });
 

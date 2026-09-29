@@ -4,9 +4,12 @@ import * as board from "./board";
 import * as catalog from "./catalog";
 import type { CatalogTool } from "./catalog";
 import type { WhereIsWhat } from "./board";
-import { RegistryError } from "./errors";
+import { RegistryError, ReplayedOperationError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as corrections from "./corrections";
+import * as deadlineReminders from "./deadline-reminders";
+import * as deadlines from "./deadlines";
+import type { AddDocumentInput, CompleteDeadlineInput, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
 import * as demo from "./demo";
 import type { DemoAccount, DemoUse } from "./demo";
 import * as history from "./history";
@@ -54,6 +57,31 @@ export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { CatalogTool } from "./catalog";
+export type {
+  AddDocumentInput,
+  CompleteDeadlineInput,
+  DeadlineChanges,
+  DeadlineDocument,
+  DeadlineKind,
+  DeadlineStatus,
+  DeadlineSummary,
+  DocumentKind,
+  NewDeadlineInput,
+  NewDocument,
+  NextDeadline,
+  ToolDeadline,
+  UpcomingDeadline,
+} from "./deadlines";
+export {
+  canAttachDocument,
+  canCompleteDeadlines,
+  canManageDeadlines,
+  DEADLINE_KINDS,
+  DOCUMENT_KINDS,
+  MAX_CYCLE_MONTHS,
+  MAX_DEADLINE_NOTE_LENGTH,
+  UPCOMING_DAYS,
+} from "./deadlines";
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolState } from "./tools";
 export { canManageTools, canSeeValues } from "./tools";
 export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
@@ -93,6 +121,7 @@ export type {
 export { canMoveEverywhere, canMoveTools, canRegisterMovements, MAX_TRANSCRIPT_LENGTH, MovementConflictError, REGISTER_SOURCES, UNDO_WINDOW_MS } from "./movements";
 export { readOnlyWarning } from "./notifications";
 export type {
+  DeadlinesNotification,
   EmailedNotification,
   FridayReportNotification,
   MovementRejectedNotification,
@@ -100,6 +129,7 @@ export type {
   NotifiedPlace,
   NotificationContent,
   NotificationKind,
+  NotifiedDeadline,
   ReadOnlyNotification,
   ReadOnlySoonNotification,
   ThresholdExceededNotification,
@@ -259,6 +289,13 @@ export interface Registry {
     /** Raporty, na które przyszła pora (jak `sendDueReports`), tylko dla jednej firmy (scenariusz demo). */
     sendCompanyDueReports(companyId: string): Promise<{ weekly: number; friday: number }>;
     /**
+     * Zadanie dzienne: przypomnienia o terminach sprzętu w obiegu, tydzień przed terminem w Polsce i (poza gwarancją) po
+     * nim, każde raz. Właściciel dostaje jedno zbiorcze, a kierownik budowy albo pojazdu o sprzęcie, który jest u niego.
+     */
+    notifyDueDeadlines(): Promise<{ deadlines: number }>;
+    /** Przypomnienia o terminach (jak `notifyDueDeadlines`) tylko dla jednej firmy (scenariusz demo). */
+    notifyCompanyDueDeadlines(companyId: string): Promise<{ deadlines: number }>;
+    /**
      * Zadanie dzienne: właściciele firm dostają ostrzeżenie 7 dni i 1 dzień przed trybem tylko do odczytu
      * (dzwonek, push i e-mail) i wpis o samym przełączeniu (dzwonek i push), każde raz na termin. Przy ręcznym
      * trybie nic. Zwraca, ile firm dostało ostrzeżenie, a ile wpis o przełączeniu. Danych firm nic nie kasuje.
@@ -326,6 +363,32 @@ export interface Registry {
     importTools(input: ImportToolsInput): Promise<{ imported: number } & WithLimitWarning>;
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
+    /**
+     * Termin przy narzędziu: przegląd, kalibracja, badanie UDT albo koniec gwarancji, jeden każdego rodzaju
+     * (drugi: `deadline_taken`), z opcjonalnym cyklem w miesiącach. Tylko właściciel; widzi je każdy w firmie.
+     */
+    addDeadline(input: NewDeadlineInput): Promise<{ deadlineId: string }>;
+    /** Zmienia datę, cykl albo opis terminu. Tylko właściciel. */
+    updateDeadline(deadlineId: string, changes: DeadlineChanges): Promise<void>;
+    /** Usuwa termin razem z dokumentami. Tylko właściciel. */
+    deleteDeadline(deadlineId: string): Promise<void>;
+    /**
+     * Wykonany przegląd, kalibracja albo badanie UDT (najpóźniej dziś w Polsce), z opcjonalnym dokumentem (np.
+     * protokołem): następny termin to podany, a bez niego liczy się z cyklu (bez cyklu go nie ma). Właściciel
+     * i magazynier. Ponowne wysłanie tej samej operacji zwraca bieżący termin. Zwraca następny termin.
+     */
+    completeDeadline(input: CompleteDeadlineInput): Promise<{ dueOn: string | null }>;
+    /**
+     * Dokument przy terminie: PDF albo zdjęcie do 4 MB (inaczej `document_invalid`). Właściciel, a magazynier bez faktur.
+     * Każdy w firmie go widzi, poza fakturą (ma cenę), którą widzi tylko właściciel.
+     */
+    addDeadlineDocument(input: AddDocumentInput): Promise<{ documentId: string }>;
+    /** Usuwa dokument terminu. Tylko właściciel. */
+    deleteDeadlineDocument(documentId: string): Promise<void>;
+    /** Plik dokumentu z nazwą; null, gdy aktor go nie widzi. */
+    deadlineDocument(documentId: string): Promise<{ file: Blob; fileName: string } | null>;
+    /** Terminy sprzętu w obiegu w najbliższych 30 dniach i te po terminie (bez wygasłych gwarancji). Widzi je każda rola. */
+    upcomingDeadlines(): Promise<UpcomingDeadline[]>;
     /**
      * Druk naklejek QR: wybrane narzędzia albo wszystkie jeszcze nieoklejone. `print` robi z nich plik
      * w tej samej transakcji, więc datę druku (wydrukowane przestają być nieoklejone) zapisujemy tylko
@@ -495,7 +558,8 @@ export interface Registry {
     supportPhoto(messageId: string): Promise<Blob | null>;
     /**
      * Raport tygodniowy firmy w tej chwili: narzędzia ponad progiem, zaginione, kwota poza bazą wobec raportu
-     * z poprzedniego tygodnia, zgłoszenia narzędzi i sprzęt najdłużej nieużywany. Tylko właściciel.
+     * z poprzedniego tygodnia, zgłoszenia narzędzi, sprzęt najdłużej nieużywany i terminy w najbliższych 30 dniach
+     * (także te po terminie). Tylko właściciel.
      */
     weeklyReport(): Promise<WeeklyReport>;
     /** Raport piątkowy w tej chwili: sprzęt poza bazą według lokalizacji. Właściciel całą firmę, kierownik swoje. */
@@ -526,6 +590,8 @@ export interface RegistryDeps {
   photos: PhotoStore;
   /** Zdjęcia z czatu z supportem. */
   chatPhotos: PhotoStore;
+  /** Dokumenty terminów narzędzi: zdjęcia i PDF. */
+  documents: PhotoStore;
 }
 
 export function createRegistry(deps: RegistryDeps): Registry {
@@ -578,6 +644,21 @@ export function createRegistry(deps: RegistryDeps): Registry {
         return sent;
       },
       notifyCompanyExceededThresholds: async (companyId) => ({ tools: await notifyThresholds(deps, companyId, deps.clock.now()) }),
+      notifyDueDeadlines: async () => {
+        const now = deps.clock.now();
+        const companyIds = await deps.db.transaction((sql) => deadlineReminders.companiesWithDeadlines(sql));
+        let count = 0;
+        // Każda firma w osobnej transakcji: błąd jednej nie zabiera przypomnień pozostałym.
+        for (const companyId of companyIds) {
+          try {
+            count += await remindDeadlines(deps, companyId, now);
+          } catch (error) {
+            console.error(`Nie sprawdzono terminów firmy ${companyId}`, error);
+          }
+        }
+        return { deadlines: count };
+      },
+      notifyCompanyDueDeadlines: async (companyId) => ({ deadlines: await remindDeadlines(deps, companyId, deps.clock.now()) }),
       sendCompanyDueReports: (companyId) => sendDueReportsOf(deps, companyId, deps.clock.now()),
       notifySubscriptionDeadlines: async () => {
         const now = deps.clock.now();
@@ -724,7 +805,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
           try {
             return await attempt();
           } catch (error) {
-            if (error instanceof tools.ReplayedOperationError || error instanceof movements.ConcurrentMoveError) return attempt();
+            if (error instanceof ReplayedOperationError || error instanceof movements.ConcurrentMoveError) return attempt();
             // Każde zapytanie widzi to, co zatwierdzono przed nim: równoległa ponowka tej samej operacji
             // mogła zapisać ruch już po naszym sprawdzeniu identyfikatora, a przed sprawdzeniem stanu,
             // który ten ruch zmienił. Wtedy zwracamy jej ruch zamiast odmowy.
@@ -833,6 +914,42 @@ export function createRegistry(deps: RegistryDeps): Registry {
             asWriter(async (sql, session) => withLimitWarning(sql, await toolImport.importTools(sql, session, input, deps.clock.now()))),
           ),
         toolCard: (toolId) => asMember((sql, session) => tools.toolCard(sql, session, toolId, deps.clock.now())),
+        addDeadline: (input) => asWriter((sql, session) => deadlines.addDeadline(sql, session, input, deps.clock.now())),
+        updateDeadline: (deadlineId, changes) => asWriter((sql, session) => deadlines.updateDeadline(sql, session, deadlineId, changes)),
+        completeDeadline: (input) =>
+          savingPhoto(deps.documents, (save) =>
+            retryOnReplay(() =>
+              asWriter(async (sql, session) => {
+                const { dueOn, file } = await deadlines.completeDeadline(sql, session, input, deps.clock.now());
+                if (file) await save(file.key, file.blob);
+                return { dueOn };
+              }),
+            ),
+          ),
+        addDeadlineDocument: (input) =>
+          savingPhoto(deps.documents, (save) =>
+            retryOnReplay(() =>
+              asWriter(async (sql, session) => {
+                const { documentId, file } = await deadlines.addDocument(sql, session, input, deps.clock.now());
+                if (file) await save(file.key, file.blob);
+                return { documentId };
+              }),
+            ),
+          ),
+        deleteDeadlineDocument: async (documentId) => {
+          const { fileKeys } = await asWriter((sql, session) => deadlines.deleteDocument(sql, session, documentId));
+          await removeFiles(deps.documents, fileKeys);
+        },
+        upcomingDeadlines: () => asMember((sql) => deadlines.upcomingDeadlines(sql, deps.clock.now())),
+        deadlineDocument: async (documentId) => {
+          const document = await asMember((sql) => deadlines.visibleDocument(sql, documentId));
+          const file = document && (await deps.documents.read(document.key));
+          return file ? { file, fileName: document.fileName } : null;
+        },
+        deleteDeadline: async (deadlineId) => {
+          const { fileKeys } = await asWriter((sql, session) => deadlines.deleteDeadline(sql, session, deadlineId));
+          await removeFiles(deps.documents, fileKeys);
+        },
         printStickers: (selection, print) =>
           asWriter(async (sql, session) => {
             stickers.requireStickerPrinter(session);
@@ -1113,6 +1230,13 @@ async function notifyThresholds(deps: RegistryDeps, companyId: string, now: Date
   return result.tools;
 }
 
+/** Przypomnienia o terminach jednej firmy w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę nowych. */
+async function remindDeadlines(deps: RegistryDeps, companyId: string, now: Date): Promise<number> {
+  const result = await deps.db.transaction((sql) => deadlineReminders.notifyDueDeadlines(sql, companyId, now));
+  await sendPushCopies(deps, result.copies);
+  return result.deadlines;
+}
+
 /** Raporty jednej firmy, na które przyszła pora. Każdy osobno: błąd jednego nie zabiera pozostałych. */
 async function sendDueReportsOf(deps: RegistryDeps, companyId: string, now: Date): Promise<{ weekly: number; friday: number }> {
   const sent = { weekly: 0, friday: 0 };
@@ -1161,12 +1285,17 @@ async function savingPhoto<T>(store: PhotoStore, command: (save: (key: string, p
   }
 }
 
+/** Usuwa pliki, które po zatwierdzonym zapisie nie mają już do czego należeć. Zapis się nie cofnie, więc błąd tylko odnotowujemy. */
+async function removeFiles(store: PhotoStore, keys: string[]) {
+  await Promise.all(keys.map((key) => store.remove(key).catch((error) => console.error("Nie usunięto pliku", key, error))));
+}
+
 /** Jedno ponowienie, gdy równoległa ponowka tej samej operacji właśnie się zapisała; drugie podejście odczyta jej wynik. */
 async function retryOnReplay<T>(attempt: () => Promise<T>): Promise<T> {
   try {
     return await attempt();
   } catch (error) {
-    if (error instanceof tools.ReplayedOperationError) return attempt();
+    if (error instanceof ReplayedOperationError) return attempt();
     throw error;
   }
 }

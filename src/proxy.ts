@@ -4,7 +4,7 @@ import { publicEnv } from "@/lib/env";
 
 // Do demo wchodzi się bez logowania. Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika. „Brak sieci” service worker
 // pobiera przy instalacji, także przed zalogowaniem.
-const PUBLIC_PATHS = ["/demo", "/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi", "/zadania/raporty", "/zadania/abonamenty", "/zadania/demo", "/offline"];
+const PUBLIC_PATHS = ["/demo", "/logowanie", "/reset-hasla", "/auth/confirm", "/zadania/progi", "/zadania/terminy", "/zadania/raporty", "/zadania/abonamenty", "/zadania/demo", "/offline"];
 
 /**
  * Odświeża sesję Supabase w ciasteczkach i odsyła niezalogowanych do logowania.

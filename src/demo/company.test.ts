@@ -8,7 +8,7 @@ const bed = setupRegistryTestbed();
 const DAY = 24 * 60 * 60 * 1000;
 const MINUTE = 60 * 1000;
 
-const deps = () => ({ db: bed.db, authAdmin: bed.auth, photos: bed.photos, chatPhotos: bed.chatPhotos });
+const deps = () => ({ db: bed.db, authAdmin: bed.auth, photos: bed.photos, chatPhotos: bed.chatPhotos, documents: bed.documents });
 const demo = (now = START) => createDemoCompany(deps(), { now });
 const refresh = (now: Date) => refreshUsedDemo(deps(), { now });
 const minutesAfterStart = (minutes: number) => new Date(START.getTime() + minutes * MINUTE);
@@ -61,6 +61,13 @@ describe("firma demo", () => {
     expect(await registry.toolReports()).toHaveLength(2);
     expect((await registry.issues()).filter((issue) => issue.status === "otwarte")).toHaveLength(3);
     expect(await registry.finishedSites()).toHaveLength(1);
+    // Terminy z najbliższego miesiąca: kalibracja po terminie, kalibracja za kilka dni, przegląd agregatu i koniec gwarancji.
+    expect((await registry.upcomingDeadlines()).map((deadline) => [deadline.tool.code, deadline.kind, deadline.overdue])).toEqual([
+      ["M-04", "kalibracja", true],
+      ["M-01", "kalibracja", false],
+      ["A-01", "przeglad", false],
+      ["H-01", "gwarancja", false],
+    ]);
 
     const marek = bed.registry.as(manager.userId);
     expect(await marek.movementsToClarify()).toHaveLength(1);
@@ -74,8 +81,8 @@ describe("firma demo", () => {
     const [owner, manager] = await bed.registry.system().demoAccounts();
     const kinds = async (userId: string) => (await bed.registry.as(userId).bell()).entries.map((entry) => entry.notification.kind);
 
-    expect(await kinds(owner.userId)).toEqual(expect.arrayContaining(["progi_przekroczone", "raport_tygodniowy", "raport_piatkowy"]));
-    expect(await kinds(manager.userId)).toEqual(expect.arrayContaining(["prog_przekroczony", "raport_piatkowy"]));
+    expect(await kinds(owner.userId)).toEqual(expect.arrayContaining(["progi_przekroczone", "terminy", "raport_tygodniowy", "raport_piatkowy"]));
+    expect(await kinds(manager.userId)).toEqual(expect.arrayContaining(["prog_przekroczony", "terminy", "raport_piatkowy"]));
     // Raporty tylko z ostatnich dwóch tygodni.
     expect((await kinds(owner.userId)).filter((kind) => kind === "raport_tygodniowy")).toHaveLength(2);
   });

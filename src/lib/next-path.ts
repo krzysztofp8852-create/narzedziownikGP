@@ -11,7 +11,7 @@ export function safeNextPath(next: string | null | undefined): string {
 }
 
 /** Strony, które widzi każda rola, więc po przełączeniu roli w demo można na nich zostać. */
-const EVERY_ROLE_PAGES = [/^\/$/, /^\/historia$/, /^\/zgloszenia$/, /^\/dzwonek$/, /^\/szukaj$/, /^\/narzedzia\/[0-9a-f-]{36}$/];
+const EVERY_ROLE_PAGES = [/^\/$/, /^\/historia$/, /^\/zgloszenia$/, /^\/dzwonek$/, /^\/szukaj$/, /^\/terminy$/, /^\/narzedzia\/[0-9a-f-]{36}$/];
 
 /**
  * Ścieżka, na której oglądający demo zostaje po zmianie roli: bieżąca strona, jeśli widzi ją każda rola,

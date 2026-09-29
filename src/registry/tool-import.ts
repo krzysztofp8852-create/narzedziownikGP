@@ -1,19 +1,17 @@
-import { RegistryError } from "./errors";
+import { isUniqueViolation, RegistryError, ReplayedOperationError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import {
   baseLocation,
   type Category,
-  isUniqueViolation,
   listCategories,
   type LocationKind,
   MAX_VALUE,
   nextCodes,
   normalizeCode,
-  ReplayedOperationError,
   uniqueOr,
 } from "./tools";
-import { UUID_PATTERN } from "./validation";
+import { isCalendarDay, UUID_PATTERN } from "./validation";
 
 /** Wiersz pliku po zmapowaniu kolumn na pola karty: teksty tak, jak są w komórkach. */
 export interface ToolImportRow {
@@ -29,6 +27,10 @@ export interface ToolImportRow {
   value?: string | null;
   /** Nazwa bazy, aktywnej budowy albo serwisu; pusta: baza. */
   location?: string | null;
+  /** Termin najbliższego przeglądu, np. „2026-09-30” albo „30.09.2026”; pusty: bez terminu. */
+  inspectionDue?: string | null;
+  /** Ostatni dzień gwarancji, w tym samym zapisie. */
+  warrantyUntil?: string | null;
 }
 
 export type ImportRowError =
@@ -45,7 +47,9 @@ export type ImportRowError =
   /** Tę nazwę ma więcej niż jedna lokalizacja firmy. */
   | "location_ambiguous"
   | "site_finished"
-  | "vehicle_inactive";
+  | "vehicle_inactive"
+  | "inspection_invalid"
+  | "warranty_invalid";
 
 export interface ImportPreviewRow {
   /** Kod z pliku albo nadany; null, gdy nie da się go ustalić (zły kod, nieznana kategoria). */
@@ -60,6 +64,10 @@ export interface ImportPreviewRow {
   value: number | null;
   /** Dokąd trafi narzędzie: lokalizacja z pliku albo baza. */
   location: { id: string; name: string; kind: LocationKind } | null;
+  /** Termin przeglądu (RRRR-MM-DD), który dostanie narzędzie. */
+  inspectionDue: string | null;
+  /** Koniec gwarancji (RRRR-MM-DD). */
+  warrantyUntil: string | null;
   errors: ImportRowError[];
 }
 
@@ -78,7 +86,7 @@ export interface ImportToolsInput {
 
 export const MAX_IMPORT_ROWS = 2000;
 
-const ROW_FIELDS = ["code", "name", "category", "brand", "model", "serialNumber", "value", "location"] as const;
+const ROW_FIELDS = ["code", "name", "category", "brand", "model", "serialNumber", "value", "location", "inspectionDue", "warrantyUntil"] as const;
 
 /** Import wgrywa właściciel: ustala stan początkowy ewidencji razem z wartościami. */
 export function canImportTools(session: Session) {
@@ -136,6 +144,11 @@ export async function previewToolImport(sql: Sql, session: Session, rows: ToolIm
       }
     }
 
+    const inspectionDue = parseDay(raw.inspectionDue);
+    if (inspectionDue === undefined) errors.push("inspection_invalid");
+    const warrantyUntil = parseDay(raw.warrantyUntil);
+    if (warrantyUntil === undefined) errors.push("warranty_invalid");
+
     return {
       code,
       codeAssigned: false,
@@ -146,6 +159,8 @@ export async function previewToolImport(sql: Sql, session: Session, rows: ToolIm
       serialNumber: text(raw.serialNumber),
       value: value ?? null,
       location,
+      inspectionDue: inspectionDue ?? null,
+      warrantyUntil: warrantyUntil ?? null,
       errors,
     };
   });
@@ -168,8 +183,9 @@ export async function previewToolImport(sql: Sql, session: Session, rows: ToolIm
 }
 
 /**
- * Zapisuje import w całości albo wcale: wszystkie narzędzia z kodami i wartościami, a każde z ruchem
- * `przyjecie` (źródło `import`) do lokalizacji z pliku. Wiersz z błędem odrzuca cały import.
+ * Zapisuje import w całości albo wcale: wszystkie narzędzia z kodami, wartościami i terminami przeglądu i końca
+ * gwarancji (bez cyklu), a każde z ruchem `przyjecie` (źródło `import`) do lokalizacji z pliku. Wiersz z błędem
+ * odrzuca cały import.
  */
 export async function importTools(sql: Sql, session: Session, input: ImportToolsInput, now: Date): Promise<{ imported: number }> {
   if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
@@ -222,6 +238,18 @@ export async function importTools(sql: Sql, session: Session, input: ImportTools
       `insert into app.tool_values (tool_id, company_id, value)
        select tool_id, $1, value from unnest($2::uuid[], $3::numeric[]) as r(tool_id, value)`,
       [session.company.id, valued.map(toolId), valued.map((row) => row.value)],
+    );
+  }
+
+  const deadlines = rows.flatMap((row) => [
+    ...(row.inspectionDue ? [{ toolId: toolId(row), kind: "przeglad", dueOn: row.inspectionDue }] : []),
+    ...(row.warrantyUntil ? [{ toolId: toolId(row), kind: "gwarancja", dueOn: row.warrantyUntil }] : []),
+  ]);
+  if (deadlines.length > 0) {
+    await sql(
+      `insert into app.tool_deadlines (company_id, tool_id, kind, due_on, created_at)
+       select $1, tool_id, kind, due_on, $2 from unnest($3::uuid[], $4::text[], $5::date[]) as r(tool_id, kind, due_on)`,
+      [session.company.id, now, deadlines.map((d) => d.toolId), deadlines.map((d) => d.kind), deadlines.map((d) => d.dueOn)],
     );
   }
 
@@ -288,4 +316,20 @@ function parseValue(raw: string | null | undefined): number | null | undefined {
   if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return undefined;
   const value = Number(normalized);
   return value <= MAX_VALUE ? value : undefined;
+}
+
+/**
+ * Dzień z komórki jako RRRR-MM-DD: „2026-09-30” (tak przychodzi też data z Excela), „30.09.2026”, „30-09-2026” albo
+ * „30/09/2026”, także bez zer z przodu. Brak to null, zły zapis albo nieistniejący dzień to undefined.
+ */
+export function parseDay(raw: string | null | undefined): string | null | undefined {
+  const cell = text(raw);
+  if (cell === null) return null;
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(cell);
+  const polish = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(cell);
+  const parts = iso ? [iso[1], iso[2], iso[3]] : polish ? [polish[3], polish[2], polish[1]] : null;
+  if (!parts) return undefined;
+  const [year, month, day] = parts;
+  const result = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  return isCalendarDay(result) ? result : undefined;
 }

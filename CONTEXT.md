@@ -75,6 +75,28 @@ Zgłoszone (dodane przez kierownika, czeka na akceptację właściciela) albo za
 Flaga narzędzia ustawiana przez zgłoszenie uszkodzenia. Nie blokuje ruchów; znika po powrocie z serwisu albo decyzją właściciela.
 _Avoid_: zepsute, niesprawne (jako stan)
 
+## Terminy
+
+**Termin**:
+Data przeglądu, kalibracji, badania UDT albo końca gwarancji przy narzędziu, najwyżej jeden każdego rodzaju, z opcjonalnym cyklem w miesiącach.
+_Avoid_: deadline, zadanie, przegląd (jako ogólne pojęcie)
+
+**Wykonanie**:
+Wpis, że przegląd, kalibracja albo badanie UDT się odbyły; następny termin to dzień wykonania plus cykl. Gwarancji się nie wykonuje, tylko wygasa.
+_Avoid_: zamknięcie terminu, odhaczenie
+
+**Po terminie**:
+Stan terminu, którego data minęła bez wpisanego wykonania. Nie blokuje ruchów, tylko ostrzega.
+_Avoid_: przeterminowany, zaległy
+
+**Dokument terminu**:
+Zdjęcie albo PDF przy terminie: świadectwo kalibracji, protokół, karta gwarancyjna, faktura albo inny. Fakturę widzi tylko właściciel, bo ma cenę.
+_Avoid_: załącznik, teczka
+
+**Przypomnienie o terminie**:
+Wpis dzwonka tydzień przed terminem i raz po nim (przy gwarancji tylko przed), dla właściciela i kierownika lokalizacji, w której jest sprzęt.
+_Avoid_: alarm (zarezerwowany dla progu dni)
+
 ## Ruchy
 
 **Ruch**:
@@ -119,7 +141,7 @@ Narzędzie w lokalizacji z progiem dłużej niż obowiązujący próg dni. Na po
 Liczba dni, od kiedy narzędzie na bazie nie wyjeżdżało.
 
 **Raport tygodniowy**:
-Pełne podsumowanie dla właściciela w poniedziałek o 7:00.
+Pełne podsumowanie dla właściciela w poniedziałek o 7:00, z terminami z najbliższych 30 dni i tymi po terminie.
 
 **Raport piątkowy**:
 Krótka lista sprzętu poza bazą w piątek o 16:00: dla właściciela cała firma, dla kierownika jego lokalizacje.
@@ -136,7 +158,7 @@ Wniosek kierownika o dopisanie do ewidencji sprzętu kupionego na budowę; końc
 _Avoid_: zgłoszenie (bez dopełnienia)
 
 **Dzwonek**:
-Skrzynka powiadomień użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm, raporty, odrzucone ruchy, płatność). Zgłoszenia i czat mają własne okna.
+Skrzynka powiadomień użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm, przypomnienia o terminach, raporty, odrzucone ruchy, płatność). Zgłoszenia i czat mają własne okna.
 _Avoid_: powiadomienia (jako nazwa miejsca), inbox
 
 **Czat z supportem**:

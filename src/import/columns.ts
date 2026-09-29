@@ -4,7 +4,18 @@ import type { Sheet } from "./sheet";
 export type ImportField = keyof ToolImportRow;
 
 /** Pola karty narzędzia, które da się wczytać z pliku, w kolejności formularza. */
-export const IMPORT_FIELDS: readonly ImportField[] = ["code", "name", "category", "brand", "model", "serialNumber", "value", "location"];
+export const IMPORT_FIELDS: readonly ImportField[] = [
+  "code",
+  "name",
+  "category",
+  "brand",
+  "model",
+  "serialNumber",
+  "value",
+  "location",
+  "inspectionDue",
+  "warrantyUntil",
+];
 
 /** Który numer kolumny pliku (od 0) trafia do danego pola; null: pole puste w każdym wierszu. */
 export type ColumnMapping = Record<ImportField, number | null>;
@@ -19,6 +30,8 @@ const HEADER_NAMES: Record<ImportField, string[]> = {
   serialNumber: ["numerseryjny", "nrseryjny", "sn", "serial", "serialnumber", "numerfabryczny", "nrfabryczny"],
   value: ["wartosc", "wartosczl", "wartoscpln", "cena", "cenazakupu", "value"],
   location: ["lokalizacja", "budowa", "miejsce", "gdzie", "location"],
+  inspectionDue: ["przeglad", "dataprzegladu", "nastepnyprzeglad", "terminprzegladu", "przegladdo", "wazneprzegladu", "przegladwaznydo"],
+  warrantyUntil: ["gwarancja", "gwarancjado", "koniecgwarancji", "datagwarancji", "terminkoncagwarancji", "gwarancjawaznado", "warranty"],
 };
 
 export function normalizeHeader(header: string): string {

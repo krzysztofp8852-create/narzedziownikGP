@@ -234,6 +234,8 @@
     "comment_required": "Wpisz komentarz.",
     "tool_required": "Wybierz narzędzie, które jest uszkodzone.",
     "photo_invalid": "Zdjęcie musi być w formacie JPG, PNG albo WEBP i mieć najwyżej 4 MB.",
+    "deadline_taken": "To narzędzie ma już termin tego rodzaju. Zmień istniejący.",
+    "document_invalid": "Dokument musi być plikiem PDF albo zdjęciem JPG, PNG lub WEBP i mieć najwyżej 4 MB.",
     "issue_closed": "To zgłoszenie jest już zamknięte.",
     "message_required": "Napisz wiadomość albo dołącz zdjęcie.",
     "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w zespole działają.",
@@ -254,6 +256,8 @@
     "model": "Model",
     "serialNumber": "Numer seryjny",
     "value": "Wartość (zł)",
+    "inspectionDue": "Następny przegląd",
+    "warrantyUntil": "Gwarancja do",
     "optional": "{field} (opcjonalnie)",
     "submitAdd": "Dodaj narzędzie",
     "submitEdit": "Zapisz zmiany",
@@ -404,8 +408,108 @@
     },
     "at": {
       "budowa": "na budowie {name}",
-      "pojazd": "na pojeździe {name}"
+      "pojazd": "na pojeździe {name}",
+      "baza": "na bazie {name}",
+      "serwis": "w serwisie {name}"
     }
+  },
+  "deadlines": {
+    "kinds": {
+      "przeglad": "Przegląd",
+      "kalibracja": "Kalibracja",
+      "udt": "Badanie UDT",
+      "gwarancja": "Gwarancja"
+    },
+    "lowerKinds": {
+      "przeglad": "przegląd",
+      "kalibracja": "kalibracja",
+      "udt": "badanie UDT",
+      "gwarancja": "gwarancja"
+    },
+    "due": "termin {day}",
+    "overdue": "po terminie ({day})",
+    "warrantyEnds": "koniec {day}",
+    "today": "dziś",
+    "tomorrow": "jutro",
+    "inDays": "za {days}",
+    "daysAgo": "{days} temu",
+    "overdueTag": "{kind} po terminie",
+    "next": "{kind}: {day}, {left}",
+    "nextOverdue": "{kind} po terminie od {day}",
+    "nextWarranty": "Gwarancja do {day}",
+    "status": {
+      "po_terminie": "po terminie",
+      "wkrotce": "wkrótce",
+      "pozniej": "zaplanowany",
+      "bez_terminu": "wykonany",
+      "wygasla": "wygasła"
+    },
+    "title": "Terminy",
+    "companyLink": "Wszystkie terminy w firmie",
+    "empty": "To narzędzie nie ma terminów.",
+    "emptyOwner": "Dodaj przegląd, kalibrację, badanie UDT albo koniec gwarancji. Tydzień przed terminem Ty i kierownik lokalizacji, w której będzie sprzęt, dostaniecie przypomnienie w dzwonku.",
+    "dueOn": "Termin: {day} ({left})",
+    "warrantyDue": "Na gwarancji do {day} ({left})",
+    "warrantyExpired": "Gwarancja skończyła się {day}.",
+    "noNextDate": "Wykonane, bez następnego terminu.",
+    "cycle": "Co {months} mies.",
+    "lastDone": "Ostatnio wykonano {day}.",
+    "documents": "Dokumenty",
+    "documentBy": "{name}, {when}",
+    "documentKinds": {
+      "swiadectwo": "Świadectwo kalibracji",
+      "protokol": "Protokół",
+      "karta_gwarancyjna": "Karta gwarancyjna",
+      "faktura": "Faktura",
+      "inne": "Dokument"
+    },
+    "invoiceHint": "Fakturę widzisz tylko Ty, bo jest na niej cena.",
+    "onlyYou": "widzisz tylko Ty",
+    "nearest": "Najbliższy termin: {text}",
+    "add": "Dodaj termin",
+    "kind": "Rodzaj",
+    "dueOnLabel": "Termin",
+    "warrantyUntilLabel": "Ostatni dzień gwarancji",
+    "cycleLabel": "Co ile miesięcy (opcjonalnie)",
+    "cycleHint": "Np. 12 dla corocznej kalibracji. Po wpisaniu wykonania następny termin policzy się sam.",
+    "noteLabel": "Opis (opcjonalnie)",
+    "notePlaceholder": "np. laboratorium, zakres przeglądu",
+    "submitAdd": "Dodaj termin",
+    "edit": "Zmień albo usuń",
+    "submitEdit": "Zapisz zmiany",
+    "delete": "Usuń termin",
+    "deleteConfirm": "Usunąć termin razem z dokumentami? Tego nie da się cofnąć.",
+    "deleteYes": "Tak, usuń",
+    "cancel": "Anuluj",
+    "complete": "Wpisz wykonanie",
+    "nextDueOn": "Następny termin (opcjonalnie)",
+    "nextDueHint": "Puste: {months} mies. od dnia wykonania. Wpisz, jeśli protokół albo świadectwo podaje inną datę.",
+    "nextDueNoCycle": "Termin nie ma cyklu: bez daty następnego terminu nie będzie.",
+    "doneOn": "Dzień wykonania",
+    "submitComplete": "Zapisz wykonanie",
+    "attach": "Dołącz dokument",
+    "documentKind": "Rodzaj dokumentu",
+    "documentFile": "Plik (PDF albo zdjęcie)",
+    "documentFileOptional": "Dokument (opcjonalnie, PDF albo zdjęcie)",
+    "documentHint": "Do 4 MB. Zdjęcie zmniejszymy przed wysłaniem.",
+    "defaultFileName": "dokument",
+    "submitAttach": "Dołącz",
+    "deleteDocument": "Usuń",
+    "deleteDocumentConfirm": "Usunąć dokument {name}?",
+    "saving": "Zapisywanie…",
+    "preparing": "Przygotowanie pliku…",
+    "saved": "Zapisano.",
+    "completed": "Zapisano wykonanie. Następny termin: {day}.",
+    "completedNoNext": "Zapisano wykonanie. Następnego terminu nie ma.",
+    "pageTitle": "Terminy sprzętu",
+    "pageIntro": "Przeglądy, kalibracje, badania UDT i końce gwarancji w najbliższych {days} dniach i te po terminie. Przypomnienie przychodzi do dzwonka tydzień przed terminem.",
+    "pageEmpty": "W najbliższych {days} dniach nie ma żadnych terminów.",
+    "back": "← Wróć do tablicy",
+    "itemAt": "{when} · {place}",
+    "itemResponsible": " · kierownik: {name}",
+    "boardDue": "Sprzęt z terminem w najbliższych {days} dniach: {count} szt.",
+    "boardOverdue": "po terminie: {count}",
+    "boardLink": "Zobacz terminy"
   },
   "siteStatus": {
     "aktywna": "Aktywna",
@@ -478,7 +582,11 @@
       }
     },
     "damagedWarning": "{code} zgłoszone jako uszkodzone {ago}. Ruch i tak się zapisze.",
-    "damagedFromService": "{code} jest zgłoszone jako uszkodzone: przyjęcie z serwisu zdejmie tę flagę."
+    "damagedFromService": "{code} jest zgłoszone jako uszkodzone: przyjęcie z serwisu zdejmie tę flagę.",
+    "warranty": "{code}: na gwarancji do {day}. Zgłoś naprawę w serwisie jako gwarancyjną.",
+    "inspectionOverdue": "{code}: {kind} po terminie od {day}. Ruch i tak się zapisze.",
+    "inspectionAfterService": "{code}: po przyjęciu wpisz na karcie wykonanie ({kind}) i następny termin.",
+    "followUp": "Wpisz wykonanie i następny termin:"
   },
   "textEntry": {
     "label": "Co zabierasz albo oddajesz?",
@@ -662,7 +770,7 @@
     "title": "Import narzędzi z pliku",
     "back": "← Wróć do tablicy",
     "intro": "Wgraj plik XLSX albo CSV z listą narzędzi: pierwszy wiersz to nagłówki kolumn, a każdy następny to jedno narzędzie. Przed zatwierdzeniem zobaczysz podgląd z błędami; bez zatwierdzenia nic się nie zapisze.",
-    "rules": "Każdy wiersz potrzebuje nazwy i kategorii (nazwy albo prefiksu, np. „Młoty” albo „H”). Wiersze bez kodu dostaną kolejny wolny kod w kategorii. Narzędzia bez lokalizacji trafią na bazę.",
+    "rules": "Każdy wiersz potrzebuje nazwy i kategorii (nazwy albo prefiksu, np. „Młoty” albo „H”). Wiersze bez kodu dostaną kolejny wolny kod w kategorii. Narzędzia bez lokalizacji trafią na bazę. Daty w kolumnach „Następny przegląd” i „Gwarancja do” (np. 30.09.2026) staną się terminami, o których system przypomni tydzień wcześniej.",
     "sample": {
       "link": "Pobierz przykładowy plik",
       "hint": "XLSX z nagłówkami, które rozpoznajemy, i kategoriami tej firmy: wpisz swój sprzęt w miejsce przykładów.",
@@ -675,7 +783,9 @@
       "model": "Model",
       "serialNumber": "Numer seryjny",
       "value": "Wartość",
-      "location": "Lokalizacja"
+      "location": "Lokalizacja",
+      "inspectionDue": "Następny przegląd",
+      "warrantyUntil": "Gwarancja do"
     },
     "categories": "Kategorie firmy",
     "noCategories": "Firma nie ma jeszcze kategorii. Dodaj je na tablicy przy dodawaniu narzędzia, zanim wgrasz plik.",
@@ -718,7 +828,9 @@
       "location_unknown": "Nieznana lokalizacja „{value}”.",
       "location_ambiguous": "Nazwę „{value}” ma kilka lokalizacji firmy.",
       "site_finished": "Budowa „{value}” jest zakończona.",
-      "vehicle_inactive": "Pojazd „{value}” jest nieaktywny."
+      "vehicle_inactive": "Pojazd „{value}” jest nieaktywny.",
+      "inspection_invalid": "Zła data przeglądu „{value}”: wpisz np. 30.09.2026 albo 2026-09-30.",
+      "warranty_invalid": "Zła data końca gwarancji „{value}”: wpisz np. 30.09.2026 albo 2026-09-30."
     }
   },
   "notifications": {
@@ -824,7 +936,11 @@
     "readOnlySoonBody": "Abonament jest opłacony do {paidUntil}. Od {from} zobaczysz tablicę, historię i eksport, ale nie zapiszesz zmian. Opłać abonament, żeby pracować dalej.",
     "readOnly": "Firma jest w trybie tylko do odczytu",
     "readOnlyOverdue": "Minęło 14 dni od końca opłaconego okresu ({paidUntil}). Tablica, historia i eksport działają, ale zmian nie zapiszesz. Po wpłacie wszystko wróci; żadne dane nie zostały usunięte.",
-    "readOnlyManual": "GP Engineering włączyło tryb tylko do odczytu. Tablica, historia i eksport działają, ale zmian nie zapiszesz. Żadne dane nie zostały usunięte."
+    "readOnlyManual": "GP Engineering włączyło tryb tylko do odczytu. Tablica, historia i eksport działają, ale zmian nie zapiszesz. Żadne dane nie zostały usunięte.",
+    "deadline": "{kind} {code} {name}: {when}",
+    "deadlineBody": "Sprzęt jest teraz {place}.",
+    "deadlines": "Terminy sprzętu: {count}",
+    "deadlineItem": "{code}: {kind}, {when}"
   },
   "push": {
     "title": "Powiadomienia na telefonie",
@@ -892,6 +1008,9 @@
     "longestUnused": "Najdłużej nieużywane na bazie",
     "longestUnusedEmpty": "Na bazie nie ma sprzętu.",
     "longestUnusedItem": "nie wyjeżdżało od {days}",
+    "deadlines": "Terminy w najbliższych {days} dniach i po terminie",
+    "deadlinesEmpty": "W najbliższych {days} dniach nie ma terminów.",
+    "deadlinesLink": "Zobacz terminy →",
     "fridayIntro": "Sprzęt poza bazą przed weekendem. Zwieź na bazę, czego nie będzie trzeba w poniedziałek.",
     "fridayEmpty": "Cały sprzęt jest na bazie albo w serwisie.",
     "fridayLocation": "{place} · kierownik: {manager}",
@@ -902,6 +1021,7 @@
       "weekly": "Raport tygodniowy: poza bazą {value}",
       "weeklyChange": "Raport tygodniowy: poza bazą {value} ({change} w tydzień)",
       "weeklyBody": "Ponad progiem: {over} · zaginione: {lost} · zgłoszenia do decyzji: {reports}",
+      "weeklyDeadlines": " · terminy: {count}",
       "friday": "Przed weekendem poza bazą: {count} szt.",
       "fridayLocation": "{place}: {count} szt."
     },

@@ -10,6 +10,7 @@ import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
+import { deadlineKindName } from "@/lib/deadline-text";
 import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
 import {
@@ -26,6 +27,7 @@ import {
   type SiteManagerCandidate,
   type ToolOnBoard,
   type ToolReport,
+  UPCOMING_DAYS,
   type WhereIsWhat,
 } from "@/registry/registry";
 import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
@@ -63,6 +65,9 @@ function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?: boolea
                 </span>
               )}
               {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
+              {tool.nextDeadline?.overdue && (
+                <span className="tag tag-alarm">{t("deadlines.overdueTag", { kind: deadlineKindName(tool.nextDeadline.kind) })}</span>
+              )}
             </span>
             <span className="tool-row-meta">
               <span className="tool-row-days">
@@ -162,6 +167,26 @@ function ToolReports({ reports }: { reports: ToolReport[] }) {
           {t("board.toolReportsWaiting", { count: reports.length })}
         </h2>
         <Link href="/zgloszenia#zgloszone-narzedzia">{t("board.toolReportsLink")}</Link>
+      </div>
+    </section>
+  );
+}
+
+/** Ile sztuk sprzętu ma termin w najbliższych 30 dniach (i ile po terminie), z odnośnikiem do listy; bez nich sekcji nie ma. */
+function DeadlinesDue({ board }: { board: WhereIsWhat }) {
+  const tools = [board.base, ...board.sites, ...board.vehicles, ...board.services]
+    .flatMap((place) => place.tools)
+    .filter((tool) => tool.nextDeadline && tool.nextDeadline.daysLeft <= UPCOMING_DAYS);
+  if (tools.length === 0) return null;
+  const overdue = tools.filter((tool) => tool.nextDeadline?.overdue).length;
+  return (
+    <section className="location location-reports" aria-labelledby="deadlines-due">
+      <div className="location-head">
+        <h2 id="deadlines-due" className="display section-title">
+          {t("deadlines.boardDue", { days: UPCOMING_DAYS, count: tools.length })}
+          {overdue > 0 && <span className="text-danger"> · {t("deadlines.boardOverdue", { count: overdue })}</span>}
+        </h2>
+        <Link href="/terminy">{t("deadlines.boardLink")}</Link>
       </div>
     </section>
   );
@@ -433,6 +458,7 @@ export default async function BoardPage(props: PageProps<"/">) {
           </div>
 
           <ToolReports reports={reports} />
+          <DeadlinesDue board={board} />
 
           <section className="location" aria-labelledby="location-base">
             <div className="location-head">

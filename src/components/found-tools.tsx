@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
+import { deadlineKindName, nextDeadlineText } from "@/lib/deadline-text";
 import type { SearchTool } from "@/lib/tool-search";
 import { DamagedIcon } from "./damaged-icon";
 import { VehicleIcon } from "./vehicle-icon";
@@ -8,8 +9,8 @@ import { VehicleIcon } from "./vehicle-icon";
 const KIND_LABELS = { baza: "board.baseKind", budowa: "board.siteKind", serwis: "board.serviceKind", pojazd: "board.vehicleKind" } as const;
 
 /**
- * Znalezione narzędzia (wyszukiwanie i odpowiedź na „gdzie jest …”): kod i nazwa, a pod nimi gdzie są, od ilu dni
- * i kto za nie odpowiada. Każde otwiera kartę narzędzia.
+ * Znalezione narzędzia (wyszukiwanie i odpowiedź na „gdzie jest …”): kod i nazwa, a pod nimi gdzie są, od ilu dni,
+ * kto za nie odpowiada i (w wyszukiwaniu) najbliższy termin. Każde otwiera kartę narzędzia.
  */
 export function FoundToolList({ tools }: { tools: SearchTool[] }) {
   return (
@@ -26,6 +27,9 @@ export function FoundToolList({ tools }: { tools: SearchTool[] }) {
                 </span>
               )}
               {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
+              {tool.nextDeadline?.overdue && (
+                <span className="tag tag-alarm">{t("deadlines.overdueTag", { kind: deadlineKindName(tool.nextDeadline.kind) })}</span>
+              )}
               <span className="tool-row-sub found-tool-place">
                 {tool.lost || !tool.place.kind ? (
                   <strong className="text-danger">{t("search.lost", { place: tool.place.name })}</strong>
@@ -39,6 +43,11 @@ export function FoundToolList({ tools }: { tools: SearchTool[] }) {
                 )}
                 {tool.responsible && <span className="muted"> · {t("search.responsible", { name: tool.responsible })}</span>}
               </span>
+              {tool.nextDeadline && (
+                <span className={tool.nextDeadline.overdue ? "tool-row-sub text-danger" : "tool-row-sub muted"} data-testid="found-tool-deadline">
+                  {nextDeadlineText(tool.nextDeadline)}
+                </span>
+              )}
             </span>
             <span className="tool-row-meta">
               <span className="tool-row-days">

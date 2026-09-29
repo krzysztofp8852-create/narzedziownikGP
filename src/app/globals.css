@@ -2620,3 +2620,68 @@ a.tool-row:hover .tool-row-name {
   color: var(--text);
 }
 
+
+/* Terminy na karcie narzędzia: przegląd, kalibracja, badanie UDT, gwarancja. Po terminie czerwony pasek jak alarm. */
+.deadlines {
+  list-style: none;
+  display: grid;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.deadline {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.deadline + .deadline {
+  border-top: 1px solid var(--border);
+}
+
+.deadline-po_terminie {
+  background: var(--danger-soft);
+  box-shadow: inset 4px 0 0 var(--danger);
+}
+
+.deadline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.deadline .panel {
+  margin-top: 4px;
+}
+
+.deadline-documents {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.deadline-documents li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  overflow-wrap: anywhere;
+}
+
+.deadline-form {
+  padding-top: 12px;
+}
+
+.deadline-inline-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.deadline-inline-form .member-confirm {
+  display: grid;
+  gap: 8px;
+}

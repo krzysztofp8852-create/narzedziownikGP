@@ -12,8 +12,8 @@ import type { ReadyRecording } from "@/lib/offline/queue";
 import { newOperationId } from "@/lib/operation-id";
 import { matchesTool } from "@/lib/tool-search";
 import { type ChecklistState, confirmProposal, proposeFromRecording, proposeMovement } from "./actions";
-import { type ChecklistData, DamagedWarnings, PlaceName } from "./checklist";
-import { type DoneMovement, MovementResult } from "./movement-result";
+import { type ChecklistData, DamagedWarnings, DeadlineHints, PlaceName, serviceFollowUp } from "./checklist";
+import { type DoneMovement, type FollowUpTool, MovementResult } from "./movement-result";
 import { type Draft, planDraft, startDraft } from "./proposal-draft";
 import { canRecord, VoiceRecorder } from "./voice-recorder";
 
@@ -287,12 +287,12 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
   // Ponowne wysłanie tego samego ruchu (np. po zerwanym połączeniu) idzie pod tym samym
   // identyfikatorem operacji, więc się nie zdubluje; poprawiony ruch dostaje nowy.
   const operationIds = useRef(new Map<string, string>());
-  const submitted = useRef<{ summary: string } | null>(null);
+  const submitted = useRef<{ summary: string; followUp: FollowUpTool[] } | null>(null);
   const [state, formAction, pending] = useActionState(async (prev: ChecklistState, formData: FormData) => {
     const summary = submitted.current?.summary ?? "";
     const result = await sendOrQueue(() => confirmProposal(prev, formData), queuedFromForm(formData, { userId: data.userId, summary }));
     if (result === "queued") onDone({ summary, notified: [], queued: true });
-    else if (result.done) onDone({ summary, notified: result.done.notified, movementId: result.done.movementId });
+    else if (result.done) onDone({ summary, notified: result.done.notified, movementId: result.done.movementId, followUp: submitted.current?.followUp });
     return result === "queued" ? {} : result;
   }, {});
 
@@ -349,7 +349,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
       operationIds.current.set(signature, operationId);
     }
     formData.set("operationId", operationId);
-    submitted.current = { summary };
+    submitted.current = { summary, followUp: serviceFollowUp(plan.tools, draft.kind) };
     startTransition(() => formAction(formData));
   }
 
@@ -553,6 +553,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
                 : summary}
       </p>
       <DamagedWarnings tools={plan.tools} kind={draft.kind} />
+      <DeadlineHints tools={plan.tools} kind={draft.kind} />
       <MovementResult done={null} state={state} refreshedHint={t("checklist.conflictRefreshed")} />
       <div className="form-actions">
         <button className="button" type="submit" disabled={!plan.ready || pending}>
