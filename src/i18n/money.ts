@@ -11,3 +11,10 @@ const moneyChange = new Intl.NumberFormat("pl-PL", { style: "currency", currency
 export function formatMoneyChange(amount: number): string {
   return moneyChange.format(amount);
 }
+
+const price = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN", maximumFractionDigits: 0, useGrouping: "always" });
+
+/** Cena w cenniku, w pełnych złotych: „300 zł”, „5 000 zł” (bez „always” Intl nie grupuje czterech cyfr). */
+export function formatPrice(amount: number): string {
+  return price.format(amount);
+}

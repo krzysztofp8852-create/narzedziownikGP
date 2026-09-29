@@ -19,6 +19,7 @@ test("właściciel loguje się hasłem tymczasowym, musi je zmienić i widzi pus
   const company = createCompany();
 
   await page.goto("/");
+  await page.getByRole("link", { name: "Zaloguj się" }).first().click();
   await expect(page).toHaveURL(/\/logowanie$/);
 
   await page.getByLabel("E-mail").fill(company.email);
