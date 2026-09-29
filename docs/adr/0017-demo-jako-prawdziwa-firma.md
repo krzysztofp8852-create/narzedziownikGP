@@ -1,6 +1,6 @@
 # 0017. Demo dla klientów to prawdziwa firma w bazie z wejściem bez hasła
 
-Data: 2026-09-28 · Status: przyjęta
+Data: 2026-09-28 · Status: przyjęta (usuwanie poprzedniego demo zmienia ADR 0020)
 
 ## Kontekst
 

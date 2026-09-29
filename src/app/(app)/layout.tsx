@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { DemoBar } from "@/components/demo-bar";
+import { DemoPageLog } from "@/components/demo-page-log";
 import { DemoTour } from "@/components/demo-tour";
 import { OfflineSync } from "@/components/offline-sync";
 import { SignOutForm } from "@/components/sign-out-form";
@@ -157,6 +158,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <DemoTour key={session.userId} role={session.role} />
         </Suspense>
       )}
+      {session.company.demo && <DemoPageLog key={session.userId} />}
     </>
   );
 }

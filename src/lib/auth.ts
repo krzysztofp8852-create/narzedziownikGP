@@ -14,6 +14,12 @@ const currentClaims = cache(async () => {
 /** Identyfikator zalogowanego użytkownika z zweryfikowanego JWT, albo null. */
 export const currentUserId = cache(async (): Promise<string | null> => (await currentClaims())?.sub ?? null);
 
+/** Identyfikator sesji Supabase Auth tej przeglądarki (z zweryfikowanego JWT), albo null. */
+export const currentSessionId = cache(async (): Promise<string | null> => {
+  const sessionId = (await currentClaims())?.session_id;
+  return typeof sessionId === "string" ? sessionId : null;
+});
+
 /** Metody logowania linkiem z e-maila (reset hasła, link logowania): potwierdzają dostęp do skrzynki. */
 const EMAIL_LINK_METHODS = new Set(["recovery", "otp", "magiclink"]);
 

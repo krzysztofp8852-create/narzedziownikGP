@@ -24,8 +24,12 @@ Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłosz
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
 **Firma demo**:
-Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie; co godzinę demo, w którym ktoś był i skończył oglądać, zastępuje świeże.
+Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie, które znika w całości; co godzinę demo, w którym ktoś był i skończył oglądać, zastępuje świeże.
 _Avoid_: konto testowe, piaskownica
+
+**Dziennik demo**:
+Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje oglądających. Wizyta to jedna przeglądarka, także po przełączeniu roli. Zostaje po usunięciu firmy demo.
+_Avoid_: analityka, śledzenie
 
 **Super-admin**:
 Globalna rola dostawcy (GP Engineering) poza firmami: zakłada firmy, pilnuje abonamentów, odpowiada na czacie z supportem.
