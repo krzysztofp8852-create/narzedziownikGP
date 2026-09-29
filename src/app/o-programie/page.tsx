@@ -265,7 +265,14 @@ export default function LandingPage() {
       </section>
 
       <footer className="landing-footer">
-        <p>{t("landing.footer.product")}</p>
+        <div className="landing-company">
+          <p>{t("landing.footer.product")}</p>
+          {/* Dane, które spółka z o.o. podaje na swoich stronach (art. 206 KSH). */}
+          <address>
+            <strong>{t("landing.footer.companyName")}</strong>, {t("landing.footer.companyAddress")}
+          </address>
+          <p>{t("landing.footer.companyRegistry")}</p>
+        </div>
         <nav className="landing-nav">
           <Link href="/demo">{t("landing.hero.demo")}</Link>
           <Link href="/logowanie">{t("landing.signIn")}</Link>
