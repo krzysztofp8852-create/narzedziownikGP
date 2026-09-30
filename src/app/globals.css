@@ -812,6 +812,8 @@ a.tool-row:hover .tool-row-name {
 .temporary-password .plate {
   justify-self: start;
   font-size: 1.1rem;
+  /* Hasło rozróżnia wielkość liter: pokazujemy i kopiujemy je dokładnie takie, jakie jest. */
+  text-transform: none;
   background: var(--surface);
   user-select: all;
   overflow-wrap: anywhere;
