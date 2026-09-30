@@ -60,3 +60,29 @@ test("pracownik zgłasza uszkodzenie z karty narzędzia, a właściciel widzi je
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /W-02/ })).not.toContainText("uszkodzone");
 });
+
+test("właściciel zgłasza brak narzędzia: tablica pokazuje „zgłoszony brak”, dopóki zgłoszenie jest otwarte", async ({ page }) => {
+  const company = seedCompany();
+  const w02OnRataje = () => page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /W-02/ });
+
+  await signIn(page, company.owner.email, company.owner.password, company.companyName);
+  await page.goto(`/narzedzia/${company.toolId}`);
+  await page.getByRole("link", { name: "Zgłoś brak albo inną sprawę" }).click();
+  await page.getByLabel("Opis").fill("Nie ma jej w kontenerze od piątku");
+  await page.getByRole("button", { name: "Wyślij zgłoszenie" }).click();
+  await expect(page.getByRole("heading", { name: /W-02 Wiertarka Makita/ })).toBeVisible();
+
+  await page.goto("/");
+  await expect(w02OnRataje()).toContainText("zgłoszony brak");
+  await expect(page.getByRole("region", { name: "Zaginione" })).toContainText("Nie ma zaginionych narzędzi.");
+
+  await page.goto("/zgloszenia");
+  await page.getByRole("link", { name: /Nie ma jej w kontenerze od piątku/ }).click();
+  await page.getByText("Zamknij zgłoszenie", { exact: true }).click();
+  await page.getByLabel("Komentarz zamykający").fill("Znalazła się w samochodzie");
+  await page.getByRole("button", { name: "Zamknij z tym komentarzem" }).click();
+  await expect(page.getByText("zamknięte", { exact: true })).toBeVisible();
+
+  await page.goto("/");
+  await expect(w02OnRataje()).not.toContainText("zgłoszony brak");
+});

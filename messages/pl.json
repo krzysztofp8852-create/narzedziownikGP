@@ -117,6 +117,7 @@
     "reportTool": "Zgłoś narzędzie",
     "reported": "zgłoszone",
     "damaged": "uszkodzone",
+    "reportedMissing": "zgłoszony brak",
     "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
     "toolReportsLink": "Rozpatrz w zgłoszeniach →"
   },

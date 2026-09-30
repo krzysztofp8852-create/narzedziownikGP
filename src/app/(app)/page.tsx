@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { MissingIcon } from "@/components/missing-icon";
 import { MovementEntry } from "@/components/movement-entry";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { VehicleIcon } from "@/components/vehicle-icon";
@@ -63,6 +64,11 @@ function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?: boolea
               {tool.damagedSince && (
                 <span className="tag tag-damaged">
                   <DamagedIcon /> {t("board.damaged")}
+                </span>
+              )}
+              {tool.reportedMissing && (
+                <span className="tag tag-missing">
+                  <MissingIcon /> {t("board.reportedMissing")}
                 </span>
               )}
               {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}

@@ -1897,6 +1897,31 @@ a.tool-row:hover .tool-row-name {
   height: 13px;
 }
 
+/*
+ * Zgłoszony brak: bursztyn jak rodzaj „brak” w zgłoszeniach, odróżniony od uszkodzenia; stanu narzędzia nie zmienia.
+ * Na tablicy tag jest pełny, żeby nie mylił się z bladym „zgłoszone” (status ewidencji).
+ */
+.missing-icon {
+  color: var(--warning);
+  vertical-align: -3px;
+  flex: none;
+}
+
+.tag-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--warning);
+  border-color: var(--warning);
+  color: #ffffff;
+}
+
+.tag-missing .missing-icon {
+  color: #ffffff;
+  width: 13px;
+  height: 13px;
+}
+
 .damaged-note {
   display: flex;
   gap: 8px;
@@ -1989,7 +2014,8 @@ a.tool-row:hover .tool-row-name {
   color: var(--warning);
 }
 
-.issue-kind .damaged-icon {
+.issue-kind .damaged-icon,
+.issue-kind .missing-icon {
   width: 13px;
   height: 13px;
 }
