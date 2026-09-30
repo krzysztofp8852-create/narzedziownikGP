@@ -5,11 +5,19 @@ import { useActionState } from "react";
 import { TemporaryPassword } from "@/components/temporary-password";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
-import type { SubscriptionTier } from "@/registry/registry";
+import type { ImplementationTier, SubscriptionTier } from "@/registry/registry";
 import { createCompany } from "../actions";
-import { TierOptions } from "../tier-options";
+import { ImplementationTierOptions, TierOptions } from "../tier-options";
 
-export function CreateCompanyForm({ tiers, defaultBaseName }: { tiers: SubscriptionTier[]; defaultBaseName: string }) {
+export function CreateCompanyForm({
+  tiers,
+  implementationTiers,
+  defaultBaseName,
+}: {
+  tiers: SubscriptionTier[];
+  implementationTiers: ImplementationTier[];
+  defaultBaseName: string;
+}) {
   const [state, formAction, pending] = useActionState(createCompany, {});
 
   return (
@@ -65,6 +73,19 @@ export function CreateCompanyForm({ tiers, defaultBaseName }: { tiers: Subscript
             <select id="tier" name="tier" defaultValue={tiers[0].id} required>
               <TierOptions tiers={tiers} />
             </select>
+          </div>
+          <div className="field">
+            <label htmlFor="implementationTier">{t("superAdmin.implementationTier")}</label>
+            <select
+              id="implementationTier"
+              name="implementationTier"
+              defaultValue={implementationTiers[0].id}
+              aria-describedby="implementationTier-hint"
+              required
+            >
+              <ImplementationTierOptions tiers={implementationTiers} />
+            </select>
+            <small id="implementationTier-hint">{t("superAdmin.implementationTierHint")}</small>
           </div>
           <div className="field">
             <label htmlFor="paidUntil">{t("superAdmin.paidUntil")}</label>

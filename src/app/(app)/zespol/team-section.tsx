@@ -1,10 +1,13 @@
 import { t } from "@/i18n/t";
-import { isDemoEmail, MEMBER_ROLES, type Session, type TeamMember } from "@/registry/registry";
+import { isDemoEmail, MEMBER_ROLES, type RecorderSeats, type Session, type TeamMember } from "@/registry/registry";
 import { AddMemberForm } from "./add-member-form";
 import { MemberActions } from "./member-actions";
 
-/** Zespół w ustawieniach właściciela: lista osób, a dodawanie i działania na koncie rozwijane na żądanie. */
-export function TeamSection({ session, members }: { session: Session; members: TeamMember[] }) {
+/**
+ * Zespół w ustawieniach właściciela: lista osób, a dodawanie (z miejscami w pakiecie wdrożenia) i działania na koncie
+ * rozwijane na żądanie.
+ */
+export function TeamSection({ session, members, recorders }: { session: Session; members: TeamMember[]; recorders: RecorderSeats }) {
   return (
     <section id="zespol" className="company-card company-team" aria-labelledby="members">
       <div className="location-head">
@@ -15,7 +18,7 @@ export function TeamSection({ session, members }: { session: Session; members: T
       </div>
       <details className="panel">
         <summary className="panel-summary">{t("team.addTitle")}</summary>
-        <AddMemberForm roles={MEMBER_ROLES} />
+        <AddMemberForm roles={MEMBER_ROLES} recorders={recorders} />
       </details>
       <ul className="member-list">
         {members.map((member) => (

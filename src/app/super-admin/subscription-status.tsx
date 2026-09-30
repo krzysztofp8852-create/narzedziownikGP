@@ -35,3 +35,15 @@ export function ToolUsage({ company }: { company: ManagedCompany }) {
     </>
   );
 }
+
+/** Osoby zapisujące ruchy wobec limitu pakietu wdrożenia, z ostrzeżeniem ponad limitem (po zmianie na niższy pakiet). */
+export function RecorderUsage({ company }: { company: ManagedCompany }) {
+  const limit = company.implementationTier.maxPeople;
+  if (limit === null) return company.recorderCount;
+  return (
+    <>
+      {t("superAdmin.recorderUsage", { count: company.recorderCount, limit })}
+      {company.recorderCount > limit && <span className="tag tag-alarm">{t("superAdmin.overLimit")}</span>}
+    </>
+  );
+}

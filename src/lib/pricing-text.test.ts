@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pricing } from "./pricing-text";
+import { implementationPeople, pricing } from "./pricing-text";
 
 // Ceny w złotówkach mają twardą spację między tysiącami, jak w cenniku: „1 000 zł”.
 const zl = (text: string) => text.replace(/ /g, " ");
@@ -19,6 +19,14 @@ describe("cennik na stronie o programie", () => {
       { people: "do 2 osób", price: zl("3 000 zł"), period: "netto, jednorazowo" },
       { people: "3–6 osób", price: zl("4 000 zł"), period: "netto, jednorazowo" },
       { people: "7 i więcej osób", price: zl("5 000 zł"), period: "netto, jednorazowo" },
+    ]);
+  });
+
+  it("opisuje liczbę osób każdego pakietu wdrożenia tak jak cennik, do panelu i ustawień", () => {
+    expect((["maly", "sredni", "duzy"] as const).map(implementationPeople)).toEqual([
+      "do 2 osób",
+      "3–6 osób",
+      "7 i więcej osób",
     ]);
   });
 });

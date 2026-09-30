@@ -1,6 +1,6 @@
 import { formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import { IMPLEMENTATION_TIERS, TIERS, type TierId } from "@/registry/subscriptions";
+import { IMPLEMENTATION_TIERS, type ImplementationTierId, TIERS, type TierId } from "@/registry/subscriptions";
 
 /** Cena z dopiskiem: „300 zł” „netto za rok”. */
 export interface PriceText {
@@ -21,9 +21,9 @@ export interface ImplementationPlan extends PriceText {
   people: string;
 }
 
-/** Progi wdrożenia z opisem liczby osób zapisujących ruchy i ceną w zł netto. */
-export function implementationTiers(): { people: string; price: number }[] {
-  // Każdy próg zaczyna się osobę po górnej granicy poprzedniego.
+/** Pakiety wdrożenia z opisem liczby osób zapisujących ruchy i ceną w zł netto. */
+export function implementationTiers(): { id: ImplementationTierId; people: string; price: number }[] {
+  // Każdy pakiet zaczyna się osobę po górnej granicy poprzedniego.
   let from = 1;
   return IMPLEMENTATION_TIERS.map((tier) => {
     const people =
@@ -33,8 +33,13 @@ export function implementationTiers(): { people: string; price: number }[] {
           ? t("landing.pricing.implementationUpTo", { to: tier.maxPeople })
           : t("landing.pricing.implementationRange", { from, to: tier.maxPeople });
     from = (tier.maxPeople ?? from) + 1;
-    return { people, price: tier.price };
+    return { id: tier.id, people, price: tier.price };
   });
+}
+
+/** Liczba osób zapisujących ruchy w pakiecie wdrożenia, jak w cenniku: „do 2 osób”, „3–6 osób”, „7 i więcej osób”. */
+export function implementationPeople(id: ImplementationTierId): string {
+  return implementationTiers().find((tier) => tier.id === id)!.people;
 }
 
 export function pricing(): { plans: PricingPlan[]; implementation: ImplementationPlan[] } {
