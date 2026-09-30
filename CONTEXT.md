@@ -40,8 +40,16 @@ Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhacz
 _Avoid_: onboarding (to wdrożenie), tutorial, przewodnik (to przewodnik po tablicy w demo)
 
 **Super-admin**:
-Globalna rola dostawcy (GP Engineering) poza firmami: zakłada firmy, pilnuje abonamentów, odpowiada na czacie z supportem.
+Globalna rola dostawcy (GP Engineering) poza firmami: zakłada i usuwa firmy, pilnuje abonamentów, odpowiada na czacie z supportem.
 _Avoid_: support (jako nazwa roli), administrator
+
+**Usunięcie firmy**:
+Nieodwracalne usunięcie firmy w całości, z historią, plikami i kontami, przez super-admina na polecenie firmy po końcu umowy. Tylko w trybie tylko do odczytu i po wpisaniu nazwy firmy; zostaje wpis w dzienniku usuniętych firm.
+_Avoid_: archiwizacja, dezaktywacja (to konto osoby)
+
+**Dziennik usuniętych firm**:
+Lista usunięć dla super-admina: która firma (nazwa), kiedy i kto ją usunął. Zostaje po usunięciu, żeby potwierdzić firmie wykonanie polecenia.
+_Avoid_: archiwum, kosz
 
 ## Lokalizacje
 

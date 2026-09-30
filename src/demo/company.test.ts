@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { isRegistryError } from "@/registry/errors";
-import { setupRegistryTestbed, START } from "@/registry/testing/harness";
+import { rowsOfCompany, setupRegistryTestbed, START } from "@/registry/testing/harness";
 import { createDemoCompany, DEMO_COMPANY_NAME, refreshUsedDemo } from "./company";
 
 const bed = setupRegistryTestbed();
@@ -19,21 +19,6 @@ const enter = (userId: string, at: Date) =>
 
 /** Wejście ze strony /demo z komputera, w nowej sesji. */
 const entry = (userId: string) => ({ userId, sessionId: randomUUID(), previousSessionId: null, switched: false, device: "komputer" as const });
-
-/** Tabele `app` z wierszami tej firmy (po `company_id`, a sama firma po `id`). */
-const rowsOfCompany = (companyId: string) =>
-  bed.db.transaction(async (sql) => {
-    const tables = await sql<{ name: string }>(
-      "select table_name as name from information_schema.columns where table_schema = 'app' and column_name = 'company_id' and table_name <> 'demo_events'",
-    );
-    const found: string[] = [];
-    for (const { name } of tables) {
-      const [row] = await sql<{ count: number }>(`select count(*)::int as count from app.${name} where company_id = $1`, [companyId]);
-      if (row.count > 0) found.push(name);
-    }
-    const [company] = await sql<{ count: number }>("select count(*)::int as count from app.companies where id = $1", [companyId]);
-    return company.count > 0 ? [...found, "companies"] : found;
-  });
 
 function jpeg() {
   return new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...new Array(500).fill(1)])], { type: "image/jpeg" });
@@ -205,12 +190,12 @@ describe("firma demo", () => {
     expect(accounts).toHaveLength(9);
     expect(await bed.registry.as(accounts[0].userId).session()).toMatchObject({ company: { id: companyId } });
     expect(await bed.registry.as(previousOwner.userId).session()).toBeNull();
-    expect(await rowsOfCompany(previousId)).toEqual([]);
+    expect(await rowsOfCompany(bed.db, previousId)).toEqual([]);
     expect(await bed.db.transaction((sql) => sql("select id from auth.users where id = any($1)", [previous.map((account) => account.userId)]))).toEqual([]);
     expect(bed.photos.photos.size).toBe(0);
     // Zwykła firma zostaje bez zmian.
     expect(await bed.registry.as(zawbud.ownerId).session()).toMatchObject({ company: { id: zawbud.companyId } });
-    expect(await rowsOfCompany(zawbud.companyId)).not.toEqual([]);
+    expect(await rowsOfCompany(bed.db, zawbud.companyId)).not.toEqual([]);
   });
 
   it("historii zwykłej firmy ani obecnego demo nie da się usunąć", async () => {

@@ -136,6 +136,8 @@ export class MemoryPhotoStore implements PhotoStore {
   readonly photos = new Map<string, Blob>();
   /** Kolejne zapisy kończą się tym błędem, np. gdy Storage nie odpowiada. */
   failWith: Error | null = null;
+  /** Kolejne usunięcia kończą się tym błędem. */
+  removeFailWith: Error | null = null;
 
   async save(key: string, photo: Blob) {
     if (this.failWith) throw this.failWith;
@@ -148,11 +150,13 @@ export class MemoryPhotoStore implements PhotoStore {
   }
 
   async remove(key: string) {
+    if (this.removeFailWith) throw this.removeFailWith;
     this.photos.delete(key);
   }
 
   clear() {
     this.photos.clear();
     this.failWith = null;
+    this.removeFailWith = null;
   }
 }

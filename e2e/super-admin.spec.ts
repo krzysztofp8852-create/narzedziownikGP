@@ -108,3 +108,44 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
     page.getByRole("alert").filter({ hasText: "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy." }),
   ).toBeVisible();
 });
+
+test("super-admin usuwa firmę dopiero w trybie tylko do odczytu i po wpisaniu jej nazwy, a właściciel traci dostęp", async ({ page }) => {
+  const admin = createSuperAdmin();
+  const suffix = randomUUID().slice(0, 8);
+  const companyName = `Test usuwania ${suffix}`;
+  const ownerEmail = `smoke-deleted-${suffix}@narzedziownik.test`;
+
+  await signIn(page, admin.email, admin.password);
+  await page.getByRole("link", { name: "Nowa firma" }).click();
+  await page.getByLabel("Nazwa firmy w aplikacji").fill(companyName);
+  await page.getByLabel("Nabywca").fill(`${companyName} sp. z o.o.`);
+  await page.getByLabel("NIP").fill("778-123-45-63");
+  await page.getByLabel("Adres").fill("ul. Polna 3\n60-001 Poznań");
+  await page.getByLabel("Imię i nazwisko").fill("Jan Usuwany");
+  await page.getByLabel("E-mail").fill(ownerEmail);
+  await page.getByRole("button", { name: "Załóż firmę" }).click();
+  const temporaryPassword = await page.getByTestId("temporary-password").innerText();
+  await page.getByRole("link", { name: "Przejdź do firmy" }).click();
+
+  // Poza trybem tylko do odczytu nie ma czego potwierdzać.
+  const deletion = page.getByRole("region", { name: "Usunięcie firmy" });
+  await expect(deletion).toContainText("Najpierw włącz tryb tylko do odczytu.");
+  await expect(deletion.getByRole("button", { name: "Usuń firmę na zawsze" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Włącz tryb tylko do odczytu" }).click();
+  await expect(page.getByTestId("subscription-status")).toHaveText("Tylko do odczytu (ręcznie)");
+  const confirmation = deletion.getByLabel("Wpisz nazwę firmy, żeby potwierdzić");
+  const submit = deletion.getByRole("button", { name: "Usuń firmę na zawsze" });
+  await confirmation.fill(companyName.toLowerCase());
+  await expect(submit).toBeDisabled();
+  await confirmation.fill(companyName);
+  await submit.click();
+
+  await expect(page).toHaveURL(/\/super-admin\?usunieta=1$/);
+  await expect(page.getByRole("status").filter({ hasText: "Firma usunięta razem z danymi" })).toBeVisible();
+  await expect(page.getByTestId("company-row").filter({ hasText: companyName })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Wyloguj" }).click();
+  await signIn(page, ownerEmail, temporaryPassword);
+  await expect(page.getByText("Nieprawidłowy login lub hasło.")).toBeVisible();
+});

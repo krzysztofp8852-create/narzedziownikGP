@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { RedirectType, redirect } from "next/navigation";
 import type { ChatFormState } from "@/components/chat-message-form";
 import { requireSuperAdmin } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
@@ -83,6 +84,27 @@ export async function setPaidUntil(companyId: string, _prev: SubscriptionFormSta
 /** Stan z klikniętego przycisku, a nie odwrotność stanu strony: nieaktualna karta nie przełączy firmy na odwrót. */
 export async function setManualReadOnly(companyId: string, _prev: SubscriptionFormState, formData: FormData) {
   return changeSubscription(companyId, (admin) => admin.setManualReadOnly(companyId, formText(formData, "manualReadOnly") === "on"));
+}
+
+export interface DeleteCompanyState {
+  error?: string;
+}
+
+/**
+ * Usunięcie firmy w całości, z jej nazwą wpisaną na potwierdzenie (sprawdza ją też Rejestr). Po usunięciu lista firm
+ * z komunikatem, a z ostrzeżeniem, gdy jakieś pliki albo konta zostały; strona firmy już nie istnieje, więc nie
+ * zostaje w historii przeglądarki.
+ */
+export async function deleteCompany(companyId: string, _prev: DeleteCompanyState, formData: FormData): Promise<DeleteCompanyState> {
+  const userId = await requireSuperAdmin();
+  let leftovers: number;
+  try {
+    ({ leftovers } = await getRegistry().superAdmin(userId).deleteCompany(companyId, formText(formData, "confirmation")));
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/super-admin", "layout");
+  redirect(leftovers > 0 ? `/super-admin?usunieta=1&pozostalo=${leftovers}` : "/super-admin?usunieta=1", RedirectType.replace);
 }
 
 /** Odpowiedź GP Engineering w wątku czatu z supportem. */

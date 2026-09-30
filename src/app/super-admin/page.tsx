@@ -8,7 +8,10 @@ import { PaidUntil, RecorderUsage, SubscriptionStatus, ToolUsage } from "./subsc
 export const metadata: Metadata = { title: t("superAdmin.companiesTitle") };
 
 /** Wszystkie firmy z progiem, liczbą narzędzi, pakietem wdrożenia, liczbą osób zapisujących ruchy, „opłacone do” i stanem abonamentu. */
-export default async function CompaniesPage() {
+export default async function CompaniesPage(props: PageProps<"/super-admin">) {
+  // `usunieta`: tu wraca usunięcie firmy; `pozostalo`: ile jej plików i kont logowania nie udało się usunąć.
+  const { usunieta, pozostalo } = await props.searchParams;
+  const leftovers = Number(pozostalo) || 0;
   const companies = await getRegistry()
     .superAdmin(await requireSuperAdmin())
     .companies();
@@ -21,6 +24,16 @@ export default async function CompaniesPage() {
           {t("superAdmin.newCompany")}
         </Link>
       </div>
+      {usunieta &&
+        (leftovers > 0 ? (
+          <p className="form-warning" role="status">
+            {t("superAdmin.deletedWithLeftovers", { count: leftovers })}
+          </p>
+        ) : (
+          <p className="form-success" role="status">
+            {t("superAdmin.deleted")}
+          </p>
+        ))}
       {companies.length === 0 ? (
         <p className="empty">{t("superAdmin.companiesEmpty")}</p>
       ) : (

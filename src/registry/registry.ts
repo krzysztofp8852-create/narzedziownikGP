@@ -6,6 +6,7 @@ import type { CatalogTool } from "./catalog";
 import type { WhereIsWhat } from "./board";
 import { RegistryError, ReplayedOperationError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore, type Sql } from "./ports";
+import * as companyDeletion from "./company-deletion";
 import * as corrections from "./corrections";
 import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
@@ -112,6 +113,7 @@ export type {
   ToolLimitWarning,
 } from "./subscriptions";
 export { IMPLEMENTATION_TIERS, TIERS } from "./subscriptions";
+export { confirmsCompanyName } from "./company-deletion";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
@@ -264,6 +266,13 @@ export interface SuperAdminRegistry {
   setPaidUntil(companyId: string, day: string): Promise<void>;
   /** Ręczny tryb tylko do odczytu, niezależny od płatności. Włączenie trafia do dzwonków właścicieli firmy. */
   setManualReadOnly(companyId: string, on: boolean): Promise<void>;
+  /**
+   * Usunięcie firmy w całości, na polecenie klienta: wszystkie jej dane z historią, pliki i konta logowania. Tylko
+   * firma w trybie tylko do odczytu i tylko z jej nazwą wpisaną w `confirmation`; firmy demo nie usuwa. Zostaje wpis
+   * w dzienniku usuniętych firm. Nie da się tego cofnąć. `leftovers`: ile plików i kont logowania nie udało się
+   * usunąć po usunięciu danych (szczegóły w logach serwera).
+   */
+  deleteCompany(companyId: string, confirmation: string): Promise<{ leftovers: number }>;
   /** Wątki czatu z supportem ze wszystkich firm: z nieprzeczytanymi na górze, potem od najnowszej wiadomości. */
   supportThreads(): Promise<SupportThreadSummary[]>;
   /** Wątek (identyfikator to jego użytkownik) z wiadomościami i kontekstem albo null, gdy go nie ma. */
@@ -786,6 +795,13 @@ export function createRegistry(deps: RegistryDeps): Registry {
         setManualReadOnly: async (companyId, on) => {
           const copies = await asSuperAdmin((sql) => readOnly.setManualReadOnly(sql, companyId, on === true, deps.clock.now()));
           await sendPushCopies(deps, copies);
+        },
+        // Usuwa aktor systemowy, bo RLS nikomu nie daje usuwać firm; rolę super-admina sprawdza ta sama transakcja.
+        deleteCompany: async (companyId, confirmation) => {
+          const purged = await deps.db.transaction((sql) =>
+            companyDeletion.deleteCompany(sql, { companyId, confirmation: String(confirmation ?? ""), deletedBy: userId }, deps.clock.now()),
+          );
+          return { leftovers: await removePurgedLeftovers(deps, companyId, purged) };
         },
         supportThreads: () => asSuperAdmin((sql) => supportChat.threads(sql)),
         supportThread: (threadId) => asSuperAdmin((sql) => supportChat.thread(sql, threadId)),
@@ -1325,19 +1341,31 @@ function loggingDemoCommands(deps: RegistryDeps, userId: string, actor: { demo: 
   return logged as unknown as MemberRegistry;
 }
 
-/**
- * Usuwa zastąpioną firmę demo w jednej transakcji, a po niej jej pliki i konta logowania. Plik albo konto, którego
- * nie udało się usunąć, zostaje osierocone, ale nikogo nie wpuszcza: danych firmy już nie ma.
- */
+/** Usuwa zastąpioną firmę demo w jednej transakcji, a po niej jej pliki i konta logowania. */
 async function purgeDemoCompany(deps: RegistryDeps, companyId: string) {
   const purged = await deps.db.transaction((sql) => demo.purgeDemoCompany(sql, companyId));
+  await removePurgedLeftovers(deps, companyId, purged);
+}
+
+/**
+ * Pliki i konta logowania usuniętej firmy, po zatwierdzeniu jej transakcji. Plik albo konto, którego nie udało się
+ * usunąć, zostaje osierocone, ale nikogo nie wpuszcza: danych firmy już nie ma. Zwraca, ilu nie usunięto.
+ */
+async function removePurgedLeftovers(deps: RegistryDeps, companyId: string, purged: companyDeletion.PurgedCompany): Promise<number> {
   const cleanups = [
     ...purged.photoKeys.map((key) => () => deps.photos.remove(key)),
     ...purged.chatPhotoKeys.map((key) => () => deps.chatPhotos.remove(key)),
     ...purged.documentKeys.map((key) => () => deps.documents.remove(key)),
     ...purged.userIds.map((userId) => () => deps.authAdmin.deleteUser(userId)),
   ];
-  for (const cleanup of cleanups) await cleanup().catch((error) => console.error(`Po usunięciu firmy demo ${companyId}`, error));
+  let failed = 0;
+  for (const cleanup of cleanups) {
+    await cleanup().catch((error) => {
+      failed += 1;
+      console.error(`Po usunięciu firmy ${companyId}`, error);
+    });
+  }
+  return failed;
 }
 
 /** Progi dni jednej firmy w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę nowych przekroczeń. */
