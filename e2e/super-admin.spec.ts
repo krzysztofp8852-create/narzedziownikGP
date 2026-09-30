@@ -49,7 +49,7 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   // Poprawiony NIP; pozostałe pola zostały w formularzu.
   await page.getByLabel("NIP").fill("778-123-45-63");
   await page.getByRole("button", { name: "Załóż firmę" }).click();
-  const temporaryPassword = await page.getByTestId("temporary-password").textContent();
+  const temporaryPassword = await page.getByTestId("temporary-password").innerText();
   expect(temporaryPassword).toBeTruthy();
 
   await page.getByRole("link", { name: "Wszystkie firmy" }).click();
