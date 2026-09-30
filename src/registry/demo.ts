@@ -1,3 +1,4 @@
+import { type PurgedCompany, purgeCompany } from "./company-deletion";
 import { RegistryError } from "./errors";
 import { UUID_PATTERN } from "./validation";
 import type { Sql } from "./ports";
@@ -96,43 +97,6 @@ export async function retiredDemoCompanies(sql: Sql): Promise<string[]> {
   return rows.map((row) => row.id);
 }
 
-/** Pliki i konta logowania usuniętej firmy: znikają z kubełków i z Supabase Auth po zatwierdzeniu transakcji. */
-export interface PurgedCompany {
-  userIds: string[];
-  photoKeys: string[];
-  chatPhotoKeys: string[];
-  documentKeys: string[];
-}
-
-/**
- * Tabele firmy w kolejności usuwania: wiersz znika, zanim zniknie to, na co wskazuje. Test demo sprawdza, że po
- * usunięciu w żadnej tabeli `app` nie zostaje nic z firmy, więc nowa tabela z `company_id` musi tu trafić.
- */
-const COMPANY_TABLES = [
-  "deadline_alerts",
-  "tool_deadline_documents",
-  "tool_deadlines",
-  "threshold_alerts",
-  "notifications",
-  "issue_entries",
-  "issue_comments",
-  "issues",
-  "rejected_movements",
-  "movement_tools",
-  "movements",
-  "company_reports",
-  "push_subscriptions",
-  "support_messages",
-  "support_threads",
-  "tool_values",
-  "tools",
-  "tool_imports",
-  "categories",
-  "locations",
-  "subscriptions",
-  "users",
-] as const;
-
 /**
  * Usuwa zastąpioną firmę demo ze wszystkim, co w niej naklikano, także historię ruchów, wątki zgłoszeń i czat
  * (baza pozwala na to tylko zastąpionemu demo). Transakcja systemowa. Zwraca pliki i konta do usunięcia potem.
@@ -140,25 +104,7 @@ const COMPANY_TABLES = [
 export async function purgeDemoCompany(sql: Sql, companyId: string): Promise<PurgedCompany> {
   const [retired] = await sql<{ retired: boolean }>("select app.is_retired_demo($1) as retired", [companyId]);
   if (!retired.retired) throw new RegistryError("forbidden");
-  const keys = async (query: string) => (await sql<{ key: string }>(query, [companyId])).map((row) => row.key);
-  const purged: PurgedCompany = {
-    userIds: await keys("select user_id as key from app.users where company_id = $1"),
-    photoKeys: await keys("select photo_path as key from app.issues where company_id = $1 and photo_path is not null"),
-    chatPhotoKeys: await keys(
-      `select m.photo_path as key from app.support_messages m join app.support_threads t on t.user_id = m.thread_id
-       where t.company_id = $1 and m.photo_path is not null`,
-    ),
-    documentKeys: await keys("select file_path as key from app.tool_deadline_documents where company_id = $1"),
-  };
-  for (const table of COMPANY_TABLES) {
-    if (table === "support_messages") {
-      await sql("delete from app.support_messages where thread_id in (select user_id from app.support_threads where company_id = $1)", [companyId]);
-    } else {
-      await sql(`delete from app.${table} where company_id = $1`, [companyId]);
-    }
-  }
-  await sql("delete from app.companies where id = $1", [companyId]);
-  return purged;
+  return purgeCompany(sql, companyId);
 }
 
 /** Urządzenie oglądającego, z nagłówka User-Agent. */

@@ -1,6 +1,6 @@
 # 0020. Zastąpione demo znika w całości, a super-admin ma dziennik demo
 
-Data: 2026-09-29 · Status: przyjęta (zmienia ADR 0017)
+Data: 2026-09-29 · Status: przyjęta (zmienia ADR 0017; usuwanie firmy przez super-admina rozszerza ADR 0025)
 
 ## Kontekst
 

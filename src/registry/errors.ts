@@ -39,7 +39,10 @@ export type RegistryErrorCode =
   | "read_only"
   | "demo_locked"
   | "demo_chat"
-  | "demo_push";
+  | "demo_push"
+  | "demo_delete"
+  | "delete_requires_read_only"
+  | "delete_confirmation";
 
 export class RegistryError extends Error {
   constructor(

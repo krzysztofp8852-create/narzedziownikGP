@@ -136,6 +136,26 @@ export function setupRegistryTestbed(): RegistryTestbed {
   };
 }
 
+/**
+ * Tabele `app`, w których zostało coś z firmy (po `company_id`, a sama firma po `id`). Dzienniki demo i usuniętych
+ * firm zostają po usunięciu z założenia, więc ich tu nie ma.
+ */
+export function rowsOfCompany(db: Db, companyId: string): Promise<string[]> {
+  return db.transaction(async (sql) => {
+    const tables = await sql<{ name: string }>(
+      `select table_name as name from information_schema.columns
+       where table_schema = 'app' and column_name = 'company_id' and table_name not in ('demo_events', 'company_deletions')`,
+    );
+    const found: string[] = [];
+    for (const { name } of tables) {
+      const [row] = await sql<{ count: number }>(`select count(*)::int as count from app.${name} where company_id = $1`, [companyId]);
+      if (row.count > 0) found.push(name);
+    }
+    const [company] = await sql<{ count: number }>("select count(*)::int as count from app.companies where id = $1", [companyId]);
+    return company.count > 0 ? [...found, "companies"] : found;
+  });
+}
+
 async function openTestDb(): Promise<Db & { close(): Promise<void> }> {
   const url = process.env.REGISTRY_TEST_DATABASE_URL;
   if (!url) return createPgliteDb();

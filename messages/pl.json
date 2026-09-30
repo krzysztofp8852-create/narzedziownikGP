@@ -248,7 +248,10 @@
     "message_required": "Napisz wiadomość albo dołącz zdjęcie.",
     "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w zespole działają.",
     "demo_chat": "W wersji demo czat z supportem jest wyłączony, bo z konta tej roli korzystają wszyscy oglądający.",
-    "demo_push": "W wersji demo powiadomienia push są wyłączone, bo z konta tej roli korzystają wszyscy oglądający."
+    "demo_push": "W wersji demo powiadomienia push są wyłączone, bo z konta tej roli korzystają wszyscy oglądający.",
+    "demo_delete": "Firmy demo nie usuwa się z panelu. Zastępuje ją nowe demo, a poprzednie znika samo.",
+    "delete_requires_read_only": "Usunąć można tylko firmę w trybie tylko do odczytu. Najpierw włącz ten tryb, żeby firma mogła jeszcze wyeksportować dane.",
+    "delete_confirmation": "Wpisana nazwa nie zgadza się z nazwą firmy. Nic nie zostało usunięte."
   },
   "days": {
     "one": "{count} dzień",
@@ -1111,6 +1114,14 @@
     "enableReadOnly": "Włącz tryb tylko do odczytu",
     "disableReadOnly": "Wyłącz tryb tylko do odczytu",
     "switching": "Przełączanie…",
+    "deleteTitle": "Usunięcie firmy",
+    "deleteIntro": "Usunięcie jest nieodwracalne. Znikną narzędzia ({tools}), cała historia ruchów, zgłoszenia, terminy z dokumentami, czat z supportem i konta wszystkich osób z firmy. Usuwaj tylko na polecenie firmy przekazane e-mailem (umowa powierzenia, § 9).",
+    "deleteNeedsReadOnly": "Najpierw włącz tryb tylko do odczytu. Firma może wtedy jeszcze wyeksportować dane, a dopiero potem da się ją usunąć.",
+    "deleteConfirmLabel": "Wpisz nazwę firmy, żeby potwierdzić: {name}",
+    "deleteSubmit": "Usuń firmę na zawsze",
+    "deleting": "Usuwanie…",
+    "deleted": "Firma usunięta razem z danymi, plikami i kontami. Wpis o usunięciu został w dzienniku.",
+    "deletedWithLeftovers": "Dane firmy usunięte, ale części plików albo kont logowania ({count}) nie udało się usunąć. Szczegóły są w logach serwera; usuń je ręcznie, zanim potwierdzisz klientowi usunięcie. Konto, które zostało, blokuje swój e-mail przy zakładaniu nowej firmy.",
     "navSupportUnread": "Czat z supportem, wątki z nowymi wiadomościami: {count}",
     "demoLog": {
       "title": "Dziennik demo",

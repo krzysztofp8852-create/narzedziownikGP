@@ -9,6 +9,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { IMPLEMENTATION_TIERS, TIERS } from "@/registry/registry";
 import { PaidUntil, RecorderUsage, SubscriptionStatus, ToolUsage } from "../../subscription-status";
 import { implementationTierLabel, tierLabel } from "../../tier-options";
+import { DeleteCompanyForm } from "./delete-company-form";
 import { ImplementationTierForm, PaidUntilForm, ReadOnlyForm, TierForm } from "./subscription-forms";
 
 /** Jedna firma na żądanie, wspólna dla tytułu strony i jej treści. */
@@ -23,7 +24,7 @@ export async function generateMetadata(props: PageProps<"/super-admin/firmy/[id]
   return { title: company?.name };
 }
 
-/** Firma z abonamentem: dane do faktury, próg, pakiet wdrożenia, „opłacone do” i ręczny tryb tylko do odczytu. */
+/** Firma z abonamentem: dane do faktury, próg, pakiet wdrożenia, „opłacone do”, ręczny tryb tylko do odczytu i usunięcie. */
 export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[id]">) {
   const company = await loadCompany((await props.params).id);
   if (!company) notFound();
@@ -96,6 +97,12 @@ export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[
             {t("superAdmin.readOnlyTitle")}
           </h2>
           <ReadOnlyForm company={company} />
+        </section>
+        <section className="company-card company-card-danger" aria-labelledby="company-delete">
+          <h2 id="company-delete" className="display section-title">
+            {t("superAdmin.deleteTitle")}
+          </h2>
+          <DeleteCompanyForm company={company} />
         </section>
       </div>
     </>
