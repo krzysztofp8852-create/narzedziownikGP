@@ -1,6 +1,7 @@
 import { SALES_EMAIL, SALES_PHONE } from "@/components/sales-contact";
 import { t } from "@/i18n/t";
-import { IMPLEMENTATION_FEE, TIERS } from "@/registry/subscriptions";
+import { TIERS } from "@/registry/subscriptions";
+import { implementationTiers } from "./pricing-text";
 
 /** Dane spółki ze stopki strony o programie, rozpisane na pola schema.org. */
 const VENDOR = {
@@ -83,14 +84,14 @@ export function landingStructuredData(siteUrl: string) {
                   },
                 ],
           ),
-          {
+          ...implementationTiers().map(({ people, price }) => ({
             "@type": "Offer",
-            name: t("landing.pricing.implementationTitle"),
+            name: `${t("landing.pricing.implementationTitle")}: ${people}`,
             description: t("landing.pricing.implementationText"),
-            price: IMPLEMENTATION_FEE,
+            price,
             priceCurrency: "PLN",
-            priceSpecification: netPrice(IMPLEMENTATION_FEE),
-          },
+            priceSpecification: netPrice(price),
+          })),
         ],
       },
     ],

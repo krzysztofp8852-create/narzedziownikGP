@@ -26,8 +26,22 @@ export const TIERS = [
 
 export type TierId = (typeof TIERS)[number]["id"];
 
-/** Wdrożenie: obowiązkowe, jednorazowe, w zł netto; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. */
-export const IMPLEMENTATION_FEE = 5000;
+/**
+ * Próg wdrożenia: obowiązkowe, jednorazowe, w zł netto; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie.
+ * Cena zależy od liczby osób, które na start zapisują ruchy (właściciel, kierownicy i magazynierzy); pracownicy się
+ * nie liczą. Ostatni próg nie ma górnej granicy.
+ */
+export interface ImplementationTier {
+  /** Null w ostatnim progu. */
+  maxPeople: number | null;
+  price: number;
+}
+
+export const IMPLEMENTATION_TIERS = [
+  { maxPeople: 2, price: 3000 },
+  { maxPeople: 6, price: 4000 },
+  { maxPeople: null, price: 5000 },
+] as const satisfies readonly ImplementationTier[];
 
 /** Próg firm założonych bez wyboru progu (skryptem). */
 export const DEFAULT_TIER: TierId = "maly";

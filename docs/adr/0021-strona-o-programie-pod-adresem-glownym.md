@@ -16,7 +16,7 @@ Zalogowany pod `/` ma dalej tablicę, a adres z naklejki QR dalej ma prowadzić 
   `visitorRoute` (`src/lib/visitor-route.ts`), razem z listą stron dostępnych bez logowania.
 - Wysłanie formularza na `/` bez sesji (akcja tablicy po wygaśnięciu sesji) prowadzi do logowania, a nie na stronę
   o programie, która takiej akcji nie zna.
-- Ceny bierze z `TIERS` i `IMPLEMENTATION_FEE` w `src/registry/subscriptions.ts`, tych samych co w panelu super-admina.
+- Ceny bierze z `TIERS` i `IMPLEMENTATION_TIERS` w `src/registry/subscriptions.ts`, tych samych co w panelu super-admina.
 - Do wyszukiwarki trafia tylko strona o programie: domyślne metadane w `src/app/layout.tsx` mają `noindex`, a strona
   o programie `index`. `robots.txt` i `sitemap.xml` są dostępne bez sesji. Adres w mapie strony i w podglądzie
   linku bierzemy z `APP_URL`, a bez niego z adresu produkcji na Vercelu. Obrazek podglądu `public/og.png` rysuje

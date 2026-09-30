@@ -14,13 +14,15 @@ describe("dane strukturalne strony o programie", () => {
     });
   });
 
-  it("podaje ceny netto progów z limitem i wdrożenia, bez planu indywidualnego", () => {
+  it("podaje ceny netto progów z limitem i progów wdrożenia, bez planu indywidualnego", () => {
     const offers = ofType("SoftwareApplication").offers as { name: string; price: number }[];
     expect(offers.map(({ name, price }) => [name, price])).toEqual([
       ["Mały", 300],
       ["Średni", 500],
       ["Duży", 1000],
-      ["Wdrożenie", 5000],
+      ["Wdrożenie: do 2 osób", 3000],
+      ["Wdrożenie: 3–6 osób", 4000],
+      ["Wdrożenie: 7 i więcej osób", 5000],
     ]);
   });
 

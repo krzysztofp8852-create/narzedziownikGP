@@ -183,7 +183,7 @@ _Avoid_: kontakt, helpdesk
 Pakiet firmy z limitem liczby narzędzi. Konta nie wchodzą do limitu.
 
 **Wdrożenie**:
-Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie.
+Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. Cena zależy od liczby osób, które na start zapisują ruchy (właściciel, kierownicy i magazynierzy): do 2, 3–6 albo 7 i więcej. Pracownicy się nie liczą.
 _Avoid_: opłata aktywacyjna, onboarding
 
 **Tryb tylko do odczytu**:
