@@ -148,6 +148,18 @@ describe("pierwsze kroki właściciela", () => {
     expect(await testbed.registry.as(budrex.ownerId).tutorial()).toMatchObject({ firstSteps: noFirstSteps });
   });
 
+  it("właściciel, który sam prowadzi budowę, ma krok kierownika odhaczony bez zakładania konta kierownika", async () => {
+    const zawbud = await testbed.givenActiveCompany("Zawbud");
+    const owner = testbed.registry.as(zawbud.ownerId);
+    const steps = async () => Object.fromEntries((await owner.tutorial())!.firstSteps.map((step) => [step.id, step.done]));
+
+    await owner.addVehicle({ name: "Bus WPI 4K21", managerId: zawbud.ownerId });
+    expect(await steps()).toEqual({ kierownik: true, budowa: false, narzedzia: false, naklejki: false });
+
+    await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: zawbud.ownerId });
+    expect(await steps()).toEqual({ kierownik: true, budowa: true, narzedzia: false, naklejki: false });
+  });
+
   it("magazynier nie odhacza kroku „dodaj kierownika”", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     await testbed.givenMember(zawbud, "magazynier");

@@ -217,7 +217,7 @@ describe("pracownik w zespole", () => {
     const workerId = await testbed.givenMember(zawbud, "pracownik");
     const owner = testbed.registry.as(zawbud.ownerId);
 
-    expect(await owner.siteManagerCandidates()).toEqual([]);
+    expect((await owner.siteManagerCandidates()).map((candidate) => candidate.id)).toEqual([zawbud.ownerId]);
     await expect(owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: workerId })).rejects.toMatchObject({
       code: "invalid_manager",
     });

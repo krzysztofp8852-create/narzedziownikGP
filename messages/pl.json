@@ -222,7 +222,7 @@
     "code_taken": "Ten kod ma już inne narzędzie w firmie.",
     "category_taken": "Kategoria o tej nazwie już istnieje.",
     "prefix_taken": "Ten prefiks ma już inna kategoria.",
-    "invalid_manager": "Kierownikiem budowy lub pojazdu może być tylko aktywny kierownik z Twojej firmy.",
+    "invalid_manager": "Kierownikiem budowy lub pojazdu może być tylko aktywny kierownik albo właściciel z Twojej firmy.",
     "site_finished": "Ta budowa jest zakończona.",
     "site_not_empty": "Na budowie zostały narzędzia. Zwróć je na bazę albo przenieś, zanim ją zamkniesz.",
     "vehicle_inactive": "Ten pojazd jest nieaktywny.",
@@ -377,8 +377,7 @@
     "address": "Adres",
     "manager": "Kierownik",
     "managerPlaceholder": "Wybierz kierownika",
-    "noManagers": "Firma nie ma jeszcze aktywnego kierownika. Dodaj go w sekcji Zespół.",
-    "goToTeam": "Przejdź do zespołu",
+    "ownerAsManager": "{name} (właściciel)",
     "submitSite": "Dodaj budowę",
     "siteAdded": "Dodano budowę {name}.",
     "vehicleName": "Nazwa pojazdu",
@@ -1701,7 +1700,7 @@
       },
       "budowa": {
         "title": "Dodaj budowę",
-        "text": "Na tablicy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada.",
+        "text": "Na tablicy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada. Jeśli sam prowadzisz budowę, wybierz siebie.",
         "link": "Przejdź do budów"
       },
       "narzedzia": {

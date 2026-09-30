@@ -241,7 +241,7 @@ function SiteCard({
         </p>
       </div>
       {site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />}
-      {managers && managers.length > 0 && (
+      {managers && (
         <details className="location-more">
           <summary>{t("locations.changeManager")}</summary>
           <ChangeManagerForm
@@ -288,17 +288,15 @@ function VehicleCard({ vehicle, managers }: { vehicle: WhereIsWhat["vehicles"][n
       {vehicle.tools.length === 0 ? <p className="empty">{t("board.vehicleEmpty")}</p> : <ToolList tools={vehicle.tools} />}
       {managers && (
         <>
-          {managers.length > 0 && (
-            <details className="location-more">
-              <summary>{t("locations.changeManager")}</summary>
-              <ChangeManagerForm
-                action={changeVehicleManager.bind(null, vehicle.id)}
-                location={vehicle}
-                label={t("locations.newVehicleManager", { name: vehicle.name })}
-                managers={managers}
-              />
-            </details>
-          )}
+          <details className="location-more">
+            <summary>{t("locations.changeManager")}</summary>
+            <ChangeManagerForm
+              action={changeVehicleManager.bind(null, vehicle.id)}
+              location={vehicle}
+              label={t("locations.newVehicleManager", { name: vehicle.name })}
+              managers={managers}
+            />
+          </details>
           <details className="location-more">
             <summary>{t("locations.vehicleAlarm")}</summary>
             <VehicleAlarmForm vehicle={vehicle} />
@@ -313,23 +311,12 @@ function VehicleCard({ vehicle, managers }: { vehicle: WhereIsWhat["vehicles"][n
   );
 }
 
-/** Kafelek dodawania budowy albo pojazdu; bez aktywnego kierownika odsyła do zespołu. */
-function AddLocationTile({ title, managers, form }: { title: string; managers: SiteManagerCandidate[]; form: ReactNode }) {
+/** Kafelek dodawania budowy albo pojazdu. Kierownika jest zawsze z kogo wybrać, bo może nim być sam właściciel. */
+function AddLocationTile({ title, form }: { title: string; form: ReactNode }) {
   return (
     <details className="location location-add">
       <summary className="panel-summary">{title}</summary>
-      {managers.length === 0 ? (
-        <div className="stack-form">
-          <p className="empty">{t("locations.noManagers")}</p>
-          <p>
-            <Link className="button button-quiet" href="/ustawienia#zespol">
-              {t("locations.goToTeam")}
-            </Link>
-          </p>
-        </div>
-      ) : (
-        form
-      )}
+      {form}
     </details>
   );
 }
@@ -366,7 +353,7 @@ function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; m
         {vehicles.map((vehicle) => (
           <VehicleCard key={vehicle.id} vehicle={vehicle} managers={managers} />
         ))}
-        {managers && <AddLocationTile title={t("board.addVehicle")} managers={managers} form={<AddVehicleForm managers={managers} />} />}
+        {managers && <AddLocationTile title={t("board.addVehicle")} form={<AddVehicleForm managers={managers} />} />}
       </div>
     </section>
   );
@@ -490,7 +477,7 @@ export default async function BoardPage(props: PageProps<"/">) {
               {sites.map((site) => (
                 <SiteCard key={site.id} site={site} managers={managers} session={session} />
               ))}
-              {managers && <AddLocationTile title={t("board.addSite")} managers={managers} form={<AddSiteForm managers={managers} />} />}
+              {managers && <AddLocationTile title={t("board.addSite")} form={<AddSiteForm managers={managers} />} />}
             </div>
             <div className="section-head">
               <Link href="/budowy/zakonczone">{t("siteClosing.finishedLink")}</Link>

@@ -28,7 +28,8 @@ export async function companiesWithDeadlines(sql: Sql): Promise<string[]> {
 /**
  * Zadanie dzienne dla jednej firmy: terminy sprzętu w obiegu, którym dziś (w Polsce) należy się przypomnienie, każde
  * zdarzenie (termin z danego dnia i faza) raz. Każdy aktywny właściciel dostaje jedno zbiorcze o wszystkich, a aktywny
- * kierownik budowy albo pojazdu jedno o sprzęcie, który jest teraz u niego. Transakcja systemowa (poza RLS). Zwraca
+ * kierownik budowy albo pojazdu jedno o sprzęcie, który jest teraz u niego. Właściciel, który sam jest kierownikiem
+ * budowy albo pojazdu, ma ten sprzęt w zbiorczym i drugiego nie dostaje. Transakcja systemowa (poza RLS). Zwraca
  * liczbę nowych przypomnień i kopie push nowych wpisów dzwonka.
  */
 export async function notifyDueDeadlines(sql: Sql, companyId: string, now: Date): Promise<{ deadlines: number; copies: PushCopy[] }> {
@@ -56,8 +57,11 @@ export async function notifyDueDeadlines(sql: Sql, companyId: string, now: Date)
     recipient,
     deadlines: entries.map((entry) => entry.deadline),
   });
-  const notifications: Notification[] = (await owners(sql, companyId)).map((owner) => summary({ userId: owner.userId, fullName: owner.fullName }, detected));
-  for (const entries of Map.groupBy(detected.filter((entry) => entry.manager), (entry) => entry.manager!.userId).values()) {
+  const companyOwners = await owners(sql, companyId);
+  const notifications: Notification[] = companyOwners.map((owner) => summary({ userId: owner.userId, fullName: owner.fullName }, detected));
+  const ownerIds = new Set(companyOwners.map((owner) => owner.userId));
+  const forSiteManagers = detected.filter((entry) => entry.manager && !ownerIds.has(entry.manager.userId));
+  for (const entries of Map.groupBy(forSiteManagers, (entry) => entry.manager!.userId).values()) {
     notifications.push(summary(entries[0].manager!, entries));
   }
   const copies = await deliverAsSystem(sql, companyId, notifications, now);

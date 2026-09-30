@@ -75,14 +75,16 @@ describe("dodawanie pojazdu", () => {
     expect(board.sites).toEqual([]);
   });
 
-  it("odrzuca pojazd bez nazwy albo z kimś innym niż aktywny kierownik firmy", async () => {
+  it("odrzuca pojazd bez nazwy albo z kimś innym niż aktywny kierownik albo właściciel firmy", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
+    const budrex = await testbed.givenActiveCompany("Budrex");
     const nowakId = await testbed.givenMember(zawbud, "kierownik");
     const storekeeperId = await testbed.givenMember(zawbud, "magazynier");
+    const workerId = await testbed.givenMember(zawbud, "pracownik");
     const owner = testbed.registry.as(zawbud.ownerId);
 
     await expect(owner.addVehicle({ name: " ", managerId: nowakId })).rejects.toMatchObject({ code: "invalid_input" });
-    for (const managerId of [storekeeperId, zawbud.ownerId, randomUUID(), "nie-uuid"]) {
+    for (const managerId of [storekeeperId, workerId, budrex.ownerId, randomUUID(), "nie-uuid"]) {
       await expect(owner.addVehicle({ name: "Bus", managerId })).rejects.toMatchObject({ code: "invalid_manager" });
     }
     expect((await owner.locations()).vehicles).toEqual([]);
@@ -120,6 +122,16 @@ describe("kierownik pojazdu", () => {
 
     const bus = (await z.owner.whereIsWhat()).vehicles.find((vehicle) => vehicle.id === z.nowakBusId)!;
     expect(bus.manager).toEqual({ id: z.kowalskiId, fullName: "Jan Kowalski", active: true });
+  });
+
+  it("właściciel, który sam jeździ busem, jest kierownikiem pojazdu: przy dodaniu i po zmianie kierownika", async () => {
+    const z = await givenZawbud();
+
+    const { locationId: busId } = await z.owner.addVehicle({ name: "Bus WPI 4K21", managerId: z.zawbud.ownerId });
+    await z.owner.changeVehicleManager(z.nowakBusId, z.zawbud.ownerId);
+
+    const managers = (await z.owner.whereIsWhat()).vehicles.map((vehicle) => [vehicle.id, vehicle.manager.id]);
+    expect(managers).toEqual(expect.arrayContaining([[busId, z.zawbud.ownerId], [z.nowakBusId, z.zawbud.ownerId]]));
   });
 
   it("kierownika zmienia tylko właściciel i tylko pojazdowi: budowa i nieznany identyfikator to „nie znaleziono”", async () => {
@@ -184,6 +196,19 @@ describe("ruchy z udziałem pojazdu", () => {
         from: { id: z.nowakBusId, name: "Bus WX 12345", kind: "pojazd" },
         to: { id: z.kowalskiBusId, name: "Bus WX 67890", kind: "pojazd" },
       }),
+    ]);
+  });
+
+  it("przeniesienie z pojazdu właściciela, który nim jeździ, zawiadamia właściciela", async () => {
+    const z = await givenZawbud();
+    await z.owner.changeVehicleManager(z.nowakBusId, z.zawbud.ownerId);
+    await move(z.zawbud.ownerId, "wydanie", z.baseId, z.nowakBusId, [z.s01]);
+    testbed.notifier.clear();
+
+    await move(z.kowalskiId, "przeniesienie", z.nowakBusId, z.kowalskiBusId, [z.s01]);
+
+    expect(testbed.notifier.sent).toEqual([
+      expect.objectContaining({ kind: "narzedzia_zabrane", recipient: expect.objectContaining({ userId: z.zawbud.ownerId }) }),
     ]);
   });
 

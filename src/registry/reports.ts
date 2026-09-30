@@ -228,7 +228,8 @@ export async function companies(sql: Sql): Promise<string[]> {
 /**
  * Zapisuje raport firmy z danego dnia w dzwonkach adresatów, o ile firma jeszcze go nie dostała. Tygodniowy:
  * każdy właściciel (z e-mailem). Piątkowy: każdy właściciel całą firmę (z e-mailem), a każdy aktywny kierownik
- * swoje lokalizacje; gdy na nich (albo w całej firmie) nic nie ma, nie dostaje nic. Transakcja systemowa (poza RLS).
+ * swoje lokalizacje; gdy na nich (albo w całej firmie) nic nie ma, nie dostaje nic. Właściciel, który sam jest
+ * kierownikiem lokalizacji, dostaje tylko raport całej firmy. Transakcja systemowa (poza RLS).
  * Zwraca, czy ktoś dostał raport, i kopie push i e-mail nowych wpisów.
  */
 export async function deliverReport(
