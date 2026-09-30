@@ -146,6 +146,7 @@ test("super-admin usuwa firmę dopiero w trybie tylko do odczytu i po wpisaniu j
   await expect(page.getByTestId("company-row").filter({ hasText: companyName })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Wyloguj" }).click();
+  await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, ownerEmail, temporaryPassword);
   await expect(page.getByText("Nieprawidłowy login lub hasło.")).toBeVisible();
 });
