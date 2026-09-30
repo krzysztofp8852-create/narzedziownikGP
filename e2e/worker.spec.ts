@@ -71,6 +71,7 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   await page.goto("/ustawienia");
   const member = team.locator("li", { hasText: "Jan Kowalski" });
+  await member.locator("summary", { hasText: "Konto: hasło, dezaktywacja" }).click();
   await member.getByRole("button", { name: "Nowe hasło tymczasowe" }).click();
   const resetPassword = await member.getByTestId("temporary-password").innerText();
   expect(resetPassword).not.toBe(temporaryPassword);
