@@ -239,17 +239,37 @@ describe("zgłoszenie braku i innej sprawy", () => {
     expect(await z.owner.toolCard(z.w02)).toMatchObject({ state: "w_obiegu" });
   });
 
-  it("brak bez narzędzia i inna sprawa do narzędzia nie dają dopisku; dopisek widzi ten, kto widzi zgłoszenie", async () => {
+  it("brak bez narzędzia i inna sprawa do narzędzia nie dają dopisku", async () => {
     const z = await givenZawbud();
 
     await fileIssue(z.workerId, { kind: "brak", description: "Brakuje kasków" });
     await fileIssue(z.workerId, { kind: "brak", locationId: z.baseId, description: "Brakuje kasków na bazie" });
     await fileIssue(z.workerId, { kind: "inne", toolId: z.s01, description: "Kabel do wymiany za miesiąc" });
-    expect(await toolOnBoard(z.ownerId, z.s01)).toMatchObject({ reportedMissing: false });
 
-    await fileIssue(z.nowakId, { kind: "brak", toolId: z.w02, description: "Nie ma jej od piątku" });
-    expect(await toolOnBoard(z.storekeeperId, z.w02)).toMatchObject({ reportedMissing: true });
-    expect(await toolOnBoard(z.kowalskiId, z.w02)).toMatchObject({ reportedMissing: false });
+    expect(await toolOnBoard(z.ownerId, z.s01)).toMatchObject({ reportedMissing: false });
+  });
+
+  it("dopisek widzi każdy w firmie, jak „uszkodzone”, choć samo zgłoszenie dalej widzą tylko uprawnieni", async () => {
+    const z = await givenZawbud();
+    const { issueId } = await fileIssue(z.ownerId, { kind: "brak", toolId: z.w02, description: "Nie ma jej od piątku" });
+
+    for (const actorId of [z.workerId, z.kowalskiId, z.nowakId, z.storekeeperId]) {
+      expect(await toolOnBoard(actorId, z.w02)).toMatchObject({ reportedMissing: true });
+    }
+    expect(await issueIds(z.workerId)).not.toContain(issueId);
+    expect(await issueIds(z.kowalskiId)).not.toContain(issueId);
+  });
+
+  it("połączenie z bazą z innej firmy nie dowie się o zgłoszonym braku", async () => {
+    const z = await givenZawbud();
+    const budrex = await testbed.givenActiveCompany("Budrex", { baseName: "Magazyn Rataje" });
+    await fileIssue(z.ownerId, { kind: "brak", toolId: z.w02, description: "Nie ma jej od piątku" });
+
+    const [row] = await withActor(testbed.db, budrex.ownerId, (sql) =>
+      sql<{ missing: boolean }>("select app.tool_reported_missing($1) as missing", [z.w02]),
+    );
+
+    expect(row.missing).toBe(false);
   });
 
   it("inne i brak mogą dotyczyć lokalizacji albo niczego", async () => {
