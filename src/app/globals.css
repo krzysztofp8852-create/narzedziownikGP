@@ -3540,19 +3540,29 @@ a.tool-row:hover .tool-row-name {
   font-size: 1.6rem;
 }
 
-.landing-implementation > p:last-child {
+.landing-implementation > div > p {
   max-width: 70ch;
+  margin-top: 4px;
 }
 
-@media (min-width: 900px) {
-  .landing-implementation {
-    grid-template-columns: 200px auto minmax(0, 1fr);
-    align-items: center;
-    gap: 28px;
-  }
+/* Progi wdrożenia: liczba osób zapisujących ruchy i cena, na szerokim ekranie obok siebie. */
+.landing-implementation-tiers {
+  list-style: none;
+  display: grid;
+  margin-top: 12px;
+}
 
-  .landing-implementation .landing-price {
-    margin-top: 0;
+.landing-implementation-tiers li {
+  display: grid;
+  align-content: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 720px) {
+  .landing-implementation-tiers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
   }
 }
 

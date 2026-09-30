@@ -18,7 +18,11 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("300 zł netto za rok");
   await expect(pricing.getByRole("listitem", { name: "Duży" })).toContainText("1 000 zł netto za rok");
   await expect(pricing.getByRole("listitem", { name: "Indywidualny" })).toContainText("ponad 1000 narzędzi");
-  await expect(pricing).toContainText("5 000 zł netto, jednorazowo");
+  // Wdrożenie według liczby osób zapisujących ruchy, właściciel też się liczy.
+  await expect(pricing.getByRole("listitem", { name: "do 2 osób" })).toContainText("3 000 zł netto, jednorazowo");
+  await expect(pricing.getByRole("listitem", { name: "3–6 osób" })).toContainText("4 000 zł netto, jednorazowo");
+  await expect(pricing.getByRole("listitem", { name: "7 i więcej osób" })).toContainText("5 000 zł netto, jednorazowo");
+  await expect(pricing).toContainText("Konta pracowników się nie liczą");
   await expect(pricing).toContainText("na miejscu w Twojej firmie albo zdalnie");
 
   // Pytania, które wpisuje się w wyszukiwarkę; cena w odpowiedzi z tego samego cennika.
@@ -26,7 +30,7 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   const faq = page.getByRole("region", { name: "Pytania i odpowiedzi" });
   await expect(faq.getByRole("term")).toHaveCount(10);
   await expect(faq).toContainText("do 150 narzędzi kosztuje 300 zł netto za rok");
-  await expect(faq).toContainText("wdrożenie ze szkoleniem za 5 000 zł netto");
+  await expect(faq).toContainText("wdrożenie ze szkoleniem, od 3 000 zł netto");
 
   const contact = page.getByRole("region", { name: "Porozmawiajmy" });
   await expect(contact.getByRole("link", { name: "576 763 536" })).toHaveAttribute("href", "tel:+48576763536");

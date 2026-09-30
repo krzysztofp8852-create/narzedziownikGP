@@ -10,7 +10,7 @@ import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
 import { type PriceText, pricing } from "@/lib/pricing-text";
 import { jsonLdScript, landingStructuredData } from "@/lib/structured-data";
-import { IMPLEMENTATION_FEE, TIERS } from "@/registry/subscriptions";
+import { IMPLEMENTATION_TIERS, TIERS } from "@/registry/subscriptions";
 import { HERO_MAP } from "./hero-map";
 import mapa from "./mapa.jpg";
 
@@ -123,14 +123,15 @@ function BoardPreview() {
   );
 }
 
-/** Odpowiedź o cenie z najtańszego progu i wdrożenia, tych samych co w cenniku. */
+/** Odpowiedź o cenie z najtańszego progu abonamentu i wdrożenia, tych samych co w cenniku. */
 function faqAnswer(question: (typeof FAQ)[number]) {
   if (question !== "price") return t(`landing.faq.${question}.answer`);
   const [cheapest] = TIERS;
+  const [cheapestImplementation] = IMPLEMENTATION_TIERS;
   return t("landing.faq.price.answer", {
     price: formatPrice(cheapest.yearlyPrice),
     limit: cheapest.toolLimit,
-    implementation: formatPrice(IMPLEMENTATION_FEE),
+    implementation: formatPrice(cheapestImplementation.price),
   });
 }
 
@@ -260,9 +261,20 @@ export default function LandingPage() {
             ))}
           </ul>
           <div className="landing-implementation">
-            <h3>{t("landing.pricing.implementationTitle")}</h3>
-            <Price {...implementation} />
-            <p>{t("landing.pricing.implementationText")}</p>
+            <div>
+              <h3>{t("landing.pricing.implementationTitle")}</h3>
+              <p>{t("landing.pricing.implementationText")}</p>
+            </div>
+            <ul className="landing-implementation-tiers">
+              {implementation.map(({ people, price, period }, index) => (
+                <li key={people} aria-labelledby={`implementation-${index}`}>
+                  <p id={`implementation-${index}`} className="landing-plan-limit">
+                    {people}
+                  </p>
+                  <Price price={price} period={period} />
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

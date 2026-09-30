@@ -14,7 +14,11 @@ describe("cennik na stronie o programie", () => {
     ]);
   });
 
-  it("pokazuje obowiązkowe, jednorazowe wdrożenie ze szkoleniem", () => {
-    expect(pricing().implementation).toEqual({ price: zl("5 000 zł"), period: "netto, jednorazowo" });
+  it("pokazuje obowiązkowe, jednorazowe wdrożenie ze szkoleniem według liczby osób zapisujących ruchy", () => {
+    expect(pricing().implementation).toEqual([
+      { people: "do 2 osób", price: zl("3 000 zł"), period: "netto, jednorazowo" },
+      { people: "3–6 osób", price: zl("4 000 zł"), period: "netto, jednorazowo" },
+      { people: "7 i więcej osób", price: zl("5 000 zł"), period: "netto, jednorazowo" },
+    ]);
   });
 });

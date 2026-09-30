@@ -1587,7 +1587,10 @@
       "accounts": "Konta dla zespołu bez limitu",
       "implementationTitle": "Wdrożenie",
       "implementationPeriod": "netto, jednorazowo",
-      "implementationText": "Obowiązkowe na start, przy każdym progu. Obejmuje szkolenie z programu dla Ciebie i zespołu: na miejscu w Twojej firmie albo zdalnie, do wyboru."
+      "implementationText": "Obowiązkowe na start, przy każdym progu. Cena zależy od liczby osób, które zapisują ruchy: Ciebie, kierowników i magazynierów. Konta pracowników się nie liczą. Wdrożenie obejmuje szkolenie z programu dla Ciebie i zespołu: na miejscu w Twojej firmie albo zdalnie, do wyboru.",
+      "implementationUpTo": "do {to} osób",
+      "implementationRange": "{from}–{to} osób",
+      "implementationAtLeast": "{from} i więcej osób"
     },
     "faq": {
       "title": "Pytania i odpowiedzi",
@@ -1621,7 +1624,7 @@
       },
       "price": {
         "question": "Ile kosztuje program do ewidencji narzędzi?",
-        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok. Na start jest jednorazowe wdrożenie ze szkoleniem za {implementation} netto. Kont dla zespołu zakładasz bez limitu."
+        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok. Na start jest jednorazowe wdrożenie ze szkoleniem, od {implementation} netto, zależnie od liczby osób zapisujących ruchy. Kont dla zespołu zakładasz bez limitu."
       },
       "data": {
         "question": "Gdzie są przechowywane dane?",
