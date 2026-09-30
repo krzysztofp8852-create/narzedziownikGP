@@ -4,6 +4,11 @@ import type { SupportReply } from "@/registry/registry";
 /** Otwarcie okna 💬: odpowiedzi supportu stają się przeczytane. */
 export const SUPPORT_CHAT_OPEN = "/czat/otworz";
 
+/** Otwarcie okna 💬 z ekranu `pathname`, który trafia do kontekstu wiadomości; z samego czatu bez kontekstu. */
+export function supportChatOpenLink(pathname: string): string {
+  return pathname.startsWith("/czat") ? SUPPORT_CHAT_OPEN : `${SUPPORT_CHAT_OPEN}?ekran=${encodeURIComponent(pathname)}`;
+}
+
 /**
  * Ekran aplikacji z `?ekran=` do kontekstu wiadomości: tylko ścieżka w tej aplikacji, najwyżej 300 znaków; inaczej
  * null.

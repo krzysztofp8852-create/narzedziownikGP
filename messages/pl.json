@@ -194,7 +194,13 @@
     "deactivateYes": "Tak, dezaktywuj",
     "deactivating": "Dezaktywowanie…",
     "cancel": "Anuluj",
-    "manage": "Konto: hasło, dezaktywacja"
+    "manage": "Konto: hasło, dezaktywacja",
+    "recorderSeats": "{count} z {limit} osób zapisujących ruchy. Wolne miejsca: {left}.",
+    "recorderSeatsHint": "Liczą się właściciel, kierownicy i magazynierzy. Pracowników dodasz bez limitu.",
+    "recorderLimitReached": "Wszystkie miejsca w pakiecie wdrożenia {tier} są zajęte: {count} z {limit} osób zapisujących ruchy. Żeby dodać kierownika albo magazyniera, potrzebny jest pakiet {upgrade} ({people}), dopłata {surcharge} netto. Pracownika dodasz bez limitu, a miejsce zwolnisz też, dezaktywując nieużywane konto.",
+    "recorderLimitContact": "Wyższy pakiet ustalisz z GP Engineering:",
+    "recorderLimitChat": "napisz na czacie z supportem",
+    "recorderLimitSales": "albo skontaktuj się z działem handlowym."
   },
   "noAccess": {
     "title": "Brak dostępu",
@@ -211,6 +217,7 @@
     "invalid_input": "Sprawdź wpisane dane.",
     "email_taken": "Ten e-mail ma już konto.",
     "username_taken": "Ta nazwa użytkownika jest już zajęta w Twojej firmie.",
+    "recorder_limit": "Wszystkie miejsca na osoby zapisujące ruchy w pakiecie wdrożenia są zajęte. Wyższy pakiet ustalisz z GP Engineering, a pracownika dodasz bez limitu.",
     "not_found": "Nie znaleziono.",
     "code_taken": "Ten kod ma już inne narzędzie w firmie.",
     "category_taken": "Kategoria o tej nazwie już istnieje.",
@@ -681,7 +688,11 @@
     "notPaid": "czeka na pierwszą wpłatę",
     "readOnlyFrom": "Tryb tylko do odczytu od",
     "status": "Stan",
-    "hint": "Zmianę progu i płatności ustalisz z GP Engineering. Konta w zespole nie wchodzą do limitu."
+    "implementationTier": "Pakiet wdrożenia",
+    "recorders": "Osoby zapisujące ruchy",
+    "recorderUsage": "{count} z {limit}",
+    "recordersNoLimit": "{count} (pakiet bez limitu)",
+    "hint": "Zmianę progu, pakietu wdrożenia i płatności ustalisz z GP Engineering. Konta nie wchodzą do limitu narzędzi, a pracownicy do limitu osób zapisujących ruchy."
   },
   "toolLimit": {
     "warning": "Wszystko zapisane, ale firma przekroczyła limit progu {tier}: {count} z {limit} narzędzi. Właściciel może przejść na próg {suggested}.",
@@ -1045,9 +1056,13 @@
     "columnTools": "Narzędzia",
     "columnPaidUntil": "Opłacone do",
     "columnStatus": "Stan",
+    "columnImplementation": "Wdrożenie",
+    "columnRecorders": "Osoby zapisujące ruchy",
     "tierOption": "{name}: do {limit} narzędzi, {price} zł netto/rok",
     "tierCustom": "{name}: ponad 1000 narzędzi, cena ustalana osobno",
     "toolUsage": "{count} / {limit}",
+    "recorderUsage": "{count} / {limit}",
+    "implementationOption": "{name}: {people}, {price} netto jednorazowo",
     "overLimit": "ponad limit",
     "notPaid": "brak wpłaty",
     "manual": "ręcznie",
@@ -1063,6 +1078,8 @@
     "taxId": "NIP",
     "invoiceAddress": "Adres",
     "tier": "Próg abonamentu",
+    "implementationTier": "Pakiet wdrożenia",
+    "implementationTierHint": "Wyznacza, ile osób zapisuje ruchy: właściciel, kierownicy i magazynierzy. Pracowników firma dodaje bez limitu.",
     "paidUntil": "Opłacone do",
     "paidUntilHint": "Zostaw puste, jeśli pierwszy przelew jeszcze nie wpłynął.",
     "ownerName": "Imię i nazwisko",
@@ -1077,10 +1094,13 @@
     "none": "—",
     "noInvoice": "Brak (firma założona skryptem)",
     "tools": "Narzędzia",
+    "recorders": "Osoby zapisujące ruchy",
     "readOnlyFrom": "Tryb tylko do odczytu od",
     "changeTier": "Zmień próg",
     "savingTier": "Zapisywanie…",
     "tierSaved": "Próg zapisany.",
+    "changeImplementationTier": "Zmień pakiet",
+    "implementationTierSaved": "Pakiet wdrożenia zapisany. Wyższy od razu pozwala dodać kolejne osoby.",
     "setPaidUntil": "Zapisz datę",
     "savingPaidUntil": "Zapisywanie…",
     "paidUntilSaved": "Data „opłacone do” zapisana.",
@@ -1578,13 +1598,13 @@
     },
     "pricing": {
       "title": "Cennik",
-      "lead": "Płacisz za liczbę narzędzi w ewidencji. Kont dla zespołu zakładasz, ile potrzebujesz.",
+      "lead": "Płacisz za liczbę narzędzi w ewidencji. Kont dla pracowników zakładasz, ile potrzebujesz.",
       "upTo": "do {limit} narzędzi",
       "above": "ponad {limit} narzędzi",
       "perYear": "netto za rok",
       "customPrice": "Wycena",
       "customPeriod": "ustalana z Tobą",
-      "accounts": "Konta dla zespołu bez limitu",
+      "accounts": "Konta dla pracowników bez limitu",
       "implementationTitle": "Wdrożenie",
       "implementationPeriod": "netto, jednorazowo",
       "implementationText": "Obowiązkowe na start, przy każdym progu. Cena zależy od liczby osób, które zapisują ruchy: Ciebie, kierowników i magazynierów. Konta pracowników się nie liczą. Wdrożenie obejmuje szkolenie z programu dla Ciebie i zespołu: na miejscu w Twojej firmie albo zdalnie, do wyboru.",
@@ -1624,7 +1644,7 @@
       },
       "price": {
         "question": "Ile kosztuje program do ewidencji narzędzi?",
-        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok. Na start jest jednorazowe wdrożenie ze szkoleniem, od {implementation} netto, zależnie od liczby osób zapisujących ruchy. Kont dla zespołu zakładasz bez limitu."
+        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok. Na start jest jednorazowe wdrożenie ze szkoleniem, od {implementation} netto, zależnie od liczby osób zapisujących ruchy. Kont dla pracowników zakładasz bez limitu."
       },
       "data": {
         "question": "Gdzie są przechowywane dane?",

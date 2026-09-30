@@ -1,6 +1,6 @@
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
-import type { Session } from "./registry";
+import type { Role, Session } from "./registry";
 import { warsawTime } from "./validation";
 import { isCalendarDay, UUID_PATTERN } from "./validation";
 
@@ -27,21 +27,45 @@ export const TIERS = [
 export type TierId = (typeof TIERS)[number]["id"];
 
 /**
- * Próg wdrożenia: obowiązkowe, jednorazowe, w zł netto; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie.
- * Cena zależy od liczby osób, które na start zapisują ruchy (właściciel, kierownicy i magazynierzy); pracownicy się
- * nie liczą. Ostatni próg nie ma górnej granicy.
+ * Pakiet wdrożenia: obowiązkowe, jednorazowe, w zł netto; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie.
+ * Wyznacza limit osób zapisujących ruchy (aktywni właściciele, kierownicy i magazynierzy); pracownicy się nie liczą.
+ * Duży pakiet nie ma górnej granicy.
  */
 export interface ImplementationTier {
-  /** Null w ostatnim progu. */
+  id: ImplementationTierId;
+  name: string;
+  /** Null w dużym pakiecie. */
   maxPeople: number | null;
   price: number;
 }
 
 export const IMPLEMENTATION_TIERS = [
-  { maxPeople: 2, price: 3000 },
-  { maxPeople: 6, price: 4000 },
-  { maxPeople: null, price: 5000 },
-] as const satisfies readonly ImplementationTier[];
+  { id: "maly", name: "Mały", maxPeople: 2, price: 3000 },
+  { id: "sredni", name: "Średni", maxPeople: 6, price: 4000 },
+  { id: "duzy", name: "Duży", maxPeople: null, price: 5000 },
+] as const satisfies readonly { id: string; name: string; maxPeople: number | null; price: number }[];
+
+export type ImplementationTierId = (typeof IMPLEMENTATION_TIERS)[number]["id"];
+
+/** Pakiet firm założonych skryptem i tych sprzed pakietów (zapłaciły dotychczasowe wdrożenie), bez limitu. */
+export const DEFAULT_IMPLEMENTATION_TIER: ImplementationTierId = "duzy";
+
+/** Role osób zapisujących ruchy, które zajmują miejsca w pakiecie wdrożenia. */
+export const RECORDER_ROLES = ["wlasciciel", "kierownik", "magazynier"] as const satisfies readonly Role[];
+
+/** Warunek SQL: aktywne konto osoby zapisującej ruchy (`u` to app.users). */
+const ACTIVE_RECORDER = `u.active and u.role in (${RECORDER_ROLES.map((role) => `'${role}'`).join(", ")})`;
+
+/** Osoby zapisujące ruchy wobec limitu pakietu wdrożenia. */
+export interface RecorderSeats {
+  implementationTier: ImplementationTier;
+  /** Aktywne konta właścicieli, kierowników i magazynierów. */
+  recorderCount: number;
+  /** Ile osób zapisujących ruchy da się jeszcze dodać; null w pakiecie bez limitu. */
+  seatsLeft: number | null;
+  /** Gdy miejsc nie ma: najniższy pakiet z miejscem na jeszcze jedną osobę i dopłata do niego (różnica cen, zł netto). */
+  upgrade: { implementationTier: ImplementationTier; surcharge: number } | null;
+}
 
 /** Próg firm założonych bez wyboru progu (skryptem). */
 export const DEFAULT_TIER: TierId = "maly";
@@ -74,6 +98,9 @@ export interface ManagedCompany {
   tier: SubscriptionTier;
   /** Narzędzia firmy poza wycofanymi. */
   toolCount: number;
+  implementationTier: ImplementationTier;
+  /** Aktywne konta właścicieli, kierowników i magazynierów. */
+  recorderCount: number;
   /** Ostatni opłacony dzień (RRRR-MM-DD). */
   paidUntil: string | null;
   /** Pierwszy dzień automatycznego trybu tylko do odczytu, gdy nic nie wpłynie. */
@@ -103,11 +130,14 @@ export interface CompanySubscription {
   readOnlyFrom: string | null;
   status: SubscriptionStatus;
   limitWarning: ToolLimitWarning | null;
+  /** Pakiet wdrożenia i miejsca na osoby zapisujące ruchy. */
+  recorders: RecorderSeats;
 }
 
 /** Abonament nowej firmy. */
 export interface NewSubscription {
   tier: TierId;
+  implementationTier: ImplementationTierId;
   paidUntil: string | null;
   invoice: InvoiceData | null;
 }
@@ -118,6 +148,7 @@ export interface NewCompanyInput {
   owner: { email: string; fullName: string };
   invoice: InvoiceData;
   tier: TierId;
+  implementationTier: ImplementationTierId;
   /** Gdy pierwszy przelew jest już zaksięgowany. */
   paidUntil?: string | null;
 }
@@ -130,6 +161,57 @@ export function requireTier(id: string): TierId {
   const found = TIERS.find((candidate) => candidate.id === id);
   if (!found) throw new RegistryError("invalid_input");
   return found.id;
+}
+
+export function implementationTier(id: ImplementationTierId): ImplementationTier {
+  return IMPLEMENTATION_TIERS.find((candidate) => candidate.id === id)!;
+}
+
+export function requireImplementationTier(id: string): ImplementationTierId {
+  const found = IMPLEMENTATION_TIERS.find((candidate) => candidate.id === id);
+  if (!found) throw new RegistryError("invalid_input");
+  return found.id;
+}
+
+/** Miejsca w pakiecie przy tylu osobach zapisujących ruchy (po zmianie na niższy pakiet może ich być ponad limit). */
+export function recorderSeats(id: ImplementationTierId, recorderCount: number): RecorderSeats {
+  const current = implementationTier(id);
+  const seatsLeft = current.maxPeople === null ? null : Math.max(current.maxPeople - recorderCount, 0);
+  const next =
+    seatsLeft === 0 ? IMPLEMENTATION_TIERS.find((candidate) => candidate.maxPeople === null || candidate.maxPeople > recorderCount)! : null;
+  return {
+    implementationTier: current,
+    recorderCount,
+    seatsLeft,
+    upgrade: next && { implementationTier: next, surcharge: next.price - current.price },
+  };
+}
+
+/**
+ * Miejsca na osoby zapisujące ruchy w firmie aktora. Abonament widzi z firmy tylko właściciel, a osoby z firmy każdy
+ * jej członek, więc to zapytanie właściciela.
+ */
+export async function companyRecorderSeats(sql: Sql): Promise<RecorderSeats> {
+  const [row] = await sql<{ implementation_tier: ImplementationTierId; recorders: string }>(
+    `select s.implementation_tier,
+            (select count(*) from app.users u where u.company_id = s.company_id and ${ACTIVE_RECORDER}) as recorders
+     from app.subscriptions s where s.company_id = app.current_company_id()`,
+  );
+  if (!row) throw new RegistryError("no_access");
+  return recorderSeats(row.implementation_tier, Number(row.recorders));
+}
+
+/**
+ * Wolne miejsce w pakiecie wdrożenia na nową osobę tej roli; bez niego `recorder_limit` (ADR 0024). Pracownik nie
+ * zapisuje ruchów, więc miejsca nie zajmuje. Blokuje wiersz firmy do końca transakcji: w transakcji, która zapisuje
+ * osobę, dwa równoległe dodania nie zajmą tego samego miejsca. Blokadę (jak zmianę firmy) RLS daje tylko właścicielowi,
+ * więc komuś innemu odmawia, zamiast liczyć bez niej.
+ */
+export async function requireRecorderSeat(sql: Sql, role: Role) {
+  if (!(RECORDER_ROLES as readonly Role[]).includes(role)) return;
+  const [locked] = await sql("select 1 from app.companies where id = app.current_company_id() for update");
+  if (!locked) throw new RegistryError("forbidden");
+  if ((await companyRecorderSeats(sql)).seatsLeft === 0) throw new RegistryError("recorder_limit");
 }
 
 export function requirePaidUntil(day: string): string {
@@ -219,6 +301,7 @@ export async function companySubscription(sql: Sql, now: Date): Promise<CompanyS
     readOnlyFrom: plan.paidUntil ? readOnlyFrom(plan.paidUntil) : null,
     status: subscriptionStatus(plan, now),
     limitWarning: limitWarning(plan),
+    recorders: await companyRecorderSeats(sql),
   };
 }
 
@@ -234,11 +317,12 @@ export async function requireSuperAdmin(sql: Sql) {
 
 export async function insertSubscription(sql: Sql, companyId: string, subscription: NewSubscription) {
   await sql(
-    `insert into app.subscriptions (company_id, tier, paid_until, invoice_name, tax_id, invoice_address)
-     values ($1, $2, $3, $4, $5, $6)`,
+    `insert into app.subscriptions (company_id, tier, implementation_tier, paid_until, invoice_name, tax_id, invoice_address)
+     values ($1, $2, $3, $4, $5, $6, $7)`,
     [
       companyId,
       subscription.tier,
+      subscription.implementationTier,
       subscription.paidUntil,
       subscription.invoice?.name ?? null,
       subscription.invoice?.taxId ?? null,
@@ -255,6 +339,7 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
     name: string;
     created_at: Date;
     tier: TierId;
+    implementation_tier: ImplementationTierId;
     paid_until: string | null;
     manual_read_only: boolean;
     invoice_name: string | null;
@@ -263,9 +348,11 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
     owner_name: string | null;
     owner_email: string | null;
     tools: string | null;
+    recorders: string;
   }>(
-    `select c.id, c.name, c.created_at, s.tier, to_char(s.paid_until, 'YYYY-MM-DD') as paid_until, s.manual_read_only,
-            s.invoice_name, s.tax_id, s.invoice_address, o.full_name as owner_name, o.email as owner_email, n.tools
+    `select c.id, c.name, c.created_at, s.tier, s.implementation_tier, to_char(s.paid_until, 'YYYY-MM-DD') as paid_until,
+            s.manual_read_only, s.invoice_name, s.tax_id, s.invoice_address, o.full_name as owner_name, o.email as owner_email,
+            n.tools, r.recorders
      from app.companies c
      join app.subscriptions s on s.company_id = c.id
      left join lateral (
@@ -273,6 +360,9 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
        where u.company_id = c.id and u.role = 'wlasciciel' and u.active
        order by u.created_at, u.user_id limit 1
      ) o on true
+     left join lateral (
+       select count(*) as recorders from app.users u where u.company_id = c.id and ${ACTIVE_RECORDER}
+     ) r on true
      left join app.company_tool_counts() n on n.company_id = c.id
      where $1::uuid is null or c.id = $1::uuid
      order by lower(c.name), c.created_at`,
@@ -291,6 +381,8 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
       owner: row.owner_name && row.owner_email ? { fullName: row.owner_name, email: row.owner_email } : null,
       tier: tier(row.tier),
       toolCount: Number(row.tools ?? 0),
+      implementationTier: implementationTier(row.implementation_tier),
+      recorderCount: Number(row.recorders),
       paidUntil,
       readOnlyFrom: paidUntil ? readOnlyFrom(paidUntil) : null,
       manualReadOnly,
@@ -304,15 +396,17 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
 export async function updateSubscription(
   sql: Sql,
   companyId: string,
-  change: { tier: TierId } | { paidUntil: string } | { manualReadOnly: boolean },
+  change: { tier: TierId } | { implementationTier: ImplementationTierId } | { paidUntil: string } | { manualReadOnly: boolean },
 ) {
   if (!UUID_PATTERN.test(companyId)) throw new RegistryError("not_found");
-  const [statement, value] =
+  const [column, value] =
     "tier" in change
-      ? ["update app.subscriptions set tier = $2 where company_id = $1 returning company_id", change.tier]
-      : "paidUntil" in change
-        ? ["update app.subscriptions set paid_until = $2 where company_id = $1 returning company_id", change.paidUntil]
-        : ["update app.subscriptions set manual_read_only = $2 where company_id = $1 returning company_id", change.manualReadOnly];
-  const updated = await sql(statement, [companyId, value]);
+      ? ["tier", change.tier]
+      : "implementationTier" in change
+        ? ["implementation_tier", change.implementationTier]
+        : "paidUntil" in change
+          ? ["paid_until", change.paidUntil]
+          : ["manual_read_only", change.manualReadOnly];
+  const updated = await sql(`update app.subscriptions set ${column} = $2 where company_id = $1 returning company_id`, [companyId, value]);
   if (updated.length === 0) throw new RegistryError("not_found");
 }

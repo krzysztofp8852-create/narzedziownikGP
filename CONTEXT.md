@@ -180,11 +180,19 @@ _Avoid_: kontakt, helpdesk
 ## Abonament
 
 **Próg abonamentu**:
-Pakiet firmy z limitem liczby narzędzi. Konta nie wchodzą do limitu.
+Pakiet firmy z limitem liczby narzędzi. Konta nie wchodzą do limitu narzędzi.
 
 **Wdrożenie**:
-Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. Cena zależy od liczby osób, które na start zapisują ruchy (właściciel, kierownicy i magazynierzy): do 2, 3–6 albo 7 i więcej. Pracownicy się nie liczą.
+Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. Cena zależy od pakietu wdrożenia.
 _Avoid_: opłata aktywacyjna, onboarding
+
+**Pakiet wdrożenia**:
+Mały (do 2 osób zapisujących ruchy), średni (3–6) albo duży (7 i więcej, bez limitu); wyznacza, ile osób zapisujących ruchy firma może mieć. Ponad limit właściciel nie doda kierownika ani magazyniera, a pracownika tak. Wyższy pakiet odblokowuje dodawanie od razu, za dopłatą w wysokości różnicy cen. Firmy sprzed pakietów, zakładane skryptem i firma demo mają duży.
+_Avoid_: próg wdrożenia (próg to abonament)
+
+**Osoba zapisująca ruchy**:
+Aktywne konto właściciela, kierownika albo magazyniera; zajmuje miejsce w pakiecie wdrożenia. Pracownik i dezaktywowane konto miejsca nie zajmują.
+_Avoid_: użytkownik płatny, licencja
 
 **Tryb tylko do odczytu**:
 Stan firmy, w którym zapisy są zablokowane (poza czatem z supportem), a podgląd i eksport działają.

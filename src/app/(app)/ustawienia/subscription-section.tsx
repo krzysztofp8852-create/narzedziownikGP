@@ -3,9 +3,10 @@ import { t } from "@/i18n/t";
 import type { CompanySubscription } from "@/registry/registry";
 import { STATUS_CLASS } from "@/app/super-admin/subscription-status";
 
-/** Abonament w ustawieniach właściciela: próg z limitem, liczba narzędzi i termin płatności. */
+/** Abonament w ustawieniach właściciela: próg z limitem, liczba narzędzi, pakiet wdrożenia z osobami i termin płatności. */
 export function SubscriptionSection({ subscription }: { subscription: CompanySubscription }) {
-  const { tier, toolCount, paidUntil, readOnlyFrom, status, limitWarning } = subscription;
+  const { tier, toolCount, paidUntil, readOnlyFrom, status, limitWarning, recorders } = subscription;
+  const recorderLimit = recorders.implementationTier.maxPeople;
   return (
     <section className="company-card" aria-labelledby="subscription" data-testid="subscription">
       <h2 id="subscription" className="display section-title">
@@ -19,6 +20,14 @@ export function SubscriptionSection({ subscription }: { subscription: CompanySub
           {tier.toolLimit === null
             ? t("subscription.noLimit", { count: toolCount })
             : t("subscription.toolUsage", { count: toolCount, limit: tier.toolLimit })}
+        </dd>
+        <dt>{t("subscription.implementationTier")}</dt>
+        <dd>{recorders.implementationTier.name}</dd>
+        <dt>{t("subscription.recorders")}</dt>
+        <dd data-testid="subscription-recorders">
+          {recorderLimit === null
+            ? t("subscription.recordersNoLimit", { count: recorders.recorderCount })
+            : t("subscription.recorderUsage", { count: recorders.recorderCount, limit: recorderLimit })}
         </dd>
         <dt>{t("subscription.paidUntil")}</dt>
         <dd>{paidUntil ? formatCalendarDay(paidUntil) : t("subscription.notPaid")}</dd>

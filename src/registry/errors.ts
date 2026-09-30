@@ -9,6 +9,7 @@ export type RegistryErrorCode =
   | "invalid_input"
   | "email_taken"
   | "username_taken"
+  | "recorder_limit"
   | "not_found"
   | "code_taken"
   | "category_taken"

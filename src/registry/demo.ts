@@ -86,7 +86,7 @@ export async function activateDemoCompany(sql: Sql, companyId: string, now: Date
   const [company] = await sql<{ id: string }>("update app.companies set demo_since = $2 where id = $1 returning id", [companyId, now]);
   if (!company) throw new RegistryError("not_found");
   const paidUntil = new Date(now.getTime() + DEMO_PAID_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  await sql("update app.subscriptions set tier = 'sredni', paid_until = $2 where company_id = $1", [companyId, paidUntil]);
+  await sql("update app.subscriptions set tier = 'sredni', implementation_tier = 'duzy', paid_until = $2 where company_id = $1", [companyId, paidUntil]);
   return retired.map((row) => row.user_id);
 }
 

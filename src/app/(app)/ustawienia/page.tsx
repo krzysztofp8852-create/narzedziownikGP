@@ -56,7 +56,7 @@ export default async function SettingsPage() {
           </section>
         )}
         <ServicesSection services={locations.services} />
-        <TeamSection session={session} members={members} />
+        <TeamSection session={session} members={members} recorders={subscription.recorders} />
         <LegalSection />
       </div>
     </>

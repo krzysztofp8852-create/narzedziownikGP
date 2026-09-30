@@ -3,11 +3,11 @@ import Link from "next/link";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { PaidUntil, SubscriptionStatus, ToolUsage } from "./subscription-status";
+import { PaidUntil, RecorderUsage, SubscriptionStatus, ToolUsage } from "./subscription-status";
 
 export const metadata: Metadata = { title: t("superAdmin.companiesTitle") };
 
-/** Wszystkie firmy z progiem, liczbą narzędzi, „opłacone do” i stanem abonamentu. */
+/** Wszystkie firmy z progiem, liczbą narzędzi, pakietem wdrożenia, liczbą osób zapisujących ruchy, „opłacone do” i stanem abonamentu. */
 export default async function CompaniesPage() {
   const companies = await getRegistry()
     .superAdmin(await requireSuperAdmin())
@@ -31,6 +31,8 @@ export default async function CompaniesPage() {
                 <th>{t("superAdmin.columnCompany")}</th>
                 <th>{t("superAdmin.columnTier")}</th>
                 <th className="import-number">{t("superAdmin.columnTools")}</th>
+                <th>{t("superAdmin.columnImplementation")}</th>
+                <th className="import-number">{t("superAdmin.columnRecorders")}</th>
                 <th>{t("superAdmin.columnPaidUntil")}</th>
                 <th>{t("superAdmin.columnStatus")}</th>
               </tr>
@@ -44,6 +46,10 @@ export default async function CompaniesPage() {
                   <td>{company.tier.name}</td>
                   <td className="import-number">
                     <ToolUsage company={company} />
+                  </td>
+                  <td>{company.implementationTier.name}</td>
+                  <td className="import-number">
+                    <RecorderUsage company={company} />
                   </td>
                   <td>
                     <PaidUntil company={company} />

@@ -6,10 +6,10 @@ import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { TIERS } from "@/registry/registry";
-import { PaidUntil, SubscriptionStatus, ToolUsage } from "../../subscription-status";
-import { tierLabel } from "../../tier-options";
-import { PaidUntilForm, ReadOnlyForm, TierForm } from "./subscription-forms";
+import { IMPLEMENTATION_TIERS, TIERS } from "@/registry/registry";
+import { PaidUntil, RecorderUsage, SubscriptionStatus, ToolUsage } from "../../subscription-status";
+import { implementationTierLabel, tierLabel } from "../../tier-options";
+import { ImplementationTierForm, PaidUntilForm, ReadOnlyForm, TierForm } from "./subscription-forms";
 
 /** Jedna firma na żądanie, wspólna dla tytułu strony i jej treści. */
 const loadCompany = cache(async (companyId: string) =>
@@ -23,7 +23,7 @@ export async function generateMetadata(props: PageProps<"/super-admin/firmy/[id]
   return { title: company?.name };
 }
 
-/** Firma z abonamentem: dane do faktury, próg, „opłacone do” i ręczny tryb tylko do odczytu. */
+/** Firma z abonamentem: dane do faktury, próg, pakiet wdrożenia, „opłacone do” i ręczny tryb tylko do odczytu. */
 export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[id]">) {
   const company = await loadCompany((await props.params).id);
   if (!company) notFound();
@@ -33,6 +33,8 @@ export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[
     [t("superAdmin.columnStatus"), <SubscriptionStatus key="status" company={company} />],
     [t("superAdmin.columnTier"), tierLabel(company.tier)],
     [t("superAdmin.tools"), <ToolUsage key="tools" company={company} />],
+    [t("superAdmin.implementationTier"), implementationTierLabel(company.implementationTier)],
+    [t("superAdmin.recorders"), <RecorderUsage key="recorders" company={company} />],
     [t("superAdmin.columnPaidUntil"), <PaidUntil key="paid" company={company} />],
     [t("superAdmin.readOnlyFrom"), company.readOnlyFrom ? formatCalendarDay(company.readOnlyFrom) : none],
     [t("superAdmin.owner"), company.owner ? `${company.owner.fullName} (${company.owner.email})` : none],
@@ -86,6 +88,7 @@ export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[
             {t("superAdmin.sectionSubscription")}
           </h2>
           <TierForm company={company} tiers={[...TIERS]} />
+          <ImplementationTierForm company={company} tiers={[...IMPLEMENTATION_TIERS]} />
           <PaidUntilForm company={company} />
         </section>
         <section className="company-card" aria-labelledby="company-read-only">

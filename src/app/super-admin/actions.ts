@@ -6,7 +6,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formPhoto, formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
-import type { SuperAdminRegistry, TierId } from "@/registry/registry";
+import type { ImplementationTierId, SuperAdminRegistry, TierId } from "@/registry/registry";
 
 export interface CreateCompanyState {
   error?: string;
@@ -36,6 +36,7 @@ export async function createCompany(_prev: CreateCompanyState, formData: FormDat
           address: formText(formData, "invoiceAddress"),
         },
         tier: formText(formData, "tier") as TierId,
+        implementationTier: formText(formData, "implementationTier") as ImplementationTierId,
         paidUntil: formText(formData, "paidUntil") || null,
       });
     revalidatePath("/super-admin");
@@ -67,6 +68,12 @@ async function changeSubscription(companyId: string, change: (admin: SuperAdminR
 
 export async function changeTier(companyId: string, _prev: SubscriptionFormState, formData: FormData) {
   return changeSubscription(companyId, (admin) => admin.changeTier(companyId, formText(formData, "tier") as TierId));
+}
+
+export async function changeImplementationTier(companyId: string, _prev: SubscriptionFormState, formData: FormData) {
+  return changeSubscription(companyId, (admin) =>
+    admin.changeImplementationTier(companyId, formText(formData, "implementationTier") as ImplementationTierId),
+  );
 }
 
 export async function setPaidUntil(companyId: string, _prev: SubscriptionFormState, formData: FormData) {

@@ -3,14 +3,17 @@
 import { useActionState, useState } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
-import type { MemberRole } from "@/registry/registry";
+import type { MemberRole, RecorderSeats } from "@/registry/registry";
 import { addMember } from "./actions";
+import { RecorderSeatsNote } from "./recorder-seats";
 import { TemporaryPassword } from "@/components/temporary-password";
 
-export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
+export function AddMemberForm({ roles, recorders }: { roles: MemberRole[]; recorders: RecorderSeats }) {
   const [state, formAction, pending] = useActionState(addMember, {});
+  // Bez wolnego miejsca w pakiecie wdrożenia da się dodać tylko pracownika, więc od niego zaczynamy.
+  const full = recorders.seatsLeft === 0;
   // Pracownik loguje się nazwą użytkownika, a e-mail może pominąć; pozostali logują się e-mailem.
-  const [role, setRole] = useState(roles[0]);
+  const [role, setRole] = useState<MemberRole>(full ? "pracownik" : roles[0]);
   const worker = role === "pracownik";
 
   return (
@@ -80,13 +83,14 @@ export function AddMemberForm({ roles }: { roles: MemberRole[] }) {
             <p className="muted">{t("team.workerHint")}</p>
           </>
         )}
+        <RecorderSeatsNote recorders={recorders} />
         {state.error && (
           <p className="form-error" role="alert">
             {state.error}
           </p>
         )}
         <div className="form-actions">
-          <button className="button" type="submit" disabled={pending}>
+          <button className="button" type="submit" disabled={pending || (full && !worker)}>
             {pending ? t("team.submitting") : t("team.submitAdd")}
           </button>
         </div>

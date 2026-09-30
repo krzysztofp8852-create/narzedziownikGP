@@ -37,7 +37,15 @@ import * as siteClosing from "./site-closing";
 import * as subscriptions from "./subscriptions";
 import * as supportChat from "./support-chat";
 import type { SupportChat, SupportMessageInput, SupportReplyInput, SupportThread, SupportThreadSummary } from "./support-chat";
-import type { CompanySubscription, ManagedCompany, NewCompanyInput, NewSubscription, TierId, ToolLimitWarning } from "./subscriptions";
+import type {
+  CompanySubscription,
+  ImplementationTierId,
+  ManagedCompany,
+  NewCompanyInput,
+  NewSubscription,
+  TierId,
+  ToolLimitWarning,
+} from "./subscriptions";
 import * as thresholds from "./thresholds";
 import type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 import { generateTemporaryPassword } from "./temporary-password";
@@ -92,15 +100,18 @@ export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./hi
 export type { CompanySettings, IssueVisibility } from "./settings";
 export type {
   CompanySubscription,
+  ImplementationTier,
+  ImplementationTierId,
   InvoiceData,
   ManagedCompany,
   NewCompanyInput,
+  RecorderSeats,
   SubscriptionStatus,
   SubscriptionTier,
   TierId,
   ToolLimitWarning,
 } from "./subscriptions";
-export { TIERS } from "./subscriptions";
+export { IMPLEMENTATION_TIERS, TIERS } from "./subscriptions";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
@@ -236,14 +247,19 @@ export interface RegisteredMovement extends Movement {
 export interface SuperAdminRegistry {
   /** Czy ten użytkownik jest super-adminem; nigdy nie odmawia. */
   isSuperAdmin(): Promise<boolean>;
-  /** Wszystkie firmy z progiem, liczbą narzędzi, „opłacone do” i stanem abonamentu, po nazwie. */
+  /**
+   * Wszystkie firmy z progiem, liczbą narzędzi, pakietem wdrożenia, liczbą osób zapisujących ruchy, „opłacone do”
+   * i stanem abonamentu, po nazwie.
+   */
   companies(): Promise<ManagedCompany[]>;
   /** Jedna firma albo null, gdy jej nie ma. */
   company(companyId: string): Promise<ManagedCompany | null>;
-  /** Firma z bazą, abonamentem, danymi do faktury i właścicielem z hasłem tymczasowym. */
+  /** Firma z bazą, abonamentem, pakietem wdrożenia, danymi do faktury i właścicielem z hasłem tymczasowym. */
   createCompany(input: NewCompanyInput): Promise<CreatedCompany>;
   /** Przejście na inny próg abonamentu. */
   changeTier(companyId: string, tier: TierId): Promise<void>;
+  /** Inny pakiet wdrożenia; wyższy od razu daje miejsca na kolejne osoby zapisujące ruchy. */
+  changeImplementationTier(companyId: string, implementationTier: ImplementationTierId): Promise<void>;
   /** „Opłacone do” (RRRR-MM-DD) po zaksięgowaniu przelewu. */
   setPaidUntil(companyId: string, day: string): Promise<void>;
   /** Ręczny tryb tylko do odczytu, niezależny od płatności. Włączenie trafia do dzwonków właścicieli firmy. */
@@ -267,7 +283,7 @@ export interface SuperAdminRegistry {
 export interface Registry {
   /** Aktor systemowy: skrypty i zadania harmonogramu, poza RLS. */
   system(): {
-    /** Firma z bazą i właścicielem, na najniższym progu, bez danych do faktury (skrypty i testy). */
+    /** Firma z bazą i właścicielem, na najniższym progu i w dużym pakiecie wdrożenia, bez danych do faktury (skrypty i testy). */
     createCompany(input: CreateCompanyInput): Promise<CreatedCompany>;
     /** Konto super-admina (GP Engineering) z wygenerowanym hasłem, do przekazania raz. */
     createSuperAdmin(input: { email: string }): Promise<{ userId: string; password: string }>;
@@ -455,6 +471,7 @@ export interface Registry {
     /**
      * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście.
      * Pracownik dostaje nazwę użytkownika unikalną w firmie (zajęta: `username_taken`), a e-mail może pominąć.
+     * Kierownik i magazynier potrzebują wolnego miejsca w pakiecie wdrożenia (bez niego `recorder_limit`); pracownik nie.
      */
     addMember(input: NewMemberInput): Promise<AddedMember>;
     /** Nowe hasło tymczasowe dla kierownika, magazyniera lub pracownika; przy logowaniu znowu musi ustawić własne. */
@@ -622,8 +639,16 @@ export function createRegistry(deps: RegistryDeps): Registry {
   return {
     system: () => ({
       createCompany: async (raw) =>
-        createCompany(deps, normalizeNewCompany(raw), { tier: subscriptions.DEFAULT_TIER, paidUntil: null, invoice: null }, (fn) =>
-          deps.db.transaction(fn),
+        createCompany(
+          deps,
+          normalizeNewCompany(raw),
+          {
+            tier: subscriptions.DEFAULT_TIER,
+            implementationTier: subscriptions.DEFAULT_IMPLEMENTATION_TIER,
+            paidUntil: null,
+            invoice: null,
+          },
+          (fn) => deps.db.transaction(fn),
         ),
       createSuperAdmin: async ({ email: raw }) => {
         const email = raw.trim().toLowerCase();
@@ -741,6 +766,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
             input: normalizeNewCompany(raw),
             subscription: {
               tier: subscriptions.requireTier(raw.tier),
+              implementationTier: subscriptions.requireImplementationTier(raw.implementationTier),
               paidUntil: raw.paidUntil ? subscriptions.requirePaidUntil(raw.paidUntil) : null,
               invoice: subscriptions.normalizeInvoice(raw.invoice),
             },
@@ -749,6 +775,12 @@ export function createRegistry(deps: RegistryDeps): Registry {
         },
         changeTier: (companyId, tier) =>
           asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { tier: subscriptions.requireTier(tier) })),
+        changeImplementationTier: (companyId, implementationTier) =>
+          asSuperAdmin((sql) =>
+            subscriptions.updateSubscription(sql, companyId, {
+              implementationTier: subscriptions.requireImplementationTier(implementationTier),
+            }),
+          ),
         setPaidUntil: (companyId, day) =>
           asSuperAdmin((sql) => subscriptions.updateSubscription(sql, companyId, { paidUntil: subscriptions.requirePaidUntil(day) })),
         setManualReadOnly: async (companyId, on) => {
@@ -1058,13 +1090,16 @@ export function createRegistry(deps: RegistryDeps): Registry {
             team.requireTeamManager(session);
             const member = team.normalizeNewMember(input);
             await team.requireFreeUsername(sql, member.username);
+            await subscriptions.requireRecorderSeat(sql, member.role);
             return member;
           });
           const temporaryPassword = generateTemporaryPassword();
           const { userId } = await createAccount(deps, team.accountEmail(member), temporaryPassword);
           try {
-            await asWriter((sql, session) => {
+            await asWriter(async (sql, session) => {
               team.requireTeamManager(session);
+              // Jeszcze raz, pod blokadą: równolegle dodana osoba mogła zająć ostatnie miejsce.
+              await subscriptions.requireRecorderSeat(sql, member.role);
               return team.insertMember(sql, session, userId, member, deps.clock.now());
             });
           } catch (error) {

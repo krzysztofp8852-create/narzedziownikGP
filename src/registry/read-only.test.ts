@@ -442,6 +442,12 @@ describe("abonament w ustawieniach właściciela", () => {
       readOnlyFrom: "2026-04-15",
       status: "aktywna",
       limitWarning: null,
+      recorders: {
+        implementationTier: { id: "duzy", name: "Duży", maxPeople: null, price: 5000 },
+        recorderCount: 3,
+        seatsLeft: null,
+        upgrade: null,
+      },
     });
     await expect(testbed.registry.as(z.nowakId).subscription()).rejects.toMatchObject({ code: "forbidden" });
     await expect(testbed.registry.as(z.storekeeperId).subscription()).rejects.toMatchObject({ code: "forbidden" });
