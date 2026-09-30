@@ -66,6 +66,7 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
 
   // Pracownik zapomniał hasła: właściciel nadaje nowe tymczasowe, a pracownik loguje się nim, odczytanym z ekranu.
   await page.getByRole("button", { name: "Wyloguj" }).click();
+  await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.owner.email, company.owner.password);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   await page.goto("/ustawienia");
@@ -75,6 +76,7 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   expect(resetPassword).not.toBe(temporaryPassword);
 
   await page.getByRole("button", { name: "Wyloguj" }).click();
+  await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, "jan.kowalski", resetPassword);
   await expect(page).toHaveURL(/\/zmien-haslo$/);
 });
