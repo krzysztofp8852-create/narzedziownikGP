@@ -256,6 +256,20 @@ describe("raport piątkowy", () => {
     expect(await testbed.registry.as(z.nowakId).sentReport("piatkowy", "2026-03-06")).toEqual(report([rataje(z)]).report);
   });
 
+  it("właściciel, który sam prowadzi budowę, dostaje tylko raport całej firmy, bez osobnego raportu kierownika", async () => {
+    const z = await givenFriday();
+    await z.owner.changeSiteManager(z.winogradyId, z.zawbud.ownerId);
+    testbed.clock.set("2026-03-06T16:10:00+01:00");
+    expect(await sendDueReports()).toEqual({ weekly: 0, friday: 1 });
+
+    const ownerAsManager = { id: z.zawbud.ownerId, fullName: "Właściciel Zawbud" };
+    expect(await bellOf(z.zawbud.ownerId)).toEqual([
+      { kind: "raport_piatkowy", report: { kind: "piatkowy", day: "2026-03-06", locations: [rataje(z), { ...winogrady(z), manager: ownerAsManager }] } },
+    ]);
+    expect(await bellOf(z.kowalskiId)).toEqual([]);
+    expect(testbed.notifier.sent.map((n) => [n.kind, n.recipient.userId])).toEqual([["raport_piatkowy", z.zawbud.ownerId]]);
+  });
+
   it("zapytanie w danej chwili: właściciel widzi całą firmę, kierownik swoje budowy, magazynier nic", async () => {
     const z = await givenFriday();
     testbed.clock.advance(4 * DAY);

@@ -18,6 +18,8 @@ prawdziwych przyciskach (`DemoTour`), który pamięta stan w `localStorage`.
   Migracja oznacza jako pominięty samouczek każdego, kto już zmienił hasło tymczasowe: pierwsze logowanie ma za sobą.
 - Pierwsze kroki właściciela Rejestr liczy przy każdym odczycie ze stanu firmy (aktywny kierownik, budowa, narzędzie,
   wydrukowana naklejka), więc nie ma czego synchronizować. Kolejność: kierownik przed budową, bo budowa go wymaga.
+  Kierownikiem budowy i pojazdu może być też sam właściciel, więc krok kierownika jest zrobiony także wtedy, gdy
+  właściciel jest kierownikiem którejś budowy albo pojazdu.
 - Samouczek to karta nad tablicą, a nie dymki przy przyciskach ani okno na cały ekran: nie zasłania tablicy (testy
   dymne i praca idą dalej), działa tak samo na telefonie i komputerze, a lista pierwszych kroków odsyła do prawdziwych
   formularzy. Ta sama karta jest pod `/samouczek`, dokąd prowadzi znak „?” w nagłówku.

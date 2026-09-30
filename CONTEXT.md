@@ -62,14 +62,14 @@ Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany.
 _Avoid_: magazyn, warsztat
 
 **Budowa**:
-Lokalizacja z adresem, przypisanym kierownikiem i statusem aktywna albo zakończona.
+Lokalizacja z adresem, przypisanym kierownikiem i statusem aktywna albo zakończona. Kierownikiem budowy jest kierownik albo właściciel, który sam ją prowadzi.
 _Avoid_: projekt, inwestycja, obiekt
 
 **Serwis**:
 Zewnętrzny punkt naprawy; sprzęt w serwisie nie jest ani zaginiony, ani na budowie.
 
 **Pojazd**:
-Lokalizacja ruchoma (np. bus brygady) z przypisanym kierownikiem; sprzęt na pojeździe jest poza bazą.
+Lokalizacja ruchoma (np. bus brygady) z przypisanym kierownikiem (kierownik albo właściciel, który sam nim jeździ); sprzęt na pojeździe jest poza bazą.
 _Avoid_: bus, auto, samochód (jako nazwa rodzaju lokalizacji)
 
 **Poza bazą**:

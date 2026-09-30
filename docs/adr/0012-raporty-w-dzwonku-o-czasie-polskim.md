@@ -21,7 +21,8 @@ poza bazą z poprzednim tygodniem.
 - Raport to wpis dzwonka (`raport_tygodniowy`, `raport_piatkowy`) z pełną treścią z chwili raportu, jak każde
   powiadomienie (ADR 0007). Push i e-mail są jego kopią, wysyłaną tylko dla nowych wpisów (ADR 0011). E-mail
   dostaje właściciel (oba raporty); kierownik ma raport piątkowy tylko w dzwonku i push, zawężony do swoich
-  lokalizacji, i nie dostaje nic, gdy nic na nich nie ma. Gdy w piątek cały sprzęt jest na bazie albo w serwisie,
+  lokalizacji, i nie dostaje nic, gdy nic na nich nie ma. Właściciel, który sam jest kierownikiem lokalizacji, dostaje
+  tylko raport całej firmy. Gdy w piątek cały sprzęt jest na bazie albo w serwisie,
   raportu piątkowego nie dostaje nikt, także właściciel: przypomnienie „zwieź przed weekendem” nie ma treści.
 - Link z pusha, dzwonka i e-maila prowadzi na `/raporty/<rodzaj>/<dzień>`. Strona pokazuje raport z dzwonka
   aktora (klucz zdarzenia `raport_<rodzaj>:<dzień>`), a nie stan bieżący.

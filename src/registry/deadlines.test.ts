@@ -522,6 +522,20 @@ describe("przypomnienia o terminach", () => {
     expect(await codes(kowalskiId)).toEqual([[["N-02", "pojazd"]]]);
   });
 
+  it("właściciel, który sam jeździ pojazdem, dostaje o jego sprzęcie jedno zbiorcze przypomnienie, jak o całej firmie", async () => {
+    const z = await givenZawbud();
+    const { locationId: busId } = await z.owner.addVehicle({ name: "Bus WPI 4K21", managerId: z.ownerId });
+    await move(z.ownerId, "wydanie", z.baseId, busId, [z.h01]);
+    await z.owner.addDeadline({ toolId: z.h01, kind: "przeglad", dueOn: "2026-03-06" });
+    await z.owner.addDeadline({ toolId: z.n01, kind: "kalibracja", dueOn: "2026-03-06" });
+
+    expect(await testbed.registry.system().notifyDueDeadlines()).toEqual({ deadlines: 2 });
+
+    const codes = async (userId: string) => (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => d.tool.code).sort());
+    expect(await codes(z.ownerId)).toEqual([["H-01", "N-01"]]);
+    expect(await codes(z.nowakId)).toEqual([["N-01"]]);
+  });
+
   it("wykonany przegląd z cyklem przypomina się znowu przed następnym terminem, a każda firma dostaje swoje", async () => {
     const z = await givenZawbud();
     const other = await testbed.givenActiveCompany("Budrex");

@@ -49,7 +49,7 @@ export async function companiesWithSites(sql: Sql): Promise<string[]> {
 /**
  * Wykrywa narzędzia firmy, które od ostatniego uruchomienia przekroczyły próg dni firmy na budowie (albo pojeździe
  * z włączonym alarmem), i każde zapisuje raz na pobyt. Kierownik budowy lub pojazdu dostaje powiadomienie o każdym narzędziu, a właściciel jedno
- * zbiorcze. Transakcja systemowa (poza RLS). Zwraca liczbę nowych przekroczeń i kopie push nowych wpisów dzwonka.
+ * zbiorcze, także o budowach i pojazdach, których sam jest kierownikiem. Transakcja systemowa (poza RLS). Zwraca liczbę nowych przekroczeń i kopie push nowych wpisów dzwonka.
  */
 export async function notifyExceededThresholds(sql: Sql, companyId: string, now: Date): Promise<{ tools: number; copies: PushCopy[] }> {
   const candidates = await sql<{
@@ -127,12 +127,12 @@ async function activePeople(sql: Sql, companyId: string): Promise<(Recipient & {
   return rows.map((row) => ({ userId: row.user_id, fullName: row.full_name, role: row.role }));
 }
 
-/** Aktywni kierownicy budów i pojazdów, według lokalizacji. */
+/** Aktywni kierownicy budów i pojazdów, według lokalizacji; bez właściciela, który ma je w zbiorczym. */
 async function siteManagers(sql: Sql, locationIds: string[]): Promise<Map<string, Recipient>> {
   const rows = await sql<{ location_id: string; user_id: string; full_name: string }>(
     `select l.id as location_id, u.user_id, u.full_name
      from app.locations l join app.users u on u.user_id = l.manager_id
-     where l.id = any($1::uuid[]) and u.active`,
+     where l.id = any($1::uuid[]) and u.role = 'kierownik' and u.active`,
     [locationIds],
   );
   return new Map(rows.map((row) => [row.location_id, { userId: row.user_id, fullName: row.full_name }]));

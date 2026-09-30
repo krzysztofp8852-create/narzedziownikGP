@@ -37,7 +37,7 @@ function ManagerSelect({ id, managers, defaultValue }: { id: string; managers: S
       </option>
       {managers.map((manager) => (
         <option key={manager.id} value={manager.id}>
-          {manager.fullName}
+          {manager.role === "wlasciciel" ? t("locations.ownerAsManager", { name: manager.fullName }) : manager.fullName}
         </option>
       ))}
     </select>

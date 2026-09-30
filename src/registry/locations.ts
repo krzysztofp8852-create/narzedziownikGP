@@ -1,6 +1,6 @@
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
-import type { Session } from "./registry";
+import type { Role, Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
 export type SiteStatus = "aktywna" | "zakonczona";
@@ -8,7 +8,7 @@ export type SiteStatus = "aktywna" | "zakonczona";
 export interface NewSiteInput {
   name: string;
   address: string;
-  /** Aktywny kierownik z firmy właściciela. */
+  /** Aktywny kierownik albo właściciel z firmy właściciela. */
   managerId: string;
 }
 
@@ -55,7 +55,7 @@ export async function changeSiteManager(sql: Sql, siteId: string, managerId: str
 export interface NewVehicleInput {
   /** Np. „Bus WX 12345”. */
   name: string;
-  /** Aktywny kierownik z firmy właściciela. */
+  /** Aktywny kierownik albo właściciel z firmy właściciela. */
   managerId: string;
 }
 
@@ -127,26 +127,30 @@ export async function addService(sql: Sql, session: Session, raw: { name: string
   return { locationId: service.id };
 }
 
-/** Aktywni kierownicy firmy, spośród których właściciel wybiera kierownika budowy albo pojazdu. */
+/**
+ * Aktywni kierownicy i właściciele firmy, spośród których właściciel wybiera kierownika budowy albo pojazdu. Właściciel
+ * małej firmy sam prowadzi budowy i jeździ busem, a osobne konto kierownika zajęłoby miejsce w pakiecie wdrożenia.
+ */
 export async function siteManagerCandidates(sql: Sql): Promise<SiteManagerCandidate[]> {
   return sql(
-    `select user_id as id, full_name as "fullName" from app.users
-     where role = 'kierownik' and active order by full_name`,
+    `select user_id as id, full_name as "fullName", role from app.users
+     where role in ('kierownik', 'wlasciciel') and active order by full_name`,
   );
 }
 
-/** Kierownikiem budowy i pojazdu może być tylko aktywny kierownik z firmy aktora (RLS ukrywa inne firmy). */
+/** Kierownikiem budowy i pojazdu może być tylko aktywny kierownik albo właściciel z firmy aktora (RLS ukrywa inne firmy). */
 async function requireSiteManagerCandidate(sql: Sql, managerId: string) {
   const [candidate] = UUID_PATTERN.test(managerId)
-    ? await sql("select 1 from app.users where user_id = $1 and role = 'kierownik' and active", [managerId])
+    ? await sql("select 1 from app.users where user_id = $1 and role in ('kierownik', 'wlasciciel') and active", [managerId])
     : [];
   if (!candidate) throw new RegistryError("invalid_manager");
 }
 
-/** Aktywny kierownik, któremu można przypisać budowę. */
+/** Aktywny kierownik albo właściciel, któremu można przypisać budowę albo pojazd. */
 export interface SiteManagerCandidate {
   id: string;
   fullName: string;
+  role: Extract<Role, "kierownik" | "wlasciciel">;
 }
 
 export interface Service {

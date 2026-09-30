@@ -7,7 +7,10 @@ export type TutorialOutcome = "ukonczony" | "pominiety";
 
 export const TUTORIAL_OUTCOMES: readonly TutorialOutcome[] = ["ukonczony", "pominiety"];
 
-/** Pierwsze kroki właściciela, po kolei: budowa potrzebuje kierownika, a naklejka narzędzia. */
+/**
+ * Pierwsze kroki właściciela, po kolei: budowa potrzebuje kierownika, a naklejka narzędzia. Krok kierownika jest zrobiony
+ * także wtedy, gdy właściciel sam prowadzi budowę albo jeździ pojazdem: osobne konto kierownika nie jest mu potrzebne.
+ */
 export const FIRST_STEP_IDS = ["kierownik", "budowa", "narzedzia", "naklejki"] as const;
 
 export type FirstStepId = (typeof FIRST_STEP_IDS)[number];
@@ -49,7 +52,9 @@ export async function tutorial(sql: Sql, session: Session): Promise<Tutorial | n
 
 async function firstSteps(sql: Sql, session: Session): Promise<FirstStep[]> {
   const [row] = await sql<Record<FirstStepId, boolean>>(
-    `select exists (select 1 from app.users where company_id = $1 and role = 'kierownik' and active) as kierownik,
+    `select exists (select 1 from app.users where company_id = $1 and role = 'kierownik' and active)
+              or exists (select 1 from app.locations l join app.users u on u.user_id = l.manager_id
+                         where l.company_id = $1 and u.role = 'wlasciciel') as kierownik,
             exists (select 1 from app.locations where company_id = $1 and kind = 'budowa') as budowa,
             exists (select 1 from app.tools where company_id = $1) as narzedzia,
             exists (select 1 from app.tools where company_id = $1 and sticker_printed_at is not null) as naklejki`,

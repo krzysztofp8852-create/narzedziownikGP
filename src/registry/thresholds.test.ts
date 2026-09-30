@@ -112,6 +112,19 @@ describe("przekroczenie progu: kto i o czym", () => {
     expect((await bellOf(z.kowalskiId)).map((n) => n.kind)).toEqual(["narzedzia_zabrane"]);
   });
 
+  it("właściciel, który sam prowadzi budowę, dostaje o jej narzędziach tylko zbiorcze, bez osobnego powiadomienia kierownika", async () => {
+    const z = await givenZawbud();
+    await z.owner.changeSiteManager(z.ratajeId, z.zawbud.ownerId);
+    await move(z.zawbud.ownerId, "wydanie", z.baseId, z.ratajeId, [z.s01]);
+    testbed.clock.advance(31 * DAY + HOUR);
+
+    expect(await testbed.registry.system().notifyExceededThresholds()).toEqual({ tools: 1 });
+    expect(await bellOf(z.zawbud.ownerId)).toEqual([
+      expect.objectContaining({ kind: "progi_przekroczone", tools: [expect.objectContaining({ code: "S-01" })] }),
+    ]);
+    expect(await bellOf(z.nowakId)).toEqual([]);
+  });
+
   it("gdy kierownik budowy jest dezaktywowany, przekroczenie dostaje tylko właściciel w zbiorczym", async () => {
     const z = await givenZawbud();
     await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.s01]);

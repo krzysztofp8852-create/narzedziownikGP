@@ -37,7 +37,8 @@ faktury) to pliki, a na fakturze jest cena, którą widzi tylko właściciel.
   żeby ściągnąć sprzęt z budowy.
 - Przypomnienie to wpis dzwonka `terminy` z listą terminów z danego dnia, bez kopii e-mail (jak progi dni). Każdy
   aktywny właściciel dostaje jeden wpis o wszystkich, a kierownik budowy albo pojazdu jeden o sprzęcie, który jest
-  teraz u niego. Sprzęt wycofany i zaginiony nie przypomina.
+  teraz u niego. Właściciel, który sam jest kierownikiem budowy albo pojazdu, ma ten sprzęt w swoim wpisie i drugiego
+  nie dostaje. Sprzęt wycofany i zaginiony nie przypomina.
 - Raport tygodniowy dostaje sekcję terminów z najbliższych 30 dni i po terminie, bez wygasłych gwarancji. Ta sama lista
   jest pod `/terminy` dla każdej roli; tam prowadzi zbiorcze przypomnienie.
 - Dokumenty leżą w prywatnym kubełku `dokumenty-narzedzi` (trzeci port plików Rejestru, jak zdjęcia zgłoszeń, ADR 0015):

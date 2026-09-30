@@ -44,39 +44,58 @@ describe("dane budowy", () => {
 });
 
 describe("kierownik budowy", () => {
-  it("kierownikiem może być tylko aktywny kierownik z tej samej firmy; inaczej budowa nie powstaje", async () => {
+  it("kierownikiem może być tylko aktywny kierownik albo właściciel z tej samej firmy; inaczej budowa nie powstaje", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const budrex = await testbed.givenActiveCompany("Budrex");
     const owner = testbed.registry.as(zawbud.ownerId);
     const storekeeperId = await testbed.givenMember(zawbud, "magazynier");
+    const workerId = await testbed.givenMember(zawbud, "pracownik");
     const leftId = await testbed.givenMember(zawbud, "kierownik");
     await owner.deactivateMember(leftId);
     const strangerId = await testbed.givenMember(budrex, "kierownik");
 
-    for (const managerId of [storekeeperId, zawbud.ownerId, leftId, strangerId, randomUUID(), "nie-uuid"]) {
+    for (const managerId of [storekeeperId, workerId, leftId, strangerId, budrex.ownerId, randomUUID(), "nie-uuid"]) {
       await expect(owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId })).rejects.toMatchObject({
         code: "invalid_manager",
       });
     }
     expect((await owner.whereIsWhat()).sites).toEqual([]);
   });
+
+  it("właściciel, który sam prowadzi budowę, jest jej kierownikiem, także po zmianie kierownika", async () => {
+    const zawbud = await testbed.givenActiveCompany("Zawbud");
+    const nowakId = await testbed.givenMember(zawbud, "kierownik", "Adam Nowak");
+    const owner = testbed.registry.as(zawbud.ownerId);
+
+    const { locationId: ratajeId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: zawbud.ownerId });
+    const { locationId: winogradyId } = await owner.addSite({ name: "Winogrady", address: "os. Wichrowe 3", managerId: nowakId });
+    await owner.changeSiteManager(winogradyId, zawbud.ownerId);
+
+    const ownerAsManager = { id: zawbud.ownerId, fullName: "Właściciel Zawbud", active: true };
+    expect((await owner.whereIsWhat()).sites).toEqual([
+      expect.objectContaining({ id: ratajeId, manager: ownerAsManager }),
+      expect.objectContaining({ id: winogradyId, manager: ownerAsManager }),
+    ]);
+  });
 });
 
 describe("kandydaci na kierownika budowy", () => {
-  it("właściciel wybiera spośród aktywnych kierowników swojej firmy, według imienia i nazwiska", async () => {
+  it("właściciel wybiera spośród aktywnych kierowników i właścicieli swojej firmy, według imienia i nazwiska", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const budrex = await testbed.givenActiveCompany("Budrex");
     const nowakId = await testbed.givenMember(zawbud, "kierownik", "Adam Nowak");
     const kowalskiId = await testbed.givenMember(zawbud, "kierownik", "Jan Kowalski");
     await testbed.givenMember(zawbud, "magazynier");
+    await testbed.givenMember(zawbud, "pracownik");
     await testbed.givenMember(budrex, "kierownik");
     const leftId = await testbed.givenMember(zawbud, "kierownik", "Ewa Adamska");
     const owner = testbed.registry.as(zawbud.ownerId);
     await owner.deactivateMember(leftId);
 
     expect(await owner.siteManagerCandidates()).toEqual([
-      { id: nowakId, fullName: "Adam Nowak" },
-      { id: kowalskiId, fullName: "Jan Kowalski" },
+      { id: nowakId, fullName: "Adam Nowak", role: "kierownik" },
+      { id: kowalskiId, fullName: "Jan Kowalski", role: "kierownik" },
+      { id: zawbud.ownerId, fullName: "Właściciel Zawbud", role: "wlasciciel" },
     ]);
     await expect(testbed.registry.as(nowakId).siteManagerCandidates()).rejects.toMatchObject({ code: "forbidden" });
   });
@@ -97,16 +116,17 @@ describe("zmiana kierownika budowy", () => {
     ]);
   });
 
-  it("nowym kierownikiem nie zostanie magazynier ani dezaktywowany kierownik; kierownik się nie zmienia", async () => {
+  it("nowym kierownikiem nie zostanie magazynier, pracownik ani dezaktywowany kierownik; kierownik się nie zmienia", async () => {
     const zawbud = await testbed.givenActiveCompany("Zawbud");
     const nowakId = await testbed.givenMember(zawbud, "kierownik", "Adam Nowak");
     const storekeeperId = await testbed.givenMember(zawbud, "magazynier");
+    const workerId = await testbed.givenMember(zawbud, "pracownik");
     const leftId = await testbed.givenMember(zawbud, "kierownik");
     const owner = testbed.registry.as(zawbud.ownerId);
     await owner.deactivateMember(leftId);
     const { locationId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId: nowakId });
 
-    for (const managerId of [storekeeperId, leftId, "nie-uuid"]) {
+    for (const managerId of [storekeeperId, workerId, leftId, "nie-uuid"]) {
       await expect(owner.changeSiteManager(locationId, managerId)).rejects.toMatchObject({ code: "invalid_manager" });
     }
     expect((await owner.whereIsWhat()).sites).toEqual([expect.objectContaining({ manager: expect.objectContaining({ id: nowakId }) })]);
