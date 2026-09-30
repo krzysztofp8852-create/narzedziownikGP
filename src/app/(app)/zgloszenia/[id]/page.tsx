@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { MissingIcon } from "@/components/missing-icon";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -40,7 +41,8 @@ export default async function IssuePage(props: PageProps<"/zgloszenia/[id]">) {
       {back}
       <div className="section-head">
         <h1 className="display page-title">
-          {issue.kind === "uszkodzenie" && <DamagedIcon />} {issueSubjectText({ kind: issue.kind, tool: issue.tool, place: issue.location?.name ?? null })}
+          {issue.kind === "uszkodzenie" && <DamagedIcon />}
+          {issue.kind === "brak" && <MissingIcon />} {issueSubjectText({ kind: issue.kind, tool: issue.tool, place: issue.location?.name ?? null })}
         </h1>
         <span className={issue.status === "otwarte" ? "tag tag-alarm" : "tag"}>{t(`issues.status.${issue.status}`)}</span>
       </div>

@@ -223,6 +223,35 @@ describe("zgłoszenie braku i innej sprawy", () => {
     expect(await z.owner.issue(issueId)).toMatchObject({ kind: "brak", tool: { code: "W-02" }, location: { name: "Rataje" } });
   });
 
+  it("tablica pokazuje zgłoszony brak, dopóki jest otwarte choć jedno zgłoszenie braku do narzędzia", async () => {
+    const z = await givenZawbud();
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ reportedMissing: false });
+
+    const { issueId: first } = await fileIssue(z.nowakId, { kind: "brak", toolId: z.w02, description: "Nie ma jej od piątku" });
+    const { issueId: second } = await fileIssue(z.workerId, { kind: "brak", toolId: z.w02, description: "Dalej jej nie ma" });
+
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ reportedMissing: true });
+    expect(await toolOnBoard(z.ownerId, z.s01)).toMatchObject({ reportedMissing: false });
+    await close(z.ownerId, first, "Jedna się znalazła");
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ reportedMissing: true });
+    await close(z.ownerId, second, "Była w kontenerze");
+    expect(await toolOnBoard(z.ownerId, z.w02)).toMatchObject({ reportedMissing: false });
+    expect(await z.owner.toolCard(z.w02)).toMatchObject({ state: "w_obiegu" });
+  });
+
+  it("brak bez narzędzia i inna sprawa do narzędzia nie dają dopisku; dopisek widzi ten, kto widzi zgłoszenie", async () => {
+    const z = await givenZawbud();
+
+    await fileIssue(z.workerId, { kind: "brak", description: "Brakuje kasków" });
+    await fileIssue(z.workerId, { kind: "brak", locationId: z.baseId, description: "Brakuje kasków na bazie" });
+    await fileIssue(z.workerId, { kind: "inne", toolId: z.s01, description: "Kabel do wymiany za miesiąc" });
+    expect(await toolOnBoard(z.ownerId, z.s01)).toMatchObject({ reportedMissing: false });
+
+    await fileIssue(z.nowakId, { kind: "brak", toolId: z.w02, description: "Nie ma jej od piątku" });
+    expect(await toolOnBoard(z.storekeeperId, z.w02)).toMatchObject({ reportedMissing: true });
+    expect(await toolOnBoard(z.kowalskiId, z.w02)).toMatchObject({ reportedMissing: false });
+  });
+
   it("inne i brak mogą dotyczyć lokalizacji albo niczego", async () => {
     const z = await givenZawbud();
 

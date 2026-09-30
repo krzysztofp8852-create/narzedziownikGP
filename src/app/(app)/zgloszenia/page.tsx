@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { MissingIcon } from "@/components/missing-icon";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -105,7 +106,8 @@ function IssueList({ issues }: { issues: IssueSummary[] }) {
             <span className="movement-head">
               {issue.unread > 0 && <span className="tag tag-unread">{t("issues.unread", { count: issue.unread })}</span>}
               <span className={`tag issue-kind issue-kind-${issue.kind}`}>
-                {issue.kind === "uszkodzenie" && <DamagedIcon />} {t(`issues.kind.${issue.kind}`)}
+                {issue.kind === "uszkodzenie" && <DamagedIcon />}
+                {issue.kind === "brak" && <MissingIcon />} {t(`issues.kind.${issue.kind}`)}
               </span>
               <span>{issueTargetText({ tool: issue.tool, place: issue.location?.name ?? null })}</span>
             </span>

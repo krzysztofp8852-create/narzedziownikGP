@@ -95,6 +95,10 @@ Zgłoszone (dodane przez kierownika, czeka na akceptację właściciela) albo za
 Flaga narzędzia ustawiana przez zgłoszenie uszkodzenia. Nie blokuje ruchów; znika po powrocie z serwisu albo decyzją właściciela.
 _Avoid_: zepsute, niesprawne (jako stan)
 
+**Zgłoszony brak**:
+Dopisek przy narzędziu na tablicy, dopóki jest do niego otwarte zgłoszenie braku lub zaginięcia. Nie jest flagą ani stanem: nie zmienia stanu narzędzia i nie przenosi go do zaginionych (to robi tylko korekta właściciela); znika z zamknięciem ostatniego takiego zgłoszenia.
+_Avoid_: zaginione (to stan narzędzia)
+
 ## Terminy
 
 **Termin**:
