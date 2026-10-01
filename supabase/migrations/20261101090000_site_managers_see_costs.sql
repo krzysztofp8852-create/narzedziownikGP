@@ -1,4 +1,5 @@
--- Kierownik widzi koszty swoich budów i pojazdów, gdy właściciel to włączy w ustawieniach firmy (domyślnie nie).
+-- Kierownik widzi koszty swoich budów i pojazdów, gdy właściciel to włączy w ustawieniach firmy (domyślnie nie);
+-- ADR 0029.
 --
 -- Koszt liczy się ze stawek i historii wartości, więc kierownik ze zgodą czyta stawki firmy i kategorii oraz kwoty
 -- i wartości tylko tych narzędzi, które kiedyś trafiły do lokalizacji, której jest kierownikiem. Z procentu
@@ -22,7 +23,7 @@ revoke execute on function app.sees_costs() from public;
 grant execute on function app.sees_costs() to authenticated;
 
 -- Czy aktor widzi stawkę i wartość narzędzia: właściciel każdego, kierownik ze zgodą tego, które kiedyś trafiło
--- do lokalizacji, której jest kierownikiem.
+-- (ruchem, którego nie cofnięto) do lokalizacji, której jest kierownikiem.
 create function app.sees_costs_of_tool(p_tool_id uuid) returns boolean
 language sql stable security definer set search_path = ''
 as $$
@@ -34,6 +35,9 @@ as $$
         join app.movements m on m.id = mt.movement_id
         join app.locations l on l.id = m.to_location_id
         where mt.tool_id = p_tool_id and l.company_id = app.current_company_id() and l.manager_id = auth.uid()
+          -- Jak przy liczeniu dni: cofnięty ruch (oryginał i cofnięcie) się nie liczy.
+          and m.kind <> 'cofniecie'
+          and not exists (select 1 from app.movements r where r.reverses_movement_id = m.id)
       )
     )
 $$;

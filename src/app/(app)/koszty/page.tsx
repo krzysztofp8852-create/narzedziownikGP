@@ -52,14 +52,14 @@ export default async function CostSummaryPage(props: PageProps<"/koszty">) {
       ) : (
         <>
           <CostPeriodPicker path="/koszty" choice={choice} />
-          <Summary summary={summary} search={costPeriodSearch(choice)} owner={owner} />
+          <Summary summary={summary} search={costPeriodSearch(choice)} />
         </>
       )}
     </>
   );
 }
 
-function Summary({ summary, search, owner }: { summary: Extract<CostSummary, { status: "koszty" }>; search: string; owner: boolean }) {
+function Summary({ summary, search }: { summary: Extract<CostSummary, { status: "koszty" }>; search: string }) {
   const groups: { kind: CostedKind; label: string }[] = [
     { kind: "budowa", label: t("costSummary.sites") },
     { kind: "pojazd", label: t("costSummary.vehicles") },
@@ -86,7 +86,7 @@ function Summary({ summary, search, owner }: { summary: Extract<CostSummary, { s
           </div>
         )}
       </div>
-      {summary.locations.length === 0 && <p className="empty">{owner ? t("costSummary.empty") : t("costSummary.emptyManager")}</p>}
+      {summary.locations.length === 0 && <p className="empty">{t("costSummary.empty")}</p>}
       {groups.map(({ kind, label }) => {
         const rows = summary.locations.filter((row) => row.location.kind === kind);
         return (

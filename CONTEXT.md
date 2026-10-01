@@ -9,7 +9,7 @@ Klient NarzędziownikaGP. Każdy rekord domenowy należy do dokładnie jednej fi
 _Avoid_: klient, tenant, organizacja
 
 **Właściciel**:
-Rola w firmie z pełnymi uprawnieniami, jedyna widząca wartości sprzętu w złotówkach.
+Rola w firmie z pełnymi uprawnieniami, jedyna widząca wartości sprzętu w złotówkach (kierownik, któremu pozwoliła widzieć koszty, wyliczy je ze stawki procentowej).
 _Avoid_: szef, admin
 
 **Kierownik**:
@@ -136,7 +136,7 @@ Część programu z własną podstroną albo zakładką (np. koszt sprzętu), w 
 _Avoid_: dodatek, plugin
 
 **Stawka dzienna**:
-Ile kosztuje dzień narzędzia na budowie albo pojeździe: kwota zł/dzień narzędzia, a bez niej procent wartości dla kategorii albo firmy. Każda stawka obowiązuje od dnia ustawienia; widzi je tylko właściciel.
+Ile kosztuje dzień narzędzia na budowie albo pojeździe: kwota zł/dzień narzędzia, a bez niej procent wartości dla kategorii albo firmy. Każda stawka obowiązuje od dnia ustawienia; ustawia i ogląda je tylko właściciel, a kierownik ze zgodą na koszty widzi je w kosztach swoich lokalizacji.
 _Avoid_: amortyzacja, cena wynajmu
 
 **Dzień startu kosztów**:

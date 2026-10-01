@@ -608,6 +608,9 @@ describe("kierownik widzi koszty swoich budów i pojazdów za zgodą właścicie
   it("połączenie z bazą jako kierownik ze zgodą czyta stawki i wartości tylko sprzętu, który był w jego lokalizacjach", async () => {
     const z = await givenTwoManagers();
     await z.owner.updateSettings({ siteManagersSeeCosts: true });
+    // Pomyłkowe wydanie na jego budowę, od razu cofnięte, nie odsłania wartości narzędzia.
+    const mistake = await move(z, "2026-03-03T12:30:00+01:00", "wydanie", z.baseId, z.winogradyId, [z.e02]);
+    await z.owner.undoMovement({ operationId: randomUUID(), movementId: mistake.id });
 
     const seen = await withActor(testbed.db, z.nowakId, async (sql) => ({
       rates: await sql<{ kind: string; tool_id: string | null }>("select kind, tool_id from app.daily_rates"),

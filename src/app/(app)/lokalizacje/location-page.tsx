@@ -149,13 +149,24 @@ export async function CostsPage({ id, kind, searchParams }: { id: string; kind: 
           </p>
         </section>
       ) : (
-        <SiteOrVehicleCosts location={location} costs={costs} choice={choice} />
+        <SiteOrVehicleCosts location={location} costs={costs} choice={choice} owner={canManageRates(session)} />
       )}
     </LocationShell>
   );
 }
 
-function SiteOrVehicleCosts({ location, costs, choice }: { location: SiteOrVehicle; costs: Extract<LocationCosts, { status: "koszty" }>; choice: CostPeriodChoice }) {
+function SiteOrVehicleCosts({
+  location,
+  costs,
+  choice,
+  owner,
+}: {
+  location: SiteOrVehicle;
+  costs: Extract<LocationCosts, { status: "koszty" }>;
+  choice: CostPeriodChoice;
+  /** Właściciel sam dopisuje wartość albo kwotę narzędzia; kierownikowi mówimy, że robi to właściciel. */
+  owner: boolean;
+}) {
   const search = costPeriodSearch(choice);
 
   return (
@@ -216,7 +227,7 @@ function SiteOrVehicleCosts({ location, costs, choice }: { location: SiteOrVehic
             ))}
           </ul>
         )}
-        {costs.tools.some((row) => row.daysWithoutRate > 0) && <p className="muted">{t("costs.noRateHint")}</p>}
+        {costs.tools.some((row) => row.daysWithoutRate > 0) && <p className="muted">{owner ? t("costs.noRateHint") : t("costs.noRateHintManager")}</p>}
         <p className="muted">{t("costs.rule")}</p>
       </section>
     </>

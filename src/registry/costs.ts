@@ -239,7 +239,7 @@ export async function costSummary(sql: Sql, session: Session, period: CostPeriod
   return {
     status: "koszty",
     period: clipToToday(period, warsawTime(now).day),
-    total: Math.round(rows.reduce((sum, row) => sum + toGrosze(row.amount), 0)) / 100,
+    total: sumAmounts(rows),
     locations: rows,
   };
 }
@@ -253,8 +253,15 @@ function clipToToday(period: CostPeriod, today: string): CostPeriod {
   return { from: period.from, to: period.to > today && today >= period.from ? today : period.to };
 }
 
-function sumAmounts(tools: ToolCost[]) {
-  return Math.round(tools.reduce((sum, row) => sum + toGrosze(row.amount), 0)) / 100;
+/** Suma kwot w zł, liczona w groszach. */
+function sumAmounts(rows: { amount: number }[]) {
+  return Math.round(rows.reduce((sum, row) => sum + toGrosze(row.amount), 0)) / 100;
+}
+
+/** Okres z dniami sprzętu (null: nie było go tam w ogóle) i narzędzia z kosztem, po kodzie. */
+interface CostsOfLocation {
+  range: CostPeriod | null;
+  tools: ToolCost[];
 }
 
 /**
@@ -266,7 +273,7 @@ async function costsIn(
   locationIds: string[],
   period: CostPeriod | undefined,
   now: Date,
-): Promise<Map<string, { range: CostPeriod | null; tools: ToolCost[] }> | null> {
+): Promise<Map<string, CostsOfLocation> | null> {
   const today = warsawTime(now).day;
   const stays = await staysIn(sql, locationIds);
   const toolIds = [...new Set([...stays.values()].flatMap((byTool) => [...byTool.keys()]))];
@@ -277,7 +284,7 @@ async function costsIn(
     "select id, code, name, category_id from app.tools where id = any($1::uuid[]) order by code",
     [toolIds],
   );
-  const costs = new Map<string, { range: CostPeriod | null; tools: ToolCost[] }>();
+  const costs = new Map<string, CostsOfLocation>();
   for (const locationId of locationIds) {
     const daysByTool = new Map([...(stays.get(locationId) ?? [])].map(([toolId, list]) => [toolId, stayDays(list, today)]));
     const allDays = [...daysByTool.values()].flatMap((days) => [...days]).sort();

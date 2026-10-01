@@ -32,7 +32,8 @@ pierwsze.
   kalendarzowa w Polsce, w której narzędzie było na budowie albo pojeździe choćby chwilę; dzień przejścia A→B
   liczy się na obu. Pobyt kończy ruch wychodzący, korekta (od chwili zapisu), zaginięcie albo wycofanie, a trwający
   liczy się do dziś. Baza i serwis nie mają kosztów. Pomyłkę w dniach poprawia się korektą, nie edycją liczby dni.
-- Stawki i historię wartości widzi i zapisuje tylko właściciel (RLS), jak wartości w zł.
+- Stawki i historię wartości widzi i zapisuje tylko właściciel (RLS), jak wartości w zł. Kierownik za zgodą
+  właściciela widzi je dla sprzętu swoich lokalizacji: ADR 0029.
 
 ## Konsekwencje
 
