@@ -249,6 +249,8 @@ export const LOGGED_DEMO_COMMANDS = [
   "reportTool",
   "acceptToolReport",
   "rejectToolReport",
+  "addRentedTool",
+  "returnToRental",
   "fileIssue",
   "commentOnIssue",
   "closeIssue",

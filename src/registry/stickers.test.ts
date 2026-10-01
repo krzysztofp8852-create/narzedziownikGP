@@ -78,8 +78,8 @@ describe("naklejki QR", () => {
     await z.owner.printStickers({ toolIds: [z.s01] }, asIs);
 
     expect(await z.owner.stickerCandidates()).toEqual([
-      { toolId: z.h01, code: "H-01", name: "Młot Hilti", location: "Magazyn Swarzędz", printedAt: null },
-      { toolId: z.s01, code: "S-01", name: "Szlifierka kątowa", location: "Magazyn Swarzędz", printedAt: new Date("2026-03-05T10:00:00+01:00") },
+      { toolId: z.h01, code: "H-01", name: "Młot Hilti", location: "Magazyn Swarzędz", printedAt: null, rented: false },
+      { toolId: z.s01, code: "S-01", name: "Szlifierka kątowa", location: "Magazyn Swarzędz", printedAt: new Date("2026-03-05T10:00:00+01:00"), rented: false },
     ]);
     await expect(testbed.registry.as(z.storekeeperId).stickerCandidates()).rejects.toMatchObject({ code: "forbidden" });
   });

@@ -32,6 +32,7 @@ const COMPANY_TABLES = [
   "push_subscriptions",
   "support_messages",
   "support_threads",
+  "rental_rates",
   "tool_value_history",
   "tool_values",
   "tools",

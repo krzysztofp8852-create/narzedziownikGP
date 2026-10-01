@@ -94,7 +94,7 @@ Identyfikator narzędzia w postaci prefiksu kategorii i numeru (H-03, S-01), dru
 _Avoid_: numer, ID
 
 **Stan narzędzia**:
-W obiegu, zaginione albo wycofane.
+W obiegu, zaginione, wycofane albo zwrócone (sprzęt wynajęty po zwrocie do wypożyczalni).
 
 **Status ewidencji**:
 Zgłoszone (dodane przez kierownika, czeka na akceptację właściciela) albo zaakceptowane.
@@ -107,15 +107,27 @@ _Avoid_: zepsute, niesprawne (jako stan)
 Dopisek przy narzędziu na tablicy, dopóki jest do niego otwarte zgłoszenie braku lub zaginięcia. Nie jest flagą ani stanem: nie zmienia stanu narzędzia i nie przenosi go do zaginionych (to robi tylko korekta właściciela); znika z zamknięciem ostatniego takiego zgłoszenia.
 _Avoid_: zaginione (to stan narzędzia)
 
+**Sprzęt wynajęty**:
+Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na tablicy ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi progu abonamentu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
+_Avoid_: wypożyczone, najem, sprzęt obcy
+
+**Wypożyczalnia**:
+Firma, od której pochodzi sprzęt wynajęty; przy narzędziu zapisuje się tylko jej nazwa.
+_Avoid_: dostawca, wynajmujący
+
 ## Terminy
 
 **Termin**:
-Data przeglądu, kalibracji, badania UDT albo końca gwarancji przy narzędziu, najwyżej jeden każdego rodzaju, z opcjonalnym cyklem w miesiącach.
+Data przeglądu, kalibracji, badania UDT, końca gwarancji albo zwrotu sprzętu wynajętego przy narzędziu, najwyżej jeden każdego rodzaju, z opcjonalnym cyklem w miesiącach.
 _Avoid_: deadline, zadanie, przegląd (jako ogólne pojęcie)
 
 **Wykonanie**:
 Wpis, że przegląd, kalibracja albo badanie UDT się odbyły; następny termin to dzień wykonania plus cykl. Gwarancji się nie wykonuje, tylko wygasa.
 _Avoid_: zamknięcie terminu, odhaczenie
+
+**Termin zwrotu**:
+Dzień, do którego sprzęt wynajęty ma wrócić do wypożyczalni. Powstaje z przyjęciem, bez cyklu i wykonania; przedłużenie to zmiana tej daty przez tych, którzy mogą zapisać zwrot do wypożyczalni. Przypomina dzień przed i raz po, a po nim tablica ma dopisek „po terminie zwrotu”, który niczego nie blokuje.
+_Avoid_: koniec wynajmu, data oddania
 
 **Po terminie**:
 Stan terminu, którego data minęła bez wpisanego wykonania. Nie blokuje ruchów, tylko ostrzega.
@@ -170,6 +182,10 @@ Ruch między budowami lub pojazdami z pominięciem bazy; rejestruje go ten, kto 
 
 **Przyjęcie**:
 Pierwsze pojawienie się narzędzia w ewidencji (dodanie, import, akceptacja zgłoszenia narzędzia).
+
+**Zwrot do wypożyczalni**:
+Ruch, który oddaje sprzęt wynajęty: narzędzie przechodzi w stan „zwrócone”, znika z tablicy, wyszukiwania i list wyboru, a zostaje w historii. Zapisuje go kierownik lokalizacji, w której sprzęt stoi, magazynier albo właściciel; autor cofa go w 15 minut jak inne ruchy.
+_Avoid_: zwrot (to ruch na bazę), oddanie
 
 **Cofnięcie**:
 Ruch odwracający własny ruch autora w ciągu 15 minut; oryginał zostaje w historii jako cofnięty. Przywraca stan sprzed ruchu, także flagę „uszkodzone”, którą zdjął ruch z serwisu.

@@ -1,12 +1,13 @@
 import { canManageRates, currentToolRate, type EffectiveRate } from "./costs";
 import { type DeadlineSummary, summarizeDeadlines, type ToolDeadline, toolDeadlines } from "./deadlines";
 import { isUniqueViolation, RegistryError, type RegistryErrorCode, ReplayedOperationError } from "./errors";
-import type { MovementKind, MovementSource } from "./movements";
+import { canHandleRentalsAt, type MovementKind, type MovementSource } from "./movements";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import { UUID_PATTERN, warsawTime } from "./validation";
 
-export type ToolState = "w_obiegu" | "zaginione" | "wycofane";
+/** Zwrócone: sprzęt wynajęty po zwrocie do wypożyczalni; zostaje tylko w historii. */
+export type ToolState = "w_obiegu" | "zaginione" | "wycofane" | "zwrocone";
 export type ToolRegistration = "zgloszone" | "zaakceptowane";
 export type LocationKind = "baza" | "budowa" | "serwis" | "pojazd";
 
@@ -59,9 +60,21 @@ export interface ToolCard extends DeadlineSummary {
   damagedSince: Date | null;
   /** Przy zaginionym narzędziu: kiedy zaginęło, gdzie było ostatnio i kto za nie odpowiadał. */
   lost: LostTool | null;
-  /** Przeglądy, kalibracje, badania UDT i gwarancja, od najbliższego terminu. */
+  /** Sprzęt wynajęty z wypożyczalni; null przy własnym. */
+  rental: ToolRental | null;
+  /** Przeglądy, kalibracje, badania UDT, gwarancja i termin zwrotu wynajętego, od najbliższego terminu. */
   deadlines: ToolDeadline[];
   history: HistoryEntry[];
+}
+
+/** Wynajem narzędzia z wypożyczalni; termin zwrotu jest wśród terminów narzędzia. */
+export interface ToolRental {
+  /** Nazwa wypożyczalni. */
+  rentedFrom: string;
+  /** Stawka dobowa z umowy w zł; klucz tylko dla tego, kto widzi koszty narzędzia. */
+  dailyRate?: number;
+  /** Czy oglądający obsługuje ten wynajem tam, gdzie sprzęt stoi: zwrot do wypożyczalni i przedłużenie. */
+  handledByViewer: boolean;
 }
 
 export interface LostTool {
@@ -143,25 +156,32 @@ export async function addTool(
   return intake(sql, session, input, { locationId: base.id, registration: "zaakceptowane" }, now);
 }
 
-/**
- * Pierwsze pojawienie się narzędzia w ewidencji: nowe narzędzie w podanej lokalizacji z ruchem
- * „przyjęcie” autorstwa aktora. Ponowne wysłanie tej samej operacji zwraca pierwotny wynik.
- */
-export async function intake(
-  sql: Sql,
-  session: Session,
-  input: AddToolInput,
-  target: { locationId: string; registration: ToolRegistration },
-  now: Date,
-): Promise<{ toolId: string; code: string }> {
-  if (!UUID_PATTERN.test(input.operationId)) throw new RegistryError("invalid_input");
+/** Narzędzie przyjęte już pod tym identyfikatorem operacji; null, gdy jeszcze go nie ma. */
+export async function intakeByOperation(sql: Sql, operationId: string): Promise<{ toolId: string; code: string } | null> {
+  if (!UUID_PATTERN.test(operationId)) throw new RegistryError("invalid_input");
   const [done] = await sql<{ toolId: string; code: string }>(
     `select t.id as "toolId", t.code from app.movements m
      join app.movement_tools mt on mt.movement_id = m.id
      join app.tools t on t.id = mt.tool_id
      where m.client_operation_id = $1 and m.kind = 'przyjecie'`,
-    [input.operationId],
+    [operationId],
   );
+  return done ?? null;
+}
+
+/**
+ * Pierwsze pojawienie się narzędzia w ewidencji: nowe narzędzie w podanej lokalizacji z ruchem
+ * „przyjęcie” autorstwa aktora, przy sprzęcie wynajętym z nazwą wypożyczalni. Ponowne wysłanie tej samej
+ * operacji zwraca pierwotny wynik.
+ */
+export async function intake(
+  sql: Sql,
+  session: Session,
+  input: AddToolInput,
+  target: { locationId: string; registration: ToolRegistration; rentedFrom?: string },
+  now: Date,
+): Promise<{ toolId: string; code: string }> {
+  const done = await intakeByOperation(sql, input.operationId);
   if (done) return done;
 
   requireOwnerForValue(session, input);
@@ -180,8 +200,8 @@ export async function intake(
   const [tool] = await uniqueOr(
     sql<{ id: string }>(
       `insert into app.tools (company_id, code, name, category_id, brand, model, serial_number, registration,
-                              location_id, located_since, created_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10) returning id`,
+                              location_id, located_since, created_at, rented_from)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11) returning id`,
       [
         session.company.id,
         code,
@@ -193,6 +213,7 @@ export async function intake(
         target.registration,
         target.locationId,
         now,
+        target.rentedFrom ?? null,
       ],
     ),
   );
@@ -344,15 +365,20 @@ export async function toolCard(
     damaged_since: Date | null;
     manager_name: string | null;
     manager_active: boolean | null;
+    location_manager_id: string | null;
+    rented_from: string | null;
+    rental_rate: string | null;
   }>(
     `select t.id, t.code, t.name, c.id as category_id, c.name as category_name, c.prefix as category_prefix,
             t.brand, t.model, t.serial_number, v.value::text as value, t.state, t.registration, l.id as location_id, l.name as location_name, l.kind as location_kind,
-            t.located_since, t.damaged_since, mu.full_name as manager_name, mu.active as manager_active
+            t.located_since, t.damaged_since, mu.full_name as manager_name, mu.active as manager_active,
+            l.manager_id as location_manager_id, t.rented_from, rr.amount::text as rental_rate
      from app.tools t
      join app.categories c on c.id = t.category_id
      join app.locations l on l.id = t.location_id
      left join app.users mu on mu.user_id = l.manager_id and l.kind in ('budowa', 'pojazd')
      left join app.tool_values v on v.tool_id = t.id
+     left join app.rental_rates rr on rr.tool_id = t.id
      where t.id = $1`,
     [toolId],
   );
@@ -423,6 +449,14 @@ export async function toolCard(
           reason: lost.reason,
         }
       : null,
+    rental:
+      row.rented_from === null
+        ? null
+        : {
+            rentedFrom: row.rented_from,
+            ...(row.rental_rate !== null && { dailyRate: Number(row.rental_rate) }),
+            handledByViewer: canHandleRentalsAt(session, { kind: row.location_kind, managerId: row.location_manager_id }),
+          },
     deadlines,
     ...summarizeDeadlines(deadlines, warsawTime(now).day),
     history: history.map((entry) => ({

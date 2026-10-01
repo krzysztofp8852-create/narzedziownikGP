@@ -7,11 +7,12 @@ import {
   canAttachDocument,
   canCompleteDeadlines,
   canManageDeadlines,
-  DEADLINE_KINDS,
+  ADDABLE_DEADLINE_KINDS,
   type DeadlineKind,
   type DeadlineStatus,
   DOCUMENT_KINDS,
   type DocumentKind,
+  isDateOnlyKind,
   type Session,
   type ToolCard,
   type ToolDeadline,
@@ -24,6 +25,7 @@ const DEFAULT_DOCUMENT: Record<DeadlineKind, DocumentKind> = {
   kalibracja: "swiadectwo",
   udt: "protokol",
   gwarancja: "karta_gwarancyjna",
+  zwrot: "inne",
 };
 
 const STATUS_TAGS: Record<DeadlineStatus, string> = {
@@ -36,13 +38,13 @@ const STATUS_TAGS: Record<DeadlineStatus, string> = {
 
 /**
  * Terminy na karcie narzędzia: stan, cykl, ostatnie wykonanie i dokumenty każdego terminu. Właściciel dodaje, zmienia
- * i usuwa terminy, właściciel i magazynier wpisują wykonanie i dołączają dokumenty. W trybie tylko do odczytu formularzy
- * nie ma.
+ * i usuwa terminy, właściciel i magazynier wpisują wykonanie i dołączają dokumenty. Termin zwrotu wynajętego zmienia
+ * (przedłuża) każdy, kto obsługuje ten wynajem, a nie usuwa go nikt. W trybie tylko do odczytu formularzy nie ma.
  */
 export function ToolDeadlines({ session, card }: { session: Session; card: ToolCard }) {
   const writable = !session.company.readOnly;
   const owner = writable && canManageDeadlines(session);
-  const missingKinds = DEADLINE_KINDS.filter((kind) => !card.deadlines.some((deadline) => deadline.kind === kind));
+  const missingKinds = ADDABLE_DEADLINE_KINDS.filter((kind) => !card.deadlines.some((deadline) => deadline.kind === kind));
   return (
     <section id="terminy" className="deadlines-section" aria-labelledby="deadlines">
       <div className="section-head">
@@ -56,7 +58,14 @@ export function ToolDeadlines({ session, card }: { session: Session; card: ToolC
       ) : (
         <ul className="deadlines">
           {card.deadlines.map((deadline) => (
-            <DeadlineItem key={deadline.id} toolId={card.id} deadline={deadline} session={session} writable={writable} />
+            <DeadlineItem
+              key={deadline.id}
+              toolId={card.id}
+              deadline={deadline}
+              session={session}
+              writable={writable}
+              handlesRental={card.state === "w_obiegu" && card.rental?.handledByViewer === true}
+            />
           ))}
         </ul>
       )}
@@ -71,13 +80,28 @@ export function ToolDeadlines({ session, card }: { session: Session; card: ToolC
   );
 }
 
-function DeadlineItem({ toolId, deadline, session, writable }: { toolId: string; deadline: ToolDeadline; session: Session; writable: boolean }) {
+function DeadlineItem({
+  toolId,
+  deadline,
+  session,
+  writable,
+  handlesRental,
+}: {
+  toolId: string;
+  deadline: ToolDeadline;
+  session: Session;
+  writable: boolean;
+  /** Oglądający przedłuża ten wynajem (zmienia termin zwrotu). */
+  handlesRental: boolean;
+}) {
   const owner = writable && canManageDeadlines(session);
+  const returnDate = deadline.kind === "zwrot";
+  const editable = returnDate ? writable && handlesRental : owner;
   const documents: DocumentChoice = {
     kinds: DOCUMENT_KINDS.filter((kind) => canAttachDocument(session, kind)),
     defaultKind: DEFAULT_DOCUMENT[deadline.kind],
   };
-  const completable = writable && canCompleteDeadlines(session) && deadline.kind !== "gwarancja" && deadline.dueOn !== null;
+  const completable = writable && canCompleteDeadlines(session) && !isDateOnlyKind(deadline.kind) && deadline.dueOn !== null;
   const attachable = writable && documents.kinds.length > 0;
   // Po zapisie karta dostaje nowe identyfikatory operacji, a nowy `key` czyści formularz.
   const operationIds = { complete: randomUUID(), attach: randomUUID() };
@@ -135,9 +159,9 @@ function DeadlineItem({ toolId, deadline, session, writable }: { toolId: string;
           <AttachDocumentForm key={operationIds.attach} toolId={toolId} deadlineId={deadline.id} operationId={operationIds.attach} documents={documents} />
         </details>
       )}
-      {owner && (
+      {editable && (
         <details className="panel">
-          <summary className="panel-summary">{t("deadlines.edit")}</summary>
+          <summary className="panel-summary">{returnDate ? t("deadlines.extendRental") : t("deadlines.edit")}</summary>
           <EditDeadlineForm key={`${deadline.dueOn}:${deadline.cycleMonths}:${deadline.note}`} toolId={toolId} deadline={deadline} />
         </details>
       )}

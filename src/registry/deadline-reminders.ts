@@ -9,13 +9,15 @@ import { warsawTime } from "./validation";
 
 /**
  * Wyprzedzenie przypomnień o terminach narzędzi: tydzień, bo tyle trzeba, żeby ściągnąć sprzęt z budowy na bazę albo
- * do serwisu. Koniec gwarancji przypomina się tylko przed.
+ * do serwisu, a termin zwrotu wynajętego dzień, bo wynajem trwa zwykle kilka dni. Koniec gwarancji przypomina się
+ * tylko przed.
  */
 const TOOL_DEADLINE_LEADS: Record<DeadlineKind, ReminderLead> = {
   przeglad: { daysBefore: 7, afterDue: true },
   kalibracja: { daysBefore: 7, afterDue: true },
   udt: { daysBefore: 7, afterDue: true },
   gwarancja: { daysBefore: 7, afterDue: false },
+  zwrot: { daysBefore: 1, afterDue: true },
 };
 
 /** Firmy z terminami, dla których zadanie dzienne sprawdza przypomnienia. */

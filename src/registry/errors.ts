@@ -27,6 +27,7 @@ export type RegistryErrorCode =
   | "invalid_tool_state"
   | "import_invalid"
   | "not_reported"
+  | "not_rented"
   | "no_stickers"
   | "description_required"
   | "comment_required"

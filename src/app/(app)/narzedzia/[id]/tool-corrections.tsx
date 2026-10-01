@@ -59,8 +59,8 @@ export function ToolCorrections({ tool, places, operationIds }: ToolCorrectionsP
         </div>
         <div className="field">
           <label htmlFor="correct-state">{t("toolCard.state")}</label>
-          {/* Korekta zaginionego narzędzia to zwykle jego odnalezienie. */}
-          <select id="correct-state" name="state" defaultValue={tool.state === "zaginione" ? "w_obiegu" : tool.state}>
+          {/* Korekta zaginionego narzędzia to zwykle jego odnalezienie, a zwróconego do wypożyczalni: zwrot zapisany pomyłkowo. */}
+          <select id="correct-state" name="state" defaultValue={tool.state === "zaginione" || tool.state === "zwrocone" ? "w_obiegu" : tool.state}>
             {TOOL_STATES.map((state) => (
               <option key={state} value={state}>
                 {t(`toolState.${state}`)}

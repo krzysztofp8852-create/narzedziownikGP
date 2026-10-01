@@ -14,7 +14,8 @@ export type MovementKind =
   | "cofniecie"
   | "korekta"
   | "zaginiecie"
-  | "wycofanie";
+  | "wycofanie"
+  | "zwrot_do_wypozyczalni";
 export type MovementSource = "panel" | "checklista" | "qr" | "import" | "glos";
 /** Skąd przychodzi polecenie „zarejestruj ruch”: checklista, skaner naklejek QR albo zatwierdzona propozycja z tekstu. */
 export const REGISTER_SOURCES = ["checklista", "qr", "glos"] as const;
@@ -22,6 +23,8 @@ export type RegisterSource = (typeof REGISTER_SOURCES)[number];
 /** Ruchy, które rejestruje polecenie „zarejestruj ruch”. */
 export const REGISTERED_KINDS = ["wydanie", "zwrot", "przeniesienie", "do_serwisu", "z_serwisu"] as const;
 export type RegisteredKind = (typeof REGISTERED_KINDS)[number];
+/** Ruchy, które autor może cofnąć w 15 minut: rejestrowane i zwrot do wypożyczalni. */
+const UNDOABLE_KINDS: readonly MovementKind[] = [...REGISTERED_KINDS, "zwrot_do_wypozyczalni"];
 
 /**
  * Skąd i dokąd prowadzi każdy rodzaj rejestrowanego ruchu, i czyja budowa albo pojazd daje kierownikowi
@@ -130,6 +133,17 @@ export function canMoveTools(session: Session, site: { manager: { id: string } }
 }
 
 /**
+ * Sprzęt wynajęty w lokalizacji przyjmuje, zwraca do wypożyczalni i przedłuża właściciel i magazynier wszędzie,
+ * a kierownik na swojej budowie albo pojeździe.
+ */
+export function canHandleRentalsAt(session: Session, place: { kind: LocationKind; managerId: string | null }) {
+  return (
+    canMoveEverywhere(session) ||
+    (session.role === "kierownik" && (place.kind === "budowa" || place.kind === "pojazd") && place.managerId === session.userId)
+  );
+}
+
+/**
  * Kierownik rejestruje ruch, gdy jego jest budowa lub pojazd docelowy (wydanie, przeniesienie) albo
  * źródłowy (zwrot; do serwisu tylko z budowy). Z bazy do serwisu i z serwisu na bazę ruszają sprzęt
  * magazynier i właściciel.
@@ -218,7 +232,8 @@ export async function registerMovement(sql: Sql, session: Session, input: Regist
 
 /**
  * Cofa własny ruch zapisany najwyżej 15 minut temu, jeśli od tamtej pory żadne z jego narzędzi
- * się nie ruszyło. Nowy ruch prowadzi w odwrotną stronę, a oryginał zostaje w historii jako cofnięty.
+ * się nie ruszyło. Nowy ruch prowadzi w odwrotną stronę (po zwrocie do wypożyczalni: w tej samej lokalizacji,
+ * ze stanem „w obiegu”), a oryginał zostaje w historii jako cofnięty.
  */
 export async function undoMovement(sql: Sql, session: Session, input: UndoMovementInput, now: Date): Promise<Movement> {
   if (!UUID_PATTERN.test(input.movementId)) throw new RegistryError("invalid_input");
@@ -227,7 +242,7 @@ export async function undoMovement(sql: Sql, session: Session, input: UndoMoveme
     kind: MovementKind;
     author_id: string;
     from_location_id: string;
-    to_location_id: string;
+    to_location_id: string | null;
     occurred_at: Date;
     recorded_at: Date;
     moved_since: boolean;
@@ -239,16 +254,18 @@ export async function undoMovement(sql: Sql, session: Session, input: UndoMoveme
   );
   if (!original) throw new RegistryError("not_found");
   if (original.author_id !== session.userId) throw new RegistryError("forbidden");
-  if (!REGISTERED_KINDS.includes(original.kind as RegisteredKind)) throw new RegistryError("not_undoable");
+  if (!UNDOABLE_KINDS.includes(original.kind)) throw new RegistryError("not_undoable");
   if (now.getTime() - new Date(original.recorded_at).getTime() > UNDO_WINDOW_MS) throw new RegistryError("undo_expired");
   if (original.moved_since) throw new RegistryError("undo_blocked");
   requireOpen((await location(sql, original.from_location_id))!);
 
+  const rentalReturn = original.kind === "zwrot_do_wypozyczalni";
   const movementId = await insertMovement(sql, session, {
     kind: "cofniecie",
     source: "panel",
-    fromLocationId: original.to_location_id,
+    fromLocationId: rentalReturn ? original.from_location_id : original.to_location_id,
     toLocationId: original.from_location_id,
+    ...(rentalReturn && { fromState: "zwrocone" as const, toState: "w_obiegu" as const }),
     // Ruch z telefonu z rozjechanym zegarem może mieć czas zdarzenia chwilę w przyszłości.
     occurredAt: new Date(Math.max(now.getTime(), new Date(original.occurred_at).getTime())),
     recordedAt: now,
@@ -337,7 +354,7 @@ export async function recentMovements(sql: Sql, session: Session, limit: number,
      from app.movements m
      left join app.locations back on back.id = m.from_location_id
      order by m.occurred_at desc, m.recorded_at desc, m.sequence_number desc limit $1`,
-    [Math.max(1, Math.min(limit, 200)), session.userId, REGISTERED_KINDS, new Date(now.getTime() - UNDO_WINDOW_MS)],
+    [Math.max(1, Math.min(limit, 200)), session.userId, UNDOABLE_KINDS, new Date(now.getTime() - UNDO_WINDOW_MS)],
   );
   const undoable = new Map(rows.map((row) => [row.id, row.undoable]));
   const movements = await movementsByIds(sql, [...undoable.keys()]);

@@ -71,6 +71,16 @@ export function notificationText(notification: NotificationContent): { title: st
           .join(" · "),
       };
     }
+    case "sprzet_wynajety":
+      return {
+        title: t("bell.rentedTool", { code: notification.tool.code, name: notification.tool.name }),
+        body: t("bell.rentedToolBody", {
+          author: notification.addedBy,
+          place: placeAt(notification.location),
+          company: notification.rentalCompany,
+          day: formatCalendarDay(notification.returnOn),
+        }),
+      };
     case "tylko_do_odczytu":
       return {
         title: t("bell.readOnly"),
@@ -90,6 +100,7 @@ export function notificationLink(notification: NotificationContent): string {
         ? `/narzedzia/${notification.tools[0].id}`
         : `/historia${historySearch({ locationId: notification.from.id })}`;
     case "prog_przekroczony":
+    case "sprzet_wynajety":
       return `/narzedzia/${notification.tool.id}`;
     case "progi_przekroczone":
       return "/";

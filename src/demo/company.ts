@@ -163,8 +163,8 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
 /**
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
- * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, alarmy, przypomnienia i raporty w dzwonkach, stawki
- * dzienne kosztu sprzętu), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
+ * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, sprzęt wynajęty z terminem zwrotu, także po terminie,
+ * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
  * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
 export async function createDemoCompany(
@@ -369,6 +369,18 @@ export async function createDemoCompany(
     reason: "Znaleziony na hali w Komornikach przy inwentaryzacji, w ewidencji był na busie.",
   });
 
+  // Sprzęt z wypożyczalni: podnośnik na Suchym Lesie jest już po terminie zwrotu, a przypomnienia przyszły w dzwonku.
+  await advanceTo(daysAgo(10, 12, 0));
+  await as("anna").addRentedTool({
+    operationId: randomUUID(),
+    locationId: places.suchyLas,
+    name: "Podnośnik nożycowy JLG 1930ES",
+    categoryId: categoryIds.R,
+    rentalCompany: "Cramo Poznań",
+    dailyRate: 280,
+    returnOn: dayFromNow(-2),
+  });
+
   await move("anna", daysAgo(9, 7, 45), "przeniesienie", "busAnna", "suchyLas", ["dhs680", "drabina2"]);
   await move("pawel", daysAgo(7, 8, 10), "przeniesienie", "tarasy", "jezyce", ["vp1550"]);
 
@@ -389,6 +401,18 @@ export async function createDemoCompany(
   await move("anna", daysAgo(5, 9, 0), "przeniesienie", "komorniki", "suchyLas", ["n24"]);
   await advanceTo(daysAgo(5, 11, 15));
   await owner.closeIssue({ operationId: randomUUID(), issueId: missingLevel, comment: "Wyjaśnione: niwelator jest na Suchym Lesie." });
+
+  // Druga zagęszczarka do zasypki fundamentów hali, wynajęta na tydzień.
+  await advanceTo(daysAgo(4, 9, 0));
+  await as("marek").addRentedTool({
+    operationId: randomUUID(),
+    locationId: places.komorniki,
+    name: "Zagęszczarka rewersyjna 500 kg",
+    categoryId: categoryIds.Z,
+    rentalCompany: "Ramirent Poznań",
+    dailyRate: 190,
+    returnOn: dayFromNow(3),
+  });
 
   await advanceTo(daysAgo(4, 14, 0));
   await as("anna").reportTool({ operationId: randomUUID(), siteId: places.suchyLas, name: "Mieszadło do zapraw Makita UT1401", categoryId: categoryIds.Z });

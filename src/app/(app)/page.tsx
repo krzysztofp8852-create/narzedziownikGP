@@ -18,7 +18,9 @@ import {
   canImportTools,
   canManageLocations,
   canManageTools,
+  canHandleRentalsAt,
   canPrintStickers,
+  canRentTools,
   canReportTools,
   canReviewToolReports,
   canSeeValues,
@@ -349,7 +351,7 @@ export default async function BoardPage(props: PageProps<"/">) {
     registry.whereIsWhat(),
     registry.recentMovements(),
     canManageLocations(session) ? registry.siteManagerCandidates() : null,
-    canManageTools(session) || canReportTools(session) ? registry.categories() : null,
+    canManageTools(session) || canReportTools(session) || canRentTools(session) ? registry.categories() : null,
     canReviewToolReports(session) ? registry.toolReports() : [],
     registry.tutorial(),
     googleMaps ? registry.siteMap() : null,
@@ -388,6 +390,15 @@ export default async function BoardPage(props: PageProps<"/">) {
               canReportTools(session) && {
                 categories,
                 sites: sites.filter((site) => site.manager.id === session.userId).map((site) => ({ id: site.id, name: site.name })),
+                operationId: randomUUID(),
+              }
+            }
+            rentedTool={
+              categories &&
+              canRentTools(session) && {
+                categories,
+                places: rentalPlaces(session, board),
+                showValue: canSeeValues(session),
                 operationId: randomUUID(),
               }
             }
@@ -482,4 +493,19 @@ export default async function BoardPage(props: PageProps<"/">) {
       </div>
     </>
   );
+}
+
+/**
+ * Gdzie aktor przyjmuje sprzęt wynajęty: właściciel i magazynier na bazie, budowach i pojazdach z tablicy (aktywnych),
+ * kierownik na swoich.
+ */
+function rentalPlaces(session: Session, board: WhereIsWhat) {
+  const place = ({ id, name }: { id: string; name: string }) => ({ id, name });
+  const handled = (kind: "budowa" | "pojazd") => (location: { id: string; name: string; manager: { id: string } }) =>
+    canHandleRentalsAt(session, { kind, managerId: location.manager.id });
+  return {
+    base: canHandleRentalsAt(session, { kind: "baza", managerId: null }) ? place(board.base) : null,
+    sites: board.sites.filter(handled("budowa")).map(place),
+    vehicles: board.vehicles.filter(handled("pojazd")).map(place),
+  };
 }

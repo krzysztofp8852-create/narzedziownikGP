@@ -68,9 +68,12 @@ describe("firma demo", () => {
     expect(await registry.toolReports()).toHaveLength(2);
     expect((await registry.issues()).filter((issue) => issue.status === "otwarte")).toHaveLength(3);
     expect(await registry.finishedSites()).toHaveLength(1);
-    // Terminy z najbliższego miesiąca: kalibracja po terminie, kalibracja za kilka dni, przegląd agregatu i koniec gwarancji.
+    // Terminy z najbliższego miesiąca: kalibracja po terminie, podnośnik po terminie zwrotu, zwrot zagęszczarki i kalibracja
+    // za kilka dni, przegląd agregatu i koniec gwarancji.
     expect((await registry.upcomingDeadlines()).map((deadline) => [deadline.tool.code, deadline.kind, deadline.overdue])).toEqual([
       ["M-04", "kalibracja", true],
+      ["R-06", "zwrot", true],
+      ["Z-07", "zwrot", false],
       ["M-01", "kalibracja", false],
       ["A-01", "przeglad", false],
       ["H-01", "gwarancja", false],

@@ -18,6 +18,7 @@ import { StickerReprintForm } from "../../naklejki/sticker-forms";
 import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
+import { RentalReturnForm } from "./rental-return-form";
 import { ToolCorrections } from "./tool-corrections";
 import { ToolDeadlines } from "./tool-deadlines";
 import { ToolRateForm } from "./tool-rate-form";
@@ -27,10 +28,13 @@ export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Pro
   return { title: card ? `${card.code} ${card.name}` : undefined };
 }
 
-/** „20,00 zł za dzień (1% wartości, stawka firmy)”: obowiązująca stawka dzienna i jej źródło. */
+/** „20,00 zł za dzień (1% wartości, stawka firmy)”: obowiązująca stawka dzienna i jej źródło, także wypożyczalnia. */
 function dailyRateText(rate: EffectiveRate | null) {
   if (!rate) return t("dailyRates.toolRateNone");
-  if (rate.source === "narzedzie") return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t("dailyRates.source.narzedzie")})`;
+  // Kwota narzędzia albo stawka wypożyczalni, bez procentu wartości.
+  if (!("percent" in rate)) {
+    return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t(`dailyRates.source.${rate.source}`)})`;
+  }
   const percent = decimalText(rate.percent);
   if (rate.amount === null) return t("dailyRates.toolRateNoValue", { percent });
   return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t(`dailyRates.source.${rate.source}`, { percent })})`;
@@ -91,6 +95,33 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
           </p>
         )}
       </section>
+
+      {card.rental && (
+        <section className="rental" aria-labelledby="rental" data-testid="tool-rental">
+          <h2 id="rental" className="display section-title">
+            {t("rentals.cardTitle")}
+          </h2>
+          <p>
+            {t("rentals.cardFrom", { company: card.rental.rentedFrom })}
+            {card.rental.dailyRate !== undefined && <> {t("rentals.cardRate", { amount: formatMoney(card.rental.dailyRate) })}</>}
+          </p>
+          {card.state === "zwrocone" ? (
+            <p className="muted">{t("rentals.cardReturned")}</p>
+          ) : (
+            card.state === "w_obiegu" &&
+            card.rental.handledByViewer &&
+            !session.company.readOnly && (
+              <>
+                <p className="muted">{t("rentals.cardExtendHint")}</p>
+                <details className="panel">
+                  <summary className="panel-summary">{t("rentals.return")}</summary>
+                  <RentalReturnForm toolId={card.id} code={card.code} operationId={randomUUID()} />
+                </details>
+              </>
+            )
+          )}
+        </section>
+      )}
 
       {card.damagedSince && (
         <p className="damaged-note" role="status" data-testid="tool-damaged">

@@ -134,9 +134,12 @@
     "lostEmpty": "Nie ma zaginionych narzędzi.",
     "lostFor": "zaginione od {days}",
     "reportTool": "Zgłoś narzędzie",
+    "addRentedTool": "Sprzęt wynajęty",
     "reported": "zgłoszone",
     "damaged": "uszkodzone",
     "reportedMissing": "zgłoszony brak",
+    "rented": "wynajęte",
+    "returnOverdue": "po terminie zwrotu",
     "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
     "toolReportsLink": "Rozpatrz w zgłoszeniach →"
   },
@@ -269,6 +272,7 @@
     "invalid_tool_state": "Narzędzie jest już w tym stanie.",
     "import_invalid": "Import ma wiersze z błędami. Popraw plik i wgraj go ponownie. Nic nie zostało zapisane.",
     "not_reported": "To zgłoszenie jest już rozpatrzone.",
+    "not_rented": "To narzędzie jest własne, nie wynajęte, więc nie wraca do wypożyczalni.",
     "no_stickers": "Nie ma narzędzi do oklejenia: każde w obiegu ma już wydrukowaną naklejkę.",
     "read_only": "Firma jest w trybie tylko do odczytu, więc tej zmiany nie zapiszemy. Tablica, historia i eksport działają normalnie.",
     "description_required": "Opisz, co się stało.",
@@ -379,7 +383,8 @@
   "toolState": {
     "w_obiegu": "W obiegu",
     "zaginione": "Zaginione",
-    "wycofane": "Wycofane"
+    "wycofane": "Wycofane",
+    "zwrocone": "Zwrócone do wypożyczalni"
   },
   "toolRegistration": {
     "zgloszone": "Zgłoszone",
@@ -395,7 +400,8 @@
     "cofniecie": "Cofnięcie",
     "korekta": "Korekta",
     "zaginiecie": "Zaginięcie",
-    "wycofanie": "Wycofanie"
+    "wycofanie": "Wycofanie",
+    "zwrot_do_wypozyczalni": "Zwrot do wypożyczalni"
   },
   "movementSource": {
     "panel": "panel",
@@ -464,13 +470,15 @@
       "przeglad": "Przegląd",
       "kalibracja": "Kalibracja",
       "udt": "Badanie UDT",
-      "gwarancja": "Gwarancja"
+      "gwarancja": "Gwarancja",
+      "zwrot": "Termin zwrotu"
     },
     "lowerKinds": {
       "przeglad": "przegląd",
       "kalibracja": "kalibracja",
       "udt": "badanie UDT",
-      "gwarancja": "gwarancja"
+      "gwarancja": "gwarancja",
+      "zwrot": "termin zwrotu"
     },
     "due": "termin {day}",
     "overdue": "po terminie ({day})",
@@ -555,7 +563,8 @@
     "itemResponsible": " · kierownik: {name}",
     "boardDue": "Sprzęt z terminem w najbliższych {days} dniach: {count} szt.",
     "boardOverdue": "po terminie: {count}",
-    "boardLink": "Zobacz terminy"
+    "boardLink": "Zobacz terminy",
+    "extendRental": "Przedłuż wynajem"
   },
   "siteStatus": {
     "aktywna": "Aktywna",
@@ -994,7 +1003,9 @@
     "deadline": "{kind} {code} {name}: {when}",
     "deadlineBody": "Sprzęt jest teraz {place}.",
     "deadlines": "Terminy sprzętu: {count}",
-    "deadlineItem": "{code}: {kind}, {when}"
+    "deadlineItem": "{code}: {kind}, {when}",
+    "rentedTool": "Sprzęt wynajęty: {code} {name}",
+    "rentedToolBody": "{author}, {place}. Wypożyczalnia {company}, zwrot do {day}."
   },
   "push": {
     "title": "Powiadomienia na telefonie",
@@ -1215,6 +1226,8 @@
         "reportTool": "Zgłoszenie narzędzia kupionego na budowę",
         "acceptToolReport": "Akceptacja zgłoszonego narzędzia",
         "rejectToolReport": "Odrzucenie zgłoszonego narzędzia",
+        "addRentedTool": "Przyjęcie sprzętu wynajętego",
+        "returnToRental": "Zwrot do wypożyczalni",
         "fileIssue": "Nowe zgłoszenie",
         "commentOnIssue": "Komentarz w zgłoszeniu",
         "closeIssue": "Zamknięcie zgłoszenia",
@@ -1916,7 +1929,8 @@
     "source": {
       "narzedzie": "kwota tego narzędzia",
       "kategoria": "{percent}% wartości, stawka kategorii",
-      "firma": "{percent}% wartości, stawka firmy"
+      "firma": "{percent}% wartości, stawka firmy",
+      "wypozyczalnia": "stawka wypożyczalni"
     }
   },
   "costSettings": {
@@ -1939,5 +1953,34 @@
     "siteEmpty": "Na tej budowie nie ma teraz sprzętu.",
     "vehicleEmpty": "Na tym pojeździe nie ma teraz sprzętu.",
     "history": "Historia ruchów tej lokalizacji"
+  },
+  "rentals": {
+    "intro": "Sprzęt z wypożyczalni od razu trafia na tablicę, bez akceptacji. Program liczy jego koszt ze stawki dobowej i dzień przed terminem zwrotu przypomina o zwrocie do wypożyczalni. Nie liczy się do limitu narzędzi abonamentu.",
+    "place": "Gdzie stoi",
+    "placePlaceholder": "Wybierz miejsce",
+    "baseGroup": "Baza",
+    "sitesGroup": "Budowy",
+    "vehiclesGroup": "Pojazdy",
+    "noPlaces": "Nie masz aktywnej budowy ani pojazdu, na które możesz przyjąć sprzęt wynajęty.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "company": "Wypożyczalnia",
+    "companyPlaceholder": "np. Ramirent Poznań",
+    "dailyRate": "Stawka dobowa (zł)",
+    "dailyRateHint": "Kwota z umowy za każdą rozpoczętą dobę.",
+    "returnOn": "Termin zwrotu",
+    "value": "Wartość (zł, opcjonalnie)",
+    "submit": "Przyjmij sprzęt wynajęty",
+    "submitting": "Zapisywanie…",
+    "added": "Przyjęto {code} {name}: {place}. Naklejkę wydrukujesz w Naklejkach, jeśli jest potrzebna.",
+    "cardTitle": "Sprzęt wynajęty",
+    "cardFrom": "Z wypożyczalni {company}.",
+    "cardRate": "Stawka dobowa: {amount}.",
+    "cardReturned": "Zwrócony do wypożyczalni. Zostaje w historii.",
+    "cardExtendHint": "Przedłużenie wynajmu: zmień termin zwrotu w terminach poniżej.",
+    "return": "Zwrot do wypożyczalni",
+    "returnHint": "Sprzęt zniknie z tablicy, a w historii zostanie, kiedy i kto zapisał zwrot. Pomyłkę cofniesz w 15 minut na tablicy.",
+    "returnConfirm": "Zapisać zwrot {code} do wypożyczalni?",
+    "returnYes": "Tak, zwrócony",
+    "cancel": "Anuluj"
   }
 }

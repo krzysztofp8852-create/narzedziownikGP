@@ -4,12 +4,13 @@ import { useState } from "react";
 import { type MessageKey, t } from "@/i18n/t";
 import type { Category, RegisteredKind } from "@/registry/registry";
 import { NewToolForm } from "./narzedzia/new-tool-form";
+import { RentedToolForm, type RentedToolFormProps } from "./narzedzia/rented-tool-form";
 import { ReportToolForm, type ReportToolFormProps } from "./narzedzia/report-tool-form";
 import { Checklist, type ChecklistData } from "./ruch/checklist";
 import { Scanner } from "./ruch/scanner";
 import { TextEntry } from "./ruch/text-entry";
 
-type Operation = RegisteredKind | "skaner" | "tekst" | "narzedzie" | "zgloszenie";
+type Operation = RegisteredKind | "skaner" | "tekst" | "narzedzie" | "zgloszenie" | "wynajem";
 
 const MOVEMENT_BUTTONS: [RegisteredKind, MessageKey][] = [
   ["wydanie", "board.issue"],
@@ -25,6 +26,8 @@ export interface OperationsPanelProps {
   newTool: { categories: Category[]; showValue: boolean; operationId: string; canImport: boolean; canPrintStickers: boolean } | false | null;
   /** Zgłaszanie narzędzi kupionych na budowę: tylko dla kierownika. */
   reportTool: ReportToolFormProps | false | null;
+  /** Przyjęcie sprzętu wynajętego: każdy, kto rejestruje ruchy. */
+  rentedTool: RentedToolFormProps | false | null;
   /** Wpis tekstem z AI: gdy skonfigurowano dostawcę interpretacji. */
   textEntry: boolean;
   /** Nagrywanie głosu: gdy skonfigurowano także dostawcę transkrypcji. */
@@ -34,7 +37,7 @@ export interface OperationsPanelProps {
 }
 
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
-export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voiceEntry, recordingId }: OperationsPanelProps) {
+export function OperationsPanel({ checklist, newTool, reportTool, rentedTool, textEntry, voiceEntry, recordingId }: OperationsPanelProps) {
   const [open, setOpen] = useState<Operation | null>(recordingId && textEntry ? "tekst" : null);
   // Link „Do zatwierdzenia” w nagłówku otwiera głos i wpis tekstem także na już otwartej tablicy.
   const [linkedRecording, setLinkedRecording] = useState(recordingId);
@@ -53,6 +56,7 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
     ...movements,
     ...(newTool ? [["narzedzie", t("board.addTool")] as [Operation, string]] : []),
     ...(reportTool ? [["zgloszenie", t("board.reportTool")] as [Operation, string]] : []),
+    ...(rentedTool ? [["wynajem", t("board.addRentedTool")] as [Operation, string]] : []),
   ];
   // Pracownik nie rejestruje ruchów ani nie dodaje narzędzi: nie ma tu nic do zrobienia.
   if (operations.length === 0) return null;
@@ -85,9 +89,10 @@ export function OperationsPanel({ checklist, newTool, reportTool, textEntry, voi
         <div id="operation-body" className="operation-body">
           {open === "narzedzie" && newTool && <NewToolForm {...newTool} />}
           {open === "zgloszenie" && reportTool && <ReportToolForm {...reportTool} />}
+          {open === "wynajem" && rentedTool && <RentedToolForm {...rentedTool} />}
           {open === "skaner" && <Scanner data={checklist} />}
           {open === "tekst" && <TextEntry data={checklist} voice={voiceEntry} recordingId={recordingId} />}
-          {open !== "skaner" && open !== "tekst" && open !== "narzedzie" && open !== "zgloszenie" && checklist.routes[open] && (
+          {open !== "skaner" && open !== "tekst" && open !== "narzedzie" && open !== "zgloszenie" && open !== "wynajem" && checklist.routes[open] && (
             <Checklist
               key={open}
               kind={open}
