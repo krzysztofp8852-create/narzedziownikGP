@@ -22,7 +22,7 @@ prawdziwych przyciskach (`DemoTour`), który pamięta stan w `localStorage`.
   właściciel jest kierownikiem którejś budowy albo pojazdu.
 - Samouczek to karta nad tablicą, a nie dymki przy przyciskach ani okno na cały ekran: nie zasłania tablicy (testy
   dymne i praca idą dalej), działa tak samo na telefonie i komputerze, a lista pierwszych kroków odsyła do prawdziwych
-  formularzy. Ta sama karta jest pod `/samouczek`, dokąd prowadzi znak „?” w nagłówku.
+  formularzy. Ta sama karta jest pod `/samouczek`, dokąd prowadzi znak „?” w nagłówku (od #79 pozycja „Samouczek” w menu).
 - Pracownik (nie rejestruje ruchów) i firma demo (własny przewodnik po tablicy, konto roli dzielą wszyscy oglądający) nie mają
   samouczka.
 

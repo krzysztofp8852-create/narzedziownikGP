@@ -42,6 +42,8 @@ test("właściciel pisze na czacie z ekranu historii, dostaje automatyczną odpo
 
   await expect(page.getByTestId("chat-message")).toHaveCount(2);
   await expect(page.getByTestId("chat-message").last()).toContainText("Dzięki za wiadomość! Odpiszemy, jak tylko znajdziemy chwilę.");
+  // W aplikacji firmy „Wyloguj” jest w menu; panel super-admina ma je w nagłówku.
+  await page.getByRole("button", { name: "Menu" }).click();
   await signOut(page);
 
   await signIn(page, seeded.superAdmin.email, seeded.superAdmin.password);

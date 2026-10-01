@@ -35,7 +35,7 @@ async function signIn(page: Page, login: string, password: string) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samouczek nie wraca sam, ale otwiera się z nagłówka", async ({
+test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samouczek nie wraca sam, ale otwiera się z menu", async ({
   page,
 }) => {
   const company = createCompany();
@@ -57,6 +57,7 @@ test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samou
   await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
 
+  await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("link", { name: "Samouczek" }).click();
   await expect(page).toHaveURL(/\/samouczek$/);
   await expect(page.getByTestId("tutorial").getByRole("heading", { name: "Pierwsze kroki" })).toBeVisible();
@@ -78,6 +79,8 @@ test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik
   await expect(tutorial.getByTestId("first-step-naklejki")).toHaveAttribute("data-done", "false");
   await tutorial.getByRole("link", { name: "Przejdź do naklejek →" }).click();
   await expect(page).toHaveURL(/\/naklejki$/);
+
+  await page.getByRole("button", { name: "Menu" }).click();
 
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);

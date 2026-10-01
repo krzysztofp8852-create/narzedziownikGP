@@ -46,6 +46,7 @@ test("właściciel loguje się hasłem tymczasowym, musi je zmienić i widzi pus
   await expect(page.getByText("Na bazie nie ma jeszcze żadnych narzędzi.")).toBeVisible();
 
   // Nowe hasło działa po wylogowaniu, a zmiana nie jest już wymagana.
+  await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await page.getByLabel("E-mail").fill(company.email);

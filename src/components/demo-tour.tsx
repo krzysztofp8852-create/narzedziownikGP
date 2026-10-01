@@ -24,7 +24,7 @@ const STEPS = {
   issues: "issues",
   issuesWorker: "issues",
   bell: "bell",
-  settings: "settings",
+  menu: "menu",
   finish: null,
 } as const;
 
@@ -47,7 +47,7 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "lost",
     "issues",
     "bell",
-    "settings",
+    "menu",
     "finish",
   ],
   kierownik: ["welcome", "roles", "alarms", "alarmTool", "search", "operationsManager", "recent", "bell", "issues", "finish"],

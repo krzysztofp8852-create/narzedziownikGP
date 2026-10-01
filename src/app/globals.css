@@ -277,6 +277,9 @@ a.button {
 }
 
 .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
   min-width: 40px;
   padding: 8px 10px;
@@ -291,6 +294,77 @@ a.button {
   .icon-button-label {
     display: inline;
   }
+}
+
+/*
+ * Menu pod trzema kreskami: ten sam panel na telefonie i komputerze, przy prawej krawędzi przycisku. Szerokość
+ * zostawia margines strony, więc na wąskim telefonie panel nie wychodzi poza ekran.
+ */
+.app-menu {
+  position: relative;
+}
+
+.app-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 900;
+  width: min(18rem, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(20 23 28 / 0.16);
+}
+
+.app-menu-panel[hidden] {
+  display: none;
+}
+
+.app-menu-group-title {
+  padding: 0 10px 4px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-menu-group ul {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.app-menu-link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.app-menu-link:hover {
+  background: var(--surface-raised);
+}
+
+.app-menu-link[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .app-header-company {

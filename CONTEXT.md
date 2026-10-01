@@ -36,7 +36,7 @@ Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje 
 _Avoid_: analityka, śledzenie
 
 **Samouczek**:
-Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Startuje sam po pierwszym logowaniu, dopóki go nie pominięto ani nie ukończono; potem otwiera się znakiem „?” w nagłówku. Pracownik i firma demo go nie mają.
+Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Startuje sam po pierwszym logowaniu, dopóki go nie pominięto ani nie ukończono; potem otwiera się z menu pod trzema kreskami. Pracownik i firma demo go nie mają.
 _Avoid_: onboarding (to wdrożenie), tutorial, przewodnik (to przewodnik po tablicy w demo)
 
 **Super-admin**:

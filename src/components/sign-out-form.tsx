@@ -9,7 +9,7 @@ import { unsubscribeFromPush } from "@/lib/push/client";
  * Wylogowanie; najpierw kopia tablicy tej osoby znika z telefonu, żeby bez sieci nie zobaczył jej nikt inny,
  * a powiadomienia push tej osoby przestają przychodzić na ten telefon.
  */
-export function SignOutForm() {
+export function SignOutForm({ className = "button button-quiet", label = t("header.logout") }: { className?: string; label?: string }) {
   return (
     <form
       action={async () => {
@@ -17,8 +17,8 @@ export function SignOutForm() {
         await signOut();
       }}
     >
-      <button className="button button-quiet" type="submit">
-        {t("header.logout")}
+      <button className={className} type="submit">
+        {label}
       </button>
     </form>
   );

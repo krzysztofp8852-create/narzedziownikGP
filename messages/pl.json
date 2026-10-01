@@ -54,7 +54,6 @@
   },
   "header": {
     "logout": "Wyloguj",
-    "settings": "Ustawienia",
     "search": "Szukaj narzędzia",
     "searchShort": "Szukaj",
     "bell": "Dzwonek",
@@ -62,8 +61,27 @@
     "issues": "Zgłoszenia",
     "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
     "chat": "Czat z supportem",
-    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}",
-    "tutorial": "Samouczek"
+    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}"
+  },
+  "menu": {
+    "title": "Menu",
+    "groups": {
+      "equipment": "Sprzęt",
+      "places": "Budowy i pojazdy",
+      "people": "Ludzie",
+      "company": "Firma"
+    },
+    "board": "Tablica",
+    "deadlines": "Terminy",
+    "history": "Historia",
+    "stickers": "Naklejki",
+    "sites": "Budowy",
+    "vehicles": "Pojazdy",
+    "team": "Zespół",
+    "documents": "Dokumenty",
+    "settings": "Ustawienia",
+    "tutorial": "Samouczek",
+    "logout": "Wyloguj"
   },
   "board": {
     "title": "Gdzie jest co",
@@ -1505,9 +1523,9 @@
         "title": "Dzwonek",
         "text": "Powiadomienia: ktoś zabrał sprzęt z Twojej budowy, ruch zapisany bez zasięgu czeka na wyjaśnienie albo przyszedł raport."
       },
-      "settings": {
-        "title": "Ustawienia",
-        "text": "Próg dni alarmu, kto widzi zgłoszenia, naklejki QR, serwisy, zespół i konta oraz abonament. Budowy i busy dodajesz na tablicy."
+      "menu": {
+        "title": "Menu",
+        "text": "Pod trzema kreskami są wszystkie podstrony: terminy, historia, naklejki QR, zespół i ustawienia firmy (próg dni alarmu, kto widzi zgłoszenia, serwisy, abonament). Budowy i pojazdy dodajesz na tablicy."
       },
       "finish": {
         "title": "Gotowe",

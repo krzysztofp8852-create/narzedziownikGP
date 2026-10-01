@@ -49,6 +49,8 @@ test("kierownik ma w telefonie kopię tablicy bez złotówek, a po wylogowaniu k
   expect(await cachedBoard(page)).not.toContain("zł");
   await expect(page.getByTestId("board-snapshot")).toHaveCount(0);
 
+  await page.getByRole("button", { name: "Menu" }).click();
+
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   expect(await cachedBoard(page)).toBeNull();
