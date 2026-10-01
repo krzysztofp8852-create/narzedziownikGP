@@ -477,3 +477,159 @@ describe("kto widzi stawki i koszty", () => {
     expect(await costsOf(z, z.ratajeId)).toMatchObject({ total: 20 });
   });
 });
+
+describe("zestawienie kosztów budów i pojazdów", () => {
+  it("przed dniem startu kosztów zestawienie ma stan „brak stawki”", async () => {
+    const z = await givenZawbud();
+    await move(z, "2026-03-02T08:00:00+01:00", "wydanie", z.baseId, z.ratajeId, [z.e01]);
+
+    expect(await z.owner.costSummary({ from: "2026-03-01", to: "2026-03-31" })).toEqual({ status: "brak_stawki" });
+  });
+
+  it("każda otwarta budowa i pojazd z kwotą za okres, zamknięte tylko z kosztem w okresie, bez bazy i serwisu", async () => {
+    const z = await givenZawbud();
+    await z.owner.setDailyRate({ kind: "firma" }, 1);
+    const { locationId: lazarzId } = await z.owner.addSite({ name: "Łazarz", address: "ul. Głogowska 1", managerId: z.nowakId });
+    const { locationId: oldSiteId } = await z.owner.addSite({ name: "Jeżyce", address: "ul. Dąbrowskiego 5", managerId: z.nowakId });
+    await move(z, "2026-03-03T08:00:00+01:00", "wydanie", z.baseId, oldSiteId, [z.p01]);
+    await move(z, "2026-03-08T08:00:00+01:00", "zwrot", oldSiteId, z.baseId, [z.p01]);
+    await z.owner.closeSite(oldSiteId);
+    await move(z, "2026-04-02T08:00:00+02:00", "wydanie", z.baseId, z.ratajeId, [z.e01]);
+    await move(z, "2026-04-05T08:00:00+02:00", "przeniesienie", z.ratajeId, z.busId, [z.e01]);
+    await move(z, "2026-04-05T09:00:00+02:00", "wydanie", z.baseId, lazarzId, [z.e02]);
+    await move(z, "2026-04-06T08:00:00+02:00", "do_serwisu", z.baseId, z.hiltiId, [z.p01]);
+    testbed.clock.set("2026-04-10T12:00:00+02:00");
+
+    expect(await z.owner.costSummary({ from: "2026-04-01", to: "2026-04-30" })).toEqual({
+      status: "koszty",
+      period: { from: "2026-04-01", to: "2026-04-10" },
+      total: 80 + 120 + 30,
+      locations: [
+        { location: { id: z.ratajeId, name: "Rataje", kind: "budowa", open: true }, toolCount: 1, amount: 80 },
+        { location: { id: lazarzId, name: "Łazarz", kind: "budowa", open: true }, toolCount: 1, amount: 30 },
+        { location: { id: z.winogradyId, name: "Winogrady", kind: "budowa", open: true }, toolCount: 0, amount: 0 },
+        { location: { id: z.busId, name: "Bus WX 12345", kind: "pojazd", open: true }, toolCount: 1, amount: 120 },
+      ],
+    });
+
+    const march = await z.owner.costSummary({ from: "2026-03-01", to: "2026-03-31" });
+    expect(march).toMatchObject({ status: "koszty", period: { from: "2026-03-01", to: "2026-03-31" }, total: 6 * 30 });
+    if (march.status !== "koszty") throw new Error("Brak kosztów");
+    expect(march.locations.map((row) => [row.location.name, row.location.open, row.amount])).toEqual([
+      ["Jeżyce", false, 180],
+      ["Łazarz", true, 0],
+      ["Rataje", true, 0],
+      ["Winogrady", true, 0],
+      ["Bus WX 12345", true, 0],
+    ]);
+    const may = await z.owner.costSummary({ from: "2026-05-01", to: "2026-05-31" });
+    expect(may.status === "koszty" && may.locations.map((row) => row.location.name)).toEqual(["Łazarz", "Rataje", "Winogrady", "Bus WX 12345"]);
+  });
+
+  it("odrzuca zły okres", async () => {
+    const z = await givenZawbud();
+    await z.owner.setDailyRate({ kind: "firma" }, 1);
+
+    for (const period of [{ from: "2026-03-10", to: "2026-03-01" }, { from: "2026-02-30", to: "2026-03-01" }, undefined]) {
+      await expect(z.owner.costSummary(period as never), JSON.stringify(period)).rejects.toMatchObject({ code: "invalid_input" });
+    }
+  });
+});
+
+describe("kierownik widzi koszty swoich budów i pojazdów za zgodą właściciela", () => {
+  const MARCH = { from: "2026-03-01", to: "2026-03-31" };
+
+  /** Zawbud z drugim kierownikiem Kowalskim na budowie Łazarz i sprzętem na Ratajach i Łazarzu od 2 marca. */
+  async function givenTwoManagers() {
+    const z = await givenZawbud();
+    const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik", "Jan Kowalski");
+    const { locationId: lazarzId } = await z.owner.addSite({ name: "Łazarz", address: "ul. Głogowska 1", managerId: kowalskiId });
+    await z.owner.setDailyRate({ kind: "firma" }, 1);
+    await z.owner.setDailyRate({ kind: "narzedzie", toolId: z.p01 }, 70);
+    await move(z, "2026-03-02T08:00:00+01:00", "wydanie", z.baseId, z.ratajeId, [z.e01]);
+    await move(z, "2026-03-02T08:00:00+01:00", "wydanie", z.baseId, lazarzId, [z.p01]);
+    testbed.clock.set("2026-03-03T12:00:00+01:00");
+    return { ...z, kowalskiId, lazarzId, nowak: testbed.registry.as(z.nowakId) };
+  }
+
+  it("domyślnie ustawienie jest wyłączone i kierownik nie widzi kosztów ani zestawienia", async () => {
+    const z = await givenTwoManagers();
+
+    expect(await z.owner.settings()).toMatchObject({ siteManagersSeeCosts: false });
+    expect((await z.nowak.session())!.company.siteManagersSeeCosts).toBe(false);
+    await expect(z.nowak.locationCosts(z.ratajeId)).rejects.toMatchObject({ code: "forbidden" });
+    await expect(z.nowak.costSummary(MARCH)).rejects.toMatchObject({ code: "forbidden" });
+  });
+
+  it("z włączonym ustawieniem kierownik widzi koszty i zestawienie tylko lokalizacji, których jest kierownikiem", async () => {
+    const z = await givenTwoManagers();
+
+    await z.owner.updateSettings({ siteManagersSeeCosts: true });
+
+    expect(await z.owner.settings()).toMatchObject({ siteManagersSeeCosts: true });
+    expect((await z.nowak.session())!.company.siteManagersSeeCosts).toBe(true);
+    expect(await z.nowak.locationCosts(z.ratajeId)).toEqual(await z.owner.locationCosts(z.ratajeId));
+    expect(await z.nowak.locationCosts(z.ratajeId)).toMatchObject({ total: 40 });
+    await expect(z.nowak.locationCosts(z.lazarzId)).rejects.toMatchObject({ code: "forbidden" });
+    const summary = await z.nowak.costSummary(MARCH);
+    if (summary.status !== "koszty") throw new Error("Brak kosztów");
+    expect(summary.total).toBe(40);
+    expect(summary.locations.map((row) => [row.location.name, row.amount])).toEqual([
+      ["Rataje", 40],
+      ["Winogrady", 0],
+      ["Bus WX 12345", 0],
+    ]);
+    const kowalski = testbed.registry.as(z.kowalskiId);
+    expect(await kowalski.locationCosts(z.lazarzId)).toMatchObject({ total: 140 });
+    expect(await kowalski.costSummary(MARCH)).toMatchObject({ total: 140, locations: [{ location: { name: "Łazarz" }, amount: 140 }] });
+  });
+
+  it("stawek nie ustawia ani nie ogląda nikt poza właścicielem, także kierownik ze zgodą", async () => {
+    const z = await givenTwoManagers();
+    await z.owner.updateSettings({ siteManagersSeeCosts: true });
+
+    await expect(z.nowak.dailyRates()).rejects.toMatchObject({ code: "forbidden" });
+    await expect(z.nowak.setDailyRate({ kind: "firma" }, 5)).rejects.toMatchObject({ code: "forbidden" });
+    await expect(z.nowak.updateSettings({ siteManagersSeeCosts: false })).rejects.toMatchObject({ code: "forbidden" });
+    expect(await z.nowak.toolCard(z.e01)).not.toHaveProperty("dailyRate");
+  });
+
+  it("magazynier i pracownik nie widzą kosztów nawet z włączonym ustawieniem", async () => {
+    const z = await givenTwoManagers();
+    await z.owner.updateSettings({ siteManagersSeeCosts: true });
+
+    for (const memberId of [z.storekeeperId, z.workerId]) {
+      const member = testbed.registry.as(memberId);
+      await expect(member.locationCosts(z.ratajeId)).rejects.toMatchObject({ code: "forbidden" });
+      await expect(member.costSummary(MARCH)).rejects.toMatchObject({ code: "forbidden" });
+    }
+  });
+
+  it("połączenie z bazą jako kierownik ze zgodą czyta stawki i wartości tylko sprzętu, który był w jego lokalizacjach", async () => {
+    const z = await givenTwoManagers();
+    await z.owner.updateSettings({ siteManagersSeeCosts: true });
+    // Pomyłkowe wydanie na jego budowę, od razu cofnięte, nie odsłania wartości narzędzia.
+    const mistake = await move(z, "2026-03-03T12:30:00+01:00", "wydanie", z.baseId, z.winogradyId, [z.e02]);
+    await z.owner.undoMovement({ operationId: randomUUID(), movementId: mistake.id });
+
+    const seen = await withActor(testbed.db, z.nowakId, async (sql) => ({
+      rates: await sql<{ kind: string; tool_id: string | null }>("select kind, tool_id from app.daily_rates"),
+      values: await sql<{ tool_id: string }>("select tool_id from app.tool_value_history"),
+    }));
+    expect(seen.rates).toEqual([{ kind: "firma", tool_id: null }]);
+    expect(seen.values.map((row) => row.tool_id)).toEqual([z.e01]);
+
+    await z.owner.updateSettings({ siteManagersSeeCosts: false });
+    const hidden = await withActor(testbed.db, z.nowakId, async (sql) => [
+      ...(await sql("select * from app.daily_rates")),
+      ...(await sql("select * from app.tool_value_history")),
+    ]);
+    expect(hidden).toEqual([]);
+  });
+
+  it("ustawienie przyjmuje tylko tak albo nie", async () => {
+    const z = await givenTwoManagers();
+
+    await expect(z.owner.updateSettings({ siteManagersSeeCosts: "tak" as never })).rejects.toMatchObject({ code: "invalid_input" });
+  });
+});

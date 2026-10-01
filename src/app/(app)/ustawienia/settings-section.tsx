@@ -1,6 +1,7 @@
 import { LegalLinks } from "@/components/legal-links";
 import { t } from "@/i18n/t";
 import { type Category, type CompanySettings, type DailyRates, MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
+import { CostVisibilityForm } from "./cost-visibility-form";
 import { DailyRatesForm } from "./daily-rates-form";
 import { IssueVisibilityForm } from "./issue-visibility-form";
 import { SettingsForm } from "./settings-form";
@@ -38,6 +39,18 @@ export function DailyRatesSection({ rates, categories }: { rates: DailyRates; ca
       </h2>
       <p className="muted">{t("dailyRates.hint")}</p>
       <DailyRatesForm rates={rates} categories={categories} />
+    </section>
+  );
+}
+
+/** Czy kierownik widzi koszty swoich budów i pojazdów; magazynier i pracownik nigdy. */
+export function CostSettingsSection({ settings }: { settings: CompanySettings }) {
+  return (
+    <section className="company-card" aria-labelledby="cost-settings">
+      <h2 id="cost-settings" className="display section-title">
+        {t("costSettings.title")}
+      </h2>
+      <CostVisibilityForm siteManagersSeeCosts={settings.siteManagersSeeCosts} />
     </section>
   );
 }

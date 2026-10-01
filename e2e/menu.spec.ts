@@ -60,6 +60,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Naklejki",
     "Budowy",
     "Pojazdy",
+    "Koszty sprzętu",
     "Zespół",
     "Dokumenty",
     "Ustawienia",

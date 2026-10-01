@@ -1,4 +1,4 @@
-import { canSeeCosts, currentToolRate, type EffectiveRate } from "./costs";
+import { canManageRates, currentToolRate, type EffectiveRate } from "./costs";
 import { type DeadlineSummary, summarizeDeadlines, type ToolDeadline, toolDeadlines } from "./deadlines";
 import { isUniqueViolation, RegistryError, type RegistryErrorCode, ReplayedOperationError } from "./errors";
 import type { MovementKind, MovementSource } from "./movements";
@@ -407,7 +407,7 @@ export async function toolCard(
     model: row.model,
     serialNumber: row.serial_number,
     ...(canSeeValues(session) && { value: row.value === null ? null : Number(row.value) }),
-    ...(canSeeCosts(session) && { dailyRate: await currentToolRate(sql, { id: row.id, categoryId: row.category_id }, now) }),
+    ...(canManageRates(session) && { dailyRate: await currentToolRate(sql, { id: row.id, categoryId: row.category_id }, now) }),
     state: row.state,
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },

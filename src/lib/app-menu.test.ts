@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import type { Role, Session } from "@/registry/registry";
 import { appMenu } from "./app-menu";
 
-const session = (role: Role, { demo = false } = {}): Session => ({
+const session = (role: Role, { demo = false, siteManagersSeeCosts = false } = {}): Session => ({
   userId: "3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102",
   fullName: "Jan Testowy",
   role,
   mustChangePassword: false,
-  company: { id: "9a4d3f2b-8c1e-4e7b-8c2f-5d6e7f809102", name: "Zawbud", readOnly: false, demo },
+  company: { id: "9a4d3f2b-8c1e-4e7b-8c2f-5d6e7f809102", name: "Zawbud", readOnly: false, demo, siteManagersSeeCosts },
 });
 
 /** Menu tak, jak je widać: grupy z pozycjami, przy odnośnikach adres. */
-const shown = (role: Role, options?: { demo?: boolean }) =>
+const shown = (role: Role, options?: { demo?: boolean; siteManagersSeeCosts?: boolean }) =>
   appMenu(session(role, options)).map((group) => [
     group.label,
     group.items.map((item) => (item.kind === "link" ? `${item.label} ${item.href}` : item.label)),
@@ -21,7 +21,7 @@ describe("menu pod trzema kreskami", () => {
   it("właściciel widzi wszystkie podstrony w czterech grupach", () => {
     expect(shown("wlasciciel")).toEqual([
       ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
-      ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
+      ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
       ["Ludzie", ["Zespół /ustawienia#zespol"]],
       ["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
     ]);
@@ -34,6 +34,16 @@ describe("menu pod trzema kreskami", () => {
         ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
         ["Firma", ["Samouczek /samouczek", "Wyloguj"]],
       ]);
+    }
+  });
+
+  it("kierownik widzi koszty sprzętu, gdy właściciel na to pozwolił; magazynier i pracownik nigdy", () => {
+    expect(shown("kierownik", { siteManagersSeeCosts: true })[1]).toEqual([
+      "Budowy i pojazdy",
+      ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"],
+    ]);
+    for (const role of ["magazynier", "pracownik"] as const) {
+      expect(shown(role, { siteManagersSeeCosts: true })[1]).toEqual(["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]]);
     }
   });
 

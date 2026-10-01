@@ -1,5 +1,5 @@
 import { t } from "@/i18n/t";
-import { canManageSettings, canPrintStickers, hasTutorial, type Session } from "@/registry/registry";
+import { canManageSettings, canPrintStickers, canSeeCosts, hasTutorial, type Session } from "@/registry/registry";
 
 export type MenuItem = { kind: "link"; href: string; label: string } | { kind: "signOut"; label: string };
 
@@ -28,7 +28,11 @@ export function appMenu(session: Session): MenuGroup[] {
     },
     {
       label: t("menu.groups.places"),
-      items: [...link("/#budowy", t("menu.sites")), ...link("/#board-vehicles", t("menu.vehicles"))],
+      items: [
+        ...link("/#budowy", t("menu.sites")),
+        ...link("/#board-vehicles", t("menu.vehicles")),
+        ...link("/koszty", t("menu.costs"), canSeeCosts(session)),
+      ],
     },
     {
       label: t("menu.groups.people"),

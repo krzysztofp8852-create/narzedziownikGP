@@ -5,16 +5,17 @@ import { cache } from "react";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { ToolList } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
-import { formatCalendarDay, formatDay } from "@/i18n/dates";
+import { formatCalendarDay } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
-import { type CostPeriodChoice, costPeriodSearch, monthPeriod, parseCostPeriod, shiftMonth } from "@/lib/cost-period";
+import { type CostPeriodChoice, costPeriodSearch, parseCostPeriod } from "@/lib/cost-period";
 import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
-import { canSeeCosts, type LocationCosts, type Session, type Site, type ToolCost } from "@/registry/registry";
+import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type Site, type ToolCost } from "@/registry/registry";
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
+import { CostPeriodPicker } from "./cost-period-picker";
 
 /** Budowa albo pojazd: lokalizacje z własną stroną i zakładką „Koszty”. */
 export type SiteOrVehicleKind = "budowa" | "pojazd";
@@ -54,11 +55,16 @@ export async function siteOrVehicleTitle(id: string, kind: SiteOrVehicleKind) {
   return (await loadSiteOrVehicle(id, kind)).location?.name;
 }
 
-/** Nagłówek strony budowy albo pojazdu z zakładkami; „Koszty” tylko dla tego, kto widzi koszty. */
+/** Czy aktor widzi koszty tej budowy albo pojazdu: właściciel, a kierownik swojej, gdy właściciel na to pozwolił. */
+function seesCostsOf(session: Session, location: SiteOrVehicle) {
+  return canSeeCostsOf(session, { managerId: location.manager.id });
+}
+
+/** Nagłówek strony budowy albo pojazdu z zakładkami; „Koszty” tylko dla tego, kto widzi koszty tej lokalizacji. */
 function LocationShell({ session, location, tab, children }: { session: Session; location: SiteOrVehicle; tab: "sprzet" | "koszty"; children: ReactNode }) {
   const tabs = [
     { id: "sprzet", href: locationPagePath(location.kind, location.id), label: t("locationPage.equipmentTab") },
-    ...(canSeeCosts(session) ? [{ id: "koszty", href: locationPagePath(location.kind, location.id, "/koszty"), label: t("costs.tab") }] : []),
+    ...(seesCostsOf(session, location) ? [{ id: "koszty", href: locationPagePath(location.kind, location.id, "/koszty"), label: t("costs.tab") }] : []),
   ];
   return (
     <>
@@ -118,18 +124,20 @@ export async function EquipmentPage({ id, kind }: { id: string; kind: SiteOrVehi
   );
 }
 
-/** Zakładka „Koszty”: koszt sprzętu w wybranym okresie z eksportem do Excela. Tylko dla tego, kto widzi koszty. */
+/** Zakładka „Koszty”: koszt sprzętu w wybranym okresie z eksportem do Excela. Tylko dla tego, kto widzi koszty tej lokalizacji. */
 export async function CostsPage({ id, kind, searchParams }: { id: string; kind: SiteOrVehicleKind; searchParams: SearchParams }) {
   const { session, location } = await loadSiteOrVehicle(id, kind);
   if (!location) notFound();
-  if (!canSeeCosts(session)) redirect(locationPagePath(kind, id));
+  if (!seesCostsOf(session, location)) redirect(locationPagePath(kind, id));
   const registry = getRegistry().as(session.userId);
   const choice = parseCostPeriod(searchParams);
   const costs = await registry.locationCosts(id, choice.mode === "cala" ? undefined : choice.period);
 
   return (
     <LocationShell session={session} location={location} tab="koszty">
-      {costs.status === "brak_stawki" ? (
+      {costs.status === "brak_stawki" && !canManageRates(session) ? (
+        <p className="empty">{t("costs.startManager")}</p>
+      ) : costs.status === "brak_stawki" ? (
         <section className="company-card cost-start" aria-labelledby="cost-start">
           <h2 id="cost-start" className="display section-title">
             {t("costs.startTitle")}
@@ -141,67 +149,33 @@ export async function CostsPage({ id, kind, searchParams }: { id: string; kind: 
           </p>
         </section>
       ) : (
-        <SiteOrVehicleCosts location={location} costs={costs} choice={choice} />
+        <SiteOrVehicleCosts location={location} costs={costs} choice={choice} owner={canManageRates(session)} />
       )}
     </LocationShell>
   );
 }
 
-function SiteOrVehicleCosts({ location, costs, choice }: { location: SiteOrVehicle; costs: Extract<LocationCosts, { status: "koszty" }>; choice: CostPeriodChoice }) {
-  const thisMonth = formatDay(new Date()).slice(0, 7);
-  const lastMonth = shiftMonth(thisMonth, -1);
-  const costsPath = locationPagePath(location.kind, location.id, "/koszty");
-  const periods: { id: string; label: string; choice: CostPeriodChoice }[] = [
-    { id: "cala", label: location.kind === "budowa" ? t("costs.whole") : t("costs.wholeVehicle"), choice: { mode: "cala" } },
-    { id: thisMonth, label: t("costs.thisMonth"), choice: { mode: "miesiac", month: thisMonth, period: monthPeriod(thisMonth) } },
-    { id: lastMonth, label: t("costs.lastMonth"), choice: { mode: "miesiac", month: lastMonth, period: monthPeriod(lastMonth) } },
-  ];
-  const activePeriod = choice.mode === "cala" ? "cala" : choice.mode === "miesiac" ? choice.month : null;
+function SiteOrVehicleCosts({
+  location,
+  costs,
+  choice,
+  owner,
+}: {
+  location: SiteOrVehicle;
+  costs: Extract<LocationCosts, { status: "koszty" }>;
+  choice: CostPeriodChoice;
+  /** Właściciel sam dopisuje wartość albo kwotę narzędzia; kierownikowi mówimy, że robi to właściciel. */
+  owner: boolean;
+}) {
   const search = costPeriodSearch(choice);
 
   return (
     <>
-      <section className="company-card cost-periods" aria-labelledby="cost-period">
-        <h2 id="cost-period" className="display section-title">
-          {t("costs.periodTitle")}
-        </h2>
-        <nav className="site-page-tabs" aria-label={t("costs.periodTitle")}>
-          {periods.map((period) => (
-            <Link
-              key={period.id}
-              href={`${costsPath}${costPeriodSearch(period.choice)}`}
-              className="site-page-tab"
-              aria-current={period.id === activePeriod ? "page" : undefined}
-            >
-              {period.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="cost-period-forms">
-          <form method="get" action={costsPath} className="cost-period-form" aria-label={t("costs.month")}>
-            <div className="field">
-              <label htmlFor="cost-month">{t("costs.month")}</label>
-              <input id="cost-month" type="month" name="miesiac" defaultValue={choice.mode === "miesiac" ? choice.month : thisMonth} required />
-            </div>
-            <button className="button button-quiet" type="submit">
-              {t("costs.showMonth")}
-            </button>
-          </form>
-          <form method="get" action={costsPath} className="cost-period-form" aria-label={t("costs.range")}>
-            <div className="field">
-              <label htmlFor="cost-from">{t("costs.from")}</label>
-              <input id="cost-from" type="date" name="od" defaultValue={choice.mode === "zakres" ? choice.period.from : ""} required />
-            </div>
-            <div className="field">
-              <label htmlFor="cost-to">{t("costs.to")}</label>
-              <input id="cost-to" type="date" name="do" defaultValue={choice.mode === "zakres" ? choice.period.to : ""} required />
-            </div>
-            <button className="button button-quiet" type="submit">
-              {t("costs.showRange")}
-            </button>
-          </form>
-        </div>
-      </section>
+      <CostPeriodPicker
+        path={locationPagePath(location.kind, location.id, "/koszty")}
+        choice={choice}
+        wholeLabel={location.kind === "budowa" ? t("costs.whole") : t("costs.wholeVehicle")}
+      />
 
       <section className="board-section" aria-labelledby="cost-total">
         <div className="page-head">
@@ -253,7 +227,7 @@ function SiteOrVehicleCosts({ location, costs, choice }: { location: SiteOrVehic
             ))}
           </ul>
         )}
-        {costs.tools.some((row) => row.daysWithoutRate > 0) && <p className="muted">{t("costs.noRateHint")}</p>}
+        {costs.tools.some((row) => row.daysWithoutRate > 0) && <p className="muted">{owner ? t("costs.noRateHint") : t("costs.noRateHintManager")}</p>}
         <p className="muted">{t("costs.rule")}</p>
       </section>
     </>

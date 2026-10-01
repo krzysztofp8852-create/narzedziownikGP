@@ -13,7 +13,7 @@ import { nextDeadlineText } from "@/lib/deadline-text";
 import { historySearch } from "@/lib/history-filters";
 import { damagedAgo } from "@/lib/issue-text";
 import { getRegistry } from "@/lib/registry-instance";
-import { canCorrectTools, canManageTools, canPrintStickers, canSeeCosts, canSeeValues, type EffectiveRate } from "@/registry/registry";
+import { canCorrectTools, canManageRates, canManageTools, canPrintStickers, canSeeValues, type EffectiveRate } from "@/registry/registry";
 import { StickerReprintForm } from "../../naklejki/sticker-forms";
 import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
@@ -158,7 +158,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
         </details>
       )}
 
-      {canSeeCosts(session) && (
+      {canManageRates(session) && (
         <details className="panel">
           <summary className="panel-summary">{t("dailyRates.toolOwnTitle")}</summary>
           <ToolRateForm toolId={card.id} amount={card.dailyRate?.source === "narzedzie" ? card.dailyRate.amount : null} />

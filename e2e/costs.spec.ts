@@ -19,7 +19,7 @@ async function signIn(page: Page, { email, password }: Credentials) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-test("właściciel ustawia stawkę na zakładce „Koszty” budowy i pobiera zestawienie; kierownik nie widzi zakładki", async ({ page }) => {
+test("właściciel ustawia stawkę na zakładce „Koszty” budowy i pobiera zestawienia; kierownik bez zgody nie widzi kosztów", async ({ page }) => {
   const company = seedCompany();
 
   await signIn(page, company.owner);
@@ -41,6 +41,16 @@ test("właściciel ustawia stawkę na zakładce „Koszty” budowy i pobiera ze
   expect(sheet.data).toContainEqual(["H-01", "Młot Hilti", 1, 32, 32]);
   expect(sheet.data.at(-1)).toEqual(["Razem", null, null, null, 32]);
 
+  // Zestawienie wszystkich budów i pojazdów z menu, za bieżący miesiąc.
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("link", { name: "Koszty sprzętu" }).click();
+  await expect(page.getByRole("heading", { name: "Koszty sprzętu", level: 1 })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Budowy" })).toContainText(/Rataje[\s\S]*32,00\s*zł/);
+  const [summaryDownload] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Pobierz Excel" }).click()]);
+  expect(summaryDownload.suggestedFilename()).toMatch(/^koszty-sprzetu-\d{4}-\d{2}-01-\d{4}-\d{2}-\d{2}\.xlsx$/);
+  const [summarySheet] = await readXlsxFile(await summaryDownload.path());
+  expect(summarySheet.data).toContainEqual(["Budowa", "Rataje", 1, 32]);
+
   await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
@@ -50,4 +60,8 @@ test("właściciel ustawia stawkę na zakładce „Koszty” budowy i pobiera ze
   await expect(page).toHaveURL(new RegExp(`/budowy/${company.siteId}$`));
   await expect(page.getByRole("link", { name: "Koszty" })).toHaveCount(0);
   await expect(page.getByText("zł")).toHaveCount(0);
+  await page.getByRole("button", { name: "Menu" }).click();
+  await expect(page.getByRole("link", { name: "Koszty sprzętu" })).toHaveCount(0);
+  await page.goto("/koszty");
+  await expect(page).toHaveURL(/\/$/);
 });

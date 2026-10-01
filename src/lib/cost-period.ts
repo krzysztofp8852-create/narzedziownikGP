@@ -1,3 +1,4 @@
+import { formatDay } from "@/i18n/dates";
 import { type CostPeriod, isCalendarDay } from "@/registry/registry";
 
 /** Parametry adresu okresu kosztów, np. /budowy/…/koszty?miesiac=2026-03 albo ?od=2026-03-05&do=2026-03-20. */
@@ -45,4 +46,17 @@ export function monthPeriod(month: string): CostPeriod {
 export function shiftMonth(month: string, delta: number): string {
   const [year, number] = month.split("-").map(Number);
   return new Date(Date.UTC(year, number - 1 + delta, 1)).toISOString().slice(0, 7);
+}
+
+/** Bieżący miesiąc w Polsce (RRRR-MM). */
+export function currentMonth(now = new Date()): string {
+  return formatDay(now).slice(0, 7);
+}
+
+/** Okres z adresu dla zestawienia, które nie ma całej budowy: bez okresu bieżący miesiąc. */
+export function parseSummaryPeriod(params: SearchParams, now = new Date()): Exclude<CostPeriodChoice, { mode: "cala" }> {
+  const choice = parseCostPeriod(params);
+  if (choice.mode !== "cala") return choice;
+  const month = currentMonth(now);
+  return { mode: "miesiac", month, period: monthPeriod(month) };
 }
