@@ -267,6 +267,14 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   Scribe (`ELEVENLABS_API_KEY`, model `scribe_v2`, inny w `ELEVENLABS_MODEL`). Kubełek `nagrania` zakłada
   migracja. Lokalnie i w teście dymnym `TRANSCRIPTION_PROVIDER=staly` z `TRANSCRIPTION_FIXED_TEXT` udaje
   transkrypcję stałym tekstem.
+- Mapa budów na tablicy (Google Maps Platform, zob. `docs/adr/0026`): `GOOGLE_MAPS_BROWSER_KEY` (sam Maps
+  JavaScript API, ograniczony do adresów aplikacji), `GOOGLE_MAPS_MAP_ID` (Map ID z Google Cloud, potrzebny pinezkom)
+  i `GOOGLE_MAPS_SERVER_KEY` (sam Geocoding API, tylko serwer) w zmiennych Vercel; w Google Cloud ustaw budżet
+  z alertem. Bez klucza przeglądarki prawdziwe firmy nie mają mapy, a bez klucza serwera budowy nie mają położenia,
+  dopóki właściciel nie postawi pinezki. Firma demo zawsze ma mapę demo i nie pyta Google. Po pierwszym wdrożeniu
+  mapy raz `npm run sites:geocode` stawia na mapie istniejące budowy i bazy z adresem. Lokalnie i w teście dymnym
+  `GEOCODER=staly` stawia każdy adres w środku Poznania, a test dymny mapy potrzebuje dowolnego
+  `GOOGLE_MAPS_BROWSER_KEY` (przeglądarka dostaje atrapę Google) i firmy demo w bazie (`npm run demo:create`).
 - Dokumenty terminów (świadectwa, protokoły, karty gwarancyjne, faktury) leżą w prywatnym kubełku
   `dokumenty-narzedzi`, który zakłada migracja, obok kubełków zdjęć zgłoszeń i czatu.
 - Zadania harmonogramu: Vercel Cron z `vercel.json` (codziennie o 5:00 UTC `/zadania/progi` i przypomnienia

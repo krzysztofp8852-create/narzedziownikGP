@@ -255,6 +255,8 @@ export const LOGGED_DEMO_COMMANDS = [
   "addMember",
   "addSite",
   "changeSiteManager",
+  "changeSiteAddress",
+  "setBaseAddress",
   "addService",
   "addVehicle",
   "changeVehicleManager",

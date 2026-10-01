@@ -11,7 +11,7 @@ const wallClockParts = new Intl.DateTimeFormat("en-US", {
   second: "numeric",
 });
 
-/** „25.09.2026, 14:03” czasu polskiego, niezależnie od strefy serwera. */
+/** „25.09.2026, 14:03” (dzień bez zera z przodu: „1.10.2026”) czasu polskiego, niezależnie od strefy serwera. */
 export function formatDateTime(date: Date): string {
   return dateTime.format(date);
 }

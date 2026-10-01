@@ -58,7 +58,7 @@ Miejsce, w którym narzędzie może być: baza, budowa, serwis albo pojazd.
 _Avoid_: miejsce, magazyn (jako ogólne pojęcie)
 
 **Baza**:
-Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany.
+Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany. Może mieć adres; wtedy jest na mapie budów.
 _Avoid_: magazyn, warsztat
 
 **Budowa**:
@@ -74,6 +74,14 @@ _Avoid_: bus, auto, samochód (jako nazwa rodzaju lokalizacji)
 
 **Poza bazą**:
 Każda lokalizacja inna niż baza i serwis. Łączna wartość sprzętu poza bazą to miara ryzyka dla właściciela.
+
+**Mapa budów**:
+Mapa na tablicy z bazą (jeśli ma adres) i aktywnymi budowami w miejscu ich adresu. Widzi ją każdy w firmie, a pinezki przesuwa tylko właściciel. Firma demo ma zamiast niej mapę demo z przykładowym położeniem i lokalizatorami.
+_Avoid_: mapa lokalizacji (pojazdów i serwisów na niej nie ma)
+
+**Położenie**:
+Punkt na mapie budów: z geokodowania adresu albo pinezka postawiona przez właściciela, ważna do zmiany adresu. Budowa bez położenia (nie znaleziono adresu) jest wypisana pod mapą.
+_Avoid_: lokalizacja (to miejsce, w którym jest sprzęt), współrzędne GPS
 
 ## Narzędzia
 

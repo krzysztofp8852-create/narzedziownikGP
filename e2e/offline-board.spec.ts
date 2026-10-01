@@ -84,7 +84,7 @@ test("kierownik bez zasięgu otwiera ostatnio pobraną tablicę z godziną pobra
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /H-01/ })).toBeVisible();
-  await expect(page.getByTestId("board-snapshot")).toContainText(/Brak sieci\. Stan z \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}/);
+  await expect(page.getByTestId("board-snapshot")).toContainText(/Brak sieci\. Stan z \d{1,2}\.\d{2}\.\d{4}, \d{2}:\d{2}/);
 
   await page.goto("/historia");
   await expect(page.getByRole("heading", { name: "Brak sieci" })).toBeVisible();

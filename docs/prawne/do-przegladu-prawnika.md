@@ -49,6 +49,10 @@ Po zatwierdzeniu: w nagłówku każdego pliku `draft: nie` i nowa data w `versio
 7. **Dostęp do produkcji**: kto w GP Engineering ma dostęp i czy konta mają logowanie dwuskładnikowe (załącznik 2).
 8. **Skrzynka supportu** (`SUPPORT_EMAIL`): wiadomości z czatu trafiają e-mailem do skrzynki GP Engineering. Dostawcę
    tej poczty trzeba dopisać do załącznika 3, bo umowa powierzenia obejmuje czat w zakresie danych klienta.
+9. **Google Maps Platform** (mapa budów, ADR 0026): załącznik 3 podaje Google Ireland Limited. Potwierdzić podmiot
+   umowy Google Maps Platform dla EOG i czy według warunków ochrony danych Maps Platform Google jest podprocesorem,
+   czy osobnym administratorem (wtedy zmienia się brzmienie załącznika 3 i punktu 6 polityki prywatności). Mapę
+   pobiera przeglądarka użytkownika bezpośrednio od Google, więc Google widzi jej adres IP.
 
 ## Obietnice wykonywane ręcznie
 

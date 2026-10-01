@@ -5,12 +5,15 @@ import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import type { SiteManagerCandidate, Vehicle } from "@/registry/registry";
 import {
+  type AddressFormState,
   addService,
   addSite,
   addVehicle,
   type ChangeManagerState,
+  changeSiteAddress,
   deactivateVehicle,
   type LocationFormState,
+  setBaseAddress,
   setVehicleAlarm,
   type VehicleActionState,
 } from "./actions";
@@ -155,6 +158,50 @@ export function ChangeManagerForm({
       </div>
       <FormError state={state} />
       {state.changed && !pending && <p role="status">{t("locations.managerChanged")}</p>}
+    </form>
+  );
+}
+
+/** Nowy adres budowy; pinezka na mapie idzie za nim. */
+export function ChangeSiteAddressForm({ site }: { site: { id: string; name: string; address: string } }) {
+  const [state, formAction, pending] = useActionState<AddressFormState, FormData>(changeSiteAddress.bind(null, site.id), {});
+  const inputId = `address-${site.id}`;
+
+  return (
+    <form onSubmit={submitKeepingValues(formAction)} className="site-manager-form">
+      <div className="field">
+        <label htmlFor={inputId}>{t("locations.newAddress", { name: site.name })}</label>
+        <input id={inputId} name="address" autoComplete="off" defaultValue={site.address} required />
+      </div>
+      <div className="form-actions">
+        <button className="button button-quiet" type="submit" disabled={pending}>
+          {pending ? t("locations.changing") : t("locations.changeAddress")}
+        </button>
+      </div>
+      <FormError state={state} />
+      {state.changed && !pending && <p role="status">{t("locations.addressChanged")}</p>}
+    </form>
+  );
+}
+
+/** Adres bazy w ustawieniach: z nim baza jest na mapie budów, pusty ją stamtąd zdejmuje. */
+export function BaseAddressForm({ address }: { address: string | null }) {
+  const [state, formAction, pending] = useActionState<AddressFormState, FormData>(setBaseAddress, {});
+
+  return (
+    <form onSubmit={submitKeepingValues(formAction)} className="stack-form">
+      <div className="field">
+        <label htmlFor="base-address">{t("settings.baseAddress")}</label>
+        <input id="base-address" name="address" autoComplete="off" defaultValue={address ?? ""} aria-describedby="base-address-hint" />
+        <small id="base-address-hint">{t("settings.baseAddressHint")}</small>
+      </div>
+      <FormError state={state} />
+      {state.changed && !pending && <p role="status">{t("settings.baseAddressSaved")}</p>}
+      <div className="form-actions">
+        <button className="button" type="submit" disabled={pending}>
+          {pending ? t("settings.submitting") : t("settings.submit")}
+        </button>
+      </div>
     </form>
   );
 }

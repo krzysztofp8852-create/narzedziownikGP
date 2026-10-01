@@ -12,6 +12,7 @@ import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { deadlineKindName } from "@/lib/deadline-text";
+import { serverEnv } from "@/lib/env";
 import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
 import {
@@ -23,6 +24,7 @@ import {
   canReportTools,
   canReviewToolReports,
   canSeeValues,
+  type MapPin,
   type RecentMovement,
   type Session,
   type SiteManagerCandidate,
@@ -32,13 +34,21 @@ import {
   type WhereIsWhat,
 } from "@/registry/registry";
 import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
-import { AddSiteForm, AddVehicleForm, ChangeManagerForm, DeactivateVehicleForm, VehicleAlarmForm } from "./lokalizacje/location-forms";
+import {
+  AddSiteForm,
+  AddVehicleForm,
+  ChangeManagerForm,
+  ChangeSiteAddressForm,
+  DeactivateVehicleForm,
+  VehicleAlarmForm,
+} from "./lokalizacje/location-forms";
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
 import { TutorialCard } from "./samouczek/tutorial";
-import { type MapDevice, type MapPlace, SiteMap } from "./site-map";
+import { DemoSiteMap, type MapDevice, type MapPlace } from "./demo-site-map";
+import { SiteMap, type SiteMapPin } from "./site-map";
 
 export const metadata: Metadata = { title: t("board.title") };
 
@@ -248,15 +258,21 @@ function SiteCard({
       </div>
       {site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />}
       {managers && (
-        <details className="location-more">
-          <summary>{t("locations.changeManager")}</summary>
-          <ChangeManagerForm
-            action={changeSiteManager.bind(null, site.id)}
-            location={site}
-            label={t("locations.newManager", { name: site.name })}
-            managers={managers}
-          />
-        </details>
+        <>
+          <details className="location-more">
+            <summary>{t("locations.changeManager")}</summary>
+            <ChangeManagerForm
+              action={changeSiteManager.bind(null, site.id)}
+              location={site}
+              label={t("locations.newManager", { name: site.name })}
+              managers={managers}
+            />
+          </details>
+          <details className="location-more">
+            <summary>{t("locations.changeAddress")}</summary>
+            <ChangeSiteAddressForm site={site} />
+          </details>
+        </>
       )}
       {canCloseSite(session, site) && (
         <p>
@@ -328,10 +344,10 @@ function AddLocationTile({ title, form }: { title: string; form: ReactNode }) {
 }
 
 /**
- * DEMO: rejestr nie zna jeszcze lokalizatorów, więc „urządzeniami z lokalizatorem” są pierwsze
- * narzędzia z każdego miejsca.
+ * Mapa firmy demo (ADR 0026): rejestr nie zna lokalizatorów, więc „urządzeniami z lokalizatorem” są pierwsze
+ * narzędzia z każdego miejsca. Prawdziwa firma tego nie widzi.
  */
-function mapData({ base, sites, vehicles }: WhereIsWhat): { places: MapPlace[]; devices: MapDevice[] } {
+function demoMapData({ base, sites, vehicles }: WhereIsWhat): { places: MapPlace[]; devices: MapDevice[] } {
   const places: MapPlace[] = [
     { id: base.id, kind: "base", name: base.name, toolCount: base.tools.length },
     ...sites.map((site) => ({ id: site.id, kind: "site" as const, name: site.name, address: site.address, toolCount: site.tools.length })),
@@ -345,6 +361,12 @@ function mapData({ base, sites, vehicles }: WhereIsWhat): { places: MapPlace[]; 
     ...vehicles.flatMap((vehicle) => tracked(vehicle.id, vehicle.tools, 1)),
   ];
   return { places, devices };
+}
+
+/** Pinezki mapy budów z liczbą narzędzi z tablicy (tej samej chwili co reszta tablicy). */
+function sitePins(pins: MapPin[], { base, sites }: WhereIsWhat): SiteMapPin[] {
+  const toolCounts = new Map([base, ...sites].map((place) => [place.id, place.tools.length]));
+  return pins.map((pin) => ({ ...pin, toolCount: toolCounts.get(pin.id) ?? 0 }));
 }
 
 function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; managers: SiteManagerCandidate[] | null }) {
@@ -369,13 +391,16 @@ export default async function BoardPage(props: PageProps<"/">) {
   const session = await requireSession();
   const { nagranie } = await props.searchParams;
   const registry = getRegistry().as(session.userId);
-  const [board, movements, managers, categories, reports, tutorial] = await Promise.all([
+  // Firma demo ma mapę demo bez dostawcy mapy; prawdziwa firma mapę Google, o ile jest klucz przeglądarki.
+  const googleMaps = session.company.demo ? null : serverEnv.googleMaps();
+  const [board, movements, managers, categories, reports, tutorial, mapPins] = await Promise.all([
     registry.whereIsWhat(),
     registry.recentMovements(),
     canManageLocations(session) ? registry.siteManagerCandidates() : null,
     canManageTools(session) || canReportTools(session) ? registry.categories() : null,
     canReviewToolReports(session) ? registry.toolReports() : [],
     registry.tutorial(),
+    googleMaps ? registry.siteMap() : null,
   ]);
   // Chwila pobrania stanu: tablica z kopii w telefonie pokazuje ją bez sieci (service worker czyta ją z atrybutu).
   const fetchedAt = new Date().toISOString();
@@ -489,7 +514,12 @@ export default async function BoardPage(props: PageProps<"/">) {
               <Link href="/budowy/zakonczone">{t("siteClosing.finishedLink")}</Link>
             </div>
 
-            <SiteMap {...mapData(board)} />
+            {session.company.demo ? (
+              <DemoSiteMap {...demoMapData(board)} />
+            ) : (
+              googleMaps &&
+              mapPins && <SiteMap pins={sitePins(mapPins, board)} maps={googleMaps} canEdit={canManageLocations(session)} />
+            )}
 
             <Vehicles vehicles={vehicles} managers={managers} />
 

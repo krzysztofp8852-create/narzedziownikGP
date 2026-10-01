@@ -1,5 +1,5 @@
 import { RegistryError } from "./errors";
-import type { Sql } from "./ports";
+import type { MapPosition, Sql } from "./ports";
 import type { Role, Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
@@ -29,7 +29,7 @@ export function requireLocationManager(session: Session) {
   if (!canManageLocations(session)) throw new RegistryError("forbidden");
 }
 
-export async function addSite(sql: Sql, session: Session, raw: NewSiteInput, now: Date): Promise<{ locationId: string }> {
+export async function addSite(sql: Sql, session: Session, raw: NewSiteInput, now: Date): Promise<LocatedAddress> {
   const name = raw.name.trim();
   const address = raw.address.trim();
   if (!name || !address) throw new RegistryError("invalid_input");
@@ -39,7 +39,7 @@ export async function addSite(sql: Sql, session: Session, raw: NewSiteInput, now
      values ($1, 'budowa', $2, $3, $4, 'aktywna', $5) returning id`,
     [session.company.id, name, address, raw.managerId, now],
   );
-  return { locationId: site.id };
+  return { locationId: site.id, address };
 }
 
 export async function changeSiteManager(sql: Sql, siteId: string, managerId: string) {
@@ -50,6 +50,116 @@ export async function changeSiteManager(sql: Sql, siteId: string, managerId: str
   if (site.status !== "aktywna") throw new RegistryError("site_finished");
   await requireSiteManagerCandidate(sql, managerId);
   await sql("update app.locations set manager_id = $2 where id = $1", [siteId, managerId]);
+}
+
+/**
+ * Nowy adres aktywnej budowy. Stare położenie na mapie przestaje pasować, więc znika do geokodowania nowego adresu.
+ * Zwraca nowy adres; null, gdy to ten sam adres (ręcznie postawiona pinezka zostaje).
+ */
+export async function changeSiteAddress(sql: Sql, siteId: string, raw: string): Promise<string | null> {
+  const address = typeof raw === "string" ? raw.trim() : "";
+  if (!address) throw new RegistryError("invalid_input");
+  const [site] = UUID_PATTERN.test(siteId)
+    ? await sql<{ status: SiteStatus; address: string }>("select status, address from app.locations where id = $1 and kind = 'budowa'", [
+        siteId,
+      ])
+    : [];
+  if (!site) throw new RegistryError("not_found");
+  if (site.status !== "aktywna") throw new RegistryError("site_finished");
+  if (site.address === address) return null;
+  await changeAddress(sql, siteId, address);
+  return address;
+}
+
+/** Adres bazy albo budowy, który trzeba zamienić na punkt na mapie (geokodowanie po zapisie). */
+export interface LocatedAddress {
+  locationId: string;
+  address: string;
+}
+
+/** Nowy adres; stare położenie przestaje pasować, więc znika do geokodowania (albo ręcznej pinezki). */
+async function changeAddress(sql: Sql, locationId: string, address: string | null) {
+  await sql("update app.locations set address = $2, latitude = null, longitude = null where id = $1", [locationId, address]);
+}
+
+/** Miejsce na mapie budów: baza z adresem albo aktywna budowa. */
+export interface MapPin {
+  id: string;
+  kind: "baza" | "budowa";
+  name: string;
+  address: string;
+  /** null: geokodowanie nie znalazło adresu, a właściciel nie postawił pinezki ręcznie. */
+  position: MapPosition | null;
+}
+
+/** Baza firmy aktora (RLS ukrywa inne firmy) z adresem; bez adresu nie ma jej na mapie budów. */
+export async function base(sql: Sql): Promise<{ id: string; name: string; address: string | null }> {
+  const [row] = await sql<{ id: string; name: string; address: string | null }>("select id, name, address from app.locations where kind = 'baza'");
+  return row;
+}
+
+/** Mapa budów firmy: baza, jeśli ma adres, a potem aktywne budowy według nazwy. */
+export async function siteMap(sql: Sql): Promise<MapPin[]> {
+  const rows = await sql<{ id: string; kind: MapPin["kind"]; name: string; address: string; latitude: number | null; longitude: number | null }>(
+    `select id, kind, name, address, latitude, longitude from app.locations
+     where (kind = 'baza' and address is not null) or (kind = 'budowa' and status = 'aktywna')
+     order by kind = 'budowa', name`,
+  );
+  return rows.map(({ latitude, longitude, ...pin }) => ({
+    ...pin,
+    position: latitude === null || longitude === null ? null : { lat: latitude, lng: longitude },
+  }));
+}
+
+/**
+ * Adres bazy (do mapy budów); pusty zdejmuje bazę z mapy. Jak przy budowie, nowy adres czyści położenie. Zwraca bazę
+ * z nowym adresem do geokodowania; null, gdy adres się nie zmienił albo go usunięto.
+ */
+export async function setBaseAddress(sql: Sql, raw: string): Promise<LocatedAddress | null> {
+  if (typeof raw !== "string") throw new RegistryError("invalid_input");
+  const address = raw.trim() || null;
+  const current = await base(sql);
+  if (current.address === address) return null;
+  await changeAddress(sql, current.id, address);
+  return address === null ? null : { locationId: current.id, address };
+}
+
+/** Ręczne położenie pinezki bazy z adresem albo aktywnej budowy; zostaje, dopóki adres się nie zmieni. */
+export async function moveMapPin(sql: Sql, locationId: string, position: MapPosition) {
+  const { lat, lng } = position ?? {};
+  const valid = (value: unknown, limit: number) => typeof value === "number" && Number.isFinite(value) && Math.abs(value) <= limit;
+  if (!valid(lat, 90) || !valid(lng, 180)) throw new RegistryError("invalid_input");
+  const [pin] = UUID_PATTERN.test(locationId)
+    ? await sql<{ kind: MapPin["kind"]; status: SiteStatus | null }>(
+        "select kind, status from app.locations where id = $1 and (kind = 'budowa' or (kind = 'baza' and address is not null))",
+        [locationId],
+      )
+    : [];
+  if (!pin) throw new RegistryError("not_found");
+  if (pin.kind === "budowa" && pin.status !== "aktywna") throw new RegistryError("site_finished");
+  await sql("update app.locations set latitude = $2, longitude = $3 where id = $1", [locationId, lat, lng]);
+}
+
+/** Bazy z adresem i aktywne budowy bez położenia we wszystkich firmach poza demo (zadanie systemowe, bez RLS). */
+export async function unplacedLocations(sql: Sql): Promise<LocatedAddress[]> {
+  return sql(
+    `select l.id as "locationId", l.address from app.locations l join app.companies c on c.id = l.company_id
+     where c.demo_since is null and l.address is not null and l.latitude is null
+       and (l.kind = 'baza' or (l.kind = 'budowa' and l.status = 'aktywna'))
+     order by l.created_at, l.id`,
+  );
+}
+
+/**
+ * Położenie z geokodowania, o ile adres jest wciąż ten sam, budowa wciąż aktywna, a pinezki nikt w międzyczasie nie
+ * postawił ręcznie (geokodowanie idzie poza transakcją, która zapisała adres).
+ */
+export async function placeGeocoded(sql: Sql, { locationId, address }: LocatedAddress, position: MapPosition) {
+  await sql(
+    `update app.locations set latitude = $3, longitude = $4
+     where id = $1 and address = $2 and latitude is null and (kind = 'baza' or status = 'aktywna')`,
+    [locationId, address, position.lat, position.lng],
+  );
 }
 
 export interface NewVehicleInput {

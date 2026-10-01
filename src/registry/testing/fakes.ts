@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { EmailedNotification } from "../notifications";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore } from "../ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore } from "../ports";
 import type { PushMessage, PushSubscriptionData } from "../push";
 import type { UserMessage } from "../support-chat";
 
@@ -158,5 +158,31 @@ export class MemoryPhotoStore implements PhotoStore {
     this.photos.clear();
     this.failWith = null;
     this.removeFailWith = null;
+  }
+}
+
+/** Geokodowanie ze znanych adresów; inne adresy nie istnieją. Zapisuje, o jakie adresy pytano. */
+export class FakeGeocoder implements Geocoder {
+  private known = new Map<string, MapPosition>();
+  /** Adresy, o które pytano, po kolei. */
+  readonly asked: string[] = [];
+  /** Kolejne pytania kończą się tym błędem, np. gdy dostawca nie odpowiada. */
+  failWith: Error | null = null;
+
+  /** Adres, który dostawca zna. */
+  knows(address: string, position: MapPosition) {
+    this.known.set(address, position);
+  }
+
+  async geocode(address: string) {
+    this.asked.push(address);
+    if (this.failWith) throw this.failWith;
+    return this.known.get(address) ?? null;
+  }
+
+  clear() {
+    this.known.clear();
+    this.asked.length = 0;
+    this.failWith = null;
   }
 }

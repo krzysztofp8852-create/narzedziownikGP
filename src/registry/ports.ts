@@ -54,6 +54,20 @@ export interface PhotoStore {
   remove(key: string): Promise<void>;
 }
 
+/** Punkt na mapie: szerokość i długość geograficzna (WGS 84), w stopniach. */
+export interface MapPosition {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Geokodowanie: adres budowy albo bazy zamieniony na punkt na mapie, po stronie serwera. null, gdy dostawca
+ * nie znalazł adresu; błąd, gdy nie odpowiedział (wtedy miejsce też zostaje bez położenia).
+ */
+export interface Geocoder {
+  geocode(address: string): Promise<MapPosition | null>;
+}
+
 export class EmailTakenError extends Error {
   constructor(email: string) {
     super(`E-mail ${email} ma już konto`);
@@ -62,3 +76,6 @@ export class EmailTakenError extends Error {
 }
 
 export const systemClock: Clock = { now: () => new Date() };
+
+/** Bez dostawcy geokodowania żaden adres nie ma położenia; właściciel stawia pinezki ręcznie. */
+export const noGeocoder: Geocoder = { geocode: async () => null };
