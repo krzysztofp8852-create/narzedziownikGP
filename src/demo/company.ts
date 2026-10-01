@@ -163,7 +163,8 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
 /**
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
- * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, alarmy, przypomnienia i raporty w dzwonkach), a potem
+ * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, alarmy, przypomnienia i raporty w dzwonkach, stawki
+ * dzienne kosztu sprzętu), a potem
  * robi z niej obecne demo. Każdy wpis idzie przez Rejestr,
  * więc dane są takie, jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed
  * kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
@@ -437,6 +438,11 @@ export async function createDemoCompany(
   await move("pawel", minutesAgo(25), "zwrot", "busPawel", "base", ["dtw300"]);
 
   await advanceTo(now);
+  // Stawki dzienne ustawione dziś liczą się wstecz przez całą historię, więc zakładka „Koszty” każdej budowy i busa
+  // od razu ma koszt sprzętu: 1% wartości, pomiarowe 2%, a podest stałą kwotą jak z wypożyczalni.
+  await owner.setDailyRate({ kind: "firma" }, 1);
+  await owner.setDailyRate({ kind: "kategoria", categoryId: categoryIds.M }, 2);
+  await owner.setDailyRate({ kind: "narzedzie", toolId: tools.podest }, 25);
   const { purged } = await registry.system().activateDemoCompany(company.companyId);
   return { companyId: company.companyId, purged };
 }

@@ -19,7 +19,7 @@ function jpeg() {
   return new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...new Array(500).fill(1)])], { type: "image/jpeg" });
 }
 
-/** Firma z panelu z właścicielem po zmianie hasła, kierownikiem, budową, narzędziem, ruchem, zgłoszeniem, terminem i czatem. */
+/** Firma z panelu z właścicielem po zmianie hasła, kierownikiem, budową, narzędziem ze stawką, ruchem, zgłoszeniem, terminem i czatem. */
 async function givenCompanyWithHistory(adminId: string) {
   const created = await testbed.registry.superAdmin(adminId).createCompany(zawbud);
   const owner = testbed.registry.as(created.ownerUserId);
@@ -28,7 +28,9 @@ async function givenCompanyWithHistory(adminId: string) {
   const managerId = await testbed.givenMember(company, "kierownik", "Adam Nowak");
   const { locationId: siteId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId });
   const category = await owner.addCategory({ name: "Szlifierki", prefix: "S" });
-  const { toolId } = await owner.addTool({ operationId: randomUUID(), code: "S-01", name: "Szlifierka", categoryId: category.id });
+  const { toolId } = await owner.addTool({ operationId: randomUUID(), code: "S-01", name: "Szlifierka", categoryId: category.id, value: 300 });
+  await owner.setDailyRate({ kind: "firma" }, 1);
+  await owner.setDailyRate({ kind: "narzedzie", toolId }, 5);
   const { base } = await owner.whereIsWhat();
   await owner.registerMovement({ operationId: randomUUID(), kind: "wydanie", fromLocationId: base.id, toLocationId: siteId, toolIds: [toolId], source: "checklista" });
   const { issueId } = await testbed.registry.as(managerId).fileIssue({ operationId: randomUUID(), kind: "inne", description: "Brakuje tarczy", photo: jpeg() });

@@ -16,6 +16,7 @@ export interface PurgedCompany {
  * po nim w żadnej tabeli `app` nie zostaje nic z firmy, więc nowa tabela z `company_id` musi tu trafić.
  */
 const COMPANY_TABLES = [
+  "daily_rates",
   "deadline_alerts",
   "tool_deadline_documents",
   "tool_deadlines",
@@ -31,6 +32,7 @@ const COMPANY_TABLES = [
   "push_subscriptions",
   "support_messages",
   "support_threads",
+  "tool_value_history",
   "tool_values",
   "tools",
   "tool_imports",

@@ -30,7 +30,7 @@ export default async function FinishedSitesPage() {
             <section key={site.id} className="location location-site" aria-labelledby={`finished-${site.id}`}>
               <div className="location-head">
                 <h2 id={`finished-${site.id}`} className="display location-name">
-                  <span className="location-kind">{t("board.siteKind")}</span> <span>{site.name}</span>
+                  <span className="location-kind">{t("board.siteKind")}</span> <Link href={`/budowy/${site.id}`}>{site.name}</Link>
                 </h2>
                 <span className="tag">{t("siteStatus.zakonczona")}</span>
               </div>

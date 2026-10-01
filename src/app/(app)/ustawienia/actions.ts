@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
-import { formText } from "@/lib/forms";
+import { formDecimal, formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
-import { MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
+import { isRegistryError } from "@/registry/errors";
+import { MAX_ALARM_THRESHOLD_DAYS, UUID_PATTERN } from "@/registry/registry";
 
 export interface SettingsFormState {
   error?: string;
@@ -43,6 +44,36 @@ export async function updateIssueVisibility(_prev: SettingsFormState, formData: 
       });
   } catch (error) {
     return { error: errorMessage(error) };
+  }
+  revalidatePath("/", "layout");
+  return { saved: true };
+}
+
+/**
+ * Stawka dzienna firmy i stawki kategorii (puste pole: kategoria liczy się stawką firmy). Zapisuje tylko zmienione,
+ * bo każda zmiana po dniu startu kosztów obowiązuje od dziś.
+ */
+export async function updateDailyRates(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
+  const session = await requireSession();
+  const registry = getRegistry().as(session.userId);
+  const companyPercent = formDecimal(formData, "companyPercent");
+  if (companyPercent === null) return { error: t("dailyRates.companyRequired") };
+  const categories = formData
+    .getAll("categoryId")
+    .filter((id): id is string => typeof id === "string" && UUID_PATTERN.test(id))
+    .map((categoryId) => ({ categoryId, percent: formDecimal(formData, `category-${categoryId}`) }));
+  if ([companyPercent, ...categories.map((category) => category.percent)].some((percent) => Number.isNaN(percent))) {
+    return { error: t("dailyRates.invalidPercent") };
+  }
+  try {
+    const current = await registry.dailyRates();
+    if (companyPercent !== current.companyPercent) await registry.setDailyRate({ kind: "firma" }, companyPercent);
+    const currentPercents = new Map(current.categories.map(({ category, percent }) => [category.id, percent]));
+    for (const { categoryId, percent } of categories) {
+      if (percent !== (currentPercents.get(categoryId) ?? null)) await registry.setDailyRate({ kind: "kategoria", categoryId }, percent);
+    }
+  } catch (error) {
+    return { error: isRegistryError(error) && error.code === "invalid_input" ? t("dailyRates.invalidPercent") : errorMessage(error) };
   }
   revalidatePath("/", "layout");
   return { saved: true };

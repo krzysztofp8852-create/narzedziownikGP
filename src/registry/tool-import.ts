@@ -1,3 +1,4 @@
+import { recordToolValues } from "./costs";
 import { isUniqueViolation, RegistryError, ReplayedOperationError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
@@ -239,6 +240,7 @@ export async function importTools(sql: Sql, session: Session, input: ImportTools
        select tool_id, $1, value from unnest($2::uuid[], $3::numeric[]) as r(tool_id, value)`,
       [session.company.id, valued.map(toolId), valued.map((row) => row.value)],
     );
+    await recordToolValues(sql, session, valued.map((row) => ({ toolId: toolId(row), value: row.value })), now);
   }
 
   const deadlines = rows.flatMap((row) => [

@@ -83,6 +83,21 @@ describe("firma demo", () => {
     expect(await bed.registry.as(worker.userId).issues()).toHaveLength(1);
   });
 
+  it("ma stawki dzienne, więc zakładka „Koszty” budów i busów od razu pokazuje koszt sprzętu z całej historii", async () => {
+    await demo();
+    const [owner] = await bed.registry.system().demoAccounts();
+    const registry = bed.registry.as(owner.userId);
+    const { sites, vehicles } = await registry.whereIsWhat();
+
+    expect(await registry.dailyRates()).toMatchObject({ companyPercent: 1, categories: [{ category: { name: "Pomiarowe" }, percent: 2 }] });
+    for (const place of [...sites, ...vehicles.filter((vehicle) => vehicle.tools.length > 0)]) {
+      const costs = await registry.locationCosts(place.id);
+      expect(costs.status === "koszty" && costs.total, place.name).toBeGreaterThan(0);
+    }
+    const [finished] = await registry.finishedSites();
+    expect(await registry.locationCosts(finished.id)).toMatchObject({ status: "koszty", total: expect.any(Number) });
+  });
+
   it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();

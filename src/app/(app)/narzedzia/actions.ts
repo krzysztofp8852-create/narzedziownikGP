@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
-import { formText } from "@/lib/forms";
+import { formDecimal, formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
 import { toolLimitText } from "@/lib/tool-limit-text";
+import { isRegistryError } from "@/registry/errors";
 import type { Category, EditToolInput, ToolState } from "@/registry/registry";
 
 export interface ToolFormState {
@@ -211,4 +212,21 @@ export async function rejectToolReport(toolId: string, _prev: ToolReportFormStat
   revalidatePath("/");
   revalidatePath(`/narzedzia/${toolId}`);
   return { done: true };
+}
+
+export interface ToolRateFormState {
+  error?: string;
+  saved?: boolean;
+}
+
+/** Własna kwota narzędzia za dzień zamiast procentu wartości; puste pole zdejmuje ją od dziś. */
+export async function setToolRate(toolId: string, _prev: ToolRateFormState, formData: FormData): Promise<ToolRateFormState> {
+  const session = await requireSession();
+  try {
+    await getRegistry().as(session.userId).setDailyRate({ kind: "narzedzie", toolId }, formDecimal(formData, "amount"));
+  } catch (error) {
+    return { error: isRegistryError(error) && error.code === "invalid_input" ? t("dailyRates.invalidAmount") : errorMessage(error) };
+  }
+  revalidatePath(`/narzedzia/${toolId}`);
+  return { saved: true };
 }

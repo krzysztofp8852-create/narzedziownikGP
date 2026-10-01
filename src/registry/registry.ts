@@ -8,6 +8,8 @@ import { RegistryError, ReplayedOperationError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as companyDeletion from "./company-deletion";
 import * as corrections from "./corrections";
+import * as costs from "./costs";
+import type { CostPeriod, DailyRates, LocationCosts, RateTarget } from "./costs";
 import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
 import type { AddDocumentInput, CompleteDeadlineInput, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
@@ -99,6 +101,8 @@ export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPrev
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings, IssueVisibility } from "./settings";
+export type { CostPeriod, DailyRates, EffectiveRate, LocationCosts, RateTarget, ToolCost } from "./costs";
+export { canSeeCosts } from "./costs";
 export type {
   CompanySubscription,
   ImplementationTier,
@@ -634,6 +638,21 @@ export interface Registry {
      * magazynier, który je widzi). Pominięte zostają bez zmian. Tylko właściciel.
      */
     updateSettings(input: Partial<CompanySettings>): Promise<void>;
+    /** Stawki dzienne obowiązujące dziś (firma i kategorie) z dniem startu kosztów. Tylko właściciel. */
+    dailyRates(): Promise<DailyRates>;
+    /**
+     * Stawka dzienna od dziś: procent wartości dla firmy albo kategorii (0–100, dwa miejsca po przecinku), kwota zł/dzień
+     * dla narzędzia; null zdejmuje nadpisanie kategorii albo narzędzia. Pierwsza stawka w firmie to dzień startu kosztów:
+     * stawki i wartości z tego dnia liczą się wstecz przez całą historię, a każda późniejsza zmiana od dnia zmiany.
+     * Tylko właściciel.
+     */
+    setDailyRate(target: RateTarget, rate: number | null): Promise<void>;
+    /**
+     * Koszt sprzętu budowy albo pojazdu w okresie (bez niego: cała budowa): każde narzędzie z liczbą rozpoczętych dób
+     * w Polsce, stawkami i kwotą, i suma. Przed dniem startu kosztów stan „brak stawki” zamiast kwot. Baza i serwis
+     * nie mają kosztów (`invalid_input`). Tylko właściciel.
+     */
+    locationCosts(locationId: string, period?: CostPeriod): Promise<LocationCosts>;
     /** Abonament firmy: próg z limitem, liczba narzędzi, „opłacone do” i stan. Tylko właściciel. */
     subscription(): Promise<CompanySubscription>;
     /**
@@ -1041,7 +1060,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         editTool: (toolId, input) =>
           asWriter((sql, session) => {
             tools.requireToolManager(session);
-            return tools.editTool(sql, session, toolId, input);
+            return tools.editTool(sql, session, toolId, input, deps.clock.now());
           }),
         previewToolImport: (rows) =>
           asMember((sql, session) => {
@@ -1116,7 +1135,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
             toolReports.requireToolReviewer(session);
             return toolReports.toolReports(sql);
           }),
-        acceptToolReport: (input) => asWriter((sql, session) => toolReports.acceptToolReport(sql, session, input)),
+        acceptToolReport: (input) => asWriter((sql, session) => toolReports.acceptToolReport(sql, session, input, deps.clock.now())),
         rejectToolReport: movementOnlyCommand(toolReports.rejectToolReport),
         fileIssue: async (input) => {
           const { issueId, copies } = await savingPhoto(deps.photos, (save) =>
@@ -1372,6 +1391,21 @@ export function createRegistry(deps: RegistryDeps): Registry {
           asWriter((sql, session) => {
             settings.requireSettingsManager(session);
             return settings.updateSettings(sql, session, input);
+          }),
+        dailyRates: () =>
+          asMember((sql, session) => {
+            costs.requireCostViewer(session);
+            return costs.dailyRates(sql, deps.clock.now());
+          }),
+        setDailyRate: (target, rate) =>
+          asWriter((sql, session) => {
+            costs.requireCostViewer(session);
+            return costs.setDailyRate(sql, session, target, rate, deps.clock.now());
+          }),
+        locationCosts: (locationId, period) =>
+          asMember((sql, session) => {
+            costs.requireCostViewer(session);
+            return costs.locationCosts(sql, locationId, period, deps.clock.now());
           }),
         subscription: () =>
           asMember((sql, session) => {

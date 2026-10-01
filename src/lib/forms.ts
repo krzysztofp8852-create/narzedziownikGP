@@ -23,3 +23,10 @@ export function formPhoto(formData: FormData): Blob | null {
   const photo = formData.get("photo");
   return photo instanceof Blob && photo.size > 0 ? photo : null;
 }
+
+/** Liczba z pola w zapisie polskim („3 200,50”, „1,5”) albo zwykłym („1.5”); null dla pustego pola, NaN dla złego zapisu. */
+export function formDecimal(formData: FormData, name: string): number | null {
+  const raw = formText(formData, name).replace(/[\s\u00a0]/g, "").replace(",", ".");
+  if (!raw) return null;
+  return /^\d+(\.\d+)?$/.test(raw) ? Number(raw) : Number.NaN;
+}

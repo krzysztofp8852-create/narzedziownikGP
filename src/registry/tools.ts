@@ -1,3 +1,4 @@
+import { canSeeCosts, currentToolRate, type EffectiveRate, recordToolValues } from "./costs";
 import { type DeadlineSummary, summarizeDeadlines, type ToolDeadline, toolDeadlines } from "./deadlines";
 import { isUniqueViolation, RegistryError, type RegistryErrorCode, ReplayedOperationError } from "./errors";
 import type { MovementKind, MovementSource } from "./movements";
@@ -46,6 +47,8 @@ export interface ToolCard extends DeadlineSummary {
   serialNumber: string | null;
   /** Wartość w zł; klucz istnieje tylko dla właściciela. */
   value?: number | null;
+  /** Stawka dzienna obowiązująca dziś i jej źródło; null przed dniem startu kosztów. Klucz tylko dla właściciela. */
+  dailyRate?: EffectiveRate | null;
   state: ToolState;
   registration: ToolRegistration;
   location: { id: string; name: string; kind: LocationKind };
@@ -199,6 +202,7 @@ export async function intake(
       session.company.id,
       fields.value,
     ]);
+    await recordToolValues(sql, session, [{ toolId: tool.id, value: fields.value }], now);
   }
   await sql("insert into app.movement_tools (movement_id, tool_id, company_id) values ($1, $2, $3)", [
     movement.id,
@@ -233,7 +237,7 @@ const EDITABLE_COLUMNS = {
   serialNumber: "serial_number",
 } as const;
 
-export async function editTool(sql: Sql, session: Session, toolId: string, input: EditToolInput): Promise<void> {
+export async function editTool(sql: Sql, session: Session, toolId: string, input: EditToolInput, now: Date): Promise<void> {
   requireOwnerForValue(session, input);
   const fields = normalizeFields(input);
   if (input.code !== undefined && !fields.code) throw new RegistryError("invalid_input");
@@ -263,6 +267,7 @@ export async function editTool(sql: Sql, session: Session, toolId: string, input
       [toolId, session.company.id, fields.value],
     );
   }
+  if (fields.value !== undefined) await recordToolValues(sql, session, [{ toolId, value: fields.value }], now);
 }
 
 async function requireCategory(sql: Sql, categoryId: string) {
@@ -392,6 +397,7 @@ export async function toolCard(
     model: row.model,
     serialNumber: row.serial_number,
     ...(canSeeValues(session) && { value: row.value === null ? null : Number(row.value) }),
+    ...(canSeeCosts(session) && { dailyRate: await currentToolRate(sql, { id: row.id, categoryId: row.category_id }, now) }),
     state: row.state,
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },

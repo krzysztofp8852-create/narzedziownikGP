@@ -129,6 +129,23 @@ _Avoid_: załącznik, teczka
 Wpis dzwonka tydzień przed terminem i raz po nim (przy gwarancji tylko przed), dla właściciela i kierownika lokalizacji, w której jest sprzęt.
 _Avoid_: alarm (zarezerwowany dla progu dni)
 
+## Koszt sprzętu
+
+**Moduł**:
+Część programu z własną podstroną albo zakładką (np. koszt sprzętu), w cenie abonamentu i zawsze włączona u każdej firmy, także w demo.
+_Avoid_: dodatek, plugin
+
+**Stawka dzienna**:
+Ile kosztuje dzień narzędzia na budowie albo pojeździe: kwota zł/dzień narzędzia, a bez niej procent wartości dla kategorii albo firmy. Każda stawka obowiązuje od dnia ustawienia; widzi je tylko właściciel.
+_Avoid_: amortyzacja, cena wynajmu
+
+**Dzień startu kosztów**:
+Dzień, w którym właściciel pierwszy raz ustawił stawki. Stawki i wartości z tego dnia liczą się wstecz przez całą historię ruchów, a każda późniejsza zmiana od dnia zmiany. Wcześniej zakładka „Koszty” nie pokazuje kwot.
+
+**Koszt sprzętu**:
+Dni narzędzi na budowie albo pojeździe razy stawka dzienna z każdego dnia, w zakładce „Koszty” lokalizacji, za całą budowę, miesiąc albo własny zakres. Liczy się każda rozpoczęta doba w Polsce (dzień przeniesienia na obu miejscach), z historii ruchów bez cofniętych; baza i serwis się nie liczą.
+_Avoid_: koszt wynajmu, amortyzacja
+
 ## Ruchy
 
 **Ruch**:

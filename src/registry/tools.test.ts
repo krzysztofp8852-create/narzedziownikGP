@@ -54,6 +54,7 @@ describe("dodawanie narzędzia", () => {
       model: "TE 30",
       serialNumber: "SN-123",
       value: 3200,
+      dailyRate: null,
       state: "w_obiegu",
       registration: "zaakceptowane",
       location: { id: base.id, name: "Magazyn Swarzędz", kind: "baza" },
