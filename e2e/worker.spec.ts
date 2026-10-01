@@ -41,6 +41,8 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   const temporaryPassword = await team.getByTestId("temporary-password").innerText();
   await expect(team.getByText("Login: jan.kowalski")).toBeVisible();
 
+  await page.getByRole("button", { name: "Menu" }).click();
+
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, "jan.kowalski", "zle-haslo-123");
@@ -65,6 +67,7 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   await expect(page.locator("main")).not.toContainText("zł");
 
   // Pracownik zapomniał hasła: właściciel nadaje nowe tymczasowe, a pracownik loguje się nim, odczytanym z ekranu.
+  await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.owner.email, company.owner.password);
@@ -75,6 +78,8 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   await member.getByRole("button", { name: "Nowe hasło tymczasowe" }).click();
   const resetPassword = await member.getByTestId("temporary-password").innerText();
   expect(resetPassword).not.toBe(temporaryPassword);
+
+  await page.getByRole("button", { name: "Menu" }).click();
 
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);

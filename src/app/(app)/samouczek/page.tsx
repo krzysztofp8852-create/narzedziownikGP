@@ -9,7 +9,7 @@ import { TutorialCard } from "./tutorial";
 
 export const metadata: Metadata = { title: t("tutorial.title") };
 
-/** Samouczek otwarty ponownie znakiem „?” w nagłówku, także po pominięciu albo ukończeniu. */
+/** Samouczek otwarty ponownie z menu, także po pominięciu albo ukończeniu. */
 export default async function TutorialPage() {
   const session = await requireSession();
   const tutorial = await getRegistry().as(session.userId).tutorial();

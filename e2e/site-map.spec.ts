@@ -76,6 +76,8 @@ test("budowa prawdziwej firmy stoi na mapie pod swoim adresem; właściciel prze
   await page.goto("/");
   await expect(map.getByRole("button", { name: "Baza: Magazyn" })).toHaveAttribute("data-lat", POZNAN.lat);
 
+  await page.getByRole("button", { name: "Menu" }).click();
+
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.manager);

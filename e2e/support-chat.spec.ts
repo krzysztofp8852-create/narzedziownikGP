@@ -20,6 +20,7 @@ async function signIn(page: Page, email: string, password: string) {
 }
 
 async function signOut(page: Page) {
+  await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "Wyloguj" }).click();
   // Logowanie dopiero po wylogowaniu; inaczej /logowanie odeśle zalogowaną osobę dalej.
   await expect(page).toHaveURL(/\/logowanie$/);
