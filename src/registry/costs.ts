@@ -7,9 +7,15 @@ import { isCalendarDay, UUID_PATTERN, warsawTime } from "./validation";
 /** Do czego odnosi się stawka dzienna: cała firma, kategoria albo jedno narzędzie. */
 export type RateTarget = { kind: "firma" } | { kind: "kategoria"; categoryId: string } | { kind: "narzedzie"; toolId: string };
 
+/** Nowa stawka dla celu: procent (firma, kategoria) albo kwota zł/dzień (narzędzie); null zdejmuje nadpisanie. */
+export interface RateChange {
+  target: RateTarget;
+  rate: number | null;
+}
+
 /** Stawki obowiązujące dziś, do ustawień firmy. */
 export interface DailyRates {
-  /** Dzień startu kosztów (RRRR-MM-DD): pierwsze ustawienie stawek; null, dopóki ich nie ustawiono. */
+  /** Dzień startu kosztów (RRRR-MM-DD): pierwsze ustawienie stawki firmy; null, dopóki jej nie ustawiono. */
   costStartDay: string | null;
   /** Procent wartości narzędzia na dzień dla firmy; null, dopóki go nie ustawiono. */
   companyPercent: number | null;
@@ -83,9 +89,10 @@ export async function dailyRates(sql: Sql, now: Date): Promise<DailyRates> {
 
 /**
  * Nowa stawka od dziś: procent dla firmy (wymagany) albo kategorii, kwota zł/dzień dla narzędzia; null zdejmuje
- * nadpisanie kategorii albo narzędzia. Pierwsza stawka wyznacza dzień startu kosztów.
+ * nadpisanie kategorii albo narzędzia. Pierwsza stawka firmy wyznacza dzień startu kosztów. Stawka równa
+ * obowiązującej dziś niczego nie dopisuje.
  */
-export async function setDailyRate(sql: Sql, session: Session, target: RateTarget, rate: number | null, now: Date): Promise<void> {
+export async function setDailyRate(sql: Sql, session: Session, { target, rate }: RateChange, now: Date): Promise<void> {
   let row: { kind: RateTarget["kind"]; categoryId: string | null; toolId: string | null; percent: number | null; amount: number | null };
   if (target.kind === "firma") {
     if (!isPercent(rate)) throw new RegistryError("invalid_input");
@@ -105,20 +112,15 @@ export async function setDailyRate(sql: Sql, session: Session, target: RateTarge
   } else {
     throw new RegistryError("invalid_input");
   }
+  const book = await loadRateBook(sql);
+  const today = warsawTime(now).day;
+  const timeline = target.kind === "firma" ? book.company : target.kind === "kategoria" ? book.categories.get(target.categoryId) : book.tools.get(target.toolId);
+  const current = book.at(timeline, today);
+  if ((current?.percent ?? null) === row.percent && (current?.amount ?? null) === row.amount) return;
   await sql(
     `insert into app.daily_rates (company_id, kind, category_id, tool_id, percent, amount, valid_from, recorded_at, recorded_by)
      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [session.company.id, row.kind, row.categoryId, row.toolId, row.percent, row.amount, warsawTime(now).day, now, session.userId],
-  );
-}
-
-/** Dopisuje do historii wartości narzędzi ich nowe wartości (null: bez wartości), obowiązujące od dziś. */
-export async function recordToolValues(sql: Sql, session: Session, values: { toolId: string; value: number | null }[], now: Date) {
-  if (values.length === 0) return;
-  await sql(
-    `insert into app.tool_value_history (tool_id, company_id, value, valid_from, recorded_at)
-     select tool_id, $1, value, $2, $3 from unnest($4::uuid[], $5::numeric[]) as v(tool_id, value)`,
-    [session.company.id, warsawTime(now).day, now, values.map((entry) => entry.toolId), values.map((entry) => entry.value)],
+    [session.company.id, row.kind, row.categoryId, row.toolId, row.percent, row.amount, today, now, session.userId],
   );
 }
 
@@ -288,7 +290,7 @@ async function loadRateBook(sql: Sql, toolIds: string[] = []) {
   const toolValues = new Map<string, ValueEntry[]>();
   for (const row of values) push(toolValues, row.tool_id, { validFrom: row.valid_from, value: number(row.value) });
 
-  const startDay = rates[0]?.valid_from ?? null;
+  const startDay = company[0]?.validFrom ?? null;
   /** Wpis obowiązujący w danym dniu: ostatni z dnia startu i sprzed niego obowiązuje wstecz, późniejsze od swojego dnia. */
   const at = <T extends Dated>(timeline: T[] | undefined, day: string): T | undefined => {
     let found: T | undefined;
@@ -310,7 +312,7 @@ async function loadRateBook(sql: Sql, toolIds: string[] = []) {
     const value = at(toolValues.get(tool.id), day)?.value;
     return { source, percent, amount: value == null ? null : Math.round((toGrosze(value) * toGrosze(percent)) / 10_000) / 100 };
   };
-  return { startDay, company, categories, at, rateOn };
+  return { startDay, company, categories, tools, at, rateOn };
 }
 
 /** Grosze z kwoty w zł (także setne części procentu z procentu). */

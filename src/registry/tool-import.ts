@@ -1,4 +1,3 @@
-import { recordToolValues } from "./costs";
 import { isUniqueViolation, RegistryError, ReplayedOperationError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
@@ -10,6 +9,7 @@ import {
   MAX_VALUE,
   nextCodes,
   normalizeCode,
+  saveToolValues,
   uniqueOr,
 } from "./tools";
 import { isCalendarDay, UUID_PATTERN } from "./validation";
@@ -234,14 +234,7 @@ export async function importTools(sql: Sql, session: Session, input: ImportTools
   const toolId = (row: ImportPreviewRow) => toolIdByCode.get(row.code!)!;
 
   const valued = rows.filter((row) => row.value !== null);
-  if (valued.length > 0) {
-    await sql(
-      `insert into app.tool_values (tool_id, company_id, value)
-       select tool_id, $1, value from unnest($2::uuid[], $3::numeric[]) as r(tool_id, value)`,
-      [session.company.id, valued.map(toolId), valued.map((row) => row.value)],
-    );
-    await recordToolValues(sql, session, valued.map((row) => ({ toolId: toolId(row), value: row.value })), now);
-  }
+  await saveToolValues(sql, session, valued.map((row) => ({ toolId: toolId(row), value: row.value })), now);
 
   const deadlines = rows.flatMap((row) => [
     ...(row.inspectionDue ? [{ toolId: toolId(row), kind: "przeglad", dueOn: row.inspectionDue }] : []),

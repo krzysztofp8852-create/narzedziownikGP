@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { decimalText } from "@/i18n/decimal";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { setToolRate, type ToolRateFormState } from "../actions";
@@ -14,7 +15,7 @@ export function ToolRateForm({ toolId, amount }: { toolId: string; amount: numbe
       <p className="muted">{t("dailyRates.toolOwnHint")}</p>
       <div className="field">
         <label htmlFor="toolRateAmount">{t("dailyRates.toolOwnLabel")}</label>
-        <input id="toolRateAmount" name="amount" inputMode="decimal" defaultValue={amount === null ? "" : String(amount).replace(".", ",")} />
+        <input id="toolRateAmount" name="amount" inputMode="decimal" defaultValue={amount === null ? "" : decimalText(amount)} />
       </div>
       {state.error && (
         <p className="form-error" role="alert">

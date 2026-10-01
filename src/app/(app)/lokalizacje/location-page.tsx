@@ -17,11 +17,11 @@ import { canSeeCosts, type LocationCosts, type Session, type Site, type ToolCost
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
 
 /** Budowa albo pojazd: lokalizacje z własną stroną i zakładką „Koszty”. */
-export type PlaceKind = "budowa" | "pojazd";
+export type SiteOrVehicleKind = "budowa" | "pojazd";
 
-interface Place {
+interface SiteOrVehicle {
   id: string;
-  kind: PlaceKind;
+  kind: SiteOrVehicleKind;
   name: string;
   address: string | null;
   manager: Site["manager"];
@@ -32,33 +32,33 @@ interface Place {
 type SearchParams = Record<string, string | string[] | undefined>;
 
 /** Adres strony budowy albo pojazdu, np. /budowy/…/koszty. */
-export function placePath(kind: PlaceKind, id: string, tab: "" | "/koszty" | "/koszty/eksport" = "") {
+export function locationPagePath(kind: SiteOrVehicleKind, id: string, tab: "" | "/koszty" | "/koszty/eksport" = "") {
   return `${kind === "budowa" ? "/budowy" : "/pojazdy"}/${id}${tab}`;
 }
 
 /** Budowa (także zakończona) albo pojazd (także nieaktywny) raz na żądanie; null, gdy nie ma takiej lokalizacji. */
-export const loadPlace = cache(async (id: string, kind: PlaceKind): Promise<{ session: Session; place: Place | null }> => {
+export const loadSiteOrVehicle = cache(async (id: string, kind: SiteOrVehicleKind): Promise<{ session: Session; location: SiteOrVehicle | null }> => {
   const session = await requireSession();
   const { sites, vehicles } = await getRegistry().as(session.userId).locations();
   const site = kind === "budowa" ? sites.find((candidate) => candidate.id === id) : undefined;
   const vehicle = kind === "pojazd" ? vehicles.find((candidate) => candidate.id === id) : undefined;
-  const place: Place | null = site
+  const location: SiteOrVehicle | null = site
     ? { id, kind, name: site.name, address: site.address, manager: site.manager, open: site.status === "aktywna" }
     : vehicle
       ? { id, kind, name: vehicle.name, address: null, manager: vehicle.manager, open: vehicle.active }
       : null;
-  return { session, place };
+  return { session, location };
 });
 
-export async function placeTitle(id: string, kind: PlaceKind) {
-  return (await loadPlace(id, kind)).place?.name;
+export async function siteOrVehicleTitle(id: string, kind: SiteOrVehicleKind) {
+  return (await loadSiteOrVehicle(id, kind)).location?.name;
 }
 
 /** Nagłówek strony budowy albo pojazdu z zakładkami; „Koszty” tylko dla tego, kto widzi koszty. */
-function PlaceShell({ session, place, tab, children }: { session: Session; place: Place; tab: "sprzet" | "koszty"; children: ReactNode }) {
+function LocationShell({ session, location, tab, children }: { session: Session; location: SiteOrVehicle; tab: "sprzet" | "koszty"; children: ReactNode }) {
   const tabs = [
-    { id: "sprzet", href: placePath(place.kind, place.id), label: t("locationPage.equipmentTab") },
-    ...(canSeeCosts(session) ? [{ id: "koszty", href: placePath(place.kind, place.id, "/koszty"), label: t("costs.tab") }] : []),
+    { id: "sprzet", href: locationPagePath(location.kind, location.id), label: t("locationPage.equipmentTab") },
+    ...(canSeeCosts(session) ? [{ id: "koszty", href: locationPagePath(location.kind, location.id, "/koszty"), label: t("costs.tab") }] : []),
   ];
   return (
     <>
@@ -69,21 +69,21 @@ function PlaceShell({ session, place, tab, children }: { session: Session; place
       </p>
       <h1 className="display page-title">
         <span className="location-kind">
-          {place.kind === "pojazd" && <VehicleIcon />} {place.kind === "budowa" ? t("locationPage.siteKind") : t("locationPage.vehicleKind")}
+          {location.kind === "pojazd" && <VehicleIcon />} {location.kind === "budowa" ? t("locationPage.siteKind") : t("locationPage.vehicleKind")}
         </span>{" "}
-        {place.name}
+        {location.name}
       </h1>
-      <div className="location-details place-details">
-        {place.address && <p className="muted">{place.address}</p>}
+      <div className="location-details site-page-details">
+        {location.address && <p className="muted">{location.address}</p>}
         <p>
-          <SiteManagerLabel manager={place.manager} />
+          <SiteManagerLabel manager={location.manager} />
         </p>
-        {!place.open && <p className="tag">{place.kind === "budowa" ? t("locationPage.finished") : t("locationPage.inactive")}</p>}
+        {!location.open && <p className="tag">{location.kind === "budowa" ? t("locationPage.finished") : t("locationPage.inactive")}</p>}
       </div>
       {tabs.length > 1 && (
-        <nav className="place-tabs" aria-label={t("locationPage.tabs")}>
+        <nav className="site-page-tabs" aria-label={t("locationPage.tabs")}>
           {tabs.map((item) => (
-            <Link key={item.id} href={item.href} className="place-tab" aria-current={item.id === tab ? "page" : undefined}>
+            <Link key={item.id} href={item.href} className="site-page-tab" aria-current={item.id === tab ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
@@ -95,15 +95,15 @@ function PlaceShell({ session, place, tab, children }: { session: Session; place
 }
 
 /** Zakładka „Sprzęt”: narzędzia, które są tu teraz (jak na tablicy), i odnośnik do historii ruchów lokalizacji. */
-export async function EquipmentPage({ id, kind }: { id: string; kind: PlaceKind }) {
-  const { session, place } = await loadPlace(id, kind);
-  if (!place) notFound();
+export async function EquipmentPage({ id, kind }: { id: string; kind: SiteOrVehicleKind }) {
+  const { session, location } = await loadSiteOrVehicle(id, kind);
+  if (!location) notFound();
   const board = await getRegistry().as(session.userId).whereIsWhat();
   const onBoard = (kind === "budowa" ? board.sites : board.vehicles).find((candidate) => candidate.id === id);
   const tools = onBoard?.tools ?? [];
 
   return (
-    <PlaceShell session={session} place={place} tab="sprzet">
+    <LocationShell session={session} location={location} tab="sprzet">
       <section className="board-section" aria-label={t("locationPage.equipmentTab")}>
         {tools.length === 0 ? (
           <p className="empty">{kind === "budowa" ? t("locationPage.siteEmpty") : t("locationPage.vehicleEmpty")}</p>
@@ -114,21 +114,21 @@ export async function EquipmentPage({ id, kind }: { id: string; kind: PlaceKind 
           <Link href={`/historia${historySearch({ locationId: id })}`}>{t("locationPage.history")}</Link>
         </p>
       </section>
-    </PlaceShell>
+    </LocationShell>
   );
 }
 
 /** Zakładka „Koszty”: koszt sprzętu w wybranym okresie z eksportem do Excela. Tylko dla tego, kto widzi koszty. */
-export async function CostsPage({ id, kind, searchParams }: { id: string; kind: PlaceKind; searchParams: SearchParams }) {
-  const { session, place } = await loadPlace(id, kind);
-  if (!place) notFound();
-  if (!canSeeCosts(session)) redirect(placePath(kind, id));
+export async function CostsPage({ id, kind, searchParams }: { id: string; kind: SiteOrVehicleKind; searchParams: SearchParams }) {
+  const { session, location } = await loadSiteOrVehicle(id, kind);
+  if (!location) notFound();
+  if (!canSeeCosts(session)) redirect(locationPagePath(kind, id));
   const registry = getRegistry().as(session.userId);
   const choice = parseCostPeriod(searchParams);
   const costs = await registry.locationCosts(id, choice.mode === "cala" ? undefined : choice.period);
 
   return (
-    <PlaceShell session={session} place={place} tab="koszty">
+    <LocationShell session={session} location={location} tab="koszty">
       {costs.status === "brak_stawki" ? (
         <section className="company-card cost-start" aria-labelledby="cost-start">
           <h2 id="cost-start" className="display section-title">
@@ -141,18 +141,18 @@ export async function CostsPage({ id, kind, searchParams }: { id: string; kind: 
           </p>
         </section>
       ) : (
-        <PlaceCosts place={place} costs={costs} choice={choice} />
+        <SiteOrVehicleCosts location={location} costs={costs} choice={choice} />
       )}
-    </PlaceShell>
+    </LocationShell>
   );
 }
 
-function PlaceCosts({ place, costs, choice }: { place: Place; costs: Extract<LocationCosts, { status: "koszty" }>; choice: CostPeriodChoice }) {
+function SiteOrVehicleCosts({ location, costs, choice }: { location: SiteOrVehicle; costs: Extract<LocationCosts, { status: "koszty" }>; choice: CostPeriodChoice }) {
   const thisMonth = formatDay(new Date()).slice(0, 7);
   const lastMonth = shiftMonth(thisMonth, -1);
-  const costsPath = placePath(place.kind, place.id, "/koszty");
+  const costsPath = locationPagePath(location.kind, location.id, "/koszty");
   const periods: { id: string; label: string; choice: CostPeriodChoice }[] = [
-    { id: "cala", label: place.kind === "budowa" ? t("costs.whole") : t("costs.wholeVehicle"), choice: { mode: "cala" } },
+    { id: "cala", label: location.kind === "budowa" ? t("costs.whole") : t("costs.wholeVehicle"), choice: { mode: "cala" } },
     { id: thisMonth, label: t("costs.thisMonth"), choice: { mode: "miesiac", month: thisMonth, period: monthPeriod(thisMonth) } },
     { id: lastMonth, label: t("costs.lastMonth"), choice: { mode: "miesiac", month: lastMonth, period: monthPeriod(lastMonth) } },
   ];
@@ -165,12 +165,12 @@ function PlaceCosts({ place, costs, choice }: { place: Place; costs: Extract<Loc
         <h2 id="cost-period" className="display section-title">
           {t("costs.periodTitle")}
         </h2>
-        <nav className="place-tabs" aria-label={t("costs.periodTitle")}>
+        <nav className="site-page-tabs" aria-label={t("costs.periodTitle")}>
           {periods.map((period) => (
             <Link
               key={period.id}
               href={`${costsPath}${costPeriodSearch(period.choice)}`}
-              className="place-tab"
+              className="site-page-tab"
               aria-current={period.id === activePeriod ? "page" : undefined}
             >
               {period.label}
@@ -225,7 +225,7 @@ function PlaceCosts({ place, costs, choice }: { place: Place; costs: Extract<Loc
           {costs.tools.length > 0 && (
             <div className="export-link">
               {/* Zwykły odnośnik: plik ma się pobrać, a nie otworzyć jako strona. */}
-              <a className="button" href={`${placePath(place.kind, place.id, "/koszty/eksport")}${search}`} download>
+              <a className="button" href={`${locationPagePath(location.kind, location.id, "/koszty/eksport")}${search}`} download>
                 {t("costs.export")}
               </a>
               <small className="muted">{t("costs.exportHint")}</small>

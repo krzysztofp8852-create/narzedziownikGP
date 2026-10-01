@@ -49,10 +49,7 @@ export async function updateIssueVisibility(_prev: SettingsFormState, formData: 
   return { saved: true };
 }
 
-/**
- * Stawka dzienna firmy i stawki kategorii (puste pole: kategoria liczy się stawką firmy). Zapisuje tylko zmienione,
- * bo każda zmiana po dniu startu kosztów obowiązuje od dziś.
- */
+/** Stawka dzienna firmy i stawki kategorii (puste pole: kategoria liczy się stawką firmy), razem albo wcale. */
 export async function updateDailyRates(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
@@ -66,12 +63,10 @@ export async function updateDailyRates(_prev: SettingsFormState, formData: FormD
     return { error: t("dailyRates.invalidPercent") };
   }
   try {
-    const current = await registry.dailyRates();
-    if (companyPercent !== current.companyPercent) await registry.setDailyRate({ kind: "firma" }, companyPercent);
-    const currentPercents = new Map(current.categories.map(({ category, percent }) => [category.id, percent]));
-    for (const { categoryId, percent } of categories) {
-      if (percent !== (currentPercents.get(categoryId) ?? null)) await registry.setDailyRate({ kind: "kategoria", categoryId }, percent);
-    }
+    await registry.setDailyRates([
+      { target: { kind: "firma" }, rate: companyPercent },
+      ...categories.map(({ categoryId, percent }) => ({ target: { kind: "kategoria" as const, categoryId }, rate: percent })),
+    ]);
   } catch (error) {
     return { error: isRegistryError(error) && error.code === "invalid_input" ? t("dailyRates.invalidPercent") : errorMessage(error) };
   }

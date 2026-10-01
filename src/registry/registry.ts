@@ -9,7 +9,7 @@ import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, ty
 import * as companyDeletion from "./company-deletion";
 import * as corrections from "./corrections";
 import * as costs from "./costs";
-import type { CostPeriod, DailyRates, LocationCosts, RateTarget } from "./costs";
+import type { CostPeriod, DailyRates, LocationCosts, RateChange, RateTarget } from "./costs";
 import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
 import type { AddDocumentInput, CompleteDeadlineInput, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
@@ -101,7 +101,7 @@ export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPrev
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings, IssueVisibility } from "./settings";
-export type { CostPeriod, DailyRates, EffectiveRate, LocationCosts, RateTarget, ToolCost } from "./costs";
+export type { CostPeriod, DailyRates, EffectiveRate, LocationCosts, RateChange, RateTarget, ToolCost } from "./costs";
 export { canSeeCosts } from "./costs";
 export type {
   CompanySubscription,
@@ -642,11 +642,13 @@ export interface Registry {
     dailyRates(): Promise<DailyRates>;
     /**
      * Stawka dzienna od dziś: procent wartości dla firmy albo kategorii (0–100, dwa miejsca po przecinku), kwota zł/dzień
-     * dla narzędzia; null zdejmuje nadpisanie kategorii albo narzędzia. Pierwsza stawka w firmie to dzień startu kosztów:
+     * dla narzędzia; null zdejmuje nadpisanie kategorii albo narzędzia. Pierwsza stawka firmy to dzień startu kosztów:
      * stawki i wartości z tego dnia liczą się wstecz przez całą historię, a każda późniejsza zmiana od dnia zmiany.
-     * Tylko właściciel.
+     * Stawka równa obowiązującej dziś niczego nie zmienia. Tylko właściciel.
      */
     setDailyRate(target: RateTarget, rate: number | null): Promise<void>;
+    /** Kilka stawek (jak `setDailyRate`) razem albo wcale, np. stawka firmy i kategorii z ustawień. Tylko właściciel. */
+    setDailyRates(changes: RateChange[]): Promise<void>;
     /**
      * Koszt sprzętu budowy albo pojazdu w okresie (bez niego: cała budowa): każde narzędzie z liczbą rozpoczętych dób
      * w Polsce, stawkami i kwotą, i suma. Przed dniem startu kosztów stan „brak stawki” zamiast kwot. Baza i serwis
@@ -1400,7 +1402,13 @@ export function createRegistry(deps: RegistryDeps): Registry {
         setDailyRate: (target, rate) =>
           asWriter((sql, session) => {
             costs.requireCostViewer(session);
-            return costs.setDailyRate(sql, session, target, rate, deps.clock.now());
+            return costs.setDailyRate(sql, session, { target, rate }, deps.clock.now());
+          }),
+        setDailyRates: (changes) =>
+          asWriter(async (sql, session) => {
+            costs.requireCostViewer(session);
+            if (!Array.isArray(changes)) throw new RegistryError("invalid_input");
+            for (const change of changes) await costs.setDailyRate(sql, session, change, deps.clock.now());
           }),
         locationCosts: (locationId, period) =>
           asMember((sql, session) => {

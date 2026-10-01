@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { t } from "@/i18n/t";
-import { CostsPage, placeTitle } from "../../../lokalizacje/location-page";
+import { CostsPage, siteOrVehicleTitle } from "../../../lokalizacje/location-page";
 
 export async function generateMetadata(props: PageProps<"/budowy/[id]/koszty">): Promise<Metadata> {
-  const name = await placeTitle((await props.params).id, "budowa");
+  const name = await siteOrVehicleTitle((await props.params).id, "budowa");
   return { title: name ? `${t("costs.tab")}: ${name}` : undefined };
 }
 

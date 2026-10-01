@@ -32,6 +32,7 @@ import {
   type WhereIsWhat,
 } from "@/registry/registry";
 import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
+import { locationPagePath } from "./lokalizacje/location-page";
 import {
   AddSiteForm,
   AddVehicleForm,
@@ -197,7 +198,7 @@ function SiteCard({
     <section className="location location-site" aria-labelledby={`location-${site.id}`}>
       <div className="location-head">
         <h3 id={`location-${site.id}`} className="display location-name">
-          <span className="location-kind">{t("board.siteKind")}</span> <Link href={`/budowy/${site.id}`}>{site.name}</Link>
+          <span className="location-kind">{t("board.siteKind")}</span> <Link href={locationPagePath("budowa", site.id)}>{site.name}</Link>
         </h3>
         <LocationTotals count={site.tools.length} totalValue={site.totalValue} />
       </div>
@@ -248,7 +249,7 @@ function VehicleCard({ vehicle, managers }: { vehicle: WhereIsWhat["vehicles"][n
           <span className="location-kind">
             <VehicleIcon /> {t("board.vehicleKind")}
           </span>{" "}
-          <Link href={`/pojazdy/${vehicle.id}`}>{vehicle.name}</Link>
+          <Link href={locationPagePath("pojazd", vehicle.id)}>{vehicle.name}</Link>
         </h3>
         <LocationTotals count={vehicle.tools.length} totalValue={vehicle.totalValue} />
       </div>

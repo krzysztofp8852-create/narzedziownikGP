@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { formatCalendarDay } from "@/i18n/dates";
+import { decimalText } from "@/i18n/decimal";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import type { Category, DailyRates } from "@/registry/registry";
@@ -10,9 +11,9 @@ import { type SettingsFormState, updateDailyRates } from "./actions";
 /** Podpowiedź stawki firmy, zanim ją ustawiono. */
 const SUGGESTED_PERCENT = 1;
 
-/** Procent w polu formularza w zapisie polskim („1,5”). */
+/** Procent w polu formularza w zapisie polskim („1,5”); puste pole bez stawki. */
 function percentText(percent: number | null | undefined) {
-  return percent == null ? "" : String(percent).replace(".", ",");
+  return percent == null ? "" : decimalText(percent);
 }
 
 /**

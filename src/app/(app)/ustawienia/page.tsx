@@ -15,8 +15,7 @@ export const metadata: Metadata = { title: t("settingsPage.title") };
 
 /**
  * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, zespół, serwisy, próg alarmu, kto widzi zgłoszenia,
- * stawki dzienne kosztu sprzętu,
- * adres bazy na mapie, naklejki QR, dokumenty prawne.
+ * stawki dzienne kosztu sprzętu, adres bazy na mapie, naklejki QR, dokumenty prawne.
  */
 export default async function SettingsPage() {
   const session = await requireSession();

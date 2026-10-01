@@ -114,6 +114,29 @@ describe("dzień startu kosztów", () => {
     expect(costs.tools[0]).toMatchObject({ days: 9, rates: [{ amount: 25, days: 9 }], amount: 225 });
   });
 
+  it("dniem startu jest pierwsza stawka firmy: kwota narzędzia i stawka kategorii sprzed niej też liczą się wstecz", async () => {
+    const z = await givenZawbud();
+    await move(z, "2026-03-02T08:00:00+01:00", "wydanie", z.baseId, z.ratajeId, [z.e01, z.e02, z.p01]);
+    testbed.clock.set("2026-03-03T08:00:00+01:00");
+    await z.owner.setDailyRate({ kind: "narzedzie", toolId: z.e01 }, null);
+    await z.owner.setDailyRate({ kind: "narzedzie", toolId: z.e02 }, 15);
+    await z.owner.setDailyRate({ kind: "kategoria", categoryId: z.measuring.id }, 2);
+    testbed.clock.set("2026-03-05T08:00:00+01:00");
+
+    expect(await z.owner.locationCosts(z.ratajeId)).toEqual({ status: "brak_stawki" });
+    expect((await z.owner.toolCard(z.e02))!.dailyRate).toBeNull();
+
+    testbed.clock.set("2026-03-06T08:00:00+01:00");
+    await z.owner.setDailyRate({ kind: "firma" }, 1);
+
+    expect(await z.owner.dailyRates()).toMatchObject({ costStartDay: "2026-03-06" });
+    expect((await costsOf(z, z.ratajeId)).tools.map((row) => [row.tool.code, row.rates])).toEqual([
+      ["E-01", [{ amount: 20, days: 5 }]],
+      ["E-02", [{ amount: 15, days: 5 }]],
+      ["P-01", [{ amount: 60, days: 5 }]],
+    ]);
+  });
+
   it("późniejsza zmiana stawki i wartości działa od dnia zmiany, więc zamknięte dni się nie zmieniają", async () => {
     const z = await givenZawbud();
     await move(z, "2026-03-02T08:00:00+01:00", "wydanie", z.baseId, z.ratajeId, [z.e01]);
@@ -374,6 +397,25 @@ describe("ustawianie stawek", () => {
     expect(await z.owner.dailyRates()).toEqual({ costStartDay: null, companyPercent: null, categories: [] });
   });
 
+  it("kilka stawek zapisuje się razem albo wcale", async () => {
+    const z = await givenZawbud();
+    await z.owner.setDailyRate({ kind: "firma" }, 1);
+
+    await expect(
+      z.owner.setDailyRates([
+        { target: { kind: "firma" }, rate: 2 },
+        { target: { kind: "kategoria", categoryId: z.measuring.id }, rate: 500 },
+      ]),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(await z.owner.dailyRates()).toMatchObject({ companyPercent: 1, categories: [] });
+
+    await z.owner.setDailyRates([
+      { target: { kind: "firma" }, rate: 2 },
+      { target: { kind: "kategoria", categoryId: z.measuring.id }, rate: 3 },
+    ]);
+    expect(await z.owner.dailyRates()).toMatchObject({ companyPercent: 2, categories: [{ category: z.measuring, percent: 3 }] });
+  });
+
   it("0% to ważna stawka: sprzęt kategorii liczy się za darmo", async () => {
     const z = await givenZawbud();
     await move(z, "2026-03-02T08:00:00+01:00", "wydanie", z.baseId, z.ratajeId, [z.p01]);
@@ -396,6 +438,7 @@ describe("kto widzi stawki i koszty", () => {
       await expect(member.dailyRates()).rejects.toMatchObject({ code: "forbidden" });
       await expect(member.setDailyRate({ kind: "firma" }, 5)).rejects.toMatchObject({ code: "forbidden" });
       await expect(member.setDailyRate({ kind: "narzedzie", toolId: z.e01 }, 5)).rejects.toMatchObject({ code: "forbidden" });
+      await expect(member.setDailyRates([{ target: { kind: "firma" }, rate: 5 }])).rejects.toMatchObject({ code: "forbidden" });
       expect(await member.toolCard(z.e01)).not.toHaveProperty("dailyRate");
     }
     expect(await z.owner.dailyRates()).toMatchObject({ companyPercent: 1 });

@@ -5,7 +5,7 @@
 -- kategorii albo narzędzia zdejmuje nadpisanie. Stawka procentowa zależy od wartości narzędzia z danego dnia, więc
 -- wartość też ma historię: każda zmiana app.tool_values dopisuje tu wpis (pusty, gdy wartość usunięto).
 --
--- Dzień startu kosztów to dzień pierwszego wpisu stawki (dowolnego poziomu). Wpisy stawek i wartości z dnia startu i sprzed niego
+-- Dzień startu kosztów to dzień pierwszego wpisu stawki firmy. Wpisy stawek i wartości z dnia startu i sprzed niego
 -- obowiązują wstecz przez całą historię ruchów, a późniejsze od swojego dnia. Obie tabele tylko się dopisują
 -- i widzi je tylko właściciel, jak wartości w zł.
 

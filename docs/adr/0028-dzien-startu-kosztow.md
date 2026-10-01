@@ -19,9 +19,11 @@ pierwsze.
   narzędzie; pusty wpis zdejmuje nadpisanie) z dniem „obowiązuje od” w Polsce. `app.tool_value_history` dopisuje
   każdą zmianę wartości narzędzia (dodanie, edycja, import, akceptacja zgłoszenia; pusta, gdy wartość usunięto).
   Obie tabele tylko się dopisują. `app.tool_values` zostaje bieżącą wartością dla reszty programu.
-- **Dzień startu kosztów** to dzień pierwszego wpisu stawki w firmie (dowolnego poziomu). Wpisy stawek i wartości
-  z dnia startu i sprzed niego obowiązują wstecz przez całą historię ruchów: z kilku liczy się ostatni. Każdy
-  późniejszy wpis obowiązuje od swojego dnia, w całości (zmiana w ciągu dnia dotyczy całego dnia).
+- **Dzień startu kosztów** to dzień pierwszego wpisu stawki firmy: to ona daje stawkę każdemu narzędziu, więc
+  kwota jednego narzędzia albo procent kategorii ustawione wcześniej nie uruchamiają kosztów. Wpisy stawek
+  i wartości z dnia startu i sprzed niego obowiązują wstecz przez całą historię ruchów: z kilku liczy się ostatni.
+  Każdy późniejszy wpis obowiązuje od swojego dnia, w całości (zmiana w ciągu dnia dotyczy całego dnia). Stawka
+  równa obowiązującej niczego nie dopisuje.
 - **Przed dniem startu** zapytanie o koszty zwraca stan „brak stawki”, a nie zera, a karta narzędzia nie ma
   stawki. Zakładka „Koszty” zachęca wtedy do ustawienia stawki firmy z podpowiedzią 1%.
 - **Pierwszeństwo** w danym dniu: kwota narzędzia, procent kategorii, procent firmy. Procent liczy się od wartości
@@ -39,5 +41,8 @@ pierwsze.
   pierwszą stawkę tego samego dnia.
 - Korekta albo ruch z kolejki offline z wcześniejszą chwilą zdarzenia mogą zmienić dni w zamkniętym okresie, bo
   historia ruchów jest źródłem dni. To zamierzone: zestawienie zawsze zgadza się z historią ruchów.
+- Kategoria narzędzia nie ma historii: przeniesienie narzędzia do innej kategorii zmienia stawkę kategorii także
+  w zamkniętych okresach. Kategorie zmienia się rzadko; gdyby to przeszkadzało, kategoria trafi do historii
+  wartości narzędzia.
 - Koszt liczy się przy każdym zapytaniu z całej historii narzędzi lokalizacji. Dla małych firm to szybkie; przy
   dużej historii można dodać projekcję pobytów bez zmiany reguł.

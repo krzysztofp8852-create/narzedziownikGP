@@ -164,10 +164,8 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
  * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, alarmy, przypomnienia i raporty w dzwonkach, stawki
- * dzienne kosztu sprzętu), a potem
- * robi z niej obecne demo. Każdy wpis idzie przez Rejestr,
- * więc dane są takie, jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed
- * kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
+ * dzienne kosztu sprzętu), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
+ * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
 export async function createDemoCompany(
   deps: DemoCompanyDeps,

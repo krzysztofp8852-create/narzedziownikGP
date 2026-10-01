@@ -6,6 +6,7 @@ import { DamagedIcon } from "@/components/damaged-icon";
 import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
+import { decimalText } from "@/i18n/decimal";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { nextDeadlineText } from "@/lib/deadline-text";
@@ -30,7 +31,7 @@ export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Pro
 function dailyRateText(rate: EffectiveRate | null) {
   if (!rate) return t("dailyRates.toolRateNone");
   if (rate.source === "narzedzie") return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t("dailyRates.source.narzedzie")})`;
-  const percent = String(rate.percent).replace(".", ",");
+  const percent = decimalText(rate.percent);
   if (rate.amount === null) return t("dailyRates.toolRateNoValue", { percent });
   return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t(`dailyRates.source.${rate.source}`, { percent })})`;
 }

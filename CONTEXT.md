@@ -140,7 +140,7 @@ Ile kosztuje dzień narzędzia na budowie albo pojeździe: kwota zł/dzień narz
 _Avoid_: amortyzacja, cena wynajmu
 
 **Dzień startu kosztów**:
-Dzień, w którym właściciel pierwszy raz ustawił stawki. Stawki i wartości z tego dnia liczą się wstecz przez całą historię ruchów, a każda późniejsza zmiana od dnia zmiany. Wcześniej zakładka „Koszty” nie pokazuje kwot.
+Dzień, w którym właściciel pierwszy raz ustawił stawkę firmy. Stawki i wartości z tego dnia liczą się wstecz przez całą historię ruchów, a każda późniejsza zmiana od dnia zmiany. Wcześniej zakładka „Koszty” nie pokazuje kwot.
 
 **Koszt sprzętu**:
 Dni narzędzi na budowie albo pojeździe razy stawka dzienna z każdego dnia, w zakładce „Koszty” lokalizacji, za całą budowę, miesiąc albo własny zakres. Liczy się każda rozpoczęta doba w Polsce (dzień przeniesienia na obu miejscach), z historii ruchów bez cofniętych; baza i serwis się nie liczą.

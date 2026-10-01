@@ -1238,7 +1238,8 @@
         "retireTool": "Wycofanie narzędzia",
         "exportData": "Eksport historii do Excela",
         "updateSettings": "Zmiana ustawień firmy",
-        "setDailyRate": "Zmiana stawki dziennej"
+        "setDailyRate": "Zmiana stawki dziennej",
+        "setDailyRates": "Zmiana stawek dziennych"
       }
     }
   },
@@ -1832,7 +1833,7 @@
     "sheet": "Koszt sprzętu",
     "sheetTitle": "Koszt sprzętu: {place}",
     "period": "Okres: {from} – {to}",
-    "noPeriod": "Okres: na tej budowie nie było jeszcze sprzętu",
+    "noPeriod": "Okres: nie było tu jeszcze sprzętu",
     "days": "Dni",
     "rate": "Stawka dzienna (zł)",
     "amount": "Kwota (zł)",

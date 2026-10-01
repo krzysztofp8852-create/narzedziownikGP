@@ -3925,18 +3925,18 @@ a.tool-row:hover .tool-row-name {
   text-underline-offset: 3px;
 }
 
-.place-details {
+.site-page-details {
   margin: 4px 0 16px;
 }
 
-.place-tabs {
+.site-page-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
 }
 
-.place-tab {
+.site-page-tab {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -3949,18 +3949,18 @@ a.tool-row:hover .tool-row-name {
   text-decoration: none;
 }
 
-.place-tab:hover {
+.site-page-tab:hover {
   background: var(--surface-raised);
 }
 
-.place-tab[aria-current="page"] {
+.site-page-tab[aria-current="page"] {
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 700;
 }
 
-.cost-periods .place-tabs {
+.cost-periods .site-page-tabs {
   margin-bottom: 0;
 }
 
