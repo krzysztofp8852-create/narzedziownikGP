@@ -1,9 +1,12 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { formatDay } from "@/i18n/dates";
-import type { Clock, Notifier } from "@/registry/ports";
+import { type Clock, noGeocoder, type Notifier } from "@/registry/ports";
 import { createRegistry, DEMO_EMAIL_DOMAIN, type MemberRole, type RegisteredKind, type RegistryDeps } from "@/registry/registry";
 
-/** Z czego demo korzysta w Rejestrze; zegar i powiadomienia ma własne. */
+/**
+ * Z czego demo korzysta w Rejestrze; zegar i powiadomienia ma własne, a geokodowania nie ma wcale: mapa demo
+ * stawia pinezki bez położenia z adresu i nie pyta dostawcy mapy (zob. ADR 0026).
+ */
 export type DemoCompanyDeps = Pick<RegistryDeps, "db" | "authAdmin" | "photos" | "chatPhotos" | "documents">;
 
 export const DEMO_COMPANY_NAME = "DemoBud Sp. z o.o.";
@@ -177,7 +180,7 @@ export async function createDemoCompany(
   };
   const minutesAgo = (minutes: number) => new Date(now.getTime() - minutes * MINUTE_MS);
   const clock = new ScenarioClock(daysAgo(46, 8), now);
-  const registry = createRegistry({ ...deps, clock, notifier: silentNotifier });
+  const registry = createRegistry({ ...deps, clock, notifier: silentNotifier, geocoder: noGeocoder });
 
   // Adresy kont są unikalne w Supabase Auth, a każde demo zakłada nowe konta.
   const tag = randomBytes(3).toString("hex");
@@ -449,7 +452,7 @@ export type DemoRefresh = { refreshed: true; companyId: string; purged: number }
  * każde nowe zostawia w bazie firmę z kontami. Bez demo zakłada pierwsze.
  */
 export async function refreshUsedDemo(deps: DemoCompanyDeps, { now = new Date() }: { now?: Date } = {}): Promise<DemoRefresh> {
-  const registry = createRegistry({ ...deps, clock: { now: () => now }, notifier: silentNotifier });
+  const registry = createRegistry({ ...deps, clock: { now: () => now }, notifier: silentNotifier, geocoder: noGeocoder });
   const use = await registry.system().demoUse();
   if (use) {
     if (!use.lastEntryAt) return { refreshed: false, reason: "unused" };

@@ -1,185 +1,239 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import { VehicleIcon } from "@/components/vehicle-icon";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
+import { forgetAuthFailure, loadGoogleMaps } from "@/lib/google-maps-loader";
+import type { MapPin, MapPosition } from "@/registry/registry";
+import { moveMapPin } from "./lokalizacje/actions";
 
-/** Miejsce na mapie: baza, budowa albo pojazd. */
-export interface MapPlace {
-  id: string;
-  kind: "base" | "site" | "vehicle";
-  name: string;
-  address?: string;
+/** Pinezka mapy budów z liczbą narzędzi z tablicy. */
+export interface SiteMapPin extends MapPin {
   toolCount: number;
 }
 
-/** Urządzenie z lokalizatorem, przypięte do miejsca, w którym jest według rejestru. */
-export interface MapDevice {
-  id: string;
-  code: string;
-  name: string;
-  placeId: string;
+/** Klucz przeglądarki i identyfikator mapy Google (zob. `serverEnv.googleMaps`). */
+export interface GoogleMapsConfig {
+  apiKey: string;
+  mapId: string;
 }
 
-type Selection = { type: "place"; id: string } | { type: "device"; id: string } | null;
+type Status = "loading" | "ready" | "offline" | "failed";
 
-/**
- * DEMO: mapa nie zna jeszcze współrzędnych budów ani sygnału lokalizatorów. Pozycje wyliczamy
- * z identyfikatora, żeby były stałe między odświeżeniami, a dane sygnału są przykładowe.
- */
-function hash(text: string): number {
-  let value = 2166136261;
-  for (const char of text) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
-  return value >>> 0;
+/** Widok startowy, zanim firma ma jakąkolwiek pinezkę: cała Polska. */
+const POLAND = { center: { lat: 52.07, lng: 19.48 }, zoom: 6 };
+const SINGLE_PIN_ZOOM = 14;
+const FIT_PADDING = 48;
+
+const STATUS_TEXT: Record<Exclude<Status, "ready">, string> = {
+  loading: t("siteMap.loading"),
+  offline: t("siteMap.offline"),
+  failed: t("siteMap.failed"),
+};
+
+function pinLabel(pin: MapPin) {
+  return `${pin.kind === "baza" ? t("board.baseKind") : t("board.siteKind")}: ${pin.name}`;
 }
 
-type Point = { x: number; y: number };
+/** Wygląd pinezki jak na mapie demo: liczba narzędzi budowy albo „B” bazy, pod spodem nazwa. */
+function pinContent(pin: SiteMapPin, selected: boolean) {
+  const element = document.createElement("span");
+  element.className = `gmap-pin gmap-pin-${pin.kind === "baza" ? "base" : "site"}${selected ? " is-selected" : ""}`;
+  const head = document.createElement("span");
+  head.className = "map-pin-head";
+  head.textContent = pin.kind === "baza" ? "B" : String(pin.toolCount);
+  const label = document.createElement("span");
+  label.className = "map-pin-label";
+  label.textContent = pin.name;
+  element.append(head, label);
+  return element;
+}
 
-/** Pozycja w procentach mapy, odsunięta od brzegów i od już postawionych pinezek. */
-function placePoints(places: MapPlace[]): Map<string, Point> {
-  const points = new Map<string, Point>();
-  for (const place of places) {
-    let seed = hash(place.id);
-    let point: Point = { x: 50, y: 50 };
-    for (let attempt = 0; attempt < 12; attempt++) {
-      point = place.kind === "base" ? { x: 46, y: 54 } : { x: 8 + (seed % 84), y: 12 + ((seed >>> 8) % 74) };
-      const free = [...points.values()].every((other) => Math.hypot(other.x - point.x, (other.y - point.y) * 0.6) > 9);
-      if (free) break;
-      seed = hash(`${seed}`);
-    }
-    points.set(place.id, point);
+function positionOf(position: google.maps.marker.AdvancedMarkerElement["position"]): MapPosition | null {
+  if (!position) return null;
+  const { lat, lng } = "toJSON" in position ? position.toJSON() : position;
+  return { lat, lng };
+}
+
+/** Przybliżenie obejmujące wszystkie pinezki; jedna stoi na środku, w skali ulic. */
+async function fitTo(map: google.maps.Map, positions: MapPosition[]) {
+  if (positions.length === 0) return;
+  if (positions.length === 1) {
+    map.setCenter(positions[0]);
+    map.setZoom(SINGLE_PIN_ZOOM);
+    return;
   }
-  return points;
+  const { LatLngBounds } = (await google.maps.importLibrary("core")) as google.maps.CoreLibrary;
+  const bounds = new LatLngBounds();
+  for (const position of positions) bounds.extend(position);
+  map.fitBounds(bounds, FIT_PADDING);
 }
 
-/** Urządzenia krążą wokół swojego miejsca, żeby nie zasłaniały pinezki ani siebie nawzajem. */
-function devicePoints(devices: MapDevice[], places: Map<string, Point>): Map<string, Point> {
-  const points = new Map<string, Point>();
-  const perPlace = new Map<string, number>();
-  for (const device of devices) {
-    const center = places.get(device.placeId);
-    if (!center) continue;
-    const index = perPlace.get(device.placeId) ?? 0;
-    perPlace.set(device.placeId, index + 1);
-    const angle = (index * 2.4 + (hash(device.id) % 10) / 10) % (2 * Math.PI);
-    // Zaokrąglone: przeglądarka zapisuje procenty w stylu z mniejszą dokładnością niż serwer, a różnica psuje hydratację.
-    points.set(device.id, { x: round(center.x + Math.cos(angle) * 4.5), y: round(center.y + Math.sin(angle) * 7) });
-  }
-  return points;
-}
-
-const round = (value: number) => Math.round(value * 100) / 100;
-
-/** Przykładowy sygnał lokalizatora. */
-function demoSignal(id: string) {
-  const seed = hash(id);
-  return { minutesAgo: 1 + (seed % 55), battery: 20 + ((seed >>> 6) % 80) };
-}
-
-function Artwork() {
-  return (
-    <svg className="site-map-art" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <rect width="1000" height="560" fill="#e9ece6" />
-      <path d="M0 90 C140 60 220 150 330 120 S520 30 610 80 S820 170 1000 120 V0 H0 Z" fill="#dfe7d7" />
-      <path d="M720 380 C780 340 900 360 1000 330 V560 H640 C660 480 680 420 720 380 Z" fill="#d6e5cf" />
-      <path d="M90 420 C130 390 210 400 230 440 S180 520 120 510 S60 450 90 420 Z" fill="#d6e5cf" />
-      <path
-        d="M-10 300 C120 280 180 360 300 350 S470 250 560 290 S700 420 820 400 S950 300 1010 320"
-        fill="none"
-        stroke="#bcd3ea"
-        strokeWidth="26"
-        strokeLinecap="round"
-      />
-      <g fill="none" strokeLinecap="round">
-        <g stroke="#c9ccd1" strokeWidth="13">
-          <path d="M0 180 L1000 210" />
-          <path d="M460 0 L520 560" />
-          <path d="M120 560 C220 420 300 260 460 200" />
-          <path d="M520 330 C640 300 760 250 1000 470" />
-        </g>
-        <g stroke="#ffffff" strokeWidth="9">
-          <path d="M0 180 L1000 210" />
-          <path d="M460 0 L520 560" />
-          <path d="M120 560 C220 420 300 260 460 200" />
-          <path d="M520 330 C640 300 760 250 1000 470" />
-        </g>
-        <path d="M0 470 C250 440 600 520 1000 40" stroke="#f3d27a" strokeWidth="7" />
-        <g stroke="#ffffff" strokeWidth="4" opacity="0.9">
-          <path d="M240 0 L280 560" />
-          <path d="M700 0 L660 560" />
-          <path d="M0 400 L1000 360" />
-          <path d="M820 0 C800 120 880 200 1000 230" />
-        </g>
-      </g>
-    </svg>
-  );
-}
-
-function PlaceMarker({ place, point, selected, onSelect }: { place: MapPlace; point: Point; selected: boolean; onSelect: () => void }) {
-  const kindLabel = { base: t("board.baseKind"), site: t("board.siteKind"), vehicle: t("board.vehicleKind") }[place.kind];
-  return (
-    <button
-      type="button"
-      className={`map-pin map-pin-${place.kind}`}
-      style={{ left: `${point.x}%`, top: `${point.y}%` }}
-      aria-pressed={selected}
-      aria-label={`${kindLabel}: ${place.name}`}
-      onClick={onSelect}
-    >
-      <span className="map-pin-head">{place.kind === "vehicle" ? <VehicleIcon /> : place.kind === "base" ? "B" : place.toolCount}</span>
-      <span className="map-pin-label">{place.name}</span>
-    </button>
-  );
-}
-
-function Details({ selection, places, devices }: { selection: Selection; places: MapPlace[]; devices: MapDevice[] }) {
-  if (!selection) return <p className="muted">{t("siteMap.hint")}</p>;
-  if (selection.type === "place") {
-    const place = places.find((candidate) => candidate.id === selection.id);
-    if (!place) return null;
-    const tracked = devices.filter((device) => device.placeId === place.id);
-    return (
-      <div className="site-map-details">
-        <strong>{place.name}</strong>
-        {place.address && <span className="muted">{place.address}</span>}
-        <span>
-          {t("board.toolCount", { count: place.toolCount })} · {t("siteMap.trackedCount", { count: tracked.length })}
-        </span>
-      </div>
-    );
-  }
-  const device = devices.find((candidate) => candidate.id === selection.id);
-  if (!device) return null;
-  const place = places.find((candidate) => candidate.id === device.placeId);
-  const signal = demoSignal(device.id);
+function Details({ pin, canEdit, onMove }: { pin: SiteMapPin | null; canEdit: boolean; onMove: (pin: SiteMapPin) => void }) {
+  if (!pin) return <p className="muted">{canEdit ? t("siteMap.ownerHint") : t("siteMap.liveHint")}</p>;
   return (
     <div className="site-map-details">
-      <span>
-        <span className="plate">{device.code}</span> <strong>{device.name}</strong>
-      </span>
-      <span>{t("siteMap.devicePlace", { place: place?.name ?? "" })}</span>
-      <span className="muted">
-        {t("siteMap.lastSignal", { minutes: signal.minutesAgo })} · {t("siteMap.battery", { percent: signal.battery })}
-      </span>
-      <Link href={`/narzedzia/${device.id}`}>{t("siteMap.openTool")}</Link>
+      <strong>{pin.name}</strong>
+      <span className="muted">{pin.address}</span>
+      <span>{t("board.toolCount", { count: pin.toolCount })}</span>
+      <a href={`#location-${pin.kind === "baza" ? "base" : pin.id}`}>{t("siteMap.openLocation")}</a>
+      {canEdit && (
+        <p>
+          <button type="button" className="button button-quiet button-small" onClick={() => onMove(pin)}>
+            {t("siteMap.movePin")}
+          </button>
+        </p>
+      )}
     </div>
   );
 }
 
-/** Mapa budów i urządzeń z lokalizatorami pod sekcją budów. Na razie tylko demo. */
-export function SiteMap({ places, devices }: { places: MapPlace[]; devices: MapDevice[] }) {
-  const [selection, setSelection] = useState<Selection>(null);
-  const placeAt = placePoints(places);
-  const deviceAt = devicePoints(devices, placeAt);
-  const toggle = (next: NonNullable<Selection>) =>
-    setSelection((current) => (current?.type === next.type && current.id === next.id ? null : next));
+/**
+ * Mapa budów prawdziwej firmy na Google Maps: baza z adresem i aktywne budowy w miejscu swojego adresu (albo tam,
+ * gdzie właściciel postawił pinezkę). Właściciel przeciąga pinezkę albo wskazuje miejsce kliknięciem. Budowy bez
+ * położenia są pod mapą. Bez sieci mapa mówi, że jej potrzebuje, a reszta tablicy działa dalej (ADR 0010).
+ */
+export function SiteMap({ pins, maps, canEdit }: { pins: SiteMapPin[]; maps: GoogleMapsConfig; canEdit: boolean }) {
+  const container = useRef<HTMLDivElement>(null);
+  const map = useRef<google.maps.Map | null>(null);
+  const markers = useRef(new Map<string, google.maps.marker.AdvancedMarkerElement>());
+  const fitted = useRef(false);
+  const [status, setStatus] = useState<Status>("loading");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [placingId, setPlacingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
+
+  const save = (pin: SiteMapPin, position: MapPosition) => {
+    setError(null);
+    setPlacingId(null);
+    startSaving(async () => {
+      const result = await moveMapPin(pin.id, position);
+      if (!result.error) return;
+      setError(result.error);
+      // Odmowa: pinezka wraca tam, gdzie stała.
+      const marker = markers.current.get(pin.id);
+      if (marker && pin.position) marker.position = pin.position;
+    });
+  };
+  // Słuchacze Google żyją dłużej niż jeden render, więc czytają bieżący stan stąd.
+  const latest = useRef({ pins, placingId, selectedId, save });
+  useEffect(() => {
+    latest.current = { pins, placingId, selectedId, save };
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    let clickListener: google.maps.MapsEventListener | undefined;
+    const onAuthFailure = () => setStatus("failed");
+    const start = async () => {
+      if (!navigator.onLine) return setStatus("offline");
+      setStatus("loading");
+      try {
+        await loadGoogleMaps(maps.apiKey, onAuthFailure);
+        const { Map } = (await google.maps.importLibrary("maps")) as google.maps.MapsLibrary;
+        if (cancelled || !container.current || map.current) return;
+        map.current = new Map(container.current, {
+          ...POLAND,
+          mapId: maps.mapId,
+          gestureHandling: "cooperative",
+          clickableIcons: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+        });
+        clickListener = map.current.addListener("click", (event: google.maps.MapMouseEvent) => {
+          const { pins, placingId, save } = latest.current;
+          const pin = pins.find((candidate) => candidate.id === placingId);
+          if (pin && event.latLng) save(pin, event.latLng.toJSON());
+        });
+        setStatus("ready");
+      } catch {
+        if (!cancelled) setStatus(navigator.onLine ? "failed" : "offline");
+      }
+    };
+    void start();
+    const retry = () => {
+      if (!map.current) void start();
+    };
+    window.addEventListener("online", retry);
+    const placedMarkers = markers.current;
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", retry);
+      forgetAuthFailure(onAuthFailure);
+      clickListener?.remove();
+      for (const marker of placedMarkers.values()) marker.map = null;
+      placedMarkers.clear();
+      map.current = null;
+      fitted.current = false;
+    };
+  }, [maps.apiKey, maps.mapId]);
+
+  useEffect(() => {
+    if (status !== "ready") return;
+    let cancelled = false;
+    void (async () => {
+      const { AdvancedMarkerElement } = (await google.maps.importLibrary("marker")) as google.maps.MarkerLibrary;
+      if (cancelled || !map.current) return;
+      const placed = pins.filter((pin): pin is SiteMapPin & { position: MapPosition } => pin.position !== null);
+      for (const [id, marker] of markers.current) {
+        if (!placed.some((pin) => pin.id === id)) {
+          marker.map = null;
+          markers.current.delete(id);
+        }
+      }
+      for (const pin of placed) {
+        const existing = markers.current.get(pin.id);
+        if (existing) {
+          existing.position = pin.position;
+          existing.content = pinContent(pin, pin.id === latest.current.selectedId);
+          existing.gmpDraggable = canEdit;
+          continue;
+        }
+        const marker = new AdvancedMarkerElement({
+          map: map.current,
+          position: pin.position,
+          title: pinLabel(pin),
+          content: pinContent(pin, pin.id === latest.current.selectedId),
+          gmpDraggable: canEdit,
+        });
+        marker.addListener("click", () => setSelectedId((current) => (current === pin.id ? null : pin.id)));
+        marker.addListener("dragend", () => {
+          const current = latest.current.pins.find((candidate) => candidate.id === pin.id);
+          const position = positionOf(marker.position);
+          if (current && position) latest.current.save(current, position);
+        });
+        markers.current.set(pin.id, marker);
+      }
+      // Widok startowy dopasowuje się raz, do pierwszych pinezek; potem zostaje taki, jak ustawił go użytkownik.
+      if (!fitted.current && placed.length > 0) {
+        fitted.current = true;
+        await fitTo(map.current, placed.map((pin) => pin.position));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, pins, canEdit]);
+
+  // Zaznaczenie zmienia tylko wygląd pinezek, nie ich położenie (przeciągnięta czeka na zapis).
+  useEffect(() => {
+    for (const pin of pins) {
+      const marker = markers.current.get(pin.id);
+      if (!marker) continue;
+      marker.content = pinContent(pin, pin.id === selectedId);
+      marker.zIndex = pin.id === selectedId ? 1 : null;
+    }
+  }, [pins, selectedId]);
+
+  const selected = pins.find((pin) => pin.id === selectedId) ?? null;
+  const placing = pins.find((pin) => pin.id === placingId) ?? null;
+  const unplaced = pins.filter((pin) => pin.position === null);
 
   return (
-    <section className="board-section" aria-labelledby="board-map" data-tour="map">
+    <section className="board-section" aria-labelledby="board-map">
       <div className="section-head">
         <h2 id="board-map" className="display section-title">
-          {t("siteMap.title")} <span className="tag tag-demo">{t("siteMap.demo")}</span>
+          {t("siteMap.title")}
         </h2>
         <ul className="map-legend">
           <li>
@@ -188,44 +242,49 @@ export function SiteMap({ places, devices }: { places: MapPlace[]; devices: MapD
           <li>
             <span className="map-legend-mark map-legend-base" /> {t("siteMap.legendBase")}
           </li>
-          <li>
-            <span className="map-legend-mark map-legend-device" /> {t("siteMap.legendDevices")}
-          </li>
         </ul>
       </div>
       <div className="location site-map">
-        <div className="site-map-canvas">
-          <Artwork />
-          {places.map((place) => (
-            <PlaceMarker
-              key={place.id}
-              place={place}
-              point={placeAt.get(place.id)!}
-              selected={selection?.type === "place" && selection.id === place.id}
-              onSelect={() => toggle({ type: "place", id: place.id })}
-            />
-          ))}
-          {devices.map((device) => {
-            const point = deviceAt.get(device.id);
-            return (
-              point && (
-                <button
-                  key={device.id}
-                  type="button"
-                  className="map-device"
-                  style={{ left: `${point.x}%`, top: `${point.y}%` }}
-                  aria-pressed={selection?.type === "device" && selection.id === device.id}
-                  aria-label={t("siteMap.deviceLabel", { code: device.code, name: device.name })}
-                  onClick={() => toggle({ type: "device", id: device.id })}
-                />
-              )
-            );
-          })}
+        <div className="site-map-canvas" data-map-status={status} aria-busy={status === "loading" || saving}>
+          <div ref={container} className="site-map-google" />
+          {status !== "ready" && <p className="site-map-status">{STATUS_TEXT[status]}</p>}
         </div>
+        {placing && (
+          <p role="status" className="site-map-placing">
+            {t("siteMap.placing", { name: placing.name })}{" "}
+            <button type="button" className="button button-quiet button-small" onClick={() => setPlacingId(null)}>
+              {t("siteMap.cancelPlacing")}
+            </button>
+          </p>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
         <div aria-live="polite">
-          <Details selection={selection} places={places} devices={devices} />
+          <Details pin={selected} canEdit={canEdit && status === "ready"} onMove={(pin) => setPlacingId(pin.id)} />
         </div>
-        <p className="muted site-map-note">{t("siteMap.note")}</p>
+        {unplaced.length > 0 && (
+          <div className="site-map-unplaced">
+            <h3 className="location-kind">{t("siteMap.unplacedTitle")}</h3>
+            <ul>
+              {unplaced.map((pin) => (
+                <li key={pin.id}>
+                  <span>
+                    <strong>{pin.name}</strong> <span className="muted">{pin.address}</span>
+                  </span>
+                  {canEdit && status === "ready" && (
+                    <button type="button" className="button button-quiet button-small" onClick={() => setPlacingId(pin.id)}>
+                      {t("siteMap.placeOnMap")}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="muted site-map-note">{canEdit ? t("siteMap.unplacedOwnerHint") : t("siteMap.unplacedHint")}</p>
+          </div>
+        )}
       </div>
     </section>
   );

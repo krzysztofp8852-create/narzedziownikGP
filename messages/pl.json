@@ -134,7 +134,20 @@
     "lastSignal": "ostatni sygnał {minutes} min temu",
     "battery": "bateria {percent}%",
     "openTool": "Karta narzędzia →",
-    "note": "Wersja demonstracyjna: położenie budów i sygnał lokalizatorów są przykładowe."
+    "note": "Wersja demonstracyjna: położenie budów i sygnał lokalizatorów są przykładowe.",
+    "loading": "Wczytywanie mapy…",
+    "offline": "Mapa wymaga połączenia z internetem. Reszta tablicy działa bez sieci.",
+    "failed": "Nie udało się wczytać mapy. Spróbuj odświeżyć stronę.",
+    "liveHint": "Kliknij pinezkę, żeby zobaczyć szczegóły budowy.",
+    "ownerHint": "Kliknij pinezkę, żeby zobaczyć szczegóły. Pinezkę w złym miejscu przeciągnij tam, gdzie jest budowa.",
+    "openLocation": "Pokaż na tablicy →",
+    "movePin": "Wskaż nowe miejsce na mapie",
+    "placing": "Kliknij na mapie, gdzie jest {name}.",
+    "cancelPlacing": "Anuluj",
+    "unplacedTitle": "Nie znaleziono adresu",
+    "placeOnMap": "Wskaż na mapie",
+    "unplacedHint": "Tych miejsc nie ma na mapie, bo nie znaleźliśmy ich adresu.",
+    "unplacedOwnerHint": "Tych miejsc nie ma na mapie, bo nie znaleźliśmy ich adresu. Popraw adres albo wskaż miejsce na mapie."
   },
   "search": {
     "title": "Gdzie jest narzędzie?",
@@ -398,6 +411,9 @@
     "changeManager": "Zmień kierownika",
     "changing": "Zapisywanie…",
     "managerChanged": "Zmieniono kierownika.",
+    "changeAddress": "Zmień adres",
+    "newAddress": "Nowy adres budowy {name}",
+    "addressChanged": "Zmieniono adres. Pinezka na mapie stoi pod nowym adresem.",
     "vehicleAlarm": "Alarm po progu dni",
     "vehicleAlarmHint": "Na pojeździe domyślnie wyłączony: stały zestaw jeździ z brygadą. Włącz, jeśli sprzęt nie powinien w nim zostawać.",
     "enableAlarm": "Włącz alarm",
@@ -679,7 +695,11 @@
     "submit": "Zapisz",
     "submitting": "Zapisywanie…",
     "saved": "Zapisano.",
-    "invalidDays": "Wpisz liczbę dni od 1 do {max}."
+    "invalidDays": "Wpisz liczbę dni od 1 do {max}.",
+    "baseAddressTitle": "Baza na mapie",
+    "baseAddress": "Adres bazy",
+    "baseAddressHint": "Z adresem baza jest na mapie budów na tablicy. Zostaw puste, żeby jej tam nie było.",
+    "baseAddressSaved": "Zapisano adres bazy."
   },
   "subscription": {
     "title": "Abonament",
@@ -1182,6 +1202,8 @@
         "addMember": "Dodanie osoby do zespołu",
         "addSite": "Dodanie budowy",
         "changeSiteManager": "Zmiana kierownika budowy",
+        "changeSiteAddress": "Zmiana adresu budowy",
+        "setBaseAddress": "Adres bazy",
         "addService": "Dodanie serwisu",
         "addVehicle": "Dodanie pojazdu",
         "changeVehicleManager": "Zmiana kierownika pojazdu",

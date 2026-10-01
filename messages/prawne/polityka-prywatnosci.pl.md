@@ -1,6 +1,6 @@
 ---
 title: Polityka prywatności NarzędziownikGP
-version: 29 września 2026
+version: 1 października 2026
 draft: tak
 ---
 
@@ -40,15 +40,16 @@ Ta polityka wyjaśnia, jakie dane osobowe przetwarzamy w programie Narzędziowni
 4. Korzystamy tylko z dostawców i ustawień, w których **przesłane dane nie służą do trenowania modeli** sztucznej inteligencji. Odpowiedzi modelu nie są zapisywane u dostawcy do późniejszego odczytu. Dostawca może przez krótki czas przechowywać zapytania, żeby wykrywać nadużycia.
 5. Ruch zapisuje się dopiero, gdy go zatwierdzisz. Program nie podejmuje wobec nikogo decyzji w sposób zautomatyzowany i nie profiluje Użytkowników.
 
-## 6. Zdjęcia, dokumenty i powiadomienia
+## 6. Zdjęcia, dokumenty, mapa i powiadomienia
 
 1. W programie można dodawać zdjęcia do zgłoszeń uszkodzeń i braków, zdjęcia na czacie z supportem oraz dokumenty narzędzi (świadectwa, protokoły, karty gwarancyjne, faktury). Leżą w prywatnym magazynie plików i otwiera je tylko serwer programu dla osób, które mają do nich dostęp. Na zdjęciach fotografuje się sprzęt; jeśli przypadkiem widać na nich ludzi, te osoby też są objęte ochroną.
-2. Powiadomienia i raporty wysyłamy e-mailem przez dostawcę poczty transakcyjnej. Powiadomienie push przechodzi przez usługę push producenta Twojej przeglądarki (np. Google, Apple, Mozilla) w postaci zaszyfrowanej; przechowujemy adres subskrypcji push i jej klucze, dopóki powiadomień nie wyłączysz.
+2. Mapę budów na tablicy pokazujemy z Google Maps. Adres budowy albo bazy, który wpisze właściciel, serwer programu wysyła do Google, żeby zamienić go na punkt na mapie, i zapisuje ten punkt w bazie. Samą mapę pobiera Twoja przeglądarka bezpośrednio od Google, więc Google widzi Twój adres IP i oglądany obszar mapy, na zasadach [polityki prywatności Google](https://policies.google.com/privacy). Bez połączenia z internetem mapy nie ma, a reszta tablicy działa. Program nie zbiera lokalizacji GPS telefonów. W demo mapa jest przykładowa i nie łączy się z Google.
+3. Powiadomienia i raporty wysyłamy e-mailem przez dostawcę poczty transakcyjnej. Powiadomienie push przechodzi przez usługę push producenta Twojej przeglądarki (np. Google, Apple, Mozilla) w postaci zaszyfrowanej; przechowujemy adres subskrypcji push i jej klucze, dopóki powiadomień nie wyłączysz.
 
 ## 7. Gdzie są dane i jak długo
 
 1. **Dane przechowujemy w Unii Europejskiej**: bazę danych, konta i pliki w Irlandii, a serwery programu działają we Frankfurcie.
-2. Część dostawców to firmy spoza Unii (m.in. z USA). Gdy dane trafiają poza Europejski Obszar Gospodarczy, np. do dostawcy sztucznej inteligencji, dzieje się to na podstawie decyzji Komisji Europejskiej stwierdzającej odpowiedni stopień ochrony (EU-US Data Privacy Framework) albo standardowych klauzul umownych.
+2. Część dostawców to firmy spoza Unii (m.in. z USA). Gdy dane trafiają poza Europejski Obszar Gospodarczy, np. do dostawcy sztucznej inteligencji albo mapy, dzieje się to na podstawie decyzji Komisji Europejskiej stwierdzającej odpowiedni stopień ochrony (EU-US Data Privacy Framework) albo standardowych klauzul umownych.
 3. Pełna lista dostawców, którym powierzamy dane, jest w [załączniku 3 do umowy powierzenia](/umowa-powierzenia#zalacznik-3-podprocesorzy). Dane rozliczeniowe przekazujemy też biuru rachunkowemu i bankowi.
 4. **Nie usuwamy danych firmy automatycznie**, także gdy firma przestaje płacić albo kończy umowę. Firma może je wtedy przeglądać i wyeksportować. Usuwamy je na polecenie firmy, na zasadach umowy powierzenia.
 

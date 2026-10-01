@@ -5,7 +5,7 @@ import * as catalog from "./catalog";
 import type { CatalogTool } from "./catalog";
 import type { WhereIsWhat } from "./board";
 import { RegistryError, ReplayedOperationError } from "./errors";
-import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Notifier, type PhotoStore, type Sql } from "./ports";
+import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as companyDeletion from "./company-deletion";
 import * as corrections from "./corrections";
 import * as deadlineReminders from "./deadline-reminders";
@@ -19,7 +19,7 @@ import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, Issue
 import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 import type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 import * as locations from "./locations";
-import type { NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, Vehicle } from "./locations";
+import type { LocatedAddress, MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, Vehicle } from "./locations";
 import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as notifications from "./notifications";
@@ -118,7 +118,8 @@ export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 export { canCorrectTools, TOOL_STATES } from "./corrections";
-export type { NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, SiteStatus, Vehicle } from "./locations";
+export type { MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, SiteStatus, Vehicle } from "./locations";
+export type { MapPosition } from "./ports";
 export { canManageLocations } from "./locations";
 export type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 export { canCloseSite, canForceCloseSites } from "./site-closing";
@@ -333,6 +334,12 @@ export interface Registry {
      * trybie nic. Zwraca, ile firm dostało ostrzeżenie, a ile wpis o przełączeniu. Danych firm nic nie kasuje.
      */
     notifySubscriptionDeadlines(): Promise<{ warned: number; switched: number }>;
+    /**
+     * Jednorazowo po wdrożeniu mapy budów (`npm run sites:geocode`): geokoduje bazy z adresem i aktywne budowy bez
+     * położenia we wszystkich firmach poza demo. Ręcznie postawionych pinezek nie rusza. Błąd dostawcy przy jednym
+     * miejscu trafia do logu, a reszta idzie dalej. Zwraca, ile miejsc dostało położenie, a ilu adresów nie znaleziono.
+     */
+    geocodeUnplacedLocations(): Promise<{ placed: number; notFound: number }>;
     /** Konta obecnej firmy demo (włączonej ostatnio), po roli; pusta lista, gdy demo nie założono. */
     demoAccounts(): Promise<DemoAccount[]>;
     /** Kiedy ktoś ostatnio wszedł do obecnego demo (zadanie godzinowe odświeża tylko używane); null, gdy demo nie założono. */
@@ -487,14 +494,28 @@ export interface Registry {
     resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
     /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
     deactivateMember(memberId: string): Promise<void>;
-    /** Baza, budowy (także zakończone), serwisy i pojazdy (także nieaktywne) firmy. */
-    locations(): Promise<{ base: { id: string; name: string }; sites: Site[]; services: Service[]; vehicles: Vehicle[] }>;
+    /** Baza (z adresem albo bez), budowy (także zakończone), serwisy i pojazdy (także nieaktywne) firmy. */
+    locations(): Promise<{ base: { id: string; name: string; address: string | null }; sites: Site[]; services: Service[]; vehicles: Vehicle[] }>;
     /** Aktywni kierownicy, którym można przypisać budowę albo pojazd. Tylko właściciel. */
     siteManagerCandidates(): Promise<SiteManagerCandidate[]>;
     /** Nowa aktywna budowa z kierownikiem. Tylko właściciel. */
     addSite(input: NewSiteInput): Promise<{ locationId: string }>;
     /** Przekazuje budowę innemu aktywnemu kierownikowi. Tylko właściciel. */
     changeSiteManager(siteId: string, managerId: string): Promise<void>;
+    /**
+     * Mapa budów, którą widzi każdy w firmie: baza, jeśli ma adres, i aktywne budowy, każda z położeniem z geokodowania
+     * adresu albo postawionym ręcznie (bez niego: nie znaleziono adresu).
+     */
+    siteMap(): Promise<MapPin[]>;
+    /**
+     * Nowy adres aktywnej budowy; pinezka idzie pod nowy adres (albo, gdy go nie znaleziono, znika z mapy). Ten sam adres
+     * niczego nie zmienia. Tylko właściciel.
+     */
+    changeSiteAddress(siteId: string, address: string): Promise<void>;
+    /** Adres bazy na mapie budów; pusty zdejmuje bazę z mapy. Tylko właściciel. */
+    setBaseAddress(address: string): Promise<void>;
+    /** Ręczne położenie pinezki bazy albo aktywnej budowy; zostaje, dopóki adres się nie zmieni. Tylko właściciel. */
+    moveMapPin(locationId: string, position: MapPosition): Promise<void>;
     /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
     addService(input: { name: string }): Promise<{ locationId: string }>;
     /** Nowy aktywny pojazd (np. „Bus WX 12345”) z kierownikiem i wyłączonym alarmem po progu dni. Tylko właściciel. */
@@ -642,6 +663,8 @@ export interface RegistryDeps {
   chatPhotos: PhotoStore;
   /** Dokumenty terminów narzędzi: zdjęcia i PDF. */
   documents: PhotoStore;
+  /** Adres budowy albo bazy na punkt na mapie budów. */
+  geocoder: Geocoder;
 }
 
 export function createRegistry(deps: RegistryDeps): Registry {
@@ -718,6 +741,17 @@ export function createRegistry(deps: RegistryDeps): Registry {
       },
       notifyCompanyDueDeadlines: async (companyId) => ({ deadlines: await remindDeadlines(deps, companyId, deps.clock.now()) }),
       sendCompanyDueReports: (companyId) => sendDueReportsOf(deps, companyId, deps.clock.now()),
+      geocodeUnplacedLocations: async () => {
+        const unplaced = await deps.db.transaction((sql) => locations.unplacedLocations(sql));
+        const result = { placed: 0, notFound: 0 };
+        // Po kolei: dostawca liczy zapytania na sekundę, a zadanie jest jednorazowe.
+        for (const located of unplaced) {
+          const outcome = await geocodeAndPlace(deps, located, (fn) => deps.db.transaction(fn));
+          if (outcome === "placed") result.placed += 1;
+          if (outcome === "not_found") result.notFound += 1;
+        }
+        return result;
+      },
       notifySubscriptionDeadlines: async () => {
         const now = deps.clock.now();
         const paid = await deps.db.transaction((sql) => readOnly.paidSubscriptions(sql));
@@ -862,6 +896,21 @@ export function createRegistry(deps: RegistryDeps): Registry {
       const asWriter = <T>(fn: (sql: Sql, session: Session) => Promise<T>) => asMember(fn, { access: "write" });
       /** Zapis spraw samego aktora (dzwonek, push, czat z supportem); działa także w trybie tylko do odczytu. */
       const asPersonal = <T>(fn: (sql: Sql, session: Session) => Promise<T>) => asMember(fn, { access: "personal" });
+      /**
+       * Polecenie, które zapisało nowy adres budowy albo bazy (`located`). Adres idzie do geokodowania dopiero po
+       * zatwierdzeniu, bo to zapytanie do zewnętrznego dostawcy; firma demo nigdy go nie pyta. Gdy dostawca nie
+       * znalazł adresu albo nie odpowiada, miejsce zostaje bez położenia, a polecenie i tak się udaje.
+       */
+      const locatingCommand = async <R>(
+        command: (sql: Sql, session: Session) => Promise<{ result: R; located: LocatedAddress | null }>,
+      ): Promise<R> => {
+        const { result, located, demo: inDemo } = await asWriter(async (sql, session) => ({
+          ...(await command(sql, session)),
+          demo: session.company.demo,
+        }));
+        if (located && !inDemo) await geocodeAndPlace(deps, located, asWriter);
+        return result;
+      };
       /** Z ostrzeżeniem o limicie narzędzi w progu, w transakcji polecenia, które je dodało. */
       const withLimitWarning = async <R>(sql: Sql, result: R): Promise<R & WithLimitWarning> => ({
         ...result,
@@ -1145,8 +1194,8 @@ export function createRegistry(deps: RegistryDeps): Registry {
             await deps.authAdmin.blockSignIn(memberId);
           }),
         locations: () =>
-          asMember(async (sql, session) => ({
-            base: await tools.baseLocation(sql, session),
+          asMember(async (sql) => ({
+            base: await locations.base(sql),
             sites: await locations.sites(sql, { activeOnly: false }),
             services: await locations.services(sql),
             vehicles: await locations.vehicles(sql, { activeOnly: false }),
@@ -1157,14 +1206,32 @@ export function createRegistry(deps: RegistryDeps): Registry {
             return locations.siteManagerCandidates(sql);
           }),
         addSite: (input) =>
-          asWriter((sql, session) => {
+          locatingCommand(async (sql, session) => {
             locations.requireLocationManager(session);
-            return locations.addSite(sql, session, input, deps.clock.now());
+            const site = await locations.addSite(sql, session, input, deps.clock.now());
+            return { result: { locationId: site.locationId }, located: site };
           }),
         changeSiteManager: (siteId, managerId) =>
           asWriter((sql, session) => {
             locations.requireLocationManager(session);
             return locations.changeSiteManager(sql, siteId, managerId);
+          }),
+        siteMap: () => asMember((sql) => locations.siteMap(sql)),
+        changeSiteAddress: (siteId, address) =>
+          locatingCommand(async (sql, session) => {
+            locations.requireLocationManager(session);
+            const changed = await locations.changeSiteAddress(sql, siteId, address);
+            return { result: undefined, located: changed === null ? null : { locationId: siteId, address: changed } };
+          }),
+        setBaseAddress: (address) =>
+          locatingCommand(async (sql, session) => {
+            locations.requireLocationManager(session);
+            return { result: undefined, located: await locations.setBaseAddress(sql, address) };
+          }),
+        moveMapPin: (locationId, position) =>
+          asWriter((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.moveMapPin(sql, locationId, position);
           }),
         addService: (input) =>
           asWriter((sql, session) => {
@@ -1324,6 +1391,26 @@ type MemberRegistry = ReturnType<Registry["as"]>;
  * Polecenia członka firmy, które po udanym wykonaniu na koncie demo trafiają do dziennika demo. Zwykłe firmy nie płacą
  * za to niczym: czy aktor jest w demo, wie już transakcja polecenia. Błąd zapisu dziennika nie psuje polecenia.
  */
+/**
+ * Geokodowanie adresu i zapis położenia w transakcji z `write` (aktora albo systemowej). Gdy dostawca nie odpowiada,
+ * błąd trafia do logu, a miejsce zostaje bez położenia (`failed`).
+ */
+async function geocodeAndPlace(
+  deps: RegistryDeps,
+  located: LocatedAddress,
+  write: (fn: (sql: Sql) => Promise<void>) => Promise<void>,
+): Promise<"placed" | "not_found" | "failed"> {
+  try {
+    const position = await deps.geocoder.geocode(located.address);
+    if (!position) return "not_found";
+    await write((sql) => locations.placeGeocoded(sql, located, position));
+    return "placed";
+  } catch (error) {
+    console.error(`Nie zgeokodowano adresu lokalizacji ${located.locationId}`, error);
+    return "failed";
+  }
+}
+
 function loggingDemoCommands(deps: RegistryDeps, userId: string, actor: { demo: boolean }, member: MemberRegistry): MemberRegistry {
   const logged: Record<string, unknown> = { ...member };
   for (const command of demo.LOGGED_DEMO_COMMANDS) {

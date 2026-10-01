@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createPgDb } from "../pg-db";
 import type { Db } from "../ports";
 import { createRegistry, type MemberRole, type Registry } from "../registry";
-import { FakeAuthAdmin, FixedClock, MemoryPhotoStore, RecordingNotifier } from "./fakes";
+import { FakeAuthAdmin, FakeGeocoder, FixedClock, MemoryPhotoStore, RecordingNotifier } from "./fakes";
 import { createPgliteDb } from "./pglite-db";
 
 export const START = new Date("2026-03-02T07:00:00+01:00");
@@ -19,6 +19,8 @@ export interface RegistryTestbed {
   chatPhotos: MemoryPhotoStore;
   /** Kubełek dokumentów terminów narzędzi. */
   documents: MemoryPhotoStore;
+  /** Geokodowanie adresów budów i bazy. */
+  geocoder: FakeGeocoder;
   db: Db;
   /** Firma z bazą i właścicielem, założona tak jak robi to skrypt. */
   givenCompany(name: string, options?: { email?: string; fullName?: string; baseName?: string }): Promise<GivenCompany>;
@@ -55,6 +57,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
   const photos = new MemoryPhotoStore();
   const chatPhotos = new MemoryPhotoStore();
   const documents = new MemoryPhotoStore();
+  const geocoder = new FakeGeocoder();
   let db: Db & { close(): Promise<void> };
   let auth: FakeAuthAdmin;
   let registry: Registry;
@@ -62,7 +65,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
   beforeAll(async () => {
     db = await openTestDb();
     auth = new FakeAuthAdmin(db);
-    registry = createRegistry({ db, clock, authAdmin: auth, notifier, photos, chatPhotos, documents });
+    registry = createRegistry({ db, clock, authAdmin: auth, notifier, photos, chatPhotos, documents, geocoder });
   });
 
   beforeEach(async () => {
@@ -72,6 +75,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
     photos.clear();
     chatPhotos.clear();
     documents.clear();
+    geocoder.clear();
     clock.set(START);
   });
 
@@ -108,6 +112,7 @@ export function setupRegistryTestbed(): RegistryTestbed {
     photos,
     chatPhotos,
     documents,
+    geocoder,
     givenCompany,
     signedInNow: () => ({ signedInAt: clock.now() }),
     async givenActiveCompany(name, options = {}) {

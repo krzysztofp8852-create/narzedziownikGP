@@ -1,6 +1,6 @@
 ---
 title: Umowa powierzenia przetwarzania danych osobowych
-version: 29 września 2026
+version: 1 października 2026
 draft: tak
 ---
 
@@ -89,6 +89,7 @@ Umowa zostaje zawarta razem z umową o świadczenie usługi na zasadach [regulam
 - zgłoszenia uszkodzeń, braków i innych spraw z opisem, zdjęciami i komentarzami,
 - dokumenty narzędzi (świadectwa, protokoły, karty gwarancyjne, faktury),
 - wiadomości, zdjęcia i zrzuty ekranu przesłane na czacie z supportem, w zakresie, w jakim zawierają Dane,
+- adresy budów i bazy oraz ich położenie na mapie budów (z geokodowania adresu albo wskazane ręcznie),
 - powiadomienia w programie, subskrypcje powiadomień push (adres i klucze) oraz stan samouczka.
 
 Administrator nie powierza danych szczególnych kategorii (art. 9 RODO) ani danych o wyrokach (art. 10 RODO), a program nie jest do nich przeznaczony. Program nie zbiera lokalizacji GPS telefonów.
@@ -116,3 +117,4 @@ Przechowywanie, porządkowanie, wyświetlanie, eksport, wysyłka powiadomień e-
 - **Vercel Inc.** (USA): hosting programu, serwery programu i zadania harmonogramu. Serwery programu w regionie UE: Frankfurt.
 - **OpenAI Ireland Limited** (Irlandia), podmiot grupy OpenAI: zamiana nagrań głosowych na tekst i tekstu na propozycję ruchu. Dane mogą być przetwarzane poza EOG przez czas potrzebny do odpowiedzi; nie służą do trenowania modeli.
 - **Plus Five Five, Inc.** (USA), dostawca usługi Resend: wysyłka e-maili (powiadomienia, raporty tygodniowe, wiadomości z czatu na adres supportu).
+- **Google Ireland Limited** (Irlandia), podmiot grupy Google, usługa Google Maps Platform: zamiana adresów budów i bazy na położenie na mapie (geokodowanie, z serwera programu; Google dostaje sam adres) i mapa budów na tablicy (pobierana przez przeglądarkę Użytkownika, więc Google widzi jej adres IP i oglądany obszar mapy). Dane mogą być przetwarzane poza EOG, m.in. w USA. W firmie demo program z Google nie korzysta.

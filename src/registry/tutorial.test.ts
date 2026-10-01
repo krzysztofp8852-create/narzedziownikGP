@@ -63,6 +63,7 @@ describe("pominięcie i ukończenie samouczka", () => {
       photos: testbed.photos,
       chatPhotos: testbed.chatPhotos,
       documents: testbed.documents,
+      geocoder: testbed.geocoder,
     });
     expect(await fresh.as(managerId).tutorial()).toMatchObject({ closed: "pominiety" });
     expect(await fresh.as(zawbud.ownerId).tutorial()).toMatchObject({ closed: null });

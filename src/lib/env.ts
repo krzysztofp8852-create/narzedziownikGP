@@ -62,6 +62,22 @@ export const serverEnv = {
         return null;
     }
   },
+  /**
+   * Geokodowanie adresów budów i bazy na mapie budów: klucz serwera Google Maps Platform z włączonym Geocoding API
+   * (`GOOGLE_MAPS_SERVER_KEY`, nigdy do przeglądarki). Lokalnie i w teście dymnym `GEOCODER=staly`: każdy adres stoi
+   * w środku Poznania, bez Google. Bez żadnego z nich budowy nie mają położenia, dopóki właściciel ich nie postawi.
+   */
+  geocoder: (): { apiKey: string } | "staly" | null =>
+    process.env.GEOCODER === "staly" ? "staly" : process.env.GOOGLE_MAPS_SERVER_KEY ? { apiKey: process.env.GOOGLE_MAPS_SERVER_KEY } : null,
+  /**
+   * Mapa budów w przeglądarce (Maps JavaScript API): klucz przeglądarki ograniczony do adresów aplikacji
+   * (`GOOGLE_MAPS_BROWSER_KEY`) i identyfikator mapy z Google Cloud (`GOOGLE_MAPS_MAP_ID`, potrzebny pinezkom;
+   * bez niego `DEMO_MAP_ID` Google, tylko do prób). Bez klucza prawdziwe firmy nie mają mapy na tablicy.
+   */
+  googleMaps: () =>
+    process.env.GOOGLE_MAPS_BROWSER_KEY
+      ? { apiKey: process.env.GOOGLE_MAPS_BROWSER_KEY, mapId: process.env.GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID" }
+      : null,
   /** Sekret zadań harmonogramu (Vercel Cron wysyła go w nagłówku `Authorization`); bez niego zadania są wyłączone. */
   cronSecret: () => process.env.CRON_SECRET || null,
   /**

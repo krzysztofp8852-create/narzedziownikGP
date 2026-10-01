@@ -48,9 +48,16 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
 
+      # Firma demo do testu mapy demo (e2e/site-map.spec.ts); bez niej ten test się pomija.
+      - name: Demo w bazie CI
+        run: npm run demo:create
+
       - name: Test dymny Playwright
         run: npm run test:e2e
         env:
+          # Mapa budów bez Google: adresy geokoduje się na stały punkt, a przeglądarka dostaje atrapę mapy.
+          GEOCODER: staly
+          GOOGLE_MAPS_BROWSER_KEY: e2e
           # Wpis tekstem bez OpenAI API: interpretacja słowami kluczowymi.
           TEXT_ENTRY_INTERPRETER: slowa
           # Nagranie bez dostawcy transkrypcji: każde „mówi” ten sam tekst.
