@@ -126,8 +126,12 @@ Zdjęcie albo PDF przy terminie: świadectwo kalibracji, protokół, karta gwara
 _Avoid_: załącznik, teczka
 
 **Przypomnienie o terminie**:
-Wpis dzwonka tydzień przed terminem i raz po nim (przy gwarancji tylko przed), dla właściciela i kierownika lokalizacji, w której jest sprzęt.
+Wpis dzwonka na **wyprzedzenie przypomnienia** przed terminem (przy narzędziach tydzień) i raz po nim (przy gwarancji tylko przed), dla właściciela i kierownika lokalizacji, w której jest sprzęt.
 _Avoid_: alarm (zarezerwowany dla progu dni)
+
+**Wyprzedzenie przypomnienia**:
+Ile dni przed terminem przychodzi przypomnienie „przed”. Zależy od rodzaju terminu i jest stałe w programie, a nie ustawieniem firmy: 7 dni przy terminach narzędzi, przeglądzie technicznym i własnych terminach pojazdu, 30 przy OC, AC, legalizacji tachografu i uprawnieniach ludzi, 1 przy zwrocie sprzętu wynajętego.
+_Avoid_: okres powiadomienia, próg (zarezerwowany dla progu dni)
 
 ## Koszt sprzętu
 

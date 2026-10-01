@@ -33,8 +33,10 @@ faktury) to pliki, a na fakturze jest cena, którą widzi tylko właściciel.
   dni (ADR 0007). Dzień liczy się w Polsce. Przypomnienie „przed” należy się od 7 dni przed terminem do dnia terminu,
   a „po” od następnego dnia; koniec gwarancji ma tylko „przed”. Każde zdarzenie (termin z danego dnia i faza) zapisuje
   się raz w `app.deadline_alerts`, więc drugie wywołanie niczego nie powtarza, pominięte nie gubi przypomnień, a nowa
-  data (zmiana, wykonanie) daje nowe. Tydzień to stała wartość, a nie ustawienie firmy czy terminu: tyle trzeba,
-  żeby ściągnąć sprzęt z budowy.
+  data (zmiana, wykonanie) daje nowe. Wyprzedzenie jest stałe w programie, a nie ustawieniem firmy czy terminu, i
+  przypisane do rodzaju terminu (`reminder-lead.ts`): przy narzędziach tydzień, bo tyle trzeba, żeby ściągnąć sprzęt z
+  budowy, a kolejne rodzaje (OC pojazdu, uprawnienia ludzi, zwrot sprzętu wynajętego) dostają 30 albo 1 dzień bez
+  zmiany faz „przed” i „po”.
 - Przypomnienie to wpis dzwonka `terminy` z listą terminów z danego dnia, bez kopii e-mail (jak progi dni). Każdy
   aktywny właściciel dostaje jeden wpis o wszystkich, a kierownik budowy albo pojazdu jeden o sprzęcie, który jest
   teraz u niego. Właściciel, który sam jest kierownikiem budowy albo pojazdu, ma ten sprzęt w swoim wpisie i drugiego

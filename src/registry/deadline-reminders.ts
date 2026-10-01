@@ -4,20 +4,19 @@ import type { DeadlinesNotification, Notification, NotifiedDeadline, Recipient }
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
 import { owners } from "./reports";
-import { daysBetween, warsawTime } from "./validation";
-
-/** Przypomnienie przychodzi tyle dni przed terminem: tyle trzeba, żeby ściągnąć sprzęt z budowy na bazę albo do serwisu. */
-const REMINDER_DAYS_BEFORE = 7;
+import { type ReminderLead, reminderPhase, reminderWindow } from "./reminder-lead";
+import { warsawTime } from "./validation";
 
 /**
- * Które przypomnienie należy się w dniu `today` (RRRR-MM-DD, w Polsce): „przed” od tygodnia przed terminem do dnia
- * terminu, „po” od następnego dnia. Koniec gwarancji przypomina się tylko przed: po nim nie ma już czego pilnować.
+ * Wyprzedzenie przypomnień o terminach narzędzi: tydzień, bo tyle trzeba, żeby ściągnąć sprzęt z budowy na bazę albo
+ * do serwisu. Koniec gwarancji przypomina się tylko przed.
  */
-function reminderPhase(kind: DeadlineKind, dueOn: string, today: string): "przed" | "po" | null {
-  const daysLeft = daysBetween(today, dueOn);
-  if (daysLeft < 0) return kind === "gwarancja" ? null : "po";
-  return daysLeft <= REMINDER_DAYS_BEFORE ? "przed" : null;
-}
+const TOOL_DEADLINE_LEADS: Record<DeadlineKind, ReminderLead> = {
+  przeglad: { daysBefore: 7, afterDue: true },
+  kalibracja: { daysBefore: 7, afterDue: true },
+  udt: { daysBefore: 7, afterDue: true },
+  gwarancja: { daysBefore: 7, afterDue: false },
+};
 
 /** Firmy z terminami, dla których zadanie dzienne sprawdza przypomnienia. */
 export async function companiesWithDeadlines(sql: Sql): Promise<string[]> {
@@ -36,8 +35,8 @@ export async function notifyDueDeadlines(sql: Sql, companyId: string, now: Date)
   const today = warsawTime(now).day;
   // Kolejność terminów (od najwcześniejszego) zostaje w każdym przypomnieniu.
   const detected: { deadline: NotifiedDeadline; manager: Recipient | null }[] = [];
-  for (const { manager, ...deadline } of await scheduledDeadlines(sql, { today, withinDays: REMINDER_DAYS_BEFORE, companyId })) {
-    const phase = reminderPhase(deadline.kind, deadline.dueOn, today);
+  for (const { manager, ...deadline } of await scheduledDeadlines(sql, { today, withinDays: reminderWindow(TOOL_DEADLINE_LEADS), companyId })) {
+    const phase = reminderPhase(TOOL_DEADLINE_LEADS[deadline.kind], deadline.dueOn, today);
     if (!phase) continue;
     const inserted = await sql(
       `insert into app.deadline_alerts (deadline_id, company_id, due_on, phase, detected_at) values ($1, $2, $3, $4, $5)
