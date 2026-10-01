@@ -143,8 +143,11 @@ _Avoid_: amortyzacja, cena wynajmu
 Dzień, w którym właściciel pierwszy raz ustawił stawkę firmy. Stawki i wartości z tego dnia liczą się wstecz przez całą historię ruchów, a każda późniejsza zmiana od dnia zmiany. Wcześniej zakładka „Koszty” nie pokazuje kwot.
 
 **Koszt sprzętu**:
-Dni narzędzi na budowie albo pojeździe razy stawka dzienna z każdego dnia, w zakładce „Koszty” lokalizacji, za całą budowę, miesiąc albo własny zakres. Liczy się każda rozpoczęta doba w Polsce (dzień przeniesienia na obu miejscach), z historii ruchów bez cofniętych; baza i serwis się nie liczą.
+Dni narzędzi na budowie albo pojeździe razy stawka dzienna z każdego dnia, w zakładce „Koszty” lokalizacji, za całą budowę, miesiąc albo własny zakres. Liczy się każda rozpoczęta doba w Polsce (dzień przeniesienia na obu miejscach), z historii ruchów bez cofniętych; baza i serwis się nie liczą. Widzi go właściciel, a kierownik tylko swoich budów i pojazdów, gdy właściciel na to pozwolił w ustawieniach; magazynier i pracownik nigdy.
 _Avoid_: koszt wynajmu, amortyzacja
+
+**Zestawienie kosztów**:
+Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, pozycja „Koszty sprzętu” w menu. Pokazuje każdą aktywną budowę i aktywny pojazd, a zakończone i nieaktywne tylko z kosztem w okresie.
 
 ## Ruchy
 

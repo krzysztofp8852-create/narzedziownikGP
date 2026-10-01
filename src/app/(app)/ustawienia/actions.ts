@@ -49,6 +49,20 @@ export async function updateIssueVisibility(_prev: SettingsFormState, formData: 
   return { saved: true };
 }
 
+/** Czy kierownik widzi koszty sprzętu lokalizacji, których jest kierownikiem. */
+export async function updateCostVisibility(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
+  const session = await requireSession();
+  try {
+    await getRegistry()
+      .as(session.userId)
+      .updateSettings({ siteManagersSeeCosts: formData.get("siteManagersSeeCosts") === "on" });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/", "layout");
+  return { saved: true };
+}
+
 /** Stawka dzienna firmy i stawki kategorii (puste pole: kategoria liczy się stawką firmy), razem albo wcale. */
 export async function updateDailyRates(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
   const session = await requireSession();

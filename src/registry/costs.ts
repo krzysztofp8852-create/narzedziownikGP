@@ -61,17 +61,58 @@ export type LocationCosts =
       tools: ToolCost[];
     };
 
-/** Koszty i stawki widzi tylko właściciel, jak wartości w zł. */
-export function canSeeCosts(session: Session) {
+/** Lokalizacje, w których sprzęt kosztuje: baza i serwis się nie liczą. */
+export type CostedKind = Extract<LocationKind, "budowa" | "pojazd">;
+
+/** Kwota sprzętu jednej budowy albo pojazdu w zestawieniu kosztów. */
+export interface LocationCostTotal {
+  /** `open`: aktywna budowa albo aktywny pojazd. */
+  location: { id: string; name: string; kind: CostedKind; open: boolean };
+  /** Narzędzia z co najmniej jednym dniem w okresie. */
+  toolCount: number;
+  /** Kwota w zł. */
+  amount: number;
+}
+
+/** Zestawienie kosztów budów i pojazdów w okresie. Przed dniem startu kosztów nie ma kwot, tylko stan „brak stawki”. */
+export type CostSummary =
+  | { status: "brak_stawki" }
+  | {
+      status: "koszty";
+      /** Okres z dniami do dziś najwyżej. */
+      period: CostPeriod;
+      total: number;
+      /** Budowy, potem pojazdy, każde od najdroższych, przy równej kwocie po nazwie. */
+      locations: LocationCostTotal[];
+    };
+
+/**
+ * Stawki ustawia i ogląda tylko właściciel, jak wartości w zł. Koszty widzi też kierownik, gdy właściciel na to
+ * pozwolił, ale tylko lokalizacji, których jest kierownikiem (`canSeeCostsOf`).
+ */
+export function canManageRates(session: Session) {
   return session.role === "wlasciciel";
+}
+
+export function requireRateManager(session: Session) {
+  if (!canManageRates(session)) throw new RegistryError("forbidden");
+}
+
+/** Czy aktor widzi jakiekolwiek koszty: właściciel, a kierownik za zgodą właściciela. Magazynier i pracownik nigdy. */
+export function canSeeCosts(session: Session) {
+  return canManageRates(session) || (session.role === "kierownik" && session.company.siteManagersSeeCosts);
+}
+
+/** Czy aktor widzi koszty budowy albo pojazdu z tym kierownikiem: właściciel każdej, kierownik ze zgodą swojej. */
+export function canSeeCostsOf(session: Session, location: { managerId: string | null }) {
+  return canManageRates(session) || (canSeeCosts(session) && location.managerId === session.userId);
 }
 
 export function requireCostViewer(session: Session) {
   if (!canSeeCosts(session)) throw new RegistryError("forbidden");
 }
 
-/** Lokalizacje, w których sprzęt kosztuje: baza i serwis się nie liczą. */
-const COSTED_KINDS: readonly LocationKind[] = ["budowa", "pojazd"];
+const COSTED_KINDS: readonly LocationKind[] = ["budowa", "pojazd"] satisfies CostedKind[];
 
 export async function dailyRates(sql: Sql, now: Date): Promise<DailyRates> {
   const book = await loadRateBook(sql);
@@ -135,61 +176,140 @@ export async function currentToolRate(sql: Sql, tool: { id: string; categoryId: 
  * dnia. Pobyty wynikają z historii ruchów bez cofniętych; kończy je ruch wychodzący, korekta, zaginięcie albo
  * wycofanie, a trwający liczy się do dziś. Bez okresu: cała budowa, od pierwszego do ostatniego dnia sprzętu.
  */
-export async function locationCosts(sql: Sql, locationId: string, period: CostPeriod | undefined, now: Date): Promise<LocationCosts> {
-  if (period !== undefined && !(isCalendarDay(period.from) && isCalendarDay(period.to) && period.from <= period.to)) {
-    throw new RegistryError("invalid_input");
-  }
+export async function locationCosts(
+  sql: Sql,
+  session: Session,
+  locationId: string,
+  period: CostPeriod | undefined,
+  now: Date,
+): Promise<LocationCosts> {
+  if (period !== undefined) requirePeriod(period);
   const [location] = UUID_PATTERN.test(locationId)
-    ? await sql<{ id: string; name: string; kind: LocationKind }>("select id, name, kind from app.locations where id = $1", [locationId])
+    ? await sql<{ id: string; name: string; kind: LocationKind; manager_id: string | null }>(
+        "select id, name, kind, manager_id from app.locations where id = $1",
+        [locationId],
+      )
     : [];
   if (!location) throw new RegistryError("not_found");
   if (!COSTED_KINDS.includes(location.kind)) throw new RegistryError("invalid_input");
+  if (!canSeeCostsOf(session, { managerId: location.manager_id })) throw new RegistryError("forbidden");
 
-  const today = warsawTime(now).day;
-  const stays = await staysIn(sql, location.id);
-  const book = await loadRateBook(sql, [...stays.keys()]);
-  if (book.startDay === null) return { status: "brak_stawki" };
-
-  const daysByTool = new Map([...stays].map(([toolId, list]) => [toolId, stayDays(list, today)]));
-  const allDays = [...daysByTool.values()].flatMap((days) => [...days]).sort();
-  const range: CostPeriod | null = period
-    ? { from: period.from, to: period.to > today && today >= period.from ? today : period.to }
-    : allDays.length > 0
-      ? { from: allDays[0], to: allDays[allDays.length - 1] }
-      : null;
-
-  const tools = await sql<{ id: string; code: string; name: string; category_id: string }>(
-    "select id, code, name, category_id from app.tools where id = any($1::uuid[]) order by code",
-    [[...stays.keys()]],
-  );
-  const rows = tools.flatMap((tool): ToolCost[] => {
-    const days = [...daysByTool.get(tool.id)!].filter((day) => range && day >= range.from && day <= range.to).sort();
-    if (days.length === 0) return [];
-    const rates = new Map<number, number>();
-    let daysWithoutRate = 0;
-    for (const day of days) {
-      const rate = book.rateOn({ id: tool.id, categoryId: tool.category_id }, day)?.amount;
-      if (rate == null) daysWithoutRate += 1;
-      else rates.set(toGrosze(rate), (rates.get(toGrosze(rate)) ?? 0) + 1);
-    }
-    const grosze = [...rates].reduce((sum, [rate, count]) => sum + rate * count, 0);
-    return [
-      {
-        tool: { id: tool.id, code: tool.code, name: tool.name },
-        days: days.length,
-        rates: [...rates].map(([rate, count]) => ({ amount: rate / 100, days: count })),
-        daysWithoutRate,
-        amount: grosze / 100,
-      },
-    ];
-  });
+  const costs = await costsIn(sql, [location.id], period, now);
+  if (!costs) return { status: "brak_stawki" };
+  const { range, tools } = costs.get(location.id)!;
   return {
     status: "koszty",
     location: { id: location.id, name: location.name, kind: location.kind },
     period: range,
-    total: Math.round(rows.reduce((sum, row) => sum + toGrosze(row.amount), 0)) / 100,
-    tools: rows,
+    total: sumAmounts(tools),
+    tools,
   };
+}
+
+/**
+ * Zestawienie kosztów w okresie: każda aktywna budowa i aktywny pojazd z kwotą (także zerową), a zakończona budowa
+ * albo nieaktywny pojazd, gdy mają koszt w okresie. Właściciel widzi wszystkie, kierownik ze zgodą swoje.
+ */
+export async function costSummary(sql: Sql, session: Session, period: CostPeriod, now: Date): Promise<CostSummary> {
+  requirePeriod(period);
+  const locations = await sql<{ id: string; name: string; kind: CostedKind; open: boolean }>(
+    `select id, name, kind, (kind = 'budowa' and status = 'aktywna') or (kind = 'pojazd' and active) as open
+     from app.locations
+     where kind::text = any($1::text[]) and ($2::uuid is null or manager_id = $2)`,
+    [COSTED_KINDS, canManageRates(session) ? null : session.userId],
+  );
+  const costs = await costsIn(
+    sql,
+    locations.map((location) => location.id),
+    period,
+    now,
+  );
+  if (!costs) return { status: "brak_stawki" };
+  const rows = locations.flatMap((location): LocationCostTotal[] => {
+    const { tools } = costs.get(location.id)!;
+    if (!location.open && tools.length === 0) return [];
+    return [{ location: { id: location.id, name: location.name, kind: location.kind, open: location.open }, toolCount: tools.length, amount: sumAmounts(tools) }];
+  });
+  rows.sort(
+    (a, b) =>
+      COSTED_KINDS.indexOf(a.location.kind) - COSTED_KINDS.indexOf(b.location.kind) ||
+      b.amount - a.amount ||
+      a.location.name.localeCompare(b.location.name, "pl"),
+  );
+  return {
+    status: "koszty",
+    period: clipToToday(period, warsawTime(now).day),
+    total: Math.round(rows.reduce((sum, row) => sum + toGrosze(row.amount), 0)) / 100,
+    locations: rows,
+  };
+}
+
+function requirePeriod(period: CostPeriod) {
+  if (!(isCalendarDay(period?.from) && isCalendarDay(period?.to) && period.from <= period.to)) throw new RegistryError("invalid_input");
+}
+
+/** Okres z końcem najpóźniej dziś, gdy dziś do niego należy. */
+function clipToToday(period: CostPeriod, today: string): CostPeriod {
+  return { from: period.from, to: period.to > today && today >= period.from ? today : period.to };
+}
+
+function sumAmounts(tools: ToolCost[]) {
+  return Math.round(tools.reduce((sum, row) => sum + toGrosze(row.amount), 0)) / 100;
+}
+
+/**
+ * Koszt sprzętu każdej z podanych lokalizacji w okresie (bez niego: od pierwszego do ostatniego dnia sprzętu tam):
+ * okres z dniami i narzędzia po kodzie. null przed dniem startu kosztów.
+ */
+async function costsIn(
+  sql: Sql,
+  locationIds: string[],
+  period: CostPeriod | undefined,
+  now: Date,
+): Promise<Map<string, { range: CostPeriod | null; tools: ToolCost[] }> | null> {
+  const today = warsawTime(now).day;
+  const stays = await staysIn(sql, locationIds);
+  const toolIds = [...new Set([...stays.values()].flatMap((byTool) => [...byTool.keys()]))];
+  const book = await loadRateBook(sql, toolIds);
+  if (book.startDay === null) return null;
+
+  const tools = await sql<{ id: string; code: string; name: string; category_id: string }>(
+    "select id, code, name, category_id from app.tools where id = any($1::uuid[]) order by code",
+    [toolIds],
+  );
+  const costs = new Map<string, { range: CostPeriod | null; tools: ToolCost[] }>();
+  for (const locationId of locationIds) {
+    const daysByTool = new Map([...(stays.get(locationId) ?? [])].map(([toolId, list]) => [toolId, stayDays(list, today)]));
+    const allDays = [...daysByTool.values()].flatMap((days) => [...days]).sort();
+    const range: CostPeriod | null = period
+      ? clipToToday(period, today)
+      : allDays.length > 0
+        ? { from: allDays[0], to: allDays[allDays.length - 1] }
+        : null;
+    const rows = tools.flatMap((tool): ToolCost[] => {
+      const days = [...(daysByTool.get(tool.id) ?? [])].filter((day) => range && day >= range.from && day <= range.to).sort();
+      if (days.length === 0) return [];
+      const rates = new Map<number, number>();
+      let daysWithoutRate = 0;
+      for (const day of days) {
+        const rate = book.rateOn({ id: tool.id, categoryId: tool.category_id }, day)?.amount;
+        if (rate == null) daysWithoutRate += 1;
+        else rates.set(toGrosze(rate), (rates.get(toGrosze(rate)) ?? 0) + 1);
+      }
+      const grosze = [...rates].reduce((sum, [rate, count]) => sum + rate * count, 0);
+      return [
+        {
+          tool: { id: tool.id, code: tool.code, name: tool.name },
+          days: days.length,
+          rates: [...rates].map(([rate, count]) => ({ amount: rate / 100, days: count })),
+          daysWithoutRate,
+          amount: grosze / 100,
+        },
+      ];
+    });
+    costs.set(locationId, { range, tools: rows });
+  }
+  return costs;
 }
 
 interface Stay {
@@ -198,8 +318,11 @@ interface Stay {
   to: Date | null;
 }
 
-/** Pobyty w lokalizacji narzędzi, które kiedyś do niej trafiły, z historii ruchów bez cofniętych. */
-async function staysIn(sql: Sql, locationId: string): Promise<Map<string, Stay[]>> {
+/**
+ * Pobyty w każdej z podanych lokalizacji narzędzi, które kiedyś do którejś z nich trafiły, z historii ruchów bez
+ * cofniętych: lokalizacja → narzędzie → pobyty.
+ */
+async function staysIn(sql: Sql, locationIds: string[]): Promise<Map<string, Map<string, Stay[]>>> {
   const rows = await sql<{ tool_id: string; to_location_id: string | null; to_state: ToolState | null; occurred_at: Date }>(
     `select mt.tool_id, m.to_location_id, m.to_state, m.occurred_at
      from app.movement_tools mt
@@ -207,25 +330,29 @@ async function staysIn(sql: Sql, locationId: string): Promise<Map<string, Stay[]
      where mt.tool_id in (
              select arrived.tool_id from app.movement_tools arrived
              join app.movements a on a.id = arrived.movement_id
-             where a.to_location_id = $1
+             where a.to_location_id = any($1::uuid[])
            )
        and m.kind <> 'cofniecie'
        and not exists (select 1 from app.movements r where r.reverses_movement_id = m.id)
      order by mt.tool_id, m.occurred_at, m.recorded_at, m.sequence_number`,
-    [locationId],
+    [locationIds],
   );
-  const stays = new Map<string, Stay[]>();
+  const wanted = new Set(locationIds);
+  const stays = new Map<string, Map<string, Stay[]>>();
   const current = new Map<string, { locationId: string | null; state: ToolState }>();
   for (const row of rows) {
     const before = current.get(row.tool_id) ?? { locationId: null, state: "w_obiegu" };
     const after = { locationId: row.to_location_id ?? before.locationId, state: row.to_state ?? before.state };
     current.set(row.tool_id, after);
-    const wasHere = before.locationId === locationId && before.state === "w_obiegu";
-    const isHere = after.locationId === locationId && after.state === "w_obiegu";
-    const list = stays.get(row.tool_id) ?? [];
-    stays.set(row.tool_id, list);
-    if (!wasHere && isHere) list.push({ from: new Date(row.occurred_at), to: null });
-    if (wasHere && !isHere) list[list.length - 1].to = new Date(row.occurred_at);
+    const wasAt = before.state === "w_obiegu" ? before.locationId : null;
+    const isAt = after.state === "w_obiegu" ? after.locationId : null;
+    if (wasAt === isAt) continue;
+    if (wasAt && wanted.has(wasAt)) stays.get(wasAt)!.get(row.tool_id)!.at(-1)!.to = new Date(row.occurred_at);
+    if (isAt && wanted.has(isAt)) {
+      const byTool = stays.get(isAt) ?? new Map<string, Stay[]>();
+      stays.set(isAt, byTool);
+      byTool.set(row.tool_id, [...(byTool.get(row.tool_id) ?? []), { from: new Date(row.occurred_at), to: null }]);
+    }
   }
   return stays;
 }

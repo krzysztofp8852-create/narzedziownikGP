@@ -9,7 +9,7 @@ import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, ty
 import * as companyDeletion from "./company-deletion";
 import * as corrections from "./corrections";
 import * as costs from "./costs";
-import type { CostPeriod, DailyRates, LocationCosts, RateChange, RateTarget } from "./costs";
+import type { CostPeriod, CostSummary, DailyRates, LocationCosts, RateChange, RateTarget } from "./costs";
 import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
 import type { AddDocumentInput, CompleteDeadlineInput, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
@@ -101,8 +101,8 @@ export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPrev
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
 export type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 export type { CompanySettings, IssueVisibility } from "./settings";
-export type { CostPeriod, DailyRates, EffectiveRate, LocationCosts, RateChange, RateTarget, ToolCost } from "./costs";
-export { canSeeCosts } from "./costs";
+export type { CostedKind, CostPeriod, CostSummary, DailyRates, EffectiveRate, LocationCostTotal, LocationCosts, RateChange, RateTarget, ToolCost } from "./costs";
+export { canManageRates, canSeeCosts, canSeeCostsOf } from "./costs";
 export type {
   CompanySubscription,
   ImplementationTier,
@@ -209,9 +209,10 @@ export interface Session {
   mustChangePassword: boolean;
   /**
    * `readOnly`: firma jest w trybie tylko do odczytu (ręcznie albo po 14 dniach od „opłacone do”). `demo`: firma
-   * demo, do której wchodzi się bez hasła ze strony /demo.
+   * demo, do której wchodzi się bez hasła ze strony /demo. `siteManagersSeeCosts`: właściciel pozwolił kierownikom
+   * widzieć koszty sprzętu ich lokalizacji.
    */
-  company: { id: string; name: string; readOnly: boolean; demo: boolean };
+  company: { id: string; name: string; readOnly: boolean; demo: boolean; siteManagersSeeCosts: boolean };
 }
 
 export interface CreateCompanyInput {
@@ -634,11 +635,12 @@ export interface Registry {
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
     /**
-     * Zmienia podane ustawienia firmy: próg dni alarmu (1–365) i kto widzi zgłoszenia (zamykać może tylko
-     * magazynier, który je widzi). Pominięte zostają bez zmian. Tylko właściciel.
+     * Zmienia podane ustawienia firmy: próg dni alarmu (1–365), kto widzi zgłoszenia (zamykać może tylko
+     * magazynier, który je widzi) i czy kierownik widzi koszty swoich lokalizacji. Pominięte zostają bez zmian.
+     * Tylko właściciel.
      */
     updateSettings(input: Partial<CompanySettings>): Promise<void>;
-    /** Stawki dzienne obowiązujące dziś (firma i kategorie) z dniem startu kosztów. Tylko właściciel. */
+    /** Stawki dzienne obowiązujące dziś (firma i kategorie) z dniem startu kosztów. Tylko właściciel, także przy zgodzie dla kierownika. */
     dailyRates(): Promise<DailyRates>;
     /**
      * Stawka dzienna od dziś: procent wartości dla firmy albo kategorii (0–100, dwa miejsca po przecinku), kwota zł/dzień
@@ -652,9 +654,16 @@ export interface Registry {
     /**
      * Koszt sprzętu budowy albo pojazdu w okresie (bez niego: cała budowa): każde narzędzie z liczbą rozpoczętych dób
      * w Polsce, stawkami i kwotą, i suma. Przed dniem startu kosztów stan „brak stawki” zamiast kwot. Baza i serwis
-     * nie mają kosztów (`invalid_input`). Tylko właściciel.
+     * nie mają kosztów (`invalid_input`). Właściciel każdej lokalizacji, kierownik swojej, gdy właściciel włączył
+     * `siteManagersSeeCosts`.
      */
     locationCosts(locationId: string, period?: CostPeriod): Promise<LocationCosts>;
+    /**
+     * Zestawienie kosztów sprzętu w okresie: każda aktywna budowa i aktywny pojazd z kwotą (także zerową), zakończone
+     * i nieaktywne tylko z kosztem w okresie, i suma. Przed dniem startu kosztów stan „brak stawki”. Właściciel całą
+     * firmę, kierownik swoje lokalizacje, gdy właściciel włączył `siteManagersSeeCosts`.
+     */
+    costSummary(period: CostPeriod): Promise<CostSummary>;
     /** Abonament firmy: próg z limitem, liczba narzędzi, „opłacone do” i stan. Tylko właściciel. */
     subscription(): Promise<CompanySubscription>;
     /**
@@ -1396,24 +1405,29 @@ export function createRegistry(deps: RegistryDeps): Registry {
           }),
         dailyRates: () =>
           asMember((sql, session) => {
-            costs.requireCostViewer(session);
+            costs.requireRateManager(session);
             return costs.dailyRates(sql, deps.clock.now());
           }),
         setDailyRate: (target, rate) =>
           asWriter((sql, session) => {
-            costs.requireCostViewer(session);
+            costs.requireRateManager(session);
             return costs.setDailyRate(sql, session, { target, rate }, deps.clock.now());
           }),
         setDailyRates: (changes) =>
           asWriter(async (sql, session) => {
-            costs.requireCostViewer(session);
+            costs.requireRateManager(session);
             if (!Array.isArray(changes)) throw new RegistryError("invalid_input");
             for (const change of changes) await costs.setDailyRate(sql, session, change, deps.clock.now());
           }),
         locationCosts: (locationId, period) =>
           asMember((sql, session) => {
             costs.requireCostViewer(session);
-            return costs.locationCosts(sql, locationId, period, deps.clock.now());
+            return costs.locationCosts(sql, session, locationId, period, deps.clock.now());
+          }),
+        costSummary: (period) =>
+          asMember((sql, session) => {
+            costs.requireCostViewer(session);
+            return costs.costSummary(sql, session, period, deps.clock.now());
           }),
         subscription: () =>
           asMember((sql, session) => {
@@ -1696,11 +1710,12 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     company_id: string;
     company_name: string;
     company_demo: boolean;
+    site_managers_see_costs: boolean;
     paid_until: string | null;
     manual_read_only: boolean | null;
   }>(
     `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name, c.demo_since is not null as company_demo,
-            to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
+            c.site_managers_see_costs, to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
      from app.users u join app.companies c on c.id = u.company_id
      left join app.current_company_plan() p on true
      where u.user_id = $1 and u.active`,
@@ -1717,6 +1732,7 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
       name: row.company_name,
       readOnly: readOnly.isReadOnly({ paidUntil: row.paid_until, manualReadOnly: row.manual_read_only === true }, now),
       demo: row.company_demo,
+      siteManagersSeeCosts: row.site_managers_see_costs,
     },
   };
 }

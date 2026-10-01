@@ -569,7 +569,7 @@ describe("ustawienie „Kto widzi zgłoszenia”", () => {
 
     await z.owner.updateSettings({ issueVisibility: visibility });
 
-    expect(await z.owner.settings()).toEqual({ alarmThresholdDays: 30, issueVisibility: visibility });
+    expect(await z.owner.settings()).toEqual({ alarmThresholdDays: 30, issueVisibility: visibility, siteManagersSeeCosts: false });
     await expect(
       z.owner.updateSettings({ issueVisibility: { siteManagers: true, storekeepers: false, storekeepersClose: true } }),
     ).rejects.toMatchObject({ code: "invalid_input" });

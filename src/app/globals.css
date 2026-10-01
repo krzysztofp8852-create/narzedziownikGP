@@ -4007,3 +4007,12 @@ a.tool-row:hover .tool-row-name {
 .cost-start {
   max-width: 640px;
 }
+
+/* Zestawienie kosztów: wiersz budowy albo pojazdu bez tabliczki z kodem. */
+.cost-summary-row {
+  grid-template-columns: 1fr auto;
+}
+
+.cost-summary-group + .cost-summary-group {
+  margin-top: 16px;
+}

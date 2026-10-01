@@ -7,6 +7,8 @@ export interface CompanySettings {
   alarmThresholdDays: number;
   /** Kto poza właścicielem i autorem widzi zgłoszenia. */
   issueVisibility: IssueVisibility;
+  /** Kierownik widzi koszty sprzętu lokalizacji, których jest kierownikiem; domyślnie nie. */
+  siteManagersSeeCosts: boolean;
 }
 
 export interface IssueVisibility {
@@ -34,9 +36,12 @@ export async function companySettings(sql: Sql, session: Session): Promise<Compa
     issues_site_managers: boolean;
     issues_storekeepers: boolean;
     issues_storekeepers_close: boolean;
-  }>("select alarm_threshold_days, issues_site_managers, issues_storekeepers, issues_storekeepers_close from app.companies where id = $1", [
-    session.company.id,
-  ]);
+    site_managers_see_costs: boolean;
+  }>(
+    `select alarm_threshold_days, issues_site_managers, issues_storekeepers, issues_storekeepers_close, site_managers_see_costs
+     from app.companies where id = $1`,
+    [session.company.id],
+  );
   return {
     alarmThresholdDays: row.alarm_threshold_days,
     issueVisibility: {
@@ -44,6 +49,7 @@ export async function companySettings(sql: Sql, session: Session): Promise<Compa
       storekeepers: row.issues_storekeepers,
       storekeepersClose: row.issues_storekeepers_close,
     },
+    siteManagersSeeCosts: row.site_managers_see_costs,
   };
 }
 
@@ -64,5 +70,10 @@ export async function updateSettings(sql: Sql, session: Session, input: Partial<
       "update app.companies set issues_site_managers = $2, issues_storekeepers = $3, issues_storekeepers_close = $4 where id = $1",
       [session.company.id, ...flags],
     );
+  }
+  const seeCosts = input.siteManagersSeeCosts;
+  if (seeCosts !== undefined) {
+    if (typeof seeCosts !== "boolean") throw new RegistryError("invalid_input");
+    await sql("update app.companies set site_managers_see_costs = $2 where id = $1", [session.company.id, seeCosts]);
   }
 }

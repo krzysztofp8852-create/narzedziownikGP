@@ -77,6 +77,7 @@
     "stickers": "Naklejki",
     "sites": "Budowy",
     "vehicles": "Pojazdy",
+    "costs": "Koszty sprzętu",
     "team": "Zespół",
     "documents": "Dokumenty",
     "settings": "Ustawienia",
@@ -1864,7 +1865,29 @@
     "rule": "Liczy się każda rozpoczęta doba, w której narzędzie było tu choćby chwilę (dzień przeniesienia na obu miejscach). Pomyłkę w dniach poprawia korekta na karcie narzędzia.",
     "startTitle": "Ustaw stawkę dzienną",
     "startHint": "Koszt sprzętu to dni na budowie razy stawka dzienna. Ustaw stawkę firmy jako procent wartości narzędzia na dzień; na start proponujemy 1%. Stawka ustawiona pierwszy raz liczy się wstecz przez całą historię ruchów, więc od razu zobaczysz koszt trwających i zakończonych budów.",
-    "startSettings": "Stawki kategorii w ustawieniach"
+    "startSettings": "Stawki kategorii w ustawieniach",
+    "startManager": "Właściciel nie ustawił jeszcze stawki dziennej, więc nie ma jeszcze kosztów sprzętu."
+  },
+  "costSummary": {
+    "back": "← Wróć do tablicy",
+    "title": "Koszty sprzętu",
+    "intro": "Koszt sprzętu każdej budowy i pojazdu w wybranym okresie. Otwórz budowę albo pojazd, żeby zobaczyć narzędzia.",
+    "introManager": "Koszt sprzętu Twoich budów i pojazdów w wybranym okresie. Otwórz budowę albo pojazd, żeby zobaczyć narzędzia.",
+    "sites": "Budowy",
+    "vehicles": "Pojazdy",
+    "empty": "Nie ma jeszcze budów ani pojazdów.",
+    "emptyManager": "Nie jesteś kierownikiem żadnej budowy ani pojazdu.",
+    "exportHint": "Plik z wybranym okresem, np. dla księgowej.",
+    "startSettings": "Ustaw stawkę dzienną w ustawieniach",
+    "sheet": "Koszty sprzętu",
+    "sheetTitle": "Koszty sprzętu budów i pojazdów",
+    "kind": "Rodzaj",
+    "tools": "Narzędzia",
+    "kinds": {
+      "budowa": "Budowa",
+      "pojazd": "Pojazd"
+    },
+    "fileName": "koszty-sprzetu-{from}-{to}.xlsx"
   },
   "dailyRates": {
     "title": "Stawki dzienne",
@@ -1895,6 +1918,15 @@
       "kategoria": "{percent}% wartości, stawka kategorii",
       "firma": "{percent}% wartości, stawka firmy"
     }
+  },
+  "costSettings": {
+    "title": "Kto widzi koszty",
+    "intro": "Właściciel widzi koszty wszystkich budów i pojazdów. Magazynier i pracownik nie widzą ich nigdy.",
+    "siteManagers": "Kierownik widzi koszty swoich budów i pojazdów",
+    "siteManagersHint": "Kierownik zobaczy zakładkę „Koszty” i zestawienie tylko dla lokalizacji, których jest kierownikiem. Ze stawki procentowej da się wyliczyć wartość narzędzia. Stawki ustawia dalej tylko właściciel.",
+    "submit": "Zapisz",
+    "submitting": "Zapisywanie…",
+    "saved": "Zapisano."
   },
   "locationPage": {
     "back": "← Tablica",

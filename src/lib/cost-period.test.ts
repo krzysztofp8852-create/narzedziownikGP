@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costPeriodSearch, monthPeriod, parseCostPeriod, shiftMonth } from "./cost-period";
+import { costPeriodSearch, monthPeriod, parseCostPeriod, parseSummaryPeriod, shiftMonth } from "./cost-period";
 
 describe("okres zestawienia kosztów w adresie", () => {
   it("bez parametrów to cała budowa", () => {
@@ -27,5 +27,16 @@ describe("okres zestawienia kosztów w adresie", () => {
   it("poprzedni miesiąc przechodzi przez granicę roku", () => {
     expect(shiftMonth("2026-01", -1)).toBe("2025-12");
     expect(shiftMonth("2026-12", 1)).toBe("2027-01");
+  });
+});
+
+describe("okres zestawienia wszystkich budów i pojazdów", () => {
+  it("bez okresu to bieżący miesiąc w Polsce, a podany okres zostaje", () => {
+    expect(parseSummaryPeriod({}, new Date("2026-03-31T23:30:00Z"))).toEqual({
+      mode: "miesiac",
+      month: "2026-04",
+      period: { from: "2026-04-01", to: "2026-04-30" },
+    });
+    expect(parseSummaryPeriod({ od: "2026-03-05", do: "2026-03-20" })).toEqual({ mode: "zakres", period: { from: "2026-03-05", to: "2026-03-20" } });
   });
 });
