@@ -131,7 +131,7 @@ export async function fileIssue(
         )
       : [];
     if (!row) throw new RegistryError("not_found");
-    if (row.state === "wycofane" || (input.kind === "uszkodzenie" && row.state !== "w_obiegu")) throw new RegistryError("invalid_tool_state");
+    if (row.state === "wycofane" || row.state === "zwrocone" || (input.kind === "uszkodzenie" && row.state !== "w_obiegu")) throw new RegistryError("invalid_tool_state");
     tool = { id: row.id, code: row.code, name: row.name };
     place = { id: row.location_id, name: row.location_name };
   } else if (input.locationId) {

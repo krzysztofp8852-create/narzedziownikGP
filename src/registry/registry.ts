@@ -31,6 +31,8 @@ import * as push from "./push";
 import type { PushCopy, PushSubscriptionData } from "./push";
 import * as queuedMovements from "./queued-movements";
 import * as readOnly from "./read-only";
+import * as rentals from "./rentals";
+import type { AddRentedToolInput, ReturnToRentalInput } from "./rentals";
 import * as reports from "./reports";
 import type { FridayReport, Report, ReportKind, WeeklyReport } from "./reports";
 import type { RejectedMovement } from "./queued-movements";
@@ -89,13 +91,18 @@ export {
   canAttachDocument,
   canCompleteDeadlines,
   canManageDeadlines,
+  ADDABLE_DEADLINE_KINDS,
   DEADLINE_KINDS,
   DOCUMENT_KINDS,
+  isDateOnlyKind,
   MAX_CYCLE_MONTHS,
   MAX_DEADLINE_NOTE_LENGTH,
   UPCOMING_DAYS,
 } from "./deadlines";
-export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolState } from "./tools";
+export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolRental, ToolState } from "./tools";
+export type { AddRentedToolInput, ReturnToRentalInput } from "./rentals";
+export { canRentTools, MAX_RENTAL_COMPANY_LENGTH } from "./rentals";
+export { canHandleRentalsAt } from "./movements";
 export { canManageTools, canSeeValues } from "./tools";
 export type { ImportPreviewRow, ImportRowError, ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 export { canImportTools, MAX_IMPORT_ROWS } from "./tool-import";
@@ -419,7 +426,10 @@ export interface Registry {
      * (drugi: `deadline_taken`), z opcjonalnym cyklem w miesiącach. Tylko właściciel; widzi je każdy w firmie.
      */
     addDeadline(input: NewDeadlineInput): Promise<{ deadlineId: string }>;
-    /** Zmienia datę, cykl albo opis terminu. Tylko właściciel. */
+    /**
+     * Zmienia datę, cykl albo opis terminu. Tylko właściciel; termin zwrotu wynajętego (przedłużenie, bez cyklu)
+     * zmienia też kierownik lokalizacji, w której sprzęt stoi, i magazynier.
+     */
     updateDeadline(deadlineId: string, changes: DeadlineChanges): Promise<void>;
     /** Usuwa termin razem z dokumentami. Tylko właściciel. */
     deleteDeadline(deadlineId: string): Promise<void>;
@@ -454,6 +464,19 @@ export interface Registry {
      * limitem progu wynik ma ostrzeżenie.
      */
     reportTool(input: ReportToolInput): Promise<{ toolId: string; code: string } & WithLimitWarning>;
+    /**
+     * Przyjęcie sprzętu wynajętego z wypożyczalni od razu w bazie, na budowie albo pojeździe, w których stoi: kod
+     * nadany jak przy dodawaniu, stawka dobowa z umowy i termin zwrotu, bez akceptacji. Właściciel i magazynier
+     * wszędzie, kierownik na swojej aktywnej budowie albo pojeździe. Właściciele (poza aktorem) dostają wpis w dzwonku
+     * z kopią push. Nie liczy się do limitu narzędzi progu.
+     */
+    addRentedTool(input: AddRentedToolInput): Promise<{ toolId: string; code: string }>;
+    /**
+     * Zwrot do wypożyczalni: sprzęt wynajęty w obiegu przechodzi w stan „zwrócone” (znika z tablicy, zostaje
+     * w historii; własny sprzęt: `not_rented`). Kierownik lokalizacji, w której sprzęt stoi, magazynier albo
+     * właściciel. Autor cofa go w 15 minut jak inne ruchy.
+     */
+    returnToRental(input: ReturnToRentalInput): Promise<Movement>;
     /** Zgłoszenia narzędzi czekające na decyzję, od najstarszego. Tylko właściciel. */
     toolReports(): Promise<ToolReport[]>;
     /** Akceptuje zgłoszenie, uzupełniając kod i wartość. Tylko właściciel. */
@@ -1141,6 +1164,17 @@ export function createRegistry(deps: RegistryDeps): Registry {
           await sendPushCopies(deps, copies);
           return result;
         },
+        addRentedTool: async (input) => {
+          const { result, copies } = await retryOnReplay(() =>
+            asWriter(async (sql, session) => {
+              const { notifications, ...added } = await rentals.addRentedTool(sql, session, input, deps.clock.now());
+              return { result: added, copies: await bell.deliver(sql, notifications, deps.clock.now()) };
+            }),
+          );
+          await sendPushCopies(deps, copies);
+          return result;
+        },
+        returnToRental: movementOnlyCommand(rentals.returnToRental),
         toolReports: () =>
           asMember((sql, session) => {
             toolReports.requireToolReviewer(session);

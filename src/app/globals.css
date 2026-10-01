@@ -792,7 +792,8 @@ a.tool-row:hover .tool-row-name {
 }
 
 .movement-kind-zwrot,
-.movement-kind-z_serwisu {
+.movement-kind-z_serwisu,
+.movement-kind-zwrot_do_wypozyczalni {
   background: var(--success-soft);
   border-color: var(--success-soft);
   color: var(--success);
@@ -1994,6 +1995,13 @@ a.tool-row:hover .tool-row-name {
   color: #ffffff;
   width: 13px;
   height: 13px;
+}
+
+/* Sprzęt wynajęty: oznaczenie, nie flaga; ruchy działają jak przy własnym. */
+.tag-rented {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .damaged-note {

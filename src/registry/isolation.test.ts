@@ -27,6 +27,16 @@ describe("izolacja firm", () => {
       { target: { kind: "kategoria", categoryId: categoryB.id }, rate: 2 },
       { target: { kind: "narzedzie", toolId: toolB }, rate: 7 },
     ]);
+    // Sprzęt wynajęty firmy B: stawka wypożyczalni i termin zwrotu.
+    const { toolId: rentedB } = await ownerB.addRentedTool({
+      operationId: randomUUID(),
+      locationId: baseB,
+      name: "Minikoparka",
+      categoryId: categoryB.id,
+      rentalCompany: "Ramirent",
+      dailyRate: 450,
+      returnOn: "2026-03-10",
+    });
 
     const visibleToA = await withActor(testbed.db, a.ownerId, async (sql) => {
       const tables = await sql<{ name: string }>(
@@ -40,7 +50,7 @@ describe("izolacja firm", () => {
     });
 
     expect(visibleToA).toContain(a.companyId);
-    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB]) expect(visibleToA).not.toContain(idOfB);
+    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB]) expect(visibleToA).not.toContain(idOfB);
   });
 
   it("każda tabela schematu app ma włączone RLS", async () => {

@@ -5,6 +5,7 @@ import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import { hasAlarm } from "./thresholds";
 import { baseLocation, canSeeValues, daysSince, type LocationKind, type ToolRegistration } from "./tools";
+import { warsawTime } from "./validation";
 
 /** Narzędzie widoczne na tablicy, z najbliższym terminem i trwającą gwarancją. */
 export interface ToolOnBoard extends DeadlineSummary {
@@ -24,6 +25,10 @@ export interface ToolOnBoard extends DeadlineSummary {
    * Nie zmienia stanu narzędzia; znika z zamknięciem ostatniego takiego zgłoszenia.
    */
   reportedMissing: boolean;
+  /** Sprzęt wynajęty z wypożyczalni. */
+  rented: boolean;
+  /** Termin zwrotu wynajętego minął; tylko ostrzega, nie blokuje ruchów. */
+  returnOverdue: boolean;
 }
 
 /** Lokalizacja na tablicy z narzędziami w obiegu, które w niej są. */
@@ -108,9 +113,13 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
     value: string | null;
     damaged_since: Date | null;
     reported_missing: boolean;
+    rented: boolean;
+    return_overdue: boolean;
   }>(
     `select t.id, t.code, t.name, t.registration, t.location_id, l.kind as location_kind, l.alarm_enabled, t.located_since, t.damaged_since,
             app.tool_reported_missing(t.id) as reported_missing,
+            t.rented_from is not null as rented,
+            exists (select 1 from app.tool_deadlines d where d.tool_id = t.id and d.kind = 'zwrot' and d.due_on < $1::date) as return_overdue,
             co.alarm_threshold_days as threshold_days,
             ${valueColumn(withValues)}
      from app.tools t
@@ -118,6 +127,7 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
      join app.companies co on co.id = t.company_id
      ${valueJoin(withValues)}
      where t.state = 'w_obiegu' order by t.code`,
+    [warsawTime(now).day],
   );
   const deadlines = await deadlineSummaries(sql, now);
   const byLocation = new Map<string, ToolOnBoard[]>();
@@ -134,6 +144,8 @@ async function toolsByLocation(sql: Sql, now: Date, withValues: boolean): Promis
       ...(withValues && { value: parseValue(row.value) }),
       damagedSince: row.damaged_since && new Date(row.damaged_since),
       reportedMissing: row.reported_missing,
+      rented: row.rented,
+      returnOverdue: row.return_overdue,
       ...(deadlines.get(row.id) ?? NO_DEADLINES),
     });
     byLocation.set(row.location_id, tools);

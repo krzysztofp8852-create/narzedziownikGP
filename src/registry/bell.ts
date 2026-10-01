@@ -124,6 +124,7 @@ function reviveContent(raw: Record<string, unknown>): NotificationContent {
     case "raport_piatkowy":
     case "tylko_do_odczytu_wkrotce":
     case "tylko_do_odczytu":
+    case "sprzet_wynajety":
       return content;
   }
 }

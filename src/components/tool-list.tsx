@@ -37,6 +37,8 @@ export function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?:
                   <MissingIcon /> {t("board.reportedMissing")}
                 </span>
               )}
+              {tool.rented && <span className="tag tag-rented">{t("board.rented")}</span>}
+              {tool.returnOverdue && <span className="tag tag-alarm">{t("board.returnOverdue")}</span>}
               {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
               {tool.nextDeadline?.overdue && (
                 <span className="tag tag-alarm">{t("deadlines.overdueTag", { kind: deadlineKindName(tool.nextDeadline.kind) })}</span>

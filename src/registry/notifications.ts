@@ -115,6 +115,19 @@ export interface DeadlinesNotification {
   deadlines: NotifiedDeadline[];
 }
 
+/** Właściciel: ktoś przyjął sprzęt wynajęty z wypożyczalni, czyli nowy koszt. */
+export interface RentedToolNotification {
+  kind: "sprzet_wynajety";
+  recipient: Recipient;
+  tool: { id: string; code: string; name: string };
+  location: { id: string; name: string; kind: "baza" | "budowa" | "pojazd" };
+  rentalCompany: string;
+  /** Termin zwrotu (RRRR-MM-DD). */
+  returnOn: string;
+  /** Kto przyjął. */
+  addedBy: string;
+}
+
 /** Powiadomienie dla użytkownika firmy. Trafia do jego dzwonka, a port powiadomień wysyła kopię. */
 export type Notification =
   | ToolsTakenNotification
@@ -125,7 +138,8 @@ export type Notification =
   | FridayReportNotification
   | ReadOnlySoonNotification
   | ReadOnlyNotification
-  | DeadlinesNotification;
+  | DeadlinesNotification
+  | RentedToolNotification;
 
 /**
  * Powiadomienia, których kopię port powiadomień wysyła także e-mailem; pozostałe idą tylko do dzwonka i push.
@@ -211,5 +225,7 @@ export function dedupeKey(notification: Notification): string | null {
       return `tylko_do_odczytu_wkrotce:${notification.readOnlyFrom}:${readOnlyWarning(notification)}`;
     case "tylko_do_odczytu":
       return notification.reason === "po_terminie" ? `tylko_do_odczytu:${notification.since}` : null;
+    case "sprzet_wynajety":
+      return `wynajem:${notification.tool.id}`;
   }
 }

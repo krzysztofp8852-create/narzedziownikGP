@@ -3,7 +3,7 @@ import type { Sql } from "./ports";
 import type { Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
-/** Które naklejki drukujemy: wybrane narzędzia albo wszystkie jeszcze nieoklejone. */
+/** Które naklejki drukujemy: wybrane narzędzia albo wszystkie jeszcze nieoklejone (bez sprzętu wynajętego). */
 export type StickerSelection = { toolIds: string[] } | { unlabeled: true };
 
 export interface StickerBatch {
@@ -28,6 +28,8 @@ export interface StickerCandidate {
   location: string;
   /** Ostatni druk naklejki; null: jeszcze nieoklejone. */
   printedAt: Date | null;
+  /** Sprzęt wynajęty: naklejka tylko z wyboru, druk wszystkich nieoklejonych go pomija. */
+  rented: boolean;
 }
 
 export function canPrintStickers(session: Session) {
@@ -46,7 +48,8 @@ const PRINTABLE = "t.state = 'w_obiegu' and t.registration = 'zaakceptowane'";
 
 export async function stickerCandidates(sql: Sql): Promise<StickerCandidate[]> {
   const rows = await sql<StickerCandidate>(
-    `select t.id as "toolId", t.code, t.name, l.name as location, t.sticker_printed_at as "printedAt"
+    `select t.id as "toolId", t.code, t.name, l.name as location, t.sticker_printed_at as "printedAt",
+            t.rented_from is not null as rented
      from app.tools t join app.locations l on l.id = t.location_id
      where ${PRINTABLE}`,
   );
@@ -74,7 +77,7 @@ export async function printStickers(sql: Sql, session: Session, selection: Stick
   } else {
     stickers = await sql(
       `update app.tools t set sticker_printed_at = $1
-       where t.sticker_printed_at is null and ${PRINTABLE}
+       where t.sticker_printed_at is null and t.rented_from is null and ${PRINTABLE}
        returning t.id as "toolId", t.code`,
       [now],
     );

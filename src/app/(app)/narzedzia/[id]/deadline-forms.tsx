@@ -3,7 +3,7 @@
 import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
 import { type MessageKey, t } from "@/i18n/t";
 import { withShrunkDocument } from "@/lib/shrink-photo";
-import { type DeadlineKind, type DocumentKind, MAX_CYCLE_MONTHS, MAX_DEADLINE_NOTE_LENGTH } from "@/registry/registry";
+import { type DeadlineKind, type DocumentKind, isDateOnlyKind, MAX_CYCLE_MONTHS, MAX_DEADLINE_NOTE_LENGTH } from "@/registry/registry";
 import { changeDeadline, type DeadlineFormState } from "../deadline-actions";
 
 type Command = "add" | "edit" | "delete" | "complete" | "attach" | "deleteDocument";
@@ -112,7 +112,9 @@ function DeadlineForm({
 function DueOnField({ id, kind, defaultValue }: { id: string; kind: DeadlineKind; defaultValue?: string }) {
   return (
     <div className="field">
-      <label htmlFor={id}>{kind === "gwarancja" ? t("deadlines.warrantyUntilLabel") : t("deadlines.dueOnLabel")}</label>
+      <label htmlFor={id}>
+        {kind === "gwarancja" ? t("deadlines.warrantyUntilLabel") : kind === "zwrot" ? t("rentals.returnOn") : t("deadlines.dueOnLabel")}
+      </label>
       <input id={id} name="dueOn" type="date" required defaultValue={defaultValue} />
     </div>
   );
@@ -181,7 +183,7 @@ export function AddDeadlineForm({ toolId, kinds }: { toolId: string; kinds: Dead
   );
 }
 
-/** Zmiana daty, cyklu i opisu terminu oraz jego usunięcie. Tylko właściciel. */
+/** Zmiana daty, cyklu i opisu terminu oraz jego usunięcie. Tylko właściciel; termin zwrotu bez cyklu i usunięcia (przedłużenie). */
 export function EditDeadlineForm({
   toolId,
   deadline,
@@ -194,10 +196,11 @@ export function EditDeadlineForm({
     <>
       <DeadlineForm command="edit" toolId={toolId} deadlineId={deadline.id}>
         <DueOnField id={`${id}-due`} kind={deadline.kind} defaultValue={deadline.dueOn ?? undefined} />
-        {deadline.kind !== "gwarancja" && <CycleField id={`${id}-cycle`} defaultValue={deadline.cycleMonths} />}
+        {!isDateOnlyKind(deadline.kind) && <CycleField id={`${id}-cycle`} defaultValue={deadline.cycleMonths} />}
         <NoteField id={`${id}-note`} defaultValue={deadline.note} />
       </DeadlineForm>
-      <DeadlineForm command="delete" toolId={toolId} deadlineId={deadline.id} confirm={t("deadlines.deleteConfirm")} />
+      {/* Termin zwrotu znika dopiero ze zwrotem do wypożyczalni. */}
+      {deadline.kind !== "zwrot" && <DeadlineForm command="delete" toolId={toolId} deadlineId={deadline.id} confirm={t("deadlines.deleteConfirm")} />}
     </>
   );
 }

@@ -1,14 +1,23 @@
 import { randomUUID } from "node:crypto";
 import { isUniqueViolation, RegistryError, ReplayedOperationError } from "./errors";
+import { canHandleRentalsAt } from "./movements";
 import { checkDocument } from "./photos";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
-import type { LocationKind } from "./tools";
+import type { LocationKind, ToolState } from "./tools";
 import { daysBetween, isCalendarDay, UUID_PATTERN, warsawTime } from "./validation";
 
-export const DEADLINE_KINDS = ["przeglad", "kalibracja", "udt", "gwarancja"] as const;
-/** Przegląd, kalibracja, badanie UDT albo koniec gwarancji. */
+export const DEADLINE_KINDS = ["przeglad", "kalibracja", "udt", "gwarancja", "zwrot"] as const;
+/** Przegląd, kalibracja, badanie UDT, koniec gwarancji albo termin zwrotu sprzętu wynajętego. */
 export type DeadlineKind = (typeof DEADLINE_KINDS)[number];
+/** Terminy, które właściciel dodaje sam; termin zwrotu powstaje z przyjęciem sprzętu wynajętego. */
+export const ADDABLE_DEADLINE_KINDS = ["przeglad", "kalibracja", "udt", "gwarancja"] as const satisfies readonly DeadlineKind[];
+const DATE_ONLY_KINDS: readonly DeadlineKind[] = ["gwarancja", "zwrot"];
+
+/** Termin bez cyklu i wykonania, który tylko się kończy: gwarancja i termin zwrotu. */
+export function isDateOnlyKind(kind: DeadlineKind) {
+  return DATE_ONLY_KINDS.includes(kind);
+}
 
 export const DOCUMENT_KINDS = ["swiadectwo", "protokol", "karta_gwarancyjna", "faktura", "inne"] as const;
 /** Świadectwo kalibracji, protokół przeglądu albo badania, karta gwarancyjna, faktura albo inny dokument. */
@@ -103,7 +112,7 @@ export interface DeadlineDocument {
   uploadedBy: string;
 }
 
-/** Terminy dodaje, zmienia i usuwa właściciel. */
+/** Terminy dodaje, zmienia i usuwa właściciel; termin zwrotu zmienia też ten, kto obsługuje wynajem (`canHandleRentalsAt`). */
 export function canManageDeadlines(session: Session) {
   return session.role === "wlasciciel";
 }
@@ -142,6 +151,8 @@ export function summarizeDeadlines(deadlines: { kind: DeadlineKind; dueOn: strin
   const earlier = (a: NextDeadline | null, b: NextDeadline) => (a && a.dueOn <= b.dueOn ? a : b);
   const summary: DeadlineSummary = { nextDeadline: null, nextInspection: null, warrantyUntil: null };
   for (const { kind, dueOn } of deadlines) {
+    // Termin zwrotu ma na tablicy własny dopisek („po terminie zwrotu”).
+    if (kind === "zwrot") continue;
     const { status, daysLeft } = deadlineStatus(kind, dueOn, today);
     if (dueOn === null || daysLeft === null || status === "wygasla" || status === "bez_terminu") continue;
     const deadline = { kind, dueOn, daysLeft, overdue: status === "po_terminie" };
@@ -269,7 +280,7 @@ export function deadlineStatus(kind: DeadlineKind, dueOn: string | null, today: 
 /** Nowy termin narzędzia. Tylko właściciel. */
 export async function addDeadline(sql: Sql, session: Session, input: NewDeadlineInput, now: Date): Promise<{ deadlineId: string }> {
   requireDeadlineManager(session);
-  if (!DEADLINE_KINDS.includes(input.kind)) throw new RegistryError("invalid_input");
+  if (!(ADDABLE_DEADLINE_KINDS as readonly DeadlineKind[]).includes(input.kind)) throw new RegistryError("invalid_input");
   const fields = checkChanges(input.kind, { dueOn: input.dueOn, cycleMonths: input.cycleMonths ?? null, note: input.note ?? null });
   const [tool] = UUID_PATTERN.test(input.toolId) ? await sql("select 1 from app.tools where id = $1", [input.toolId]) : [];
   if (!tool) throw new RegistryError("not_found");
@@ -283,12 +294,26 @@ export async function addDeadline(sql: Sql, session: Session, input: NewDeadline
   return { deadlineId: row.id };
 }
 
-/** Zmienia datę, cykl albo opis terminu. Tylko właściciel. */
+/**
+ * Zmienia datę, cykl albo opis terminu. Właściciel, a termin zwrotu (przedłużenie wynajmu) też kierownik lokalizacji,
+ * w której sprzęt stoi, i magazynier.
+ */
 export async function updateDeadline(sql: Sql, session: Session, deadlineId: string, changes: DeadlineChanges): Promise<void> {
-  requireDeadlineManager(session);
   const [deadline] = UUID_PATTERN.test(deadlineId)
-    ? await sql<{ kind: DeadlineKind }>("select kind from app.tool_deadlines where id = $1", [deadlineId])
+    ? await sql<{ kind: DeadlineKind; tool_state: ToolState; location_kind: LocationKind; manager_id: string | null }>(
+        `select d.kind, t.state as tool_state, l.kind as location_kind, l.manager_id
+         from app.tool_deadlines d join app.tools t on t.id = d.tool_id join app.locations l on l.id = t.location_id
+         where d.id = $1`,
+        [deadlineId],
+      )
     : [];
+  if (deadline?.kind === "zwrot") {
+    if (!canHandleRentalsAt(session, { kind: deadline.location_kind, managerId: deadline.manager_id })) throw new RegistryError("forbidden");
+    // Zwróconego do wypożyczalni nie ma już czego przedłużać.
+    if (deadline.tool_state !== "w_obiegu") throw new RegistryError("invalid_tool_state");
+  } else {
+    requireDeadlineManager(session);
+  }
   if (!deadline) throw new RegistryError("not_found");
   const fields = checkChanges(deadline.kind, changes);
   const columns: [column: string, value: unknown][] = [];
@@ -330,7 +355,7 @@ export async function completeDeadline(
       )
     : [];
   if (!deadline) throw new RegistryError("not_found");
-  if (deadline.kind === "gwarancja") throw new RegistryError("invalid_input");
+  if (isDateOnlyKind(deadline.kind)) throw new RegistryError("invalid_input");
   // Ponowne wysłanie tego samego wykonania zwraca bieżący termin: nie cofa zmian, które zaszły od tamtej pory.
   if (deadline.last_done_operation_id === input.operationId) return { dueOn: deadline.due_on, file: null };
   const [row] = await sql<{ due_on: string | null }>(
@@ -406,6 +431,9 @@ function checkDocumentFields(session: Session, document: Pick<NewDocument, "kind
 /** Usuwa termin z dokumentami. Tylko właściciel. Zwraca klucze plików dokumentów do usunięcia z kubełka. */
 export async function deleteDeadline(sql: Sql, session: Session, deadlineId: string): Promise<{ fileKeys: string[] }> {
   requireDeadlineManager(session);
+  const [deadline] = UUID_PATTERN.test(deadlineId) ? await sql<{ kind: DeadlineKind }>("select kind from app.tool_deadlines where id = $1", [deadlineId]) : [];
+  // Termin zwrotu znika dopiero ze zwrotem do wypożyczalni.
+  if (deadline?.kind === "zwrot") throw new RegistryError("invalid_input");
   const files = UUID_PATTERN.test(deadlineId)
     ? await sql<{ file_path: string }>("select file_path from app.tool_deadline_documents where deadline_id = $1", [deadlineId])
     : [];
@@ -428,7 +456,7 @@ function checkChanges(kind: DeadlineKind, changes: DeadlineChanges): DeadlineCha
   if (changes.cycleMonths !== undefined) {
     const cycle = changes.cycleMonths;
     if (cycle !== null && !(Number.isInteger(cycle) && cycle >= 1 && cycle <= MAX_CYCLE_MONTHS)) throw invalid();
-    if (cycle !== null && kind === "gwarancja") throw invalid();
+    if (cycle !== null && isDateOnlyKind(kind)) throw invalid();
     fields.cycleMonths = cycle;
   }
   if (changes.note !== undefined) {

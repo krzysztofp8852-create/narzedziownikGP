@@ -56,6 +56,8 @@ describe("zgłoszenie narzędzia", () => {
         alarm: false,
         damagedSince: null,
         reportedMissing: false,
+        rented: false,
+        returnOverdue: false,
         nextDeadline: null,
         nextInspection: null,
         warrantyUntil: null,

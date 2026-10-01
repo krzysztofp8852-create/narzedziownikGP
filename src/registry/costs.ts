@@ -27,7 +27,9 @@ export interface DailyRates {
  * Stawka dzienna narzędzia i jej źródło. Przy stawce procentowej `amount` to procent wartości z tego dnia; null,
  * gdy narzędzie nie ma wartości.
  */
-export type EffectiveRate = { source: "narzedzie"; amount: number } | { source: "kategoria" | "firma"; percent: number; amount: number | null };
+export type EffectiveRate =
+  | { source: "wypozyczalnia" | "narzedzie"; amount: number }
+  | { source: "kategoria" | "firma"; percent: number; amount: number | null };
 
 /** Okres zestawienia: dni kalendarza w Polsce (RRRR-MM-DD), oba włącznie. */
 export interface CostPeriod {
@@ -173,8 +175,8 @@ export async function currentToolRate(sql: Sql, tool: { id: string; categoryId: 
 
 /**
  * Koszt sprzętu budowy albo pojazdu: każda rozpoczęta doba w Polsce, w której narzędzie tam było, razy stawka z tego
- * dnia. Pobyty wynikają z historii ruchów bez cofniętych; kończy je ruch wychodzący, korekta, zaginięcie albo
- * wycofanie, a trwający liczy się do dziś. Bez okresu: cała budowa, od pierwszego do ostatniego dnia sprzętu.
+ * dnia. Pobyty wynikają z historii ruchów bez cofniętych; kończy je ruch wychodzący, korekta, zaginięcie,
+ * wycofanie albo zwrot do wypożyczalni, a trwający liczy się do dziś. Bez okresu: cała budowa, od pierwszego do ostatniego dnia sprzętu.
  */
 export async function locationCosts(
   sql: Sql,
@@ -392,7 +394,7 @@ interface ValueEntry extends Dated {
   value: number | null;
 }
 
-/** Wszystkie stawki firmy i historia wartości wskazanych narzędzi, od najstarszego wpisu. */
+/** Wszystkie stawki firmy, stawki wypożyczalni i historia wartości wskazanych narzędzi, od najstarszego wpisu. */
 async function loadRateBook(sql: Sql, toolIds: string[] = []) {
   const rates = await sql<{
     kind: RateTarget["kind"];
@@ -410,6 +412,12 @@ async function loadRateBook(sql: Sql, toolIds: string[] = []) {
      where tool_id = any($1::uuid[]) order by valid_from, sequence_number`,
     [toolIds],
   );
+  // Stawkę wypożyczalni widzi ten, kto widzi koszty narzędzia (RLS); stała przez cały wynajem.
+  const rentalRates = await sql<{ tool_id: string; amount: string }>(
+    "select tool_id, amount::text from app.rental_rates where tool_id = any($1::uuid[])",
+    [toolIds],
+  );
+  const rentals = new Map(rentalRates.map((row) => [row.tool_id, Number(row.amount)]));
   const number = (text: string | null) => (text === null ? null : Number(text));
   const company: RateEntry[] = [];
   const categories = new Map<string, RateEntry[]>();
@@ -434,9 +442,11 @@ async function loadRateBook(sql: Sql, toolIds: string[] = []) {
     }
     return found;
   };
-  /** Pierwszeństwo: kwota narzędzia, procent kategorii, procent firmy. */
+  /** Pierwszeństwo: stawka wypożyczalni, kwota narzędzia, procent kategorii, procent firmy. */
   const rateOn = (tool: { id: string; categoryId: string }, day: string): EffectiveRate | null => {
     if (startDay === null) return null;
+    const rental = rentals.get(tool.id);
+    if (rental !== undefined) return { source: "wypozyczalnia", amount: rental };
     const own = at(tools.get(tool.id), day)?.amount;
     if (own != null) return { source: "narzedzie", amount: own };
     const categoryPercent = at(categories.get(tool.categoryId), day)?.percent;
@@ -464,6 +474,7 @@ function isPercent(value: number | null): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= MAX_RATE_PERCENT && hasTwoDecimals(value);
 }
 
-function isAmount(value: number) {
+/** Kwota w zł: od 0 do największej wartości narzędzia, z najwyżej dwoma miejscami po przecinku. */
+export function isAmount(value: number) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= MAX_VALUE && hasTwoDecimals(value);
 }

@@ -162,6 +162,8 @@ describe("zatwierdzenie importu", () => {
         value: 3200,
         damagedSince: null,
         reportedMissing: false,
+        rented: false,
+        returnOverdue: false,
         nextDeadline: null,
         nextInspection: null,
         warrantyUntil: null,

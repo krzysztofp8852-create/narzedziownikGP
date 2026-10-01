@@ -127,7 +127,8 @@ export function StickerSheetForm({ candidates }: { candidates: StickerCandidate[
   const { state, submit, pending } = usePdfDownload();
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const unlabeled = candidates.filter((candidate) => candidate.printedAt === null).length;
+  // Sprzęt wynajęty dostaje naklejkę tylko z wyboru, jak zrobi to druk w Rejestrze.
+  const unlabeled = candidates.filter((candidate) => candidate.printedAt === null && !candidate.rented).length;
   const visible = candidates.filter((candidate) => matchesTool(candidate, query));
   // Po odświeżeniu listy zaznaczenie zostaje tylko przy narzędziach, które nadal na niej są.
   const selected = selectedIds.filter((id) => candidates.some((candidate) => candidate.toolId === id));

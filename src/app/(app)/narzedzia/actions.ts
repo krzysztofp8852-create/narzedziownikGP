@@ -114,6 +114,54 @@ function formError(error: unknown) {
   return error instanceof InvalidNumberError ? t("tools.invalidNumber") : errorMessage(error);
 }
 
+export interface RentedToolFormState {
+  error?: string;
+  /** Przyjęty sprzęt wynajęty; formularz czyści się wtedy pod następny. */
+  added?: { id: string; code: string; name: string; place: string };
+}
+
+/** Przyjęcie sprzętu wynajętego z wypożyczalni tam, gdzie stoi. Wartość jest tylko w formularzu właściciela. */
+export async function addRentedTool(_prev: RentedToolFormState, formData: FormData): Promise<RentedToolFormState> {
+  const session = await requireSession();
+  try {
+    const name = text(formData, "name") ?? "";
+    const { toolId, code } = await getRegistry()
+      .as(session.userId)
+      .addRentedTool({
+        operationId: formText(formData, "operationId"),
+        locationId: formText(formData, "locationId"),
+        name,
+        categoryId: formText(formData, "categoryId"),
+        rentalCompany: formText(formData, "rentalCompany"),
+        dailyRate: number(formData, "dailyRate") ?? Number.NaN,
+        returnOn: formText(formData, "returnOn"),
+        ...(formData.has("value") && { value: number(formData, "value") ?? null }),
+      });
+    revalidatePath("/");
+    return { added: { id: toolId, code, name, place: formText(formData, "placeName") } };
+  } catch (error) {
+    return { error: formError(error) };
+  }
+}
+
+export interface RentalReturnFormState {
+  error?: string;
+}
+
+/** Zwrot sprzętu wynajętego do wypożyczalni z karty narzędzia. */
+export async function returnToRental(_prev: RentalReturnFormState, formData: FormData): Promise<RentalReturnFormState> {
+  const session = await requireSession();
+  const toolId = formText(formData, "toolId");
+  try {
+    await getRegistry().as(session.userId).returnToRental({ operationId: formText(formData, "operationId"), toolId });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/");
+  revalidatePath(`/narzedzia/${toolId}`);
+  return {};
+}
+
 export interface CorrectionFormState {
   error?: string;
 }
