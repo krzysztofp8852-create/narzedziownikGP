@@ -273,6 +273,8 @@ export const LOGGED_DEMO_COMMANDS = [
   "retireTool",
   "exportData",
   "updateSettings",
+  "setDailyRate",
+  "setDailyRates",
 ] as const;
 export type LoggedDemoCommand = (typeof LOGGED_DEMO_COMMANDS)[number];
 

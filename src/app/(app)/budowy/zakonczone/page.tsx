@@ -6,6 +6,7 @@ import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
+import { locationPagePath } from "../../lokalizacje/location-page";
 
 export const metadata: Metadata = { title: t("siteClosing.finishedTitle") };
 
@@ -30,7 +31,7 @@ export default async function FinishedSitesPage() {
             <section key={site.id} className="location location-site" aria-labelledby={`finished-${site.id}`}>
               <div className="location-head">
                 <h2 id={`finished-${site.id}`} className="display location-name">
-                  <span className="location-kind">{t("board.siteKind")}</span> <span>{site.name}</span>
+                  <span className="location-kind">{t("board.siteKind")}</span> <Link href={locationPagePath("budowa", site.id)}>{site.name}</Link>
                 </h2>
                 <span className="tag">{t("siteStatus.zakonczona")}</span>
               </div>

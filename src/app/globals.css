@@ -3917,3 +3917,93 @@ a.tool-row:hover .tool-row-name {
   color: var(--warning);
   font-weight: 600;
 }
+
+/* Strona budowy i pojazdu: nazwa na tablicy prowadzi do niej, a zakładki „Sprzęt” i „Koszty” są pod nagłówkiem. */
+.location-name a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.site-page-details {
+  margin: 4px 0 16px;
+}
+
+.site-page-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.site-page-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-page-tab:hover {
+  background: var(--surface-raised);
+}
+
+.site-page-tab[aria-current="page"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cost-periods .site-page-tabs {
+  margin-bottom: 0;
+}
+
+.cost-period-forms {
+  display: grid;
+  gap: 12px 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.cost-period-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+.cost-period-form .field {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.cost-total {
+  display: grid;
+  gap: 2px;
+}
+
+.cost-total-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.cost-total-amount {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.cost-rates {
+  display: block;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-start {
+  max-width: 640px;
+}

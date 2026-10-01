@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { withActor } from "./registry";
 import { setupRegistryTestbed } from "./testing/harness";
@@ -17,6 +18,15 @@ describe("izolacja firm", () => {
     const a = await testbed.givenActiveCompany("Zawbud");
     const b = await testbed.givenActiveCompany("Budrex");
     const baseB = (await testbed.registry.as(b.ownerId).whereIsWhat()).base.id;
+    // Stawki i historia wartości firmy B (tabele kosztu sprzętu).
+    const ownerB = testbed.registry.as(b.ownerId);
+    const categoryB = await ownerB.addCategory({ name: "Młoty", prefix: "H" });
+    const { toolId: toolB } = await ownerB.addTool({ operationId: randomUUID(), code: "H-01", name: "Młot", categoryId: categoryB.id, value: 900 });
+    await ownerB.setDailyRates([
+      { target: { kind: "firma" }, rate: 1 },
+      { target: { kind: "kategoria", categoryId: categoryB.id }, rate: 2 },
+      { target: { kind: "narzedzie", toolId: toolB }, rate: 7 },
+    ]);
 
     const visibleToA = await withActor(testbed.db, a.ownerId, async (sql) => {
       const tables = await sql<{ name: string }>(
@@ -30,7 +40,7 @@ describe("izolacja firm", () => {
     });
 
     expect(visibleToA).toContain(a.companyId);
-    for (const idOfB of [b.companyId, b.ownerId, baseB]) expect(visibleToA).not.toContain(idOfB);
+    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB]) expect(visibleToA).not.toContain(idOfB);
   });
 
   it("każda tabela schematu app ma włączone RLS", async () => {

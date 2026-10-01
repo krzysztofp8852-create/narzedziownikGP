@@ -6,23 +6,34 @@ import { DamagedIcon } from "@/components/damaged-icon";
 import { movementRoute, stateChangeText } from "@/i18n/movement-text";
 import { formatDateTime } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
+import { decimalText } from "@/i18n/decimal";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { nextDeadlineText } from "@/lib/deadline-text";
 import { historySearch } from "@/lib/history-filters";
 import { damagedAgo } from "@/lib/issue-text";
 import { getRegistry } from "@/lib/registry-instance";
-import { canCorrectTools, canManageTools, canPrintStickers, canSeeValues } from "@/registry/registry";
+import { canCorrectTools, canManageTools, canPrintStickers, canSeeCosts, canSeeValues, type EffectiveRate } from "@/registry/registry";
 import { StickerReprintForm } from "../../naklejki/sticker-forms";
 import { editTool } from "../actions";
 import { ToolForm } from "../tool-form";
 import { loadToolCard } from "./load-tool-card";
 import { ToolCorrections } from "./tool-corrections";
 import { ToolDeadlines } from "./tool-deadlines";
+import { ToolRateForm } from "./tool-rate-form";
 
 export async function generateMetadata(props: PageProps<"/narzedzia/[id]">): Promise<Metadata> {
   const { card } = await loadToolCard((await props.params).id);
   return { title: card ? `${card.code} ${card.name}` : undefined };
+}
+
+/** „20,00 zł za dzień (1% wartości, stawka firmy)”: obowiązująca stawka dzienna i jej źródło. */
+function dailyRateText(rate: EffectiveRate | null) {
+  if (!rate) return t("dailyRates.toolRateNone");
+  if (rate.source === "narzedzie") return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t("dailyRates.source.narzedzie")})`;
+  const percent = decimalText(rate.percent);
+  if (rate.amount === null) return t("dailyRates.toolRateNoValue", { percent });
+  return `${t("dailyRates.toolRateAmount", { amount: formatMoney(rate.amount) })} (${t(`dailyRates.source.${rate.source}`, { percent })})`;
 }
 
 export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) {
@@ -39,6 +50,7 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
     [t("tools.model"), card.model ?? none],
     [t("tools.serialNumber"), card.serialNumber ?? none],
     ...("value" in card ? [[t("tools.value"), card.value == null ? none : formatMoney(card.value)] as [string, string]] : []),
+    ...("dailyRate" in card ? [[t("dailyRates.toolRate"), dailyRateText(card.dailyRate ?? null)] as [string, string]] : []),
     [t("toolCard.state"), t("toolCard.stateValue", { state: t(`toolState.${card.state}`), registration: t(`toolRegistration.${card.registration}`) })],
   ];
 
@@ -143,6 +155,13 @@ export default async function ToolCardPage(props: PageProps<"/narzedzia/[id]">) 
             }}
             submitLabel={t("tools.submitEdit")}
           />
+        </details>
+      )}
+
+      {canSeeCosts(session) && (
+        <details className="panel">
+          <summary className="panel-summary">{t("dailyRates.toolOwnTitle")}</summary>
+          <ToolRateForm toolId={card.id} amount={card.dailyRate?.source === "narzedzie" ? card.dailyRate.amount : null} />
         </details>
       )}
 

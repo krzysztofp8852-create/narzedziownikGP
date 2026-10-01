@@ -1,6 +1,7 @@
 import { LegalLinks } from "@/components/legal-links";
 import { t } from "@/i18n/t";
-import { type CompanySettings, MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
+import { type Category, type CompanySettings, type DailyRates, MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
+import { DailyRatesForm } from "./daily-rates-form";
 import { IssueVisibilityForm } from "./issue-visibility-form";
 import { SettingsForm } from "./settings-form";
 
@@ -24,6 +25,19 @@ export function IssueSettingsSection({ settings }: { settings: CompanySettings }
         {t("issueSettings.title")}
       </h2>
       <IssueVisibilityForm visibility={settings.issueVisibility} />
+    </section>
+  );
+}
+
+/** Stawka dzienna firmy i kategorii, z której liczy się koszt sprzętu na budowach i pojazdach. */
+export function DailyRatesSection({ rates, categories }: { rates: DailyRates; categories: Category[] }) {
+  return (
+    <section className="company-card" aria-labelledby="stawki">
+      <h2 id="stawki" className="display section-title">
+        {t("dailyRates.title")}
+      </h2>
+      <p className="muted">{t("dailyRates.hint")}</p>
+      <DailyRatesForm rates={rates} categories={categories} />
     </section>
   );
 }

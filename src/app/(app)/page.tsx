@@ -2,16 +2,14 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { DamagedIcon } from "@/components/damaged-icon";
-import { MissingIcon } from "@/components/missing-icon";
 import { MovementEntry } from "@/components/movement-entry";
 import { SiteManagerLabel } from "@/components/site-manager-label";
+import { Money, ToolList } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
-import { deadlineKindName } from "@/lib/deadline-text";
 import { serverEnv } from "@/lib/env";
 import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
@@ -34,6 +32,7 @@ import {
   type WhereIsWhat,
 } from "@/registry/registry";
 import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
+import { locationPagePath } from "./lokalizacje/location-page";
 import {
   AddSiteForm,
   AddVehicleForm,
@@ -51,53 +50,6 @@ import { DemoSiteMap, type MapDevice, type MapPlace } from "./demo-site-map";
 import { SiteMap, type SiteMapPin } from "./site-map";
 
 export const metadata: Metadata = { title: t("board.title") };
-
-/** Kwota w zł, gdy aktor ją widzi (klucz jest tylko u właściciela). */
-function Money({ amount, className }: { amount: number | null | undefined; className?: string }) {
-  return amount != null && <span className={className}>{formatMoney(amount)}</span>;
-}
-
-function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?: boolean; atBase?: boolean }) {
-  return (
-    <ul className={wide ? "tool-list tool-list-wide" : "tool-list"}>
-      {tools.map((tool) => (
-        <li key={tool.id}>
-          <Link
-            href={`/narzedzia/${tool.id}`}
-            className={tool.alarm ? "tool-row tool-row-alarm" : "tool-row"}
-            data-tour={tool.alarm ? "alarm-tool" : undefined}
-          >
-            <span className="plate">{tool.code}</span>
-            <span className="tool-row-name">
-              {tool.name}
-              {tool.registration === "zgloszone" && <span className="tag tag-reported">{t("board.reported")}</span>}
-              {tool.damagedSince && (
-                <span className="tag tag-damaged">
-                  <DamagedIcon /> {t("board.damaged")}
-                </span>
-              )}
-              {tool.reportedMissing && (
-                <span className="tag tag-missing">
-                  <MissingIcon /> {t("board.reportedMissing")}
-                </span>
-              )}
-              {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
-              {tool.nextDeadline?.overdue && (
-                <span className="tag tag-alarm">{t("deadlines.overdueTag", { kind: deadlineKindName(tool.nextDeadline.kind) })}</span>
-              )}
-            </span>
-            <span className="tool-row-meta">
-              <span className="tool-row-days">
-                {atBase ? t("board.unused", { days: formatDays(tool.daysInPlace) }) : formatDays(tool.daysInPlace)}
-              </span>
-              <Money amount={tool.value} className="tool-row-value" />
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 /** Liczba sztuk i, dla właściciela, suma wartości lokalizacji. */
 function LocationTotals({ count, totalValue }: { count: number; totalValue?: number }) {
@@ -246,7 +198,7 @@ function SiteCard({
     <section className="location location-site" aria-labelledby={`location-${site.id}`}>
       <div className="location-head">
         <h3 id={`location-${site.id}`} className="display location-name">
-          <span className="location-kind">{t("board.siteKind")}</span> <span>{site.name}</span>
+          <span className="location-kind">{t("board.siteKind")}</span> <Link href={locationPagePath("budowa", site.id)}>{site.name}</Link>
         </h3>
         <LocationTotals count={site.tools.length} totalValue={site.totalValue} />
       </div>
@@ -297,7 +249,7 @@ function VehicleCard({ vehicle, managers }: { vehicle: WhereIsWhat["vehicles"][n
           <span className="location-kind">
             <VehicleIcon /> {t("board.vehicleKind")}
           </span>{" "}
-          <span>{vehicle.name}</span>
+          <Link href={locationPagePath("pojazd", vehicle.id)}>{vehicle.name}</Link>
         </h3>
         <LocationTotals count={vehicle.tools.length} totalValue={vehicle.totalValue} />
       </div>

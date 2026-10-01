@@ -115,7 +115,7 @@ export async function toolReports(sql: Sql): Promise<ToolReport[]> {
 }
 
 /** Akceptacja: ostateczny kod (i ewentualnie kategoria) oraz wartość; narzędzie staje się zaakceptowane. */
-export async function acceptToolReport(sql: Sql, session: Session, input: AcceptToolReportInput): Promise<void> {
+export async function acceptToolReport(sql: Sql, session: Session, input: AcceptToolReportInput, now: Date): Promise<void> {
   requireToolReviewer(session);
   await pendingReport(sql, input.toolId);
   if (typeof input.value !== "number" || !Number.isFinite(input.value)) throw new RegistryError("invalid_input");
@@ -124,7 +124,7 @@ export async function acceptToolReport(sql: Sql, session: Session, input: Accept
     ...(code && { code }),
     ...(input.categoryId !== undefined && { categoryId: input.categoryId }),
     value: input.value,
-  });
+  }, now);
   await sql("update app.tools set registration = 'zaakceptowane' where id = $1", [input.toolId]);
 }
 

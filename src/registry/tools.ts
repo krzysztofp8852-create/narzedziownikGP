@@ -1,3 +1,4 @@
+import { canSeeCosts, currentToolRate, type EffectiveRate } from "./costs";
 import { type DeadlineSummary, summarizeDeadlines, type ToolDeadline, toolDeadlines } from "./deadlines";
 import { isUniqueViolation, RegistryError, type RegistryErrorCode, ReplayedOperationError } from "./errors";
 import type { MovementKind, MovementSource } from "./movements";
@@ -46,6 +47,8 @@ export interface ToolCard extends DeadlineSummary {
   serialNumber: string | null;
   /** Wartość w zł; klucz istnieje tylko dla właściciela. */
   value?: number | null;
+  /** Stawka dzienna obowiązująca dziś i jej źródło; null przed dniem startu kosztów. Klucz tylko dla właściciela. */
+  dailyRate?: EffectiveRate | null;
   state: ToolState;
   registration: ToolRegistration;
   location: { id: string; name: string; kind: LocationKind };
@@ -193,13 +196,7 @@ export async function intake(
       ],
     ),
   );
-  if (fields.value != null) {
-    await sql("insert into app.tool_values (tool_id, company_id, value) values ($1, $2, $3)", [
-      tool.id,
-      session.company.id,
-      fields.value,
-    ]);
-  }
+  if (fields.value != null) await saveToolValues(sql, session, [{ toolId: tool.id, value: fields.value }], now);
   await sql("insert into app.movement_tools (movement_id, tool_id, company_id) values ($1, $2, $3)", [
     movement.id,
     tool.id,
@@ -233,7 +230,7 @@ const EDITABLE_COLUMNS = {
   serialNumber: "serial_number",
 } as const;
 
-export async function editTool(sql: Sql, session: Session, toolId: string, input: EditToolInput): Promise<void> {
+export async function editTool(sql: Sql, session: Session, toolId: string, input: EditToolInput, now: Date): Promise<void> {
   requireOwnerForValue(session, input);
   const fields = normalizeFields(input);
   if (input.code !== undefined && !fields.code) throw new RegistryError("invalid_input");
@@ -254,15 +251,33 @@ export async function editTool(sql: Sql, session: Session, toolId: string, input
     );
   }
 
-  if (fields.value === null) {
-    await sql("delete from app.tool_values where tool_id = $1", [toolId]);
-  } else if (fields.value !== undefined) {
-    await sql(
-      `insert into app.tool_values (tool_id, company_id, value) values ($1, $2, $3)
-       on conflict (tool_id) do update set value = excluded.value`,
-      [toolId, session.company.id, fields.value],
-    );
-  }
+  if (fields.value !== undefined) await saveToolValues(sql, session, [{ toolId, value: fields.value }], now);
+}
+
+/**
+ * Jedyny zapis wartości narzędzi (null usuwa wartość): bieżąca w app.tool_values i wpis historii wartości od dziś,
+ * z której liczy się stawka procentowa kosztu sprzętu (ADR 0028).
+ */
+export async function saveToolValues(sql: Sql, session: Session, values: { toolId: string; value: number | null }[], now: Date) {
+  if (values.length === 0) return;
+  const toolIds = values.map((entry) => entry.toolId);
+  const amounts = values.map((entry) => entry.value);
+  await sql(
+    `delete from app.tool_values v using unnest($1::uuid[], $2::numeric[]) as r(tool_id, value)
+     where v.tool_id = r.tool_id and r.value is null`,
+    [toolIds, amounts],
+  );
+  await sql(
+    `insert into app.tool_values (tool_id, company_id, value)
+     select tool_id, $1, value from unnest($2::uuid[], $3::numeric[]) as r(tool_id, value) where value is not null
+     on conflict (tool_id) do update set value = excluded.value`,
+    [session.company.id, toolIds, amounts],
+  );
+  await sql(
+    `insert into app.tool_value_history (tool_id, company_id, value, valid_from, recorded_at)
+     select tool_id, $1, value, $2, $3 from unnest($4::uuid[], $5::numeric[]) as r(tool_id, value)`,
+    [session.company.id, warsawTime(now).day, now, toolIds, amounts],
+  );
 }
 
 async function requireCategory(sql: Sql, categoryId: string) {
@@ -392,6 +407,7 @@ export async function toolCard(
     model: row.model,
     serialNumber: row.serial_number,
     ...(canSeeValues(session) && { value: row.value === null ? null : Number(row.value) }),
+    ...(canSeeCosts(session) && { dailyRate: await currentToolRate(sql, { id: row.id, categoryId: row.category_id }, now) }),
     state: row.state,
     registration: row.registration,
     location: { id: row.location_id, name: row.location_name, kind: row.location_kind },
