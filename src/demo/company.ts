@@ -82,6 +82,15 @@ const TEAM: Person[] = [
   { key: "lukasz", firstName: "Łukasz", lastName: "Szymański", role: "pracownik", username: "lszymanski" },
 ];
 
+/** Osoby z brygad bez konta w programie (w kartotece Ludzie), z notatką; `left`: odeszła z firmy. */
+const CREW: { fullName: string; note: string; left?: boolean }[] = [
+  { fullName: "Zbigniew Kaczmarek", note: "Pomocnik w brygadzie Marka, bez smartfona" },
+  { fullName: "Tadeusz Wróbel", note: "Operator minikoparki, brygada Anny" },
+  { fullName: "Grzegorz Pietrzak", note: "Murarz, brygada Pawła" },
+  { fullName: "Mykola Bondarenko", note: "Zbrojarz, brygada Marka" },
+  { fullName: "Sławomir Kubiak", note: "Cieśla, odszedł w zeszłym miesiącu", left: true },
+];
+
 /** „Paweł Dąbrowski” → „pawel.dabrowski”. */
 function emailLocal(person: Person) {
   return `${person.firstName}.${person.lastName}`.toLowerCase().replace(/ł/g, "l").normalize("NFD").replace(/[^a-z.]/g, "");
@@ -164,7 +173,7 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
  * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, sprzęt wynajęty z terminem zwrotu, także po terminie,
- * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
+ * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu, osoby z brygad bez konta w kartotece Ludzie), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
  * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
 export async function createDemoCompany(
@@ -228,6 +237,11 @@ export async function createDemoCompany(
     people[person.key] = userId;
   }
   const as = (key: string) => registry.as(people[key]);
+  for (const person of CREW) {
+    clock.tick();
+    const { personId } = await owner.addPerson({ fullName: person.fullName, note: person.note });
+    if (person.left) await owner.deactivatePerson(personId);
+  }
 
   const categoryIds = {} as Record<Prefix, string>;
   for (const category of CATEGORIES) {

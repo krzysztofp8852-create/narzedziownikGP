@@ -56,8 +56,10 @@ import type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 import { generateTemporaryPassword } from "./temporary-password";
 import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
+import * as people from "./people";
+import type { NewPersonInput, Person } from "./people";
 import * as team from "./team";
-import type { AddedMember, NewMemberInput, TeamMember } from "./team";
+import type { AddedMember, NewMemberInput, PersonAccountInput, TeamMember } from "./team";
 import * as stickers from "./stickers";
 import type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
 import * as toolReports from "./tool-reports";
@@ -197,7 +199,9 @@ export type {
 } from "./support-chat";
 export { canUseSupportChat, MAX_SUPPORT_MESSAGE_LENGTH } from "./support-chat";
 export type { RejectedMovement } from "./queued-movements";
-export type { AddedMember, MemberRole, NewMemberInput, TeamMember } from "./team";
+export type { AddedMember, MemberRole, NewAccountInput, NewMemberInput, PersonAccountInput, TeamMember } from "./team";
+export type { NewPersonInput, Person, PersonAccount } from "./people";
+export { MAX_PERSON_NAME_LENGTH, MAX_PERSON_NOTE_LENGTH } from "./people";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
@@ -510,17 +514,40 @@ export interface Registry {
     /** Otwarcie zgłoszenia: jego wpisy w oknie 📋 aktora są przeczytane. */
     markIssueRead(issueId: string): Promise<void>;
     markAllIssueEntriesRead(): Promise<void>;
-    /** Wszystkie osoby w firmie, także dezaktywowane. Tylko właściciel. */
+    /** Wszystkie konta w firmie, także dezaktywowane. Tylko właściciel. */
     team(): Promise<TeamMember[]>;
     /**
-     * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście.
+     * Kartoteka Ludzie: wszystkie osoby firmy, z kontem (rola, login, stan konta) i bez niego, także nieaktywne (na
+     * końcu). Tylko właściciel.
+     */
+    people(): Promise<Person[]>;
+    /**
+     * Osoba bez konta (np. robotnik bez telefonu): imię i nazwisko i opcjonalna notatka. Nie zajmuje miejsca w pakiecie
+     * wdrożenia. Tylko właściciel.
+     */
+    addPerson(input: NewPersonInput): Promise<{ personId: string }>;
+    /** Nowe imię i nazwisko i notatka osoby; konto osoby nosi odtąd to imię i nazwisko. Tylko właściciel. */
+    editPerson(personId: string, changes: NewPersonInput): Promise<void>;
+    /**
+     * Osoba odeszła z firmy: znika z aktywnych, a jej historia zostaje. Z kontem działa jak `deactivateMember` (konta
+     * właściciela nie, w firmie demo żadnego). Tylko właściciel.
+     */
+    deactivatePerson(personId: string): Promise<void>;
+    /**
+     * Konto dla aktywnej osoby z kartoteki, która go nie ma, bez drugiego wpisu w kartotece; jak `addMember`, ale imię
+     * i nazwisko konta to imię i nazwisko osoby. Tylko właściciel.
+     */
+    addPersonAccount(input: PersonAccountInput): Promise<AddedMember>;
+    /**
+     * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście, i jego osobę
+     * w kartotece Ludzie.
      * Pracownik dostaje nazwę użytkownika unikalną w firmie (zajęta: `username_taken`), a e-mail może pominąć.
      * Kierownik i magazynier potrzebują wolnego miejsca w pakiecie wdrożenia (bez niego `recorder_limit`); pracownik nie.
      */
     addMember(input: NewMemberInput): Promise<AddedMember>;
     /** Nowe hasło tymczasowe dla kierownika, magazyniera lub pracownika; przy logowaniu znowu musi ustawić własne. */
     resetMemberPassword(memberId: string): Promise<{ temporaryPassword: string }>;
-    /** Blokuje logowanie i dostęp do firmy. Osoba i jej historia zostają. */
+    /** Blokuje logowanie i dostęp do firmy; osoba konta w kartotece przestaje być aktywna. Osoba i jej historia zostają. */
     deactivateMember(memberId: string): Promise<void>;
     /** Baza (z adresem albo bez), budowy (także zakończone), serwisy i pojazdy (także nieaktywne) firmy. */
     locations(): Promise<{ base: { id: string; name: string; address: string | null }; sites: Site[]; services: Service[]; vehicles: Vehicle[] }>;
@@ -964,6 +991,43 @@ export function createRegistry(deps: RegistryDeps): Registry {
         if (located && !inDemo) await geocodeAndPlace(deps, located, asWriter);
         return result;
       };
+      /**
+       * Nowe konto z hasłem tymczasowym: `prepare` sprawdza dane i wskazuje osobę z kartoteki (bez niej powstaje nowa).
+       * Uprawnienia, nazwę użytkownika i miejsce w pakiecie sprawdzamy, zanim powstanie konto logowania.
+       */
+      const addAccount = async (
+        prepare: (sql: Sql, session: Session) => Promise<{ member: team.NewMember; personId: string | null }>,
+      ): Promise<AddedMember> => {
+        const { member, personId } = await asWriter(async (sql, session) => {
+          team.requireTeamManager(session);
+          const prepared = await prepare(sql, session);
+          await team.requireFreeUsername(sql, prepared.member.username);
+          await subscriptions.requireRecorderSeat(sql, prepared.member.role);
+          return prepared;
+        });
+        const temporaryPassword = generateTemporaryPassword();
+        const { userId } = await createAccount(deps, team.accountEmail(member), temporaryPassword);
+        try {
+          await asWriter(async (sql, session) => {
+            team.requireTeamManager(session);
+            // Jeszcze raz, pod blokadą: równolegle dodana osoba mogła zająć ostatnie miejsce.
+            await subscriptions.requireRecorderSeat(sql, member.role);
+            return team.insertMember(sql, session, userId, member, deps.clock.now(), personId);
+          });
+        } catch (error) {
+          await deps.authAdmin.deleteUser(userId).catch((cleanupError) => console.error(cleanupError));
+          throw error;
+        }
+        return { userId, fullName: member.fullName, email: member.email, username: member.username, temporaryPassword };
+      };
+      /** Dezaktywuje konto kierownika, magazyniera lub pracownika i jego osobę; w firmie demo odmawia. */
+      const deactivateAccount = async (sql: Sql, session: Session, memberId: string) => {
+        demo.refuseInDemo(session);
+        await team.requireManagedMember(sql, memberId);
+        await team.deactivate(sql, memberId);
+        // Blokada przed zatwierdzeniem: gdy Auth odmówi, osoba zostaje aktywna i można ponowić.
+        await deps.authAdmin.blockSignIn(memberId);
+      };
       /** Z ostrzeżeniem o limicie narzędzi w progu, w transakcji polecenia, które je dodało. */
       const withLimitWarning = async <R>(sql: Sql, result: R): Promise<R & WithLimitWarning> => ({
         ...result,
@@ -1213,30 +1277,40 @@ export function createRegistry(deps: RegistryDeps): Registry {
             team.requireTeamManager(session);
             return team.listTeam(sql);
           }),
-        addMember: async (input) => {
-          // Uprawnienia sprawdzamy, zanim powstanie konto logowania.
-          const member = await asWriter(async (sql, session) => {
+        people: () =>
+          asMember((sql, session) => {
             team.requireTeamManager(session);
-            const member = team.normalizeNewMember(input);
-            await team.requireFreeUsername(sql, member.username);
-            await subscriptions.requireRecorderSeat(sql, member.role);
-            return member;
-          });
-          const temporaryPassword = generateTemporaryPassword();
-          const { userId } = await createAccount(deps, team.accountEmail(member), temporaryPassword);
-          try {
-            await asWriter(async (sql, session) => {
-              team.requireTeamManager(session);
-              // Jeszcze raz, pod blokadą: równolegle dodana osoba mogła zająć ostatnie miejsce.
-              await subscriptions.requireRecorderSeat(sql, member.role);
-              return team.insertMember(sql, session, userId, member, deps.clock.now());
-            });
-          } catch (error) {
-            await deps.authAdmin.deleteUser(userId).catch((cleanupError) => console.error(cleanupError));
-            throw error;
-          }
-          return { userId, fullName: member.fullName, email: member.email, username: member.username, temporaryPassword };
-        },
+            return people.listPeople(sql);
+          }),
+        addPerson: (input) =>
+          asWriter(async (sql, session) => {
+            team.requireTeamManager(session);
+            const person = people.normalizePerson(input);
+            return { personId: await people.insertPerson(sql, session.company.id, person, deps.clock.now()) };
+          }),
+        editPerson: (personId, changes) =>
+          asWriter(async (sql, session) => {
+            team.requireTeamManager(session);
+            const person = people.normalizePerson(changes);
+            const { userId } = await people.requirePerson(sql, personId);
+            // Konto roli demo i jego nazwę widzą wszyscy oglądający (także na stronie /demo).
+            if (userId !== null) demo.refuseInDemo(session);
+            await people.updatePerson(sql, personId, person);
+          }),
+        deactivatePerson: (personId) =>
+          asWriter(async (sql, session) => {
+            team.requireTeamManager(session);
+            const person = await people.requirePerson(sql, personId);
+            if (!person.active) throw new RegistryError("forbidden");
+            if (person.userId === null) return people.deactivatePerson(sql, personId);
+            await deactivateAccount(sql, session, person.userId);
+          }),
+        addPersonAccount: (input) =>
+          addAccount(async (sql) => {
+            const person = await people.requireAccountlessPerson(sql, String(input.personId));
+            return { member: team.normalizeAccount(person.fullName, input), personId: input.personId };
+          }),
+        addMember: (input) => addAccount(async () => ({ member: team.normalizeNewMember(input), personId: null })),
         resetMemberPassword: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);
@@ -1251,11 +1325,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         deactivateMember: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);
-            demo.refuseInDemo(session);
-            await team.requireManagedMember(sql, memberId);
-            await team.deactivate(sql, memberId);
-            // Blokada przed zatwierdzeniem: gdy Auth odmówi, osoba zostaje aktywna i można ponowić.
-            await deps.authAdmin.blockSignIn(memberId);
+            await deactivateAccount(sql, session, memberId);
           }),
         locations: () =>
           asMember(async (sql) => ({
@@ -1689,7 +1759,7 @@ function normalizeNewCompany(raw: CreateCompanyInput): CreateCompanyInput {
 
 /**
  * Zakłada konto logowania właściciela, a potem w jednej transakcji `transaction` (systemowej albo
- * super-admina) firmę, bazę, właściciela i abonament.
+ * super-admina) firmę, bazę, właściciela (z jego osobą w kartotece Ludzie) i abonament.
  */
 async function createCompany(
   deps: RegistryDeps,
@@ -1717,6 +1787,7 @@ async function createCompany(
          values ($1, $2, 'wlasciciel', $3, $4, true, $5, $5)`,
         [userId, company.id, input.owner.fullName, input.owner.email, now],
       );
+      await people.insertPerson(sql, company.id, { fullName: input.owner.fullName, note: null }, now, userId);
       await subscriptions.insertSubscription(sql, company.id, subscription);
       return company.id;
     });

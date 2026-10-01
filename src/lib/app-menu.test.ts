@@ -22,12 +22,12 @@ describe("menu pod trzema kreskami", () => {
     expect(shown("wlasciciel")).toEqual([
       ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
-      ["Ludzie", ["Zespół /ustawienia#zespol"]],
+      ["Ludzie", ["Ludzie /ludzie"]],
       ["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
     ]);
   });
 
-  it("kierownik i magazynier nie widzą naklejek, zespołu, dokumentów ani ustawień, ale mają samouczek", () => {
+  it("kierownik i magazynier nie widzą naklejek, kartoteki Ludzie, dokumentów ani ustawień, ale mają samouczek", () => {
     for (const role of ["kierownik", "magazynier"] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],

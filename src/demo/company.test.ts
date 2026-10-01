@@ -101,6 +101,19 @@ describe("firma demo", () => {
     expect(await registry.locationCosts(finished.id)).toMatchObject({ status: "koszty", total: expect.any(Number) });
   });
 
+  it("kartoteka Ludzie ma wszystkie konta i kilka osób z brygad bez konta, w tym jedną, która odeszła", async () => {
+    await demo();
+    const accounts = await bed.registry.system().demoAccounts();
+    const people = await bed.registry.as(accounts[0].userId).people();
+
+    expect(people.filter((person) => person.account !== null)).toHaveLength(accounts.length);
+    const accountless = people.filter((person) => person.account === null);
+    expect(accountless.filter((person) => person.active).length).toBeGreaterThanOrEqual(3);
+    expect(accountless.filter((person) => !person.active)).toHaveLength(1);
+    expect(accountless.every((person) => person.note !== null)).toBe(true);
+    expect((await bed.registry.as(accounts[0].userId).subscription()).recorders.recorderCount).toBe(5);
+  });
+
   it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();

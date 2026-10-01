@@ -1,5 +1,5 @@
 import { t } from "@/i18n/t";
-import { canManageSettings, canPrintStickers, canSeeCosts, hasTutorial, type Session } from "@/registry/registry";
+import { canManageSettings, canManageTeam, canPrintStickers, canSeeCosts, hasTutorial, type Session } from "@/registry/registry";
 
 export type MenuItem = { kind: "link"; href: string; label: string } | { kind: "signOut"; label: string };
 
@@ -12,8 +12,8 @@ const link = (href: string, label: string, visible = true): MenuItem[] => (visib
 
 /**
  * Podstrony, które aktor może otworzyć, w grupach menu pod trzema kreskami. Widoczność według tych samych funkcji
- * uprawnień, których pilnują strony, żeby menu nie prowadziło na „brak dostępu”. Budowy, pojazdy, zespół i dokumenty
- * nie mają jeszcze własnych stron, więc prowadzą do swoich sekcji tablicy i ustawień. Puste grupy znikają.
+ * uprawnień, których pilnują strony, żeby menu nie prowadziło na „brak dostępu”. Budowy, pojazdy i dokumenty nie mają
+ * jeszcze własnych stron, więc prowadzą do swoich sekcji tablicy i ustawień. Puste grupy znikają.
  */
 export function appMenu(session: Session): MenuGroup[] {
   const groups: MenuGroup[] = [
@@ -36,8 +36,7 @@ export function appMenu(session: Session): MenuGroup[] {
     },
     {
       label: t("menu.groups.people"),
-      // Zespół jest dziś sekcją ustawień, więc widzi go ten, kto otworzy ustawienia.
-      items: link("/ustawienia#zespol", t("menu.team"), canManageSettings(session)),
+      items: link("/ludzie", t("menu.people"), canManageTeam(session)),
     },
     {
       label: t("menu.groups.company"),

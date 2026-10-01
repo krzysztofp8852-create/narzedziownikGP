@@ -40,6 +40,7 @@ const COMPANY_TABLES = [
   "categories",
   "locations",
   "subscriptions",
+  "people",
   "users",
 ] as const;
 
