@@ -10,7 +10,14 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: { baseURL, trace: "retain-on-failure", locale: "pl-PL" },
-  projects: [{ name: "telefon", use: { ...devices["Pixel 7"] } }],
+  // Test dymny nigdy nie łączy się z Google Maps: adres się nie rozwiązuje, więc mapa pokazuje, że się nie wczytała.
+  // Test mapy podmienia skrypt Google na atrapę (e2e/support/google-maps-stub.js), zanim zapytanie wyjdzie do sieci.
+  projects: [
+    {
+      name: "telefon",
+      use: { ...devices["Pixel 7"], launchOptions: { args: ["--host-resolver-rules=MAP maps.googleapis.com ~NOTFOUND"] } },
+    },
+  ],
   // Bez E2E_BASE_URL uruchamiamy aplikację sami: w CI zbudowaną, lokalnie w trybie dev.
   webServer: process.env.E2E_BASE_URL
     ? undefined
