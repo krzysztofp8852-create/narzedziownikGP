@@ -9,14 +9,15 @@ import { punchCheckText } from "@/lib/punch-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { canClarifyPunches, type PunchConflict } from "@/registry/registry";
 import { locationPagePath } from "../lokalizacje/location-page";
-import { PunchEntry } from "../lokalizacje/people-on-site";
+import { CorrectPunch, PunchEntry } from "../lokalizacje/people-on-site";
 import { ExplainPunchConflictForm, ExplainPunchForm } from "../lokalizacje/punch-forms";
 
 export const metadata: Metadata = { title: t("punches.toClarifyTitle") };
 
 /**
- * Odbicia do wyjaśnienia (poza budową, bez położenia, bez sprawdzenia) dla właściciela i kierownika budowy, z akcją
- * „Wyjaśnione” i opcjonalną notatką, a pod nimi skany z kolejki offline, które się nie zapisały (konflikty).
+ * Odbicia do wyjaśnienia (poza budową, bez położenia, bez sprawdzenia, bez wyjścia) dla właściciela i kierownika
+ * budowy, z poprawką godzin i akcją „Wyjaśnione” z opcjonalną notatką, a pod nimi skany z kolejki offline, które się
+ * nie zapisały (konflikty).
  */
 export default async function PunchesToClarifyPage() {
   const session = await requireSession();
@@ -44,6 +45,7 @@ export default async function PunchesToClarifyPage() {
               <p className="movement-meta">
                 <Link href={locationPagePath(punch.place.kind, punch.place.id, "/ludzie")}>{t("punches.openPlace", { place: punch.place.name })}</Link>
               </p>
+              {writable && punch.correctable && <CorrectPunch punch={punch} />}
               {writable && <ExplainPunchForm punchId={punch.id} />}
             </PunchEntry>
           ))}

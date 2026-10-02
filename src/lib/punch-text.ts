@@ -1,6 +1,6 @@
 import { formatDateTime, formatDay, formatTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
-import type { Punch, PunchCheck } from "@/registry/registry";
+import type { Punch, PunchCheck, PunchCorrection } from "@/registry/registry";
 
 const kilometers = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -15,14 +15,37 @@ export function punchCheckText(check: PunchCheck) {
   return check.distanceM === null ? result : `${result}, ${distanceText(check.distanceM)}`;
 }
 
-/** „2.03.2026, 7:02 – 15:30”, wyjście innego dnia z datą, a bez wyjścia „teraz”. */
-export function punchTimeText(punch: Pick<Punch, "enteredAt" | "leftAt">) {
-  const left = punch.leftAt
-    ? formatDay(punch.leftAt) === formatDay(punch.enteredAt)
-      ? formatTime(punch.leftAt)
-      : formatDateTime(punch.leftAt)
-    : t("punches.now");
+/** „2.03.2026, 7:02 – 15:30”, wyjście innego dnia z datą, odbita teraz „teraz”, a zamknięte o północy „bez wyjścia”. */
+export function punchTimeText(punch: Pick<Punch, "enteredAt" | "leftAt" | "exitVia">) {
+  const left =
+    punch.exitVia === "bez_wyjscia"
+      ? t("punches.noExit")
+      : punch.leftAt
+        ? formatDay(punch.leftAt) === formatDay(punch.enteredAt)
+          ? formatTime(punch.leftAt)
+          : formatDateTime(punch.leftAt)
+        : t("punches.now");
   return `${formatDateTime(punch.enteredAt)} – ${left}`;
+}
+
+/** „Czas na budowie: 8 godz. 30 min”; przy odbiciu „bez wyjścia”, że się nie liczy; odbita teraz: null. */
+export function timeOnSiteText(punch: Pick<Punch, "timeOnSiteMs" | "exitVia">) {
+  if (punch.exitVia === "bez_wyjscia") return t("punches.timeOnSiteMissing");
+  if (punch.timeOnSiteMs === null) return null;
+  const totalMinutes = Math.round(punch.timeOnSiteMs / 60_000);
+  const [hours, minutes] = [Math.floor(totalMinutes / 60), totalMinutes % 60];
+  return t("punches.timeOnSite", { time: hours === 0 ? t("punches.minutes", { minutes }) : t("punches.hoursMinutes", { hours, minutes }) });
+}
+
+/**
+ * Poprawka w historii odbicia: „Poprawka wejścia: 9:00 → 7:00. Powód: … (Adam Nowak, 3.03.2026, 8:00)”, a przy
+ * wyjściu, którego nie było, „Uzupełnione wyjście: 15:30. …”.
+ */
+export function punchCorrectionText(correction: PunchCorrection) {
+  const details = { to: formatDateTime(correction.to), reason: correction.reason, name: correction.byName, when: formatDateTime(correction.at) };
+  if (correction.from === null) return t("punches.correctionExitAdded", details);
+  const key = correction.field === "wejscie" ? "punches.correctionEntry" : "punches.correctionExit";
+  return t(key, { ...details, from: formatDateTime(correction.from) });
 }
 
 /**
@@ -44,6 +67,14 @@ export function punchChecksText(punch: Pick<Punch, "entry" | "exit" | "exitVia" 
   const offline = (text: string, queued: boolean) => (queued ? `${text} (${t("punches.offlineMark")})` : text);
   const entry = offline(t("punches.entry", { check: punchCheckText(punch.entry) }), punch.entryOffline);
   const exit =
-    punch.exitVia === "przejscie" ? t("punches.exitTransfer") : punch.exit ? t("punches.exit", { check: punchCheckText(punch.exit) }) : null;
+    punch.exitVia === "przejscie"
+      ? t("punches.exitTransfer")
+      : punch.exitVia === "bez_wyjscia"
+        ? t("punches.exitMissing")
+        : punch.exitVia === "uzupelnione"
+          ? t("punches.exitAdded")
+          : punch.exit
+            ? t("punches.exit", { check: punchCheckText(punch.exit) })
+            : null;
   return exit ? `${entry} · ${offline(exit, punch.exitOffline)}` : entry;
 }

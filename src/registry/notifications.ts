@@ -2,6 +2,7 @@ import type { DeadlineAt } from "./deadlines";
 import type { RegistryErrorCode } from "./errors";
 import type { Movement, RegisteredKind } from "./movements";
 import type { Sql } from "./ports";
+import type { PunchPlace } from "./punches";
 import type { NotifiedQualification } from "./qualifications";
 import type { FridayReport, ReportKind, WeeklyReport } from "./reports";
 
@@ -139,6 +140,24 @@ export interface QualificationsNotification {
   qualifications: NotifiedQualification[];
 }
 
+/** Odbicie otwarte w przypomnieniu o wyjściu: kto, gdzie i od kiedy. */
+export interface NotifiedPunch {
+  id: string;
+  person: { id: string; fullName: string };
+  place: PunchPlace;
+  enteredAt: Date;
+}
+
+/**
+ * Przypomnienie o wyjściu od 18:00 w Polsce: ten, kto odbił wejście osoby nadal odbitej (ona sama albo kierownik za
+ * osobę z kartoteki), dostaje jedno zbiorcze o wszystkich swoich takich odbiciach.
+ */
+export interface ForgottenExitNotification {
+  kind: "przypomnienie_wyjscia";
+  recipient: Recipient;
+  punches: NotifiedPunch[];
+}
+
 /** Powiadomienie dla użytkownika firmy. Trafia do jego dzwonka, a port powiadomień wysyła kopię. */
 export type Notification =
   | ToolsTakenNotification
@@ -151,7 +170,8 @@ export type Notification =
   | ReadOnlyNotification
   | DeadlinesNotification
   | RentedToolNotification
-  | QualificationsNotification;
+  | QualificationsNotification
+  | ForgottenExitNotification;
 
 /**
  * Powiadomienia, których kopię port powiadomień wysyła także e-mailem; pozostałe idą tylko do dzwonka i push.
@@ -214,7 +234,8 @@ export function reportKey(kind: ReportKind, day: string): string {
 
 /**
  * Klucz zdarzenia: to samo zdarzenie daje adresatowi najwyżej jedno powiadomienie w dzwonku. Zbiorcze (progi dni,
- * terminy, uprawnienia) nie mają klucza, bo każde narzędzie (termin, uprawnienie) wchodzi do nich raz, gdy zadanie dzienne je wykryje, a ręczne
+ * terminy, uprawnienia, przypomnienia o wyjściu) nie mają klucza, bo każde narzędzie (termin, uprawnienie, odbicie)
+ * wchodzi do nich raz, gdy zadanie harmonogramu je wykryje, a ręczne
  * włączenie trybu tylko do odczytu, bo powiadamia o nim samo przełączenie. Ostrzeżenia przed trybem są dwa
  * na każdy termin (tydzień i dzień przed), a przełączenie po terminie jedno.
  * W transakcji użytkownika ten sam klucz składa funkcja `app.deliver_notification`.
@@ -228,6 +249,7 @@ export function dedupeKey(notification: Notification): string | null {
     case "progi_przekroczone":
     case "terminy":
     case "uprawnienia":
+    case "przypomnienie_wyjscia":
       return null;
     case "ruch_odrzucony":
       return `odrzucony:${notification.rejectionId}`;

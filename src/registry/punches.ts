@@ -15,6 +15,7 @@ export const DEFAULT_PUNCH_RADIUS_M = 300;
 export const MIN_PUNCH_RADIUS_M = 50;
 export const MAX_PUNCH_RADIUS_M = 5000;
 export const MAX_PUNCH_EXPLANATION_LENGTH = 500;
+export const MAX_PUNCH_CORRECTION_REASON_LENGTH = 500;
 /** Tyle osób odbija się najwyżej jednym zatwierdzeniem listy „Odbij też…”. */
 export const MAX_PEOPLE_PER_PUNCH = 100;
 
@@ -40,6 +41,11 @@ export interface PunchInput {
 export type PunchPlaceKind = "budowa" | "baza";
 /** `wyjscie`: skan na tej budowie, `przejscie`: skan na innej (jej położenie sprawdza tamto wejście). */
 export type PunchExitVia = "wyjscie" | "przejscie";
+/**
+ * Jak skończył się pobyt: skanem (`wyjscie`, `przejscie`), zamknięciem o północy, gdy nikt nie odbił wyjścia
+ * (`bez_wyjscia`), albo wyjściem wpisanym poprawką (`uzupelnione`).
+ */
+export type PunchEnd = PunchExitVia | "bez_wyjscia" | "uzupelnione";
 
 /** Miejsce, w którym się odbija: budowa albo baza. */
 export interface PunchPlace {
@@ -64,14 +70,20 @@ export interface Punch {
   place: PunchPlace;
   enteredAt: Date;
   entry: PunchCheck;
-  /** null: osoba jest tu odbita teraz. */
+  /** null: osoba jest tu odbita teraz. Przy odbiciu „bez wyjścia” północ, o której się zamknęło. */
   leftAt: Date | null;
-  exitVia: PunchExitVia | null;
+  exitVia: PunchEnd | null;
   /** Tylko przy wyjściu skanem na tej budowie. */
   exit: PunchCheck | null;
   explained: { at: Date; byName: string; note: string | null } | null;
-  /** Wynik wejścia albo wyjścia inny niż „na budowie”, jeszcze niewyjaśniony. */
+  /** Wynik wejścia albo wyjścia inny niż „na budowie” albo odbicie „bez wyjścia”, jeszcze niewyjaśnione. */
   toClarify: boolean;
+  /** Czas na budowie od wejścia do wyjścia; null, gdy osoba jest tu odbita teraz albo odbicie jest „bez wyjścia”. */
+  timeOnSiteMs: number | null;
+  /** Poprawki godzin wejścia i wyjścia, po kolei. */
+  corrections: PunchCorrection[];
+  /** Czy aktor może poprawić godziny tego odbicia. */
+  correctable: boolean;
   /** Wejście doszło z kolejki offline telefonu: „zapisane offline”. */
   entryOffline: boolean;
   /** Wyjście (także przejście) doszło z kolejki offline telefonu. */
@@ -80,6 +92,28 @@ export interface Punch {
   entryPunchedByName: string | null;
   /** Kto odbił wyjście albo przejście za tę osobę; null, gdy osoba sama albo jeszcze nie wyszła. */
   exitPunchedByName: string | null;
+}
+
+/** Którą godzinę odbicia poprawia poprawka. */
+export type PunchCorrectionField = "wejscie" | "wyjscie";
+
+/** Poprawka godziny wejścia albo wyjścia, z powodem, w historii odbicia. */
+export interface PunchCorrection {
+  field: PunchCorrectionField;
+  /** Godzina sprzed poprawki; null, gdy wyjścia nie było (osoba odbita teraz albo odbicie „bez wyjścia”). */
+  from: Date | null;
+  to: Date;
+  reason: string;
+  byName: string;
+  at: Date;
+}
+
+/** Prawdziwa godzina wejścia, wyjścia albo obu naraz (co najmniej jedna), z powodem. */
+export interface CorrectPunchInput {
+  punchId: string;
+  enteredAt?: Date;
+  leftAt?: Date;
+  reason: string;
 }
 
 /** Co zrobi skan plakatu, zanim cokolwiek zapisze. `from`: skąd przejście. */
@@ -221,6 +255,11 @@ function requirePunchClarifier(session: Session) {
   if (!canClarifyPunches(session)) throw new RegistryError("forbidden");
 }
 
+/** Godziny odbić poprawiają właściciel i kierownik (na swoich budowach); pracownik i magazynier żadnych, także własnych. */
+export function canCorrectPunches(session: Session) {
+  return session.role === "wlasciciel" || session.role === "kierownik";
+}
+
 /** Osoby z kartoteki („Odbij też…”) odbijają po skanie właściciel i kierownik; pracownik i magazynier tylko siebie. */
 export function canPunchOthers(session: Session) {
   return session.role === "wlasciciel" || session.role === "kierownik";
@@ -325,7 +364,7 @@ interface PunchRow {
   entry_result: PunchResult;
   entry_distance_m: number | null;
   left_at: Date | null;
-  exit_via: PunchExitVia | null;
+  exit_via: PunchEnd | null;
   exit_result: PunchResult | null;
   exit_distance_m: number | null;
   explained_at: Date | null;
@@ -335,6 +374,9 @@ interface PunchRow {
   exit_offline: boolean;
   entry_punched_by_name: string | null;
   exit_punched_by_name: string | null;
+  person_user_id: string | null;
+  manager_id: string | null;
+  corrections: { field: PunchCorrectionField; from_at: string | null; to_at: string; reason: string; by_name: string | null; corrected_at: string }[];
 }
 
 const PUNCH_SELECT = `
@@ -342,7 +384,14 @@ const PUNCH_SELECT = `
          p.entered_at, p.entry_result, p.entry_distance_m, p.left_at, p.exit_via, p.exit_result, p.exit_distance_m,
          p.explained_at, eu.full_name as explained_by_name, p.explanation, p.entry_offline, p.exit_offline,
          case when p.punched_by is distinct from pe.user_id then bu.full_name end as entry_punched_by_name,
-         case when p.exit_punched_by is distinct from pe.user_id then xu.full_name end as exit_punched_by_name
+         case when p.exit_punched_by is distinct from pe.user_id then xu.full_name end as exit_punched_by_name,
+         pe.user_id as person_user_id, l.manager_id,
+         coalesce((
+           select json_agg(json_build_object('field', c.field, 'from_at', c.from_at, 'to_at', c.to_at, 'reason', c.reason,
+                                             'by_name', cu.full_name, 'corrected_at', c.corrected_at) order by c.sequence_number)
+           from app.punch_corrections c left join app.users cu on cu.user_id = c.corrected_by
+           where c.punch_id = p.id
+         ), '[]') as corrections
   from app.punches p
   join app.people pe on pe.id = p.person_id
   join app.locations l on l.id = p.location_id
@@ -350,25 +399,51 @@ const PUNCH_SELECT = `
   left join app.users bu on bu.user_id = p.punched_by
   left join app.users xu on xu.user_id = p.exit_punched_by`;
 
-/** Odbicie `p` z wynikiem wejścia albo wyjścia innym niż „na budowie” (ten sam warunek sprawdza wyzwalacz w bazie). */
-const FLAGGED = "(p.entry_result <> 'na_budowie' or coalesce(p.exit_result, 'na_budowie') <> 'na_budowie')";
+/**
+ * Odbicie `p` z wynikiem wejścia albo wyjścia innym niż „na budowie” albo „bez wyjścia” (ten sam warunek sprawdza
+ * wyzwalacz w bazie).
+ */
+const FLAGGED = "(p.entry_result <> 'na_budowie' or coalesce(p.exit_result, 'na_budowie') <> 'na_budowie' or p.exit_via = 'bez_wyjscia')";
 /** Warunek „do wyjaśnienia”: odbicie z oznaczeniem, jeszcze niewyjaśnione. */
 const TO_CLARIFY = `p.explained_at is null and ${FLAGGED}`;
 
-function punchFromRow(row: PunchRow): Punch {
-  const flagged = row.entry_result !== "na_budowie" || (row.exit_result !== null && row.exit_result !== "na_budowie");
+/**
+ * Odbicie poprawia właściciel albo kierownik budowy, jeśli nie jest jego własne (te poprawia właściciel). Odbicia
+ * brygady, które kierownik sam odbił, poprawia też on: i tak decyduje, kiedy je odbija. Ten sam warunek sprawdza
+ * polityka `punch_corrections_insert`.
+ */
+function mayCorrect(session: Session, row: Pick<PunchRow, "manager_id" | "person_user_id">) {
+  if (session.role === "wlasciciel") return true;
+  return session.role === "kierownik" && row.manager_id === session.userId && row.person_user_id !== session.userId;
+}
+
+function punchFromRow(row: PunchRow, session: Session): Punch {
+  const flagged =
+    row.entry_result !== "na_budowie" || (row.exit_result !== null && row.exit_result !== "na_budowie") || row.exit_via === "bez_wyjscia";
+  const enteredAt = new Date(row.entered_at);
+  const leftAt = row.left_at === null ? null : new Date(row.left_at);
   return {
     id: row.id,
     person: { id: row.person_id, fullName: row.person_name },
     place: { id: row.location_id, kind: row.location_kind, name: row.location_name },
-    enteredAt: new Date(row.entered_at),
+    enteredAt,
     entry: { result: row.entry_result, distanceM: row.entry_distance_m },
-    leftAt: row.left_at === null ? null : new Date(row.left_at),
+    leftAt,
     exitVia: row.exit_via,
     exit: row.exit_result === null ? null : { result: row.exit_result, distanceM: row.exit_distance_m },
     explained:
       row.explained_at === null ? null : { at: new Date(row.explained_at), byName: row.explained_by_name ?? "", note: row.explanation },
     toClarify: flagged && row.explained_at === null,
+    timeOnSiteMs: leftAt === null || row.exit_via === "bez_wyjscia" ? null : leftAt.getTime() - enteredAt.getTime(),
+    corrections: row.corrections.map((correction) => ({
+      field: correction.field,
+      from: correction.from_at === null ? null : new Date(correction.from_at),
+      to: new Date(correction.to_at),
+      reason: correction.reason,
+      byName: correction.by_name ?? "",
+      at: new Date(correction.corrected_at),
+    })),
+    correctable: mayCorrect(session, row),
     entryOffline: row.entry_offline,
     exitOffline: row.exit_offline,
     entryPunchedByName: row.entry_punched_by_name,
@@ -376,9 +451,9 @@ function punchFromRow(row: PunchRow): Punch {
   };
 }
 
-async function punchById(sql: Sql, punchId: string): Promise<Punch> {
+async function punchById(sql: Sql, session: Session, punchId: string): Promise<Punch> {
   const [row] = await sql<PunchRow>(`${PUNCH_SELECT} where p.id = $1`, [punchId]);
-  return punchFromRow(row);
+  return punchFromRow(row, session);
 }
 
 /** Otwarte odbicie osoby: gdzie jest odbita teraz. */
@@ -454,16 +529,16 @@ export async function punchPeoplePreview(sql: Sql, session: Session, posterToken
 }
 
 /** Odbicie zapisane już tą operacją (powtórzone wysłanie), z tym samym wynikiem co za pierwszym razem. */
-async function replayedPunch(sql: Sql, operationId: string): Promise<SavedPunchOutcome | null> {
+async function replayedPunch(sql: Sql, session: Session, operationId: string): Promise<SavedPunchOutcome | null> {
   const rows = await sql<{ id: string; entry: boolean }>(
     `select id, entry_operation_id = $1 as entry from app.punches where entry_operation_id = $1 or exit_operation_id = $1`,
     [operationId],
   );
   const entered = rows.find((row) => row.entry);
   const left = rows.find((row) => !row.entry);
-  if (entered && left) return { action: "przejscie", left: await punchById(sql, left.id), punch: await punchById(sql, entered.id) };
-  if (entered) return { action: "wejscie", punch: await punchById(sql, entered.id) };
-  if (left) return { action: "wyjscie", punch: await punchById(sql, left.id) };
+  if (entered && left) return { action: "przejscie", left: await punchById(sql, session, left.id), punch: await punchById(sql, session, entered.id) };
+  if (entered) return { action: "wejscie", punch: await punchById(sql, session, entered.id) };
+  if (left) return { action: "wyjscie", punch: await punchById(sql, session, left.id) };
   return null;
 }
 
@@ -474,7 +549,7 @@ async function replayedPunch(sql: Sql, operationId: string): Promise<SavedPunchO
 export async function punch(sql: Sql, session: Session, input: PunchInput, now: Date): Promise<PunchOutcome> {
   if (!UUID_PATTERN.test(String(input.operationId))) throw new RegistryError("invalid_input");
   const position = checkPosition(input.position);
-  const replayed = await replayedPunch(sql, input.operationId);
+  const replayed = await replayedPunch(sql, session, input.operationId);
   if (replayed) return replayed;
   const place = await placeByToken(sql, input.posterToken);
   const personId = await actorPerson(sql, session);
@@ -499,7 +574,7 @@ export async function punchPeople(sql: Sql, session: Session, input: PunchPeople
   const ownId = await actorPerson(sql, session);
   if (people.some((person) => person.personId === ownId)) throw new RegistryError("invalid_input");
   const replayed: (SavedPunchOutcome | null)[] = [];
-  for (const person of people) replayed.push(await replayedPunch(sql, person.operationId));
+  for (const person of people) replayed.push(await replayedPunch(sql, session, person.operationId));
   // Ponowka całej listy działa także po „Nowy kod”, tak jak przy własnym skanie.
   if (replayed.every((outcome) => outcome !== null)) return replayed as SavedPunchOutcome[];
 
@@ -559,12 +634,12 @@ async function applyPunch(
   const { open, own, operationId, at: now, offline } = scan;
   if (open && open.location_id === scan.place.id) {
     await closePunch(sql, session, open.id, { via: "wyjscie", check: scan.check, operationId, now, offline, own });
-    return { action: "wyjscie", punch: await punchById(sql, open.id) };
+    return { action: "wyjscie", punch: await punchById(sql, session, open.id) };
   }
   if (open) await closePunch(sql, session, open.id, { via: "przejscie", check: null, operationId, now, offline, own });
   const punchId = await insertPunch(sql, session, { personId: scan.personId, placeId: scan.place.id, check: scan.check, operationId, now, offline });
-  const entered = await punchById(sql, punchId);
-  return open ? { action: "przejscie", left: await punchById(sql, open.id), punch: entered } : { action: "wejscie", punch: entered };
+  const entered = await punchById(sql, session, punchId);
+  return open ? { action: "przejscie", left: await punchById(sql, session, open.id), punch: entered } : { action: "wejscie", punch: entered };
 }
 
 /**
@@ -577,7 +652,7 @@ export async function queuedPunch(sql: Sql, session: Session, input: QueuedPunch
   if (!UUID_PATTERN.test(String(input.operationId))) throw new RegistryError("invalid_input");
   if (!(input.scannedAt instanceof Date) || Number.isNaN(input.scannedAt.getTime())) throw new RegistryError("invalid_input");
   const position = checkPosition(input.position);
-  const replayed = await replayedPunch(sql, input.operationId);
+  const replayed = await replayedPunch(sql, session, input.operationId);
   if (replayed) return { status: "registered", outcome: replayed };
   const [earlier] = await conflicts(sql, session, { operationId: input.operationId });
   if (earlier) return { status: "rejected", conflict: earlier };
@@ -809,7 +884,7 @@ function concurrencyError(error: unknown) {
 }
 
 /** Zakładka „Ludzie na budowie” budowy albo bazy: odbici teraz i ostatnie odbicia, które aktor widzi (RLS). */
-export async function peopleOnSite(sql: Sql, locationId: string): Promise<PeopleOnSite> {
+export async function peopleOnSite(sql: Sql, session: Session, locationId: string): Promise<PeopleOnSite> {
   const place = await requirePlace(sql, locationId);
   const present = await sql<PunchRow>(`${PUNCH_SELECT} where p.location_id = $1 and p.left_at is null order by pe.full_name, p.sequence_number`, [
     place.id,
@@ -822,8 +897,8 @@ export async function peopleOnSite(sql: Sql, locationId: string): Promise<People
     place: placeOf(place),
     radiusM: place.punch_radius_m,
     positioned: place.latitude !== null,
-    present: present.map(punchFromRow),
-    history: history.map(punchFromRow),
+    present: present.map((row) => punchFromRow(row, session)),
+    history: history.map((row) => punchFromRow(row, session)),
   };
 }
 
@@ -840,7 +915,7 @@ export async function punchesToClarify(sql: Sql, session: Session): Promise<Punc
      order by coalesce(p.left_at, p.entered_at) desc, p.sequence_number desc`,
     [session.role === "wlasciciel", session.userId],
   );
-  return rows.map(punchFromRow);
+  return rows.map((row) => punchFromRow(row, session));
 }
 
 /** „Wyjaśnione” z opcjonalną notatką: odbicie znika z listy do wyjaśnienia. Wyjaśnione drugi raz niczego nie zmienia. */
@@ -862,6 +937,61 @@ export async function explainPunch(sql: Sql, session: Session, input: ExplainPun
   if (!allowed || !row.flagged) throw new RegistryError("forbidden");
   if (row.explained) return;
   await sql("update app.punches set explained_at = $2, explained_by = $3, explanation = $4 where id = $1", [input.punchId, now, session.userId, note]);
+}
+
+/**
+ * Poprawka godziny wejścia, wyjścia albo obu naraz z powodem (także uzupełnienie wyjścia osoby odbitej teraz albo
+ * odbicia „bez wyjścia”, które wtedy liczy się do czasu na budowie), w jednej transakcji. Poprawia właściciel albo
+ * kierownik budowy, jeśli odbicie nie jest jego własne; pracownik i magazynier żadnych. Godzina nie sięga w przyszłość
+ * ani nie powtarza obecnej, wejście zostaje przed wyjściem, a pobyt nie nachodzi na inne odbicie tej osoby
+ * (`punch_overlap`). Poprzednie godziny zostają w historii odbicia.
+ */
+export async function correctPunch(sql: Sql, session: Session, input: CorrectPunchInput, now: Date): Promise<Punch> {
+  if (!canCorrectPunches(session)) throw new RegistryError("forbidden");
+  const reason = String(input.reason ?? "").trim();
+  if (!reason) throw new RegistryError("reason_required");
+  const isTime = (value: unknown) => value === undefined || (value instanceof Date && !Number.isNaN(value.getTime()));
+  const given = [input.enteredAt, input.leftAt].filter((value) => value !== undefined);
+  if (reason.length > MAX_PUNCH_CORRECTION_REASON_LENGTH || !isTime(input.enteredAt) || !isTime(input.leftAt) || given.length === 0) {
+    throw new RegistryError("invalid_input");
+  }
+  const [row] = UUID_PATTERN.test(String(input.punchId)) ? await sql<PunchRow>(`${PUNCH_SELECT} where p.id = $1`, [input.punchId]) : [];
+  if (!row) throw new RegistryError("not_found");
+  if (!mayCorrect(session, row)) throw new RegistryError("forbidden");
+
+  const before = { enteredAt: new Date(row.entered_at).getTime(), leftAt: row.left_at === null ? null : new Date(row.left_at).getTime() };
+  // Północ odbicia „bez wyjścia” to nie godzina wyjścia: wyjście trzeba uzupełnić.
+  const exitBefore = row.exit_via === "bez_wyjscia" ? null : before.leftAt;
+  const enteredAt = input.enteredAt?.getTime() ?? before.enteredAt;
+  const leftAt = input.leftAt?.getTime() ?? exitBefore;
+  const unchanged = input.enteredAt?.getTime() === before.enteredAt || (input.leftAt !== undefined && input.leftAt.getTime() === exitBefore);
+  const future = given.some((value) => value!.getTime() > now.getTime());
+  // Bez wyjścia wejście zostaje przed północą, o której odbicie się zamknęło.
+  const bound = leftAt ?? before.leftAt;
+  if (unchanged || future || (bound !== null && enteredAt >= bound)) throw new RegistryError("invalid_input");
+  const [neighbours] = await sql<{ previous_left_at: Date | null; next_entered_at: Date | null }>(
+    "select previous_left_at, next_entered_at from app.punch_neighbours($1)",
+    [row.id],
+  );
+  const overlaps =
+    (neighbours.previous_left_at !== null && enteredAt < new Date(neighbours.previous_left_at).getTime()) ||
+    (leftAt !== null && neighbours.next_entered_at !== null && leftAt > new Date(neighbours.next_entered_at).getTime());
+  if (overlaps) throw new RegistryError("punch_overlap");
+
+  const corrections: { field: PunchCorrectionField; at: Date }[] = [
+    ...(input.enteredAt ? [{ field: "wejscie" as const, at: input.enteredAt }] : []),
+    ...(input.leftAt ? [{ field: "wyjscie" as const, at: input.leftAt }] : []),
+  ];
+  // Baza pilnuje wejścia przed wyjściem po każdej poprawce: wejście za dotychczasowe wyjście idzie po nowym wyjściu.
+  if (before.leftAt !== null && enteredAt >= before.leftAt) corrections.reverse();
+  for (const correction of corrections) {
+    await sql(
+      `insert into app.punch_corrections (company_id, punch_id, field, to_at, reason, corrected_by, corrected_at)
+       values ($1, $2, $3, $4, $5, $6, $7)`,
+      [session.company.id, row.id, correction.field, correction.at, reason, session.userId, now],
+    );
+  }
+  return punchById(sql, session, row.id);
 }
 
 /** Plakat budowy (właściciel albo jej kierownik) albo bazy z adresem (właściciel). */

@@ -54,6 +54,8 @@ describe("izolacja firm", () => {
     const { code: posterB } = await ownerB.poster(baseB);
     const punchB = await ownerB.punch({ operationId: randomUUID(), posterToken: posterB, position: null });
     if (punchB.action !== "wejscie") throw new Error("Odbicie B powinno być wejściem");
+    // Poprawka godziny tego odbicia.
+    await ownerB.correctPunch({ punchId: punchB.punch.id, enteredAt: new Date(testbed.clock.now().getTime() - 120_000), reason: "Był wcześniej" });
     // Skan B z kolejki offline sprzed tego odbicia: konflikt do wyjaśnienia.
     const conflictB = await ownerB.registerQueuedPunch({
       operationId: randomUUID(),

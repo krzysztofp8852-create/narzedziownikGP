@@ -39,6 +39,7 @@ export type RegistryErrorCode =
   | "document_invalid"
   | "poster_invalid"
   | "poster_no_address"
+  | "punch_overlap"
   | "issue_closed"
   | "message_required"
   | "read_only"

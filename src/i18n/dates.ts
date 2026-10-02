@@ -44,3 +44,27 @@ const calendarDay = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeZ
 export function formatCalendarDay(day: string): string {
   return calendarDay.format(new Date(`${day}T00:00:00Z`));
 }
+
+/** Wartość pola `datetime-local` (RRRR-MM-DDTHH:MM) z godziną w Polsce. */
+export function dateTimeInputValue(date: Date): string {
+  return warsawWallClock(date).toISOString().slice(0, 16);
+}
+
+const DATE_TIME_INPUT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+/**
+ * Chwila z pola `datetime-local` czytanego jako godzina w Polsce; null przy pustym albo złym zapisie. Godzinę, której
+ * w dniu zmiany czasu nie ma albo jest dwa razy, czyta z przesunięciem sprzed zmiany.
+ */
+export function parseDateTimeInput(raw: string): Date | null {
+  const match = DATE_TIME_INPUT.exec(raw);
+  if (!match) return null;
+  const [year, month, day, hour, minute] = match.slice(1).map(Number);
+  const wall = Date.UTC(year, month - 1, day, hour, minute);
+  const check = new Date(wall);
+  if (check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day || hour > 23 || minute > 59) return null;
+  // Przesunięcie Polski względem UTC sprzed tej godziny, a potem to, które naprawdę obowiązuje w tak policzonej chwili.
+  const offset = (at: number) => warsawWallClock(new Date(at)).getTime() - at;
+  const guess = wall - offset(wall - 3 * 60 * 60 * 1000);
+  return new Date(wall - offset(guess));
+}

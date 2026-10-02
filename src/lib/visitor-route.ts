@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   "/zadania/terminy",
   "/zadania/raporty",
   "/zadania/abonamenty",
+  "/zadania/odbicia",
   "/zadania/demo",
   "/offline",
   "/robots.txt",

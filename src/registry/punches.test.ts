@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { PhonePosition, PunchOutcome } from "./registry";
 import { withActor } from "./registry";
-import { setupRegistryTestbed } from "./testing/harness";
+import { setupRegistryTestbed, START } from "./testing/harness";
 
 const testbed = setupRegistryTestbed();
 
@@ -860,6 +860,404 @@ describe("odbicie osób z kartoteki przez kierownika", () => {
   });
 });
 
+describe("zapomniane wyjście", () => {
+  const HOUR = 60 * 60 * 1000;
+
+  /** Brygada Nowaka bez kont: Wojciech Lis i Marek Zając. */
+  async function givenCrew(z: Zawbud) {
+    const { personId: wojtekId } = await z.owner.addPerson({ fullName: "Wojciech Lis", note: null });
+    const { personId: marekId } = await z.owner.addPerson({ fullName: "Marek Zając", note: null });
+    const janPersonId = (await z.owner.people()).find((person) => person.account?.userId === z.janId)!.personId;
+    return { wojtekId, marekId, janPersonId };
+  }
+
+  function punchPeople(actorId: string, posterToken: string, personIds: string[]) {
+    return testbed.registry.as(actorId).punchPeople({
+      posterToken,
+      position: north(RATAJE, 10),
+      people: personIds.map((personId) => ({ personId, operationId: randomUUID() })),
+    });
+  }
+
+  /** Przypomnienia o wyjściu w dzwonku użytkownika: kogo i gdzie, od najnowszego. */
+  async function exitReminders(userId: string) {
+    const { entries } = await testbed.registry.as(userId).bell();
+    return entries
+      .map((entry) => entry.notification)
+      .flatMap((notification) =>
+        notification.kind === "przypomnienie_wyjscia" ? [notification.punches.map((entry) => [entry.person.fullName, entry.place.name])] : [],
+      );
+  }
+
+  async function onlyPunchAt(actorId: string, locationId: string) {
+    const [entry] = (await testbed.registry.as(actorId).peopleOnSite(locationId)).history;
+    return entry;
+  }
+
+  it("o 18:00 osoba nadal odbita dostaje przypomnienie w dzwonku i push, każde odbicie raz; kto wyszedł, nic", async () => {
+    const z = await givenZawbud();
+    const phone = { endpoint: `https://fcm.googleapis.com/fcm/send/jan-${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
+    await testbed.registry.as(z.janId).subscribeToPush(phone);
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10));
+    testbed.clock.set("2026-03-02T15:00:00+01:00");
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10), { confirmExit: true });
+
+    testbed.clock.set("2026-03-02T17:55:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 0 });
+    expect(await exitReminders(z.janId)).toEqual([]);
+
+    testbed.clock.set("2026-03-02T18:05:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 1 });
+    expect(await exitReminders(z.janId)).toEqual([[["Jan Mazur", "Rataje"]]]);
+    const [entry] = (await testbed.registry.as(z.janId).bell()).entries;
+    expect(entry.notification).toMatchObject({ kind: "przypomnienie_wyjscia", punches: [{ enteredAt: START, place: { id: z.ratajeId, kind: "budowa" } }] });
+    expect(testbed.notifier.pushed).toEqual([
+      { subscription: phone, message: { window: "dzwonek", notificationId: entry.id, notification: expect.objectContaining({ kind: "przypomnienie_wyjscia" }) } },
+    ]);
+    expect(await exitReminders(z.ewaId)).toEqual([]);
+    expect(await exitReminders(z.zawbud.ownerId)).toEqual([]);
+
+    testbed.clock.set("2026-03-02T19:00:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 0 });
+    expect(await exitReminders(z.janId)).toHaveLength(1);
+  });
+
+  it("za osoby odbite przez kierownika przypomnienie dostaje kierownik, jedno razem z jego własnym", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punch(z.nowakId, z.tokens.rataje, north(RATAJE, 10));
+    await punchPeople(z.nowakId, z.tokens.rataje, [crew.wojtekId, crew.marekId, crew.janPersonId]);
+    await punch(z.kowalskiId, z.tokens.winogrady, north(WINOGRADY, 10));
+
+    testbed.clock.set("2026-03-02T18:00:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 5 });
+
+    expect(await exitReminders(z.nowakId)).toEqual([
+      [
+        ["Adam Nowak", "Rataje"],
+        ["Jan Mazur", "Rataje"],
+        ["Marek Zając", "Rataje"],
+        ["Wojciech Lis", "Rataje"],
+      ],
+    ]);
+    expect(await exitReminders(z.kowalskiId)).toEqual([[["Piotr Kowalski", "Winogrady"]]]);
+    expect(await exitReminders(z.janId)).toEqual([]);
+    expect(await exitReminders(z.zawbud.ownerId)).toEqual([]);
+  });
+
+  it("kto odbije się po przypomnieniu, dostaje własne przy następnym uruchomieniu zadania", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set("2026-03-02T18:10:00+01:00");
+    await testbed.registry.system().notifyForgottenExits();
+    testbed.clock.set("2026-03-02T18:30:00+01:00");
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10));
+
+    testbed.clock.set("2026-03-02T19:10:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 1 });
+    expect(await exitReminders(z.ewaId)).toEqual([[["Ewa Wiśniewska", "Baza Franowo"]]]);
+    expect(await exitReminders(z.janId)).toHaveLength(1);
+  });
+
+  it("o północy otwarte odbicia zamykają się „bez wyjścia”: trafiają do wyjaśnienia i nie liczą się do czasu na budowie", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10));
+    testbed.clock.set("2026-03-02T15:00:00+01:00");
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10), { confirmExit: true });
+
+    testbed.clock.set("2026-03-02T23:50:00+01:00");
+    expect(await testbed.registry.system().closeForgottenExits()).toEqual({ punches: 0 });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Jan Mazur"]);
+
+    testbed.clock.set("2026-03-03T00:20:00+01:00");
+    expect(await testbed.registry.system().closeForgottenExits()).toEqual({ punches: 1 });
+
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+    const closed = await onlyPunchAt(z.zawbud.ownerId, z.ratajeId);
+    expect(closed).toMatchObject({
+      leftAt: new Date("2026-03-03T00:00:00+01:00"),
+      exitVia: "bez_wyjscia",
+      exit: null,
+      exitPunchedByName: null,
+      toClarify: true,
+      timeOnSiteMs: null,
+    });
+    expect(await onlyPunchAt(z.zawbud.ownerId, z.baseId)).toMatchObject({ exitVia: "wyjscie", timeOnSiteMs: 8 * HOUR, toClarify: false });
+    expect((await z.owner.punchesToClarify()).map((entry) => entry.id)).toEqual([closed.id]);
+    expect((await testbed.registry.as(z.nowakId).punchesToClarify()).map((entry) => entry.id)).toEqual([closed.id]);
+    expect(await testbed.registry.system().closeForgottenExits()).toEqual({ punches: 0 });
+
+    // Rano pierwszy skan to znowu wejście, a nie „Kończysz?”.
+    testbed.clock.set("2026-03-03T07:00:00+01:00");
+    expect(await punch(z.janId, z.tokens.rataje, north(RATAJE, 20))).toMatchObject({ action: "wejscie" });
+  });
+
+  it("północ liczy się czasem polskim także latem, a odbicie sprzed kilku dni zamyka się o północy dnia wejścia", async () => {
+    const z = await givenZawbud();
+    testbed.clock.set("2026-07-01T07:00:00+02:00");
+    await testbed.registry.as(z.janId).registerQueuedPunch({
+      operationId: randomUUID(),
+      posterToken: z.tokens.rataje,
+      position: north(RATAJE, 20),
+      scannedAt: new Date("2026-06-29T22:30:00+02:00"),
+    });
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10));
+
+    testbed.clock.set("2026-07-02T00:05:00+02:00");
+    expect(await testbed.registry.system().closeForgottenExits()).toEqual({ punches: 2 });
+
+    expect(await onlyPunchAt(z.zawbud.ownerId, z.ratajeId)).toMatchObject({ leftAt: new Date("2026-06-30T00:00:00+02:00"), exitVia: "bez_wyjscia" });
+    expect(await onlyPunchAt(z.zawbud.ownerId, z.baseId)).toMatchObject({ leftAt: new Date("2026-07-02T00:00:00+02:00"), exitVia: "bez_wyjscia" });
+  });
+
+  it("za osobę odbitą przez kierownika, który już nie ma konta, przypomnienie dostaje osoba ze swoim kontem", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punchPeople(z.nowakId, z.tokens.rataje, [crew.wojtekId, crew.janPersonId]);
+    await z.owner.deactivateMember(z.nowakId);
+
+    testbed.clock.set("2026-03-02T18:00:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 2 });
+
+    expect(await exitReminders(z.janId)).toEqual([[["Jan Mazur", "Rataje"]]]);
+  });
+
+  it("wyjście ze skanu offline sprzed północy, które dotrze po zamknięciu, czeka na wyjaśnienie obok odbicia „bez wyjścia”", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set("2026-03-03T06:30:00+01:00");
+    await testbed.registry.system().closeForgottenExits();
+
+    const result = await testbed.registry.as(z.janId).registerQueuedPunch({
+      operationId: randomUUID(),
+      posterToken: z.tokens.rataje,
+      position: north(RATAJE, 20),
+      confirmExit: true,
+      scannedAt: new Date("2026-03-02T15:30:00+01:00"),
+    });
+
+    expect(result).toMatchObject({ status: "rejected", conflict: { reason: "pozniejsze_odbicie", confirmExit: true } });
+    expect((await z.owner.punchesToClarify()).map((entry) => entry.exitVia)).toEqual(["bez_wyjscia"]);
+  });
+
+  it("odbicie „bez wyjścia” wyjaśnione bez uzupełnienia znika z listy, ale dalej nie liczy się do czasu", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set("2026-03-03T00:10:00+01:00");
+    await testbed.registry.system().closeForgottenExits();
+    const [closed] = await z.owner.punchesToClarify();
+
+    await testbed.registry.as(z.nowakId).explainPunch({ punchId: closed.id, note: "Nie wiadomo, kiedy wyszedł" });
+
+    expect(await z.owner.punchesToClarify()).toEqual([]);
+    expect(await onlyPunchAt(z.zawbud.ownerId, z.ratajeId)).toMatchObject({ exitVia: "bez_wyjscia", timeOnSiteMs: null, toClarify: false });
+  });
+});
+
+describe("poprawka odbicia", () => {
+  const HOUR = 60 * 60 * 1000;
+  const at = (time: string) => new Date(`2026-03-02T${time}:00+01:00`);
+
+  function correct(actorId: string, punchId: string, field: "wejscie" | "wyjscie", time: Date, reason = "Zapomniał odbić") {
+    const times = field === "wejscie" ? { enteredAt: time } : { leftAt: time };
+    return testbed.registry.as(actorId).correctPunch({ punchId, ...times, reason });
+  }
+
+  /** Jan wchodzi na Rataje o 7:00 i nie odbija wyjścia, więc o północy odbicie zamyka się „bez wyjścia”. */
+  async function givenForgottenExit(z: Zawbud) {
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set("2026-03-03T08:00:00+01:00");
+    await testbed.registry.system().closeForgottenExits();
+    const [closed] = await z.owner.punchesToClarify();
+    return closed;
+  }
+
+  it("kierownik budowy uzupełnia wyjście „bez wyjścia” z powodem: odbicie liczy się do czasu, znika z wyjaśnienia, a poprawka zostaje w historii", async () => {
+    const z = await givenZawbud();
+    const closed = await givenForgottenExit(z);
+
+    const corrected = await correct(z.nowakId, closed.id, "wyjscie", at("15:30"), "Wyszedł o 15:30, potwierdził brygadzista");
+
+    const expected = {
+      id: closed.id,
+      enteredAt: START,
+      leftAt: at("15:30"),
+      exitVia: "uzupelnione",
+      toClarify: false,
+      timeOnSiteMs: 8.5 * HOUR,
+      corrections: [
+        { field: "wyjscie", from: null, to: at("15:30"), reason: "Wyszedł o 15:30, potwierdził brygadzista", byName: "Adam Nowak", at: testbed.clock.now() },
+      ],
+    };
+    expect(corrected).toMatchObject(expected);
+    expect((await z.owner.peopleOnSite(z.ratajeId)).history).toEqual([expect.objectContaining(expected)]);
+    expect((await testbed.registry.as(z.janId).peopleOnSite(z.ratajeId)).history).toEqual([expect.objectContaining(expected)]);
+    expect(await z.owner.punchesToClarify()).toEqual([]);
+  });
+
+  it("właściciel poprawia godzinę wejścia i wyjścia: poprzednie godziny zostają w historii, po kolei", async () => {
+    const z = await givenZawbud();
+    testbed.clock.set(at("09:00"));
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set(at("17:00"));
+    const { punch: left } = (await punch(z.janId, z.tokens.rataje, north(RATAJE, 20), { confirmExit: true })) as { punch: { id: string } };
+    testbed.clock.set("2026-03-03T08:00:00+01:00");
+
+    await correct(z.zawbud.ownerId, left.id, "wejscie", at("07:00"), "Był od siódmej, telefon się rozładował");
+    const corrected = await correct(z.zawbud.ownerId, left.id, "wyjscie", at("15:00"), "Odbił po powrocie z hurtowni");
+
+    expect(corrected).toMatchObject({
+      enteredAt: at("07:00"),
+      leftAt: at("15:00"),
+      exitVia: "wyjscie",
+      exit: { result: "na_budowie" },
+      timeOnSiteMs: 8 * HOUR,
+      corrections: [
+        { field: "wejscie", from: at("09:00"), to: at("07:00"), byName: "Właściciel Zawbud" },
+        { field: "wyjscie", from: at("17:00"), to: at("15:00"), byName: "Właściciel Zawbud" },
+      ],
+    });
+  });
+
+  it("wejście i wyjście poprawione naraz zapisują się razem albo wcale, także gdy nowe wejście wypada po dawnym wyjściu", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set(at("10:00"));
+    const { punch: left } = (await punch(z.janId, z.tokens.rataje, north(RATAJE, 20), { confirmExit: true })) as { punch: { id: string } };
+    testbed.clock.set(at("13:00"));
+    await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 20));
+    testbed.clock.set(at("20:00"));
+    const owner = z.owner;
+
+    // Zła para (wyjście z Rataj po wejściu na Winogrady) nie zostawia poprawionego wejścia.
+    await expect(owner.correctPunch({ punchId: left.id, enteredAt: at("11:00"), leftAt: at("14:00"), reason: "Pomyłka" })).rejects.toMatchObject({
+      code: "punch_overlap",
+    });
+    expect(await owner.peopleOnSite(z.ratajeId)).toMatchObject({ history: [{ enteredAt: START, leftAt: at("10:00"), corrections: [] }] });
+
+    const corrected = await owner.correctPunch({ punchId: left.id, enteredAt: at("10:30"), leftAt: at("12:30"), reason: "Przyszedł po hurtowni" });
+    expect(corrected).toMatchObject({
+      enteredAt: at("10:30"),
+      leftAt: at("12:30"),
+      corrections: [
+        { field: "wyjscie", from: at("10:00"), to: at("12:30") },
+        { field: "wejscie", from: START, to: at("10:30") },
+      ],
+    });
+    await expect(owner.correctPunch({ punchId: left.id, reason: "Nic" })).rejects.toMatchObject({ code: "invalid_input" });
+  });
+
+  it("uzupełnione wyjście odbitej teraz osoby zamyka jej odbicie, a ona może się znowu odbić", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set(at("16:00"));
+
+    const corrected = await correct(z.nowakId, (await onlyPresent(z)).id, "wyjscie", at("14:00"), "Pojechał do lekarza");
+
+    expect(corrected).toMatchObject({ leftAt: at("14:00"), exitVia: "uzupelnione", timeOnSiteMs: 7 * HOUR });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+    testbed.clock.set("2026-03-02T18:00:00+01:00");
+    expect(await testbed.registry.system().notifyForgottenExits()).toEqual({ punches: 0 });
+    expect(await punch(z.janId, z.tokens.rataje, north(RATAJE, 20))).toMatchObject({ action: "wejscie" });
+  });
+
+  it("poprawka wymaga powodu, nie sięga w przyszłość, nie odwraca wejścia i wyjścia i nie nachodzi na inne odbicie tej osoby", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set(at("12:00"));
+    const transfer = await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 20));
+    if (transfer.action !== "przejscie") throw new Error("Skan na Winogradach powinien być przejściem");
+    testbed.clock.set(at("16:00"));
+    const rataje = transfer.left.id;
+    const winogrady = transfer.punch.id;
+
+    await expect(correct(z.zawbud.ownerId, rataje, "wejscie", at("06:00"), "  ")).rejects.toMatchObject({ code: "reason_required" });
+    await expect(correct(z.zawbud.ownerId, winogrady, "wyjscie", at("16:30"))).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(correct(z.zawbud.ownerId, rataje, "wejscie", at("12:30"))).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(correct(z.zawbud.ownerId, rataje, "wyjscie", at("06:30"))).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(correct(z.zawbud.ownerId, rataje, "wyjscie", at("12:15"))).rejects.toMatchObject({ code: "punch_overlap" });
+    await expect(correct(z.zawbud.ownerId, winogrady, "wejscie", at("11:45"))).rejects.toMatchObject({ code: "punch_overlap" });
+    await expect(correct(z.zawbud.ownerId, rataje, "wyjscie", at("12:00"))).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(correct(z.zawbud.ownerId, randomUUID(), "wyjscie", at("12:00"))).rejects.toMatchObject({ code: "not_found" });
+
+    // Dojazd między budowami: wyjście z Rataj wcześniej niż wejście na Winogrady.
+    expect(await correct(z.zawbud.ownerId, rataje, "wyjscie", at("11:30"), "Wyjechał przed 11:30")).toMatchObject({ timeOnSiteMs: 4.5 * HOUR });
+    expect((await z.owner.peopleOnSite(z.winogradyId)).present.map((entry) => entry.corrections)).toEqual([[]]);
+  });
+
+  it("pracownik i magazynier nie poprawiają odbić, nawet własnych; kierownik nie poprawia własnych ani spoza swoich budów", async () => {
+    const z = await givenZawbud();
+    const { personId: wojtekId } = await z.owner.addPerson({ fullName: "Wojciech Lis", note: null });
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 20));
+    await punch(z.nowakId, z.tokens.rataje, north(RATAJE, 20));
+    await testbed.registry.as(z.nowakId).punchPeople({ posterToken: z.tokens.rataje, position: north(RATAJE, 10), people: [{ personId: wojtekId, operationId: randomUUID() }] });
+    await punch(z.kowalskiId, z.tokens.winogrady, north(WINOGRADY, 20));
+    testbed.clock.set(at("16:00"));
+    const owner = z.owner;
+    const byName = async (locationId: string, name: string) => (await owner.peopleOnSite(locationId)).present.find((entry) => entry.person.fullName === name)!;
+    const jan = await byName(z.ratajeId, "Jan Mazur");
+    const ewa = await byName(z.baseId, "Ewa Wiśniewska");
+    const nowak = await byName(z.ratajeId, "Adam Nowak");
+    const kowalski = await byName(z.winogradyId, "Piotr Kowalski");
+
+    await expect(correct(z.janId, jan.id, "wyjscie", at("15:00"))).rejects.toMatchObject({ code: "forbidden" });
+    await expect(correct(z.ewaId, ewa.id, "wyjscie", at("15:00"))).rejects.toMatchObject({ code: "forbidden" });
+    await expect(correct(z.ewaId, jan.id, "wyjscie", at("15:00"))).rejects.toMatchObject({ code: "forbidden" });
+    await expect(correct(z.nowakId, nowak.id, "wyjscie", at("15:00"))).rejects.toMatchObject({ code: "forbidden" });
+    await expect(correct(z.nowakId, kowalski.id, "wyjscie", at("15:00"))).rejects.toMatchObject({ code: "not_found" });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Adam Nowak", "Jan Mazur", "Wojciech Lis"]);
+
+    // Strona wie, które odbicia aktor może poprawić.
+    const correctable = async (actorId: string, locationId: string) =>
+      (await testbed.registry.as(actorId).peopleOnSite(locationId)).present.map((entry) => [entry.person.fullName, entry.correctable]);
+    expect(await correctable(z.nowakId, z.ratajeId)).toEqual([
+      ["Adam Nowak", false],
+      ["Jan Mazur", true],
+      ["Wojciech Lis", true],
+    ]);
+    expect(await correctable(z.janId, z.ratajeId)).toEqual([["Jan Mazur", false]]);
+    expect(await correctable(z.zawbud.ownerId, z.winogradyId)).toEqual([["Piotr Kowalski", true]]);
+    await expect(correct(z.zawbud.ownerId, nowak.id, "wyjscie", at("15:00"), "Kierownik zapomniał")).resolves.toMatchObject({ exitVia: "uzupelnione" });
+  });
+
+  it("kierownik uzupełnia wyjście brygady, którą sam odbił: to o nich dostaje przypomnienie", async () => {
+    const z = await givenZawbud();
+    const { personId: wojtekId } = await z.owner.addPerson({ fullName: "Wojciech Lis", note: null });
+    await testbed.registry.as(z.nowakId).punchPeople({ posterToken: z.tokens.rataje, position: north(RATAJE, 10), people: [{ personId: wojtekId, operationId: randomUUID() }] });
+    testbed.clock.set("2026-03-03T07:30:00+01:00");
+    await testbed.registry.system().closeForgottenExits();
+    const [closed] = (await testbed.registry.as(z.nowakId).peopleOnSite(z.ratajeId)).history;
+
+    expect(await correct(z.nowakId, closed.id, "wyjscie", at("15:00"), "Brygada skończyła o 15:00")).toMatchObject({
+      exitVia: "uzupelnione",
+      timeOnSiteMs: 8 * HOUR,
+      corrections: [{ byName: "Adam Nowak" }],
+    });
+  });
+
+  it("poprawka wejścia następnego dnia nie zatrzymuje się na północy, o której zamknęło się odbicie „bez wyjścia”", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    testbed.clock.set("2026-03-03T06:00:00+01:00");
+    await testbed.registry.system().closeForgottenExits();
+    await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 20));
+    testbed.clock.set("2026-03-03T08:00:00+01:00");
+    const [nightShift] = (await z.owner.peopleOnSite(z.winogradyId)).present;
+
+    expect(await correct(z.zawbud.ownerId, nightShift.id, "wejscie", new Date("2026-03-02T23:00:00+01:00"), "Nocna zmiana")).toMatchObject({
+      enteredAt: new Date("2026-03-02T23:00:00+01:00"),
+    });
+  });
+
+  async function onlyPresent(z: Zawbud) {
+    const [entry] = (await z.owner.peopleOnSite(z.ratajeId)).present;
+    return entry;
+  }
+});
+
 describe("tryb tylko do odczytu", () => {
   it("blokuje odbicia, wyjaśnienia i nowy kod, a lista obecnych działa", async () => {
     const z = await givenZawbud();
@@ -875,6 +1273,9 @@ describe("tryb tylko do odczytu", () => {
     const crewPunch = { posterToken: z.tokens.rataje, position: north(RATAJE, 10), people: [{ personId: janPersonId, operationId: randomUUID(), confirmExit: true }] };
     await expect(testbed.registry.as(z.nowakId).punchPeople(crewPunch)).rejects.toMatchObject(readOnly);
     await expect(z.owner.explainPunch({ punchId: flagged.id, note: null })).rejects.toMatchObject(readOnly);
+    await expect(
+      z.owner.correctPunch({ punchId: flagged.id, enteredAt: new Date(testbed.clock.now().getTime() - 60_000), reason: "Był wcześniej" }),
+    ).rejects.toMatchObject(readOnly);
     await expect(z.owner.renewPosterToken(z.ratajeId)).rejects.toMatchObject(readOnly);
     await expect(z.owner.setPunchRadius(z.ratajeId, 400)).rejects.toMatchObject(readOnly);
     expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Jan Mazur"]);
@@ -960,6 +1361,63 @@ describe("baza danych", () => {
         ),
       ),
     ).rejects.toThrow();
+  });
+
+  it("pracownik nie poprawi godzin własnego odbicia, a kierownik własnego, nawet z pominięciem Rejestru", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    await punch(z.nowakId, z.tokens.rataje, north(RATAJE, 20));
+    const present = (await z.owner.peopleOnSite(z.ratajeId)).present;
+    const jan = present.find((entry) => entry.person.fullName === "Jan Mazur")!;
+    const nowak = present.find((entry) => entry.person.fullName === "Adam Nowak")!;
+    const earlier = new Date(testbed.clock.now().getTime() - 60 * 60 * 1000);
+
+    for (const [actorId, punchId] of [
+      [z.janId, jan.id],
+      [z.nowakId, nowak.id],
+    ]) {
+      await expect(
+        withActor(testbed.db, actorId, (sql) =>
+          sql(
+            `insert into app.punch_corrections (company_id, punch_id, field, to_at, reason, corrected_by, corrected_at)
+             values ($1, $2, 'wejscie', $3, 'Byłem wcześniej', $4, now())`,
+            [z.zawbud.companyId, punchId, earlier, actorId],
+          ),
+        ),
+      ).rejects.toThrow(/row-level security/);
+      await expect(
+        withActor(testbed.db, actorId, (sql) => sql("update app.punches set entered_at = $2 where id = $1", [punchId, earlier])),
+      ).rejects.toThrow();
+      // Przypomnienie o wyjściu zapisuje tylko zadanie harmonogramu.
+      await expect(
+        withActor(testbed.db, actorId, (sql) => sql("update app.punches set exit_reminded_at = now() where id = $1", [punchId])),
+      ).rejects.toThrow();
+      await expect(
+        withActor(testbed.db, actorId, (sql) => sql("update app.punches set left_at = now(), exit_via = 'uzupelnione', exit_punched_by = $2 where id = $1", [punchId, actorId])),
+      ).rejects.toThrow();
+    }
+    expect((await z.owner.peopleOnSite(z.ratajeId)).present.map((entry) => [entry.enteredAt, entry.leftAt])).toEqual([
+      [START, null],
+      [START, null],
+    ]);
+  });
+
+  it("poprawka zapisuje w historii prawdziwą poprzednią godzinę, a nie tę podaną przez aktora", async () => {
+    const z = await givenZawbud();
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    const [jan] = (await z.owner.peopleOnSite(z.ratajeId)).present;
+    const earlier = new Date(testbed.clock.now().getTime() - 60 * 60 * 1000);
+
+    await withActor(testbed.db, z.nowakId, (sql) =>
+      sql(
+        `insert into app.punch_corrections (company_id, punch_id, field, from_at, to_at, reason, corrected_by, corrected_at)
+         values ($1, $2, 'wejscie', '2020-01-01', $3, 'Był od szóstej', $4, now())`,
+        [z.zawbud.companyId, jan.id, earlier, z.nowakId],
+      ),
+    );
+
+    const [corrected] = (await z.owner.peopleOnSite(z.ratajeId)).present;
+    expect(corrected).toMatchObject({ enteredAt: earlier, corrections: [{ field: "wejscie", from: START, to: earlier }] });
   });
 
   it("pracownik nie wpisze sobie wyjaśnienia ani cudzego odbicia, nawet z pominięciem Rejestru", async () => {

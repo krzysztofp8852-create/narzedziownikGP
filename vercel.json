@@ -8,6 +8,10 @@
     { "path": "/zadania/raporty", "schedule": "0 5 * * 1" },
     { "path": "/zadania/raporty", "schedule": "0 6 * * 1" },
     { "path": "/zadania/raporty", "schedule": "0 14 * * 5" },
-    { "path": "/zadania/raporty", "schedule": "0 15 * * 5" }
+    { "path": "/zadania/raporty", "schedule": "0 15 * * 5" },
+    { "path": "/zadania/odbicia", "schedule": "0 16 * * *" },
+    { "path": "/zadania/odbicia", "schedule": "0 17 * * *" },
+    { "path": "/zadania/odbicia", "schedule": "0 22 * * *" },
+    { "path": "/zadania/odbicia", "schedule": "0 23 * * *" }
   ]
 }

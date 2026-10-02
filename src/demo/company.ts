@@ -174,7 +174,7 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
  * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, sprzęt wynajęty z terminem zwrotu, także po terminie,
  * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu, osoby z brygad bez konta w kartotece Ludzie,
- * uprawnienia ludzi, w tym szkolenie BHP po terminie, plakaty budów i odbicia z ostatnich dni, w tym jedno do wyjaśnienia), a potem robi
+ * uprawnienia ludzi, w tym szkolenie BHP po terminie, plakaty budów i odbicia z ostatnich dni, w tym jedno do wyjaśnienia i zapomniane wyjście uzupełnione przez kierownika), a potem robi
  * z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
  * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
@@ -501,7 +501,7 @@ export async function createDemoCompany(
   await owner.setDailyRate({ kind: "firma" }, 1);
   await owner.setDailyRate({ kind: "kategoria", categoryId: categoryIds.M }, 2);
   await owner.setDailyRate({ kind: "narzedzie", toolId: tools.podest }, 25);
-  await punchScenario({ deps, owner, people, places, daysAgo, now });
+  await punchScenario({ deps, companyId: company.companyId, owner, people, places, daysAgo, now });
   const { purged } = await registry.system().activateDemoCompany(company.companyId);
   return { companyId: company.companyId, purged };
 }
@@ -521,11 +521,12 @@ type PinnedPlace = keyof typeof PINS;
  * Odbicia z ostatnich trzech dni i z dzisiejszego ranka: ludzie z kontem wchodzą rano i wychodzą po południu, Jan raz
  * przechodzi z Tarasów do Komornik, a dziś rano część jest jeszcze odbita. Marek odbija zaraz po sobie swoją brygadę
  * bez telefonu („Odbij też…”). Jan raz odbił się bez GPS (kierownik to wyjaśnił), a Piotr raz z domu, 3,4 km od budowy
- * (czeka na wyjaśnienie). Firma nie jest jeszcze demo, więc
- * położenie się sprawdza. Odbicia nie zależą od ruchów sprzętu, więc idą własnym zegarem po całej reszcie scenariusza.
+ * (czeka na wyjaśnienie). Przedwczoraj Jan zapomniał odbić wyjścia: o północy odbicie zamknęło się „bez wyjścia”,
+ * a rano Marek uzupełnił wyjście z powodem. Firma nie jest jeszcze demo, więc położenie się sprawdza. Odbicia nie zależą od ruchów sprzętu, więc idą własnym zegarem po całej reszcie scenariusza.
  */
 async function punchScenario({
   deps,
+  companyId,
   owner,
   people,
   places,
@@ -533,6 +534,7 @@ async function punchScenario({
   now,
 }: {
   deps: DemoCompanyDeps;
+  companyId: string;
   owner: ReturnType<ReturnType<typeof createRegistry>["as"]>;
   people: Record<string, string>;
   places: Record<PinnedPlace | "base", string>;
@@ -563,6 +565,7 @@ async function punchScenario({
     await registry.as(people.marek).punchPeople({ posterToken: codes.tarasy, position: near("tarasy", metersAway), people: crew });
   };
 
+  let forgottenExit: string | null = null;
   for (const days of [3, 2, 1]) {
     await punch("krzysztof", daysAgo(days, 6, 40), "base", 25);
     await punch("marek", daysAgo(days, 6, 50), "tarasy", 40);
@@ -575,14 +578,23 @@ async function punchScenario({
       clock.set(daysAgo(days, 9, 30));
       await registry.as(people.marek).explainPunch({ punchId: janEntry.punch.id, note: "Telefon bez GPS w piwnicy, Jan był od rana." });
     }
+    if (days === 1 && forgottenExit) {
+      clock.set(daysAgo(days, 7, 30));
+      const exit = { punchId: forgottenExit, leftAt: daysAgo(2, 15, 20) };
+      await registry.as(people.marek).correctPunch({ ...exit, reason: "Jan zapomniał odbić wyjścia, był do 15:20 (potwierdził brygadzista)." });
+    }
     if (days === 1) await punch("jan", daysAgo(days, 11, 30), "komorniki", 70);
-    await punch("jan", daysAgo(days, 15, 20), days === 1 ? "komorniki" : "tarasy", 50, true);
+    if (days === 2 && janEntry.action === "wejscie") forgottenExit = janEntry.punch.id;
+    else await punch("jan", daysAgo(days, 15, 20), days === 1 ? "komorniki" : "tarasy", 50, true);
     await punch("piotr", daysAgo(days, 15, 25), "komorniki", 60, true);
     await punch("marek", daysAgo(days, 15, 30), "tarasy", 30, true);
     await punchMarekCrew(daysAgo(days, 15, 31), 30, true);
     await punch("anna", daysAgo(days, 15, 40), "szkola", 20, true);
     await punch("pawel", daysAgo(days, 15, 45), "jezyce", 40, true);
     await punch("krzysztof", daysAgo(days, 16, 0), "base", 15, true);
+    // Zadanie harmonogramu po północy (w Polsce, zimą i latem) zamyka odbicia bez wyjścia.
+    clock.set(daysAgo(days - 1, 1, 30));
+    await registry.system().closeCompanyForgottenExits(companyId);
   }
   // Dziś rano, o ile demo zakładamy po tej porze.
   const today: [string, Date, PinnedPlace, number][] = [

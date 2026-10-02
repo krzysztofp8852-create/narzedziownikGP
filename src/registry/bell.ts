@@ -121,6 +121,8 @@ function reviveContent(raw: Record<string, unknown>): NotificationContent {
       return content;
     case "ruch_odrzucony":
       return { ...content, occurredAt: new Date(content.occurredAt) };
+    case "przypomnienie_wyjscia":
+      return { ...content, punches: content.punches.map((punch) => ({ ...punch, enteredAt: new Date(punch.enteredAt) })) };
     case "raport_tygodniowy":
     case "raport_piatkowy":
     case "tylko_do_odczytu_wkrotce":

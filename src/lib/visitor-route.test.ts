@@ -32,7 +32,7 @@ describe("dokąd trafia wejście na adres aplikacji", () => {
   });
 
   it("strony dla oglądających z zewnątrz i dla wyszukiwarek otwierają się bez logowania", () => {
-    for (const path of [LANDING_PATH, "/demo", "/logowanie", "/reset-hasla", "/offline", "/robots.txt", "/sitemap.xml", "/zadania/raporty"]) {
+    for (const path of [LANDING_PATH, "/demo", "/logowanie", "/reset-hasla", "/offline", "/robots.txt", "/sitemap.xml", "/zadania/raporty", "/zadania/odbicia"]) {
       expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });
     }
   });
