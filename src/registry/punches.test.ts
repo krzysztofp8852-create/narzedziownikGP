@@ -620,6 +620,246 @@ describe("odbicie z kolejki offline", () => {
   });
 });
 
+describe("odbicie osób z kartoteki przez kierownika", () => {
+  const HOUR = 60 * 60 * 1000;
+
+  /** Brygada bez kont w kartotece Zawbudu: Wojciech Lis, Marek Zając i nieaktywny już Tomasz Kruk. */
+  async function givenCrew(z: Zawbud) {
+    const { personId: wojtekId } = await z.owner.addPerson({ fullName: "Wojciech Lis", note: "Bez telefonu" });
+    const { personId: marekId } = await z.owner.addPerson({ fullName: "Marek Zając", note: null });
+    const { personId: tomaszId } = await z.owner.addPerson({ fullName: "Tomasz Kruk", note: null });
+    await z.owner.deactivatePerson(tomaszId);
+    const janPersonId = (await z.owner.people()).find((person) => person.account?.userId === z.janId)!.personId;
+    return { wojtekId, marekId, tomaszId, janPersonId };
+  }
+
+  /** Aktor odbija osoby po skanie plakatu `posterToken`; każda osoba z własnym identyfikatorem operacji. */
+  function punchPeople(
+    actorId: string,
+    posterToken: string,
+    position: PhonePosition | null,
+    people: { personId: string; operationId?: string; confirmExit?: boolean }[],
+  ) {
+    return testbed.registry.as(actorId).punchPeople({
+      posterToken,
+      position,
+      people: people.map((person) => ({ ...person, operationId: person.operationId ?? randomUUID() })),
+    });
+  }
+
+  /** Skan bez zasięgu, w którym aktor odbił osobę `personId`, wysłany teraz z kolejki telefonu. */
+  function queuedPersonPunch(actorId: string, posterToken: string, personId: string, options: { scannedAt: Date; confirmExit?: boolean }) {
+    return testbed.registry.as(actorId).registerQueuedPunch({ operationId: randomUUID(), posterToken, position: null, personId, ...options });
+  }
+
+  it("po skanie kierownik widzi „Odbij też…”: aktywne osoby z kartoteki bez siebie, z tym, co zrobi skan dla każdej", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 10));
+    await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }]);
+
+    const people = await testbed.registry.as(z.nowakId).punchPeoplePreview(z.tokens.rataje);
+
+    expect(people.map((entry) => [entry.person.fullName, entry.action, entry.from?.name ?? null])).toEqual([
+      ["Wojciech Lis", "wyjscie", null],
+      ["Ewa Wiśniewska", "wejscie", null],
+      ["Jan Mazur", "przejscie", "Winogrady"],
+      ["Marek Zając", "wejscie", null],
+      ["Piotr Kowalski", "wejscie", null],
+      ["Właściciel Zawbud", "wejscie", null],
+    ]);
+    expect((await z.owner.punchPeoplePreview(z.tokens.rataje)).map((entry) => entry.person.fullName)).toContain("Adam Nowak");
+  });
+
+  it("kierownik odbija kilka osób naraz: każda ma wejście z wynikiem jego położenia i oznaczenie „odbił: X”", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punch(z.nowakId, z.tokens.rataje, north(RATAJE, 10));
+
+    const outcomes = await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 450), [{ personId: crew.wojtekId }, { personId: crew.marekId }]);
+
+    expect(outcomes).toMatchObject([
+      { action: "wejscie", punch: { person: { fullName: "Wojciech Lis" }, entry: { result: "poza_budowa", distanceM: 450 }, entryPunchedByName: "Adam Nowak" } },
+      { action: "wejscie", punch: { person: { fullName: "Marek Zając" }, entry: { result: "poza_budowa", distanceM: 450 }, entryPunchedByName: "Adam Nowak" } },
+    ]);
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Adam Nowak", "Marek Zając", "Wojciech Lis"]);
+    const [own] = (await z.owner.peopleOnSite(z.ratajeId)).present;
+    expect(own).toMatchObject({ person: { fullName: "Adam Nowak" }, entryPunchedByName: null, exitPunchedByName: null });
+  });
+
+  it("wyjście tych osób kierownik odbija tak samo, a skan na innej budowie to ich przejście", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }, { personId: crew.marekId }]);
+    testbed.clock.advance(4 * HOUR);
+
+    const transfer = await punchPeople(z.nowakId, z.tokens.kornik, null, [{ personId: crew.marekId }]);
+    testbed.clock.advance(4 * HOUR);
+    const exit = await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 20), [{ personId: crew.wojtekId, confirmExit: true }]);
+
+    expect(transfer).toMatchObject([
+      {
+        action: "przejscie",
+        left: { person: { fullName: "Marek Zając" }, place: { name: "Rataje" }, exitVia: "przejscie", exitPunchedByName: "Adam Nowak" },
+        punch: { place: { name: "Kórnik" }, entry: { result: "bez_sprawdzenia" }, entryPunchedByName: "Adam Nowak" },
+      },
+    ]);
+    expect(exit).toMatchObject([
+      {
+        action: "wyjscie",
+        punch: { person: { fullName: "Wojciech Lis" }, leftAt: testbed.clock.now(), exit: { result: "na_budowie", distanceM: 20 }, exitPunchedByName: "Adam Nowak" },
+      },
+    ]);
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+    expect(await presentAt(z.zawbud.ownerId, z.kornikId)).toEqual(["Marek Zając"]);
+  });
+
+  it("wyjście bez potwierdzenia niczego nie zapisuje (np. ktoś odbił tę osobę tu w międzyczasie)", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }]);
+
+    const outcomes = await punchPeople(z.zawbud.ownerId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }, { personId: crew.marekId }]);
+
+    expect(outcomes).toMatchObject([
+      { action: "potwierdz_wyjscie", place: { name: "Rataje" } },
+      { action: "wejscie", punch: { person: { fullName: "Marek Zając" }, entryPunchedByName: "Właściciel Zawbud" } },
+    ]);
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Marek Zając", "Wojciech Lis"]);
+  });
+
+  it("wyjście z listy, która się zestarzała (ktoś w międzyczasie odbił tę osobę gdzie indziej), niczego nie zapisuje", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }]);
+    await punchPeople(z.kowalskiId, z.tokens.winogrady, north(WINOGRADY, 10), [{ personId: crew.wojtekId }]);
+
+    const outcomes = await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId, confirmExit: true }]);
+
+    expect(outcomes).toEqual([{ action: "nie_odbity_tu", place: { id: z.ratajeId, kind: "budowa", name: "Rataje" } }]);
+    expect(await presentAt(z.zawbud.ownerId, z.winogradyId)).toEqual(["Wojciech Lis"]);
+  });
+
+  it("kierownik przenosi osobę z budowy, której nie prowadzi, i widzi odbicia, które sam odbił, ale nie cudze stamtąd", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punchPeople(z.kowalskiId, z.tokens.winogrady, north(WINOGRADY, 10), [{ personId: crew.wojtekId }, { personId: crew.marekId }]);
+    await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 10));
+    testbed.clock.advance(2 * HOUR);
+
+    const [outcome] = await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }]);
+
+    expect(outcome).toMatchObject({ action: "przejscie", left: { place: { name: "Winogrady" }, entryPunchedByName: "Piotr Kowalski", exitPunchedByName: "Adam Nowak" } });
+    expect((await testbed.registry.as(z.nowakId).peopleOnSite(z.winogradyId)).history.map((entry) => entry.person.fullName)).toEqual(["Wojciech Lis"]);
+    expect(await presentAt(z.nowakId, z.winogradyId)).toEqual([]);
+    expect(await presentAt(z.kowalskiId, z.ratajeId)).toEqual([]);
+    expect(await presentAt(z.zawbud.ownerId, z.winogradyId)).toEqual(["Jan Mazur", "Marek Zając"]);
+  });
+
+  it("odbija się też osobę z kontem, a ona sama potem odbija wyjście", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.janPersonId }]);
+
+    const exit = await punch(z.janId, z.tokens.rataje, north(RATAJE, 10), { confirmExit: true });
+
+    expect(exit).toMatchObject({ action: "wyjscie", punch: { entryPunchedByName: "Adam Nowak", exitPunchedByName: null } });
+  });
+
+  it("ponowne wysłanie zwraca pierwotne odbicia i niczego nie dubluje", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    const people = [
+      { personId: crew.wojtekId, operationId: randomUUID() },
+      { personId: crew.marekId, operationId: randomUUID() },
+    ];
+    const first = await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), people);
+    testbed.clock.advance(60_000);
+
+    const again = await punchPeople(z.nowakId, z.tokens.rataje, north(RATAJE, 10), people);
+
+    expect(again).toEqual(first);
+    expect((await z.owner.peopleOnSite(z.ratajeId)).history).toHaveLength(2);
+  });
+
+  it("pracownik i magazynier nie odbijają innych ani nie widzą listy „Odbij też…”", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    const forbidden = { code: "forbidden" };
+
+    for (const actorId of [z.janId, z.ewaId]) {
+      await expect(testbed.registry.as(actorId).punchPeoplePreview(z.tokens.rataje)).rejects.toMatchObject(forbidden);
+      await expect(punchPeople(actorId, z.tokens.rataje, north(RATAJE, 10), [{ personId: crew.wojtekId }])).rejects.toMatchObject(forbidden);
+      await expect(queuedPersonPunch(actorId, z.tokens.rataje, crew.wojtekId, { scannedAt: testbed.clock.now() })).rejects.toMatchObject(forbidden);
+    }
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+  });
+
+  it("nie odbija nieaktywnej osoby, osoby innej firmy ani siebie przez listę", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    const budrex = await testbed.givenActiveCompany("Budrex");
+    const { personId: budrexPersonId } = await testbed.registry.as(budrex.ownerId).addPerson({ fullName: "Obcy Robotnik", note: null });
+    const nowakPersonId = (await z.owner.people()).find((person) => person.account?.userId === z.nowakId)!.personId;
+    const position = north(RATAJE, 10);
+    const attempt = (people: { personId: string }[]) => punchPeople(z.nowakId, z.tokens.rataje, position, people);
+
+    await expect(attempt([{ personId: crew.tomaszId }])).rejects.toMatchObject({ code: "not_found" });
+    await expect(attempt([{ personId: budrexPersonId }])).rejects.toMatchObject({ code: "not_found" });
+    await expect(attempt([{ personId: nowakPersonId }])).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(attempt([{ personId: crew.wojtekId }, { personId: crew.wojtekId }])).rejects.toMatchObject({ code: "invalid_input" });
+    await expect(attempt([])).rejects.toMatchObject({ code: "invalid_input" });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+  });
+
+  it("z kolejki offline: odbicie osoby z czasem skanu, „zapisane offline” i „odbił: X”, a konflikt z oznaczeniem, kto odbijał", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    const scannedAt = new Date(testbed.clock.now().getTime() - HOUR);
+
+    const entry = await queuedPersonPunch(z.nowakId, z.tokens.rataje, crew.wojtekId, { scannedAt });
+    const conflict = await queuedPersonPunch(z.nowakId, z.tokens.rataje, crew.marekId, { scannedAt: testbed.clock.now(), confirmExit: true });
+
+    expect(entry).toMatchObject({
+      status: "registered",
+      outcome: { action: "wejscie", punch: { person: { fullName: "Wojciech Lis" }, enteredAt: scannedAt, entryOffline: true, entryPunchedByName: "Adam Nowak" } },
+    });
+    expect(conflict).toMatchObject({ status: "rejected", conflict: { person: { fullName: "Marek Zając" }, reason: "nie_odbity_tu", punchedByName: "Adam Nowak" } });
+    expect(await z.owner.punchConflictsToClarify()).toMatchObject([{ person: { fullName: "Marek Zając" }, punchedByName: "Adam Nowak" }]);
+  });
+
+  it("osoba, która przed wysłaniem kolejki przestała być aktywna, trafia do wyjaśnienia i nie blokuje kolejki kierownika", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    const scannedAt = testbed.clock.now();
+    await z.owner.deactivatePerson(crew.wojtekId);
+    testbed.clock.advance(HOUR);
+
+    const result = await queuedPersonPunch(z.nowakId, z.tokens.rataje, crew.wojtekId, { scannedAt });
+
+    expect(result).toMatchObject({ status: "rejected", conflict: { person: { fullName: "Wojciech Lis" }, reason: "osoba_nieaktywna", punchedByName: "Adam Nowak" } });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+  });
+
+  it("odbicia i konflikty, które kierownik sam odbił, wyjaśnia właściciel, a nie on", async () => {
+    const z = await givenZawbud();
+    const crew = await givenCrew(z);
+    const nowak = testbed.registry.as(z.nowakId);
+    await punchPeople(z.nowakId, z.tokens.rataje, null, [{ personId: crew.wojtekId }]);
+    await queuedPersonPunch(z.nowakId, z.tokens.rataje, crew.marekId, { scannedAt: testbed.clock.now(), confirmExit: true });
+    const [flagged] = await z.owner.punchesToClarify();
+    const [conflict] = await z.owner.punchConflictsToClarify();
+
+    expect(flagged).toMatchObject({ person: { fullName: "Wojciech Lis" }, entry: { result: "brak_polozenia" } });
+    expect(await nowak.punchesToClarify()).toEqual([]);
+    expect(await nowak.punchConflictsToClarify()).toEqual([]);
+    await expect(nowak.explainPunch({ punchId: flagged.id, note: null })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(nowak.explainPunchConflict({ conflictId: conflict.id, note: null })).rejects.toMatchObject({ code: "forbidden" });
+    await z.owner.explainPunch({ punchId: flagged.id, note: "Brygada była na budowie" });
+    expect(await z.owner.punchesToClarify()).toEqual([]);
+  });
+});
+
 describe("tryb tylko do odczytu", () => {
   it("blokuje odbicia, wyjaśnienia i nowy kod, a lista obecnych działa", async () => {
     const z = await givenZawbud();
@@ -631,6 +871,9 @@ describe("tryb tylko do odczytu", () => {
 
     await expect(punch(z.janId, z.tokens.rataje, north(RATAJE, 10), { confirmExit: true })).rejects.toMatchObject(readOnly);
     await expect(punch(z.nowakId, z.tokens.rataje, north(RATAJE, 10))).rejects.toMatchObject(readOnly);
+    const { personId: janPersonId } = (await z.owner.people()).find((person) => person.fullName === "Jan Mazur")!;
+    const crewPunch = { posterToken: z.tokens.rataje, position: north(RATAJE, 10), people: [{ personId: janPersonId, operationId: randomUUID(), confirmExit: true }] };
+    await expect(testbed.registry.as(z.nowakId).punchPeople(crewPunch)).rejects.toMatchObject(readOnly);
     await expect(z.owner.explainPunch({ punchId: flagged.id, note: null })).rejects.toMatchObject(readOnly);
     await expect(z.owner.renewPosterToken(z.ratajeId)).rejects.toMatchObject(readOnly);
     await expect(z.owner.setPunchRadius(z.ratajeId, 400)).rejects.toMatchObject(readOnly);
@@ -640,6 +883,52 @@ describe("tryb tylko do odczytu", () => {
 });
 
 describe("baza danych", () => {
+  it("pracownik i magazynier nie odbiją innej osoby, nie zamkną jej odbicia i nie poznają jej stanu, nawet z pominięciem Rejestru", async () => {
+    const z = await givenZawbud();
+    const { personId: wojtekId } = await z.owner.addPerson({ fullName: "Wojciech Lis", note: null });
+    const { personId: marekId } = await z.owner.addPerson({ fullName: "Marek Zając", note: null });
+    const [entered] = await testbed.registry.as(z.nowakId).punchPeople({
+      posterToken: z.tokens.rataje,
+      position: north(RATAJE, 10),
+      people: [{ personId: wojtekId, operationId: randomUUID() }],
+    });
+    if (entered.action !== "wejscie") throw new Error("Kierownik powinien odbić wejście");
+
+    for (const actorId of [z.janId, z.ewaId]) {
+      // Marek nie jest nigdzie odbity, więc wejście zatrzymuje tylko polityka RLS, a nie jedno otwarte odbicie na osobę.
+      await expect(
+        withActor(testbed.db, actorId, (sql) =>
+          sql(
+            `insert into app.punches (company_id, person_id, location_id, punched_by, entered_at, entry_result, entry_operation_id)
+             values ($1, $2, $3, $4, now(), 'na_budowie', gen_random_uuid())`,
+            [z.zawbud.companyId, marekId, z.ratajeId, actorId],
+          ),
+        ),
+      ).rejects.toThrow(/row-level security/);
+      const attempts = await withActor(testbed.db, actorId, async (sql) => ({
+        closed: await sql("select app.close_punch_of($1, now(), 'wyjscie', 'na_budowie', null, gen_random_uuid(), false) as closed", [entered.punch.id]),
+        state: await sql("select * from app.punch_state($1)", [wojtekId]),
+      }));
+      expect(attempts).toEqual({ closed: [{ closed: false }], state: [] });
+    }
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Wojciech Lis"]);
+  });
+
+  it("kierownik nie wpisze, że odbicie odbił ktoś inny", async () => {
+    const z = await givenZawbud();
+    const { personId: wojtekId } = await z.owner.addPerson({ fullName: "Wojciech Lis", note: null });
+
+    await expect(
+      withActor(testbed.db, z.nowakId, (sql) =>
+        sql(
+          `insert into app.punches (company_id, person_id, location_id, punched_by, entered_at, entry_result, entry_operation_id)
+           values ($1, $2, $3, $4, now(), 'na_budowie', gen_random_uuid())`,
+          [z.zawbud.companyId, wojtekId, z.ratajeId, z.kowalskiId],
+        ),
+      ),
+    ).rejects.toThrow(/row-level security/);
+  });
+
   it("pracownik nie wyjaśni ani nie dopisze konfliktu z kolejki offline z pominięciem Rejestru", async () => {
     const z = await givenZawbud();
     await testbed.registry.as(z.janId).registerQueuedPunch({

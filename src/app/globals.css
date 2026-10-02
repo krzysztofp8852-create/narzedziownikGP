@@ -1303,6 +1303,25 @@ a.tool-row:hover .tool-row-name {
   gap: 12px;
 }
 
+/* „Odbij też…”: osoby z kartoteki do zaznaczenia, z tym, co zrobi dla nich skan. */
+.punch-people {
+  display: grid;
+  gap: 12px;
+}
+
+.punch-people-list,
+.punch-people-done {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.punch-people-list .checkbox {
+  min-height: 44px;
+}
+
 /* Tablica: wszystko na jednym ekranie */
 .board {
   display: grid;

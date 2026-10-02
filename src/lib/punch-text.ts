@@ -26,6 +26,17 @@ export function punchTimeText(punch: Pick<Punch, "enteredAt" | "leftAt">) {
 }
 
 /**
+ * Kto odbijał za osobę: „odbił: Adam Nowak”, a gdy wejście i wyjście odbili różni ludzie (albo jedno z nich osoba sama),
+ * „wejście odbił: … · wyjście odbił: …”. null, gdy osoba odbijała się sama.
+ */
+export function punchedByText(punch: Pick<Punch, "leftAt" | "entryPunchedByName" | "exitPunchedByName">) {
+  const { entryPunchedByName: entry, exitPunchedByName: exit } = punch;
+  if (entry !== null && (punch.leftAt === null || exit === entry)) return t("punches.punchedBy", { name: entry });
+  const parts = [entry && t("punches.entryPunchedBy", { name: entry }), exit && t("punches.exitPunchedBy", { name: exit })];
+  return parts.filter(Boolean).join(" · ") || null;
+}
+
+/**
  * Wejście i wyjście z wynikami i oznaczeniem odbić z kolejki offline: „Wejście: na budowie, 120 m (zapisane offline) ·
  * Wyjście: przejście na inną budowę”.
  */

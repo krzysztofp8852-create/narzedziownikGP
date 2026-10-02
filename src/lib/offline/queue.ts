@@ -45,8 +45,10 @@ export interface QueuedPunch {
   /** Kod plakatu (po normalizacji). */
   posterCode: string;
   position: PhonePosition | null;
-  /** Co według telefonu zrobił skan; wyjście osoba potwierdziła („Kończysz?”). */
+  /** Co według telefonu zrobił skan; wyjście osoba potwierdziła („Kończysz?”) albo kierownik zaznaczył na liście. */
   action: PunchAction;
+  /** Osoba z kartoteki odbijana przez właściciela albo kierownika („Odbij też…”); brak: `userId` odbija siebie. */
+  person?: { id: string; name: string };
   /** Chwila skanu (ISO): czas wejścia albo wyjścia. */
   scannedAt: string;
   queuedAt: number;

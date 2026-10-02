@@ -133,7 +133,9 @@ export function OfflineSync({ userId }: { userId: string }) {
               {queue.punches.map((item) => (
                 <li key={item.operationId}>
                   <span className="tag tag-pending">{t("offline.pendingTag")}</span>{" "}
-                  {t(`offline.punch.${item.action}`, { place: item.summary })}
+                  {item.person
+                    ? t(`offline.punchPerson.${item.action}`, { name: item.person.name, place: item.summary })
+                    : t(`offline.punch.${item.action}`, { place: item.summary })}
                   <span className="muted"> · {formatDateTime(new Date(item.scannedAt))}</span>
                 </li>
               ))}

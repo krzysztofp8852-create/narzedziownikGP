@@ -64,10 +64,13 @@ import type {
   ExplainPunchInput,
   PeopleOnSite,
   Poster,
+  PersonPunchOutcome,
+  PersonToPunch,
   Punch,
   PunchConflict,
   PunchInput,
   PunchOutcome,
+  PunchPeopleInput,
   PunchPreview,
   QueuedPunchInput,
   QueuedPunchResult,
@@ -227,6 +230,8 @@ export type {
   ExplainPunchInput,
   PeopleOnSite,
   PhonePosition,
+  PersonPunchOutcome,
+  PersonToPunch,
   Poster,
   Punch,
   PunchAction,
@@ -236,6 +241,7 @@ export type {
   PunchExitVia,
   PunchInput,
   PunchOutcome,
+  PunchPeopleInput,
   PunchPlace,
   PunchPlaceKind,
   PunchPreview,
@@ -247,8 +253,10 @@ export type {
 export {
   canClarifyPunches,
   canPrintPoster,
+  canPunchOthers,
   canSetPunchRadius,
   DEFAULT_PUNCH_RADIUS_M,
+  MAX_PEOPLE_PER_PUNCH,
   MAX_PUNCH_EXPLANATION_LENGTH,
   MAX_PUNCH_RADIUS_M,
   MIN_PUNCH_RADIUS_M,
@@ -688,22 +696,38 @@ export interface Registry {
      */
     punch(input: PunchInput): Promise<PunchOutcome>;
     /**
+     * Lista „Odbij też…” po skanie plakatu (ADR 0034): aktywne osoby z kartoteki oprócz aktora, z tym, co zrobi dla
+     * każdej skan (wejście, wyjście, przejście z innej budowy), najpierw odbite tutaj. Niczego nie zapisuje. Właściciel
+     * i kierownik; pracownik i magazynier: `forbidden`.
+     */
+    punchPeoplePreview(posterToken: string): Promise<PersonToPunch[]>;
+    /**
+     * „Odbij też…”: właściciel albo kierownik po skanie plakatu odbija zaznaczone aktywne osoby z kartoteki. Dla każdej
+     * wejście, wyjście (tylko z `confirmExit` przy osobie, inaczej `potwierdz_wyjscie`; osoba nie jest już tu odbita:
+     * `nie_odbity_tu`) albo przejście, z wynikiem
+     * sprawdzenia położenia odbijającego i oznaczeniem „odbił: X”. Wyniki w kolejności osób; ponowne wysłanie zwraca
+     * pierwotne. Nieaktywna osoba albo spoza firmy: `not_found`, aktor na liście albo osoba dwa razy: `invalid_input`;
+     * pracownik i magazynier: `forbidden`.
+     */
+    punchPeople(input: PunchPeopleInput): Promise<PersonPunchOutcome[]>;
+    /**
      * Skan plakatu zrobiony bez zasięgu, z kolejki offline telefonu (ADR 0033): zapisuje się jak `punch` w chwili skanu
      * (`scannedAt`, z przyszłości przycięty do teraz), z oznaczeniem „zapisane offline”; wyjście telefon już potwierdził
      * (`confirmExit`). Skan, który nie pasuje do odbić zapisanych w międzyczasie (późniejsze odbicie, wyjście bez
      * wejścia, drugie wejście, stary kod, zakończona budowa), nie zapisuje się, tylko trafia jako konflikt do
-     * wyjaśnienia. Ponowne wysłanie tej samej operacji zwraca pierwotny wynik. Błędy, po których warto ponowić (np. tryb
-     * tylko do odczytu), rzuca.
+     * wyjaśnienia. Z `personId` właściciel albo kierownik odbija osobę z kartoteki jak w `punchPeople` (osoba, która
+     * w międzyczasie przestała być aktywna, też trafia do wyjaśnienia). Ponowne wysłanie tej samej operacji zwraca
+     * pierwotny wynik. Błędy, po których warto ponowić (np. tryb tylko do odczytu), rzuca.
      */
     registerQueuedPunch(input: QueuedPunchInput): Promise<QueuedPunchResult>;
     /**
      * Zakładka „Ludzie na budowie” budowy albo bazy: odbici teraz i ostatnie odbicia, z promieniem odbicia. Właściciel
-     * widzi wszystkie, kierownik na swoich budowach, a każdy własne. Pojazd i serwis: `not_found`.
+     * widzi wszystkie, kierownik na swoich budowach i te, które sam odbił, a każdy własne. Pojazd i serwis: `not_found`.
      */
     peopleOnSite(locationId: string): Promise<PeopleOnSite>;
     /**
      * Odbicia do wyjaśnienia (wynik wejścia albo wyjścia inny niż „na budowie”), od najnowszego: właściciel wszystkie,
-     * kierownik na swoich budowach bez własnych. Pracownik i magazynier: `forbidden`.
+     * kierownik na swoich budowach bez własnych i bez odbitych przez siebie. Pracownik i magazynier: `forbidden`.
      */
     punchesToClarify(): Promise<Punch[]>;
     /** „Wyjaśnione” z opcjonalną notatką: odbicie znika z listy do wyjaśnienia. Ci, którzy je tam widzą. */
@@ -1557,6 +1581,17 @@ export function createRegistry(deps: RegistryDeps): Registry {
             return await attempt();
           } catch (error) {
             // Równoległy skan tej osoby albo ponowka tej samej operacji; drugie podejście zobaczy jego wynik.
+            if (error instanceof ReplayedOperationError || error instanceof punches.ConcurrentPunchError) return attempt();
+            throw error;
+          }
+        },
+        punchPeoplePreview: (posterToken) => asMember((sql, session) => punches.punchPeoplePreview(sql, session, posterToken)),
+        punchPeople: async (input) => {
+          const attempt = () => asWriter((sql, session) => punches.punchPeople(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległy skan którejś z osób albo ponowka tej samej operacji; drugie podejście zobaczy jego wynik.
             if (error instanceof ReplayedOperationError || error instanceof punches.ConcurrentPunchError) return attempt();
             throw error;
           }

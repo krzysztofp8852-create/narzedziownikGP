@@ -519,8 +519,9 @@ type PinnedPlace = keyof typeof PINS;
 
 /**
  * Odbicia z ostatnich trzech dni i z dzisiejszego ranka: ludzie z kontem wchodzą rano i wychodzą po południu, Jan raz
- * przechodzi z Tarasów do Komornik, a dziś rano część jest jeszcze odbita. Jan raz odbił się bez GPS (kierownik
- * to wyjaśnił), a Piotr raz z domu, 3,4 km od budowy (czeka na wyjaśnienie). Firma nie jest jeszcze demo, więc
+ * przechodzi z Tarasów do Komornik, a dziś rano część jest jeszcze odbita. Marek odbija zaraz po sobie swoją brygadę
+ * bez telefonu („Odbij też…”). Jan raz odbił się bez GPS (kierownik to wyjaśnił), a Piotr raz z domu, 3,4 km od budowy
+ * (czeka na wyjaśnienie). Firma nie jest jeszcze demo, więc
  * położenie się sprawdza. Odbicia nie zależą od ruchów sprzętu, więc idą własnym zegarem po całej reszcie scenariusza.
  */
 async function punchScenario({
@@ -546,16 +547,26 @@ async function punchScenario({
   }
   const clock = new ScenarioClock(daysAgo(3, 6), now);
   const registry = createRegistry({ ...deps, clock, notifier: silentNotifier, geocoder: noGeocoder });
-  /** Skan plakatu `metersAway` metrów na północ od miejsca (null: telefon bez położenia). */
+  /** Telefon `metersAway` metrów na północ od miejsca (null: bez położenia). */
+  const near = (place: PinnedPlace, metersAway: number | null) =>
+    metersAway === null ? null : { lat: PINS[place].lat + metersAway / 111_195, lng: PINS[place].lng, accuracy: 12 };
+  /** Skan plakatu `metersAway` metrów na północ od miejsca. */
   const punch = async (who: string, at: Date, place: PinnedPlace, metersAway: number | null, confirmExit = false) => {
     clock.set(at);
-    const position = metersAway === null ? null : { lat: PINS[place].lat + metersAway / 111_195, lng: PINS[place].lng, accuracy: 12 };
-    return registry.as(people[who]).punch({ operationId: randomUUID(), posterToken: codes[place], position, confirmExit });
+    return registry.as(people[who]).punch({ operationId: randomUUID(), posterToken: codes[place], position: near(place, metersAway), confirmExit });
+  };
+  const personIds = new Map((await owner.people()).map((person) => [person.fullName, person.personId]));
+  /** Marek odbija na Tarasach swoją brygadę bez telefonu: wejście albo (`confirmExit`) wyjście. */
+  const punchMarekCrew = async (at: Date, metersAway: number, confirmExit = false) => {
+    clock.set(at);
+    const crew = ["Zbigniew Kaczmarek", "Mykola Bondarenko"].map((fullName) => ({ personId: personIds.get(fullName)!, operationId: randomUUID(), confirmExit }));
+    await registry.as(people.marek).punchPeople({ posterToken: codes.tarasy, position: near("tarasy", metersAway), people: crew });
   };
 
   for (const days of [3, 2, 1]) {
     await punch("krzysztof", daysAgo(days, 6, 40), "base", 25);
     await punch("marek", daysAgo(days, 6, 50), "tarasy", 40);
+    await punchMarekCrew(daysAgo(days, 6, 51), 40);
     const janEntry = await punch("jan", daysAgo(days, 6, 55), "tarasy", days === 3 ? null : 60);
     await punch("anna", daysAgo(days, 7, 0), "szkola", 35);
     await punch("piotr", daysAgo(days, 7, 5), "komorniki", days === 2 ? 3_400 : 80);
@@ -568,6 +579,7 @@ async function punchScenario({
     await punch("jan", daysAgo(days, 15, 20), days === 1 ? "komorniki" : "tarasy", 50, true);
     await punch("piotr", daysAgo(days, 15, 25), "komorniki", 60, true);
     await punch("marek", daysAgo(days, 15, 30), "tarasy", 30, true);
+    await punchMarekCrew(daysAgo(days, 15, 31), 30, true);
     await punch("anna", daysAgo(days, 15, 40), "szkola", 20, true);
     await punch("pawel", daysAgo(days, 15, 45), "jezyce", 40, true);
     await punch("krzysztof", daysAgo(days, 16, 0), "base", 15, true);
@@ -580,7 +592,9 @@ async function punchScenario({
     ["anna", daysAgo(0, 6, 55), "szkola", 40],
   ];
   for (const [who, at, place, meters] of today) {
-    if (at.getTime() <= now.getTime()) await punch(who, at, place, meters);
+    if (at.getTime() > now.getTime()) continue;
+    await punch(who, at, place, meters);
+    if (who === "marek") await punchMarekCrew(new Date(at.getTime() + MINUTE_MS), meters);
   }
 }
 

@@ -52,6 +52,35 @@ test("pracownik skanuje plakat aparatem 100 m od budowy: po logowaniu wejście z
   await expect(page.getByTestId("punch-done")).toHaveText(/^Wyjście zapisane: Rataje, \d{1,2}:\d{2}\.$/);
 });
 
+test("kierownik po skanie plakatu odbija z listy „Odbij też…” osobę bez telefonu, a potem tak samo jej wyjście", async ({ page, context }) => {
+  const company = seedCompany();
+  await context.setGeolocation({ latitude: company.site.lat + north(60), longitude: company.site.lng, accuracy: 15 });
+  await page.goto("/logowanie");
+  await fillLogin(page, company.manager);
+  await expect(page).toHaveURL("/");
+
+  await page.goto(`/odbicie/${company.posterCode}`);
+  await expect(page.getByTestId("punch-done")).toHaveText(/^Wejście zapisane: Rataje/);
+  const list = page.getByRole("region", { name: "Odbij też…" });
+  await list.getByRole("checkbox", { name: "Wojciech Lis · wejście" }).check();
+  await list.getByRole("button", { name: "Odbij zaznaczonych (1)" }).click();
+  await expect(list.getByTestId("punch-people-done")).toHaveText(/^Wojciech Lis: wejście, \d{1,2}:\d{2}$/);
+
+  await page.goto(`/budowy/${company.siteId}/ludzie`);
+  const present = page.getByRole("list", { name: "Teraz na budowie" });
+  await expect(present.getByTestId("punch").filter({ hasText: "Wojciech Lis" }).getByTestId("punch-punched-by")).toHaveText("odbił: Adam Nowak");
+
+  // Drugi skan: kierownik zostaje na budowie, a brygadzista kończy.
+  await page.goto(`/odbicie/${company.posterCode}`);
+  await expect(page.getByText("Kończysz na tej budowie?")).toBeVisible();
+  await list.getByRole("checkbox", { name: "Wojciech Lis · wyjście" }).check();
+  await list.getByRole("button", { name: "Odbij zaznaczonych (1)" }).click();
+  await expect(list.getByTestId("punch-people-done")).toHaveText(/^Wojciech Lis: wyjście, \d{1,2}:\d{2}$/);
+  await page.goto(`/budowy/${company.siteId}/ludzie`);
+  await expect(page.getByRole("main").getByText("Teraz na budowie (1)")).toBeVisible();
+  await expect(present.getByText("Wojciech Lis")).toHaveCount(0);
+});
+
 test("odbicie 5 km od budowy przyciskiem „Odbij się” zapisuje się z oznaczeniem, a kierownik je wyjaśnia", async ({ page, context }) => {
   const company = seedCompany();
   await context.setGeolocation({ latitude: company.site.lat + north(5_000), longitude: company.site.lng, accuracy: 30 });

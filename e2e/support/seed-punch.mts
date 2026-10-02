@@ -1,6 +1,6 @@
 /**
- * Firma do testu dymnego odbijania: właściciel, kierownik Nowak (Rataje z pinezką w stałym punkcie, bez Google)
- * i pracownik z nazwą użytkownika. Wypisuje kod plakatu Rataje, położenie budowy i dane logowania jako JSON.
+ * Firma do testu dymnego odbijania: właściciel, kierownik Nowak (Rataje z pinezką w stałym punkcie, bez Google),
+ * pracownik z nazwą użytkownika i Wojciech Lis z kartoteki, bez konta. Wypisuje kod plakatu Rataje, położenie budowy i dane logowania jako JSON.
  */
 import { randomUUID } from "node:crypto";
 import { getRegistry } from "@/lib/registry-instance";
@@ -25,6 +25,8 @@ const username = `kowalczyk.${suffix}`;
 const worker = await owner.addMember({ firstName: "Piotr", lastName: "Kowalczyk", email: "", username, role: "pracownik" });
 const workerPassword = `Pracownik-${randomUUID().slice(0, 8)}`;
 await registry.as(worker.userId).changePassword(workerPassword, signedInNow());
+
+await owner.addPerson({ fullName: "Wojciech Lis", note: "Bez telefonu" });
 
 const { locationId: siteId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12, Poznań", managerId: manager.userId });
 await owner.moveMapPin(siteId, RATAJE);
