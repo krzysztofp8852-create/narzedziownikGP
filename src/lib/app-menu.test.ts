@@ -22,20 +22,20 @@ describe("menu pod trzema kreskami", () => {
     expect(shown("wlasciciel")).toEqual([
       ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
-      ["Ludzie", ["Ludzie /ludzie"]],
+      ["Ludzie", ["Ludzie /ludzie", "Odbicia do wyjaśnienia /odbicia"]],
       ["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
     ]);
   });
 
-  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie", () => {
+  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też odbicia do wyjaśnienia", () => {
     for (const [role, people] of [
-      ["kierownik", "Ludzie /ludzie"],
-      ["magazynier", "Moje uprawnienia /ludzie"],
+      ["kierownik", ["Ludzie /ludzie", "Odbicia do wyjaśnienia /odbicia"]],
+      ["magazynier", ["Moje uprawnienia /ludzie"]],
     ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
         ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
-        ["Ludzie", [people]],
+        ["Ludzie", people],
         ["Firma", ["Samouczek /samouczek", "Wyloguj"]],
       ]);
     }

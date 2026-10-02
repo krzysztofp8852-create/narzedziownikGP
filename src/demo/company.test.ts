@@ -133,6 +133,27 @@ describe("firma demo", () => {
     expect(await kinds(manager.userId)).not.toContain("uprawnienia");
   });
 
+  it("ma plakaty i odbicia z ostatnich dni: ludzie są dziś na budowach, a jedno odbicie poza budową czeka na wyjaśnienie", async () => {
+    await demo();
+    const [ownerAccount] = await bed.registry.system().demoAccounts();
+    const owner = bed.registry.as(ownerAccount.userId);
+    const { base, sites } = await owner.locations();
+    const tarasy = sites.find((site) => site.name === "Osiedle Zielone Tarasy")!;
+
+    const onTarasy = await owner.peopleOnSite(tarasy.id);
+    expect(onTarasy.present.map((punch) => punch.person.fullName)).toEqual(["Jan Mazur", "Marek Kowalczyk"]);
+    expect(onTarasy.history.filter((punch) => punch.leftAt !== null).length).toBeGreaterThanOrEqual(4);
+    expect(onTarasy.history.some((punch) => punch.explained?.note)).toBe(true);
+    expect((await owner.peopleOnSite(base.id)).present.map((punch) => punch.person.fullName)).toEqual(["Krzysztof Lewandowski"]);
+
+    const toClarify = await owner.punchesToClarify();
+    expect(toClarify.map((punch) => [punch.person.fullName, punch.entry.result])).toEqual([["Piotr Wójcik", "poza_budowa"]]);
+    expect(toClarify[0].entry.distanceM).toBeGreaterThan(1000);
+    for (const place of [base, ...sites.filter((site) => site.status === "aktywna")]) {
+      expect((await owner.poster(place.id)).code).toMatch(/^[0-9A-Z]{10}$/);
+    }
+  });
+
   it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();

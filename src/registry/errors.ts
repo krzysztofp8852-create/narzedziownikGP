@@ -37,6 +37,8 @@ export type RegistryErrorCode =
   | "qualification_taken"
   | "qualification_kind_taken"
   | "document_invalid"
+  | "poster_invalid"
+  | "poster_no_address"
   | "issue_closed"
   | "message_required"
   | "read_only"

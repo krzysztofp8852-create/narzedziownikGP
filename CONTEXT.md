@@ -70,7 +70,7 @@ Miejsce, w którym narzędzie może być: baza, budowa, serwis albo pojazd.
 _Avoid_: miejsce, magazyn (jako ogólne pojęcie)
 
 **Baza**:
-Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany. Może mieć adres; wtedy jest na mapie budów.
+Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany. Może mieć adres; wtedy jest na mapie budów i ma plakat do odbijania.
 _Avoid_: magazyn, warsztat
 
 **Budowa**:
@@ -176,6 +176,20 @@ _Avoid_: koszt wynajmu, amortyzacja
 
 **Zestawienie kosztów**:
 Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, pozycja „Koszty sprzętu” w menu. Pokazuje każdą aktywną budowę i aktywny pojazd, a zakończone i nieaktywne tylko z kosztem w okresie.
+
+## Odbijanie na budowie
+
+**Odbicie**:
+Pobyt osoby na budowie albo bazie zapisany skanem plakatu budowy: wejście, a potem wyjście (skan na tej samej budowie, po pytaniu „Kończysz na tej budowie?”) albo przejście (skan na innej budowie zamyka ten pobyt i otwiera nowy). Przy każdym skanie program sprawdza położenie telefonu i zapisuje tylko wynik (na budowie, poza budową z odległością, brak położenia, bez sprawdzenia) i odległość, nigdy współrzędne. Odbicie z wynikiem innym niż „na budowie” się zapisuje, ale trafia do wyjaśnienia: wyjaśnia je właściciel albo kierownik budowy (własne odbicia kierownika wyjaśnia właściciel), z opcjonalną notatką. Odbija się każdy z kontem; widzi je właściciel, kierownik na swoich budowach i każdy własne. W firmie demo położenia się nie sprawdza.
+_Avoid_: check-in, ewidencja czasu pracy, wejściówka
+
+**Plakat budowy**:
+Kartka A4 z nazwą budowy, kodem QR i instrukcją, wisząca przy wejściu albo kontenerze; ma ją też baza z adresem. Kod QR prowadzi na stronę odbicia po losowym kodzie plakatu, który nie zdradza budowy; ten sam kod jest wydrukowany do wpisania ręcznie. Drukuje go właściciel albo kierownik budowy, a „Nowy kod” unieważnia stary plakat. Pojazd i serwis plakatu nie mają.
+_Avoid_: kod budowy (kod to identyfikator narzędzia), tablica (to ekran „Gdzie jest co”), naklejka (to przy narzędziu)
+
+**Promień odbicia**:
+Odległość od położenia budowy albo bazy, do której skan liczy się jako „na budowie”; domyślnie 300 m, zmienia go właściciel (np. dla dużego placu). Budowa bez położenia ma odbicia „bez sprawdzenia”.
+_Avoid_: geofence, strefa
 
 ## Ruchy
 

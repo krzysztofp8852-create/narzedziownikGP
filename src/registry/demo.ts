@@ -282,6 +282,10 @@ export const LOGGED_DEMO_COMMANDS = [
   "updateSettings",
   "setDailyRate",
   "setDailyRates",
+  "punch",
+  "explainPunch",
+  "renewPosterToken",
+  "setPunchRadius",
 ] as const;
 export type LoggedDemoCommand = (typeof LOGGED_DEMO_COMMANDS)[number];
 

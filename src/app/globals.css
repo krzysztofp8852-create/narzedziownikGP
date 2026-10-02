@@ -1287,6 +1287,22 @@ a.tool-row:hover .tool-row-name {
   gap: 10px;
 }
 
+/* „Odbij się” nad tablicą: przycisk, a pod nim skaner plakatu budowy. */
+.punch-button {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.punch-button > .button {
+  justify-self: start;
+}
+
+.punch-flow {
+  display: grid;
+  gap: 12px;
+}
+
 /* Tablica: wszystko na jednym ekranie */
 .board {
   display: grid;

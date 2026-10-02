@@ -49,6 +49,12 @@ describe("izolacja firm", () => {
       returnOn: "2026-03-10",
     });
 
+    // Odbicie właściciela B na bazie B (kod plakatu jest przy lokalizacji).
+    await ownerB.setBaseAddress("ul. Główna 1, Poznań");
+    const { code: posterB } = await ownerB.poster(baseB);
+    const punchB = await ownerB.punch({ operationId: randomUUID(), posterToken: posterB, position: null });
+    if (punchB.action !== "wejscie") throw new Error("Odbicie B powinno być wejściem");
+
     const visibleToA = await withActor(testbed.db, a.ownerId, async (sql) => {
       const tables = await sql<{ name: string }>(
         `select format('%I.%I', schemaname, tablename) as name from pg_tables
@@ -61,7 +67,7 @@ describe("izolacja firm", () => {
     });
 
     expect(visibleToA).toContain(a.companyId);
-    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB, personB, kindB, qualificationB, qualificationDocumentB]) {
+    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB, personB, kindB, qualificationB, qualificationDocumentB, posterB, punchB.punch.id]) {
       expect(visibleToA).not.toContain(idOfB);
     }
   });
