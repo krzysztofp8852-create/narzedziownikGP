@@ -3,8 +3,16 @@
 import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
 import { type MessageKey, t } from "@/i18n/t";
 import { withShrunkDocument } from "@/lib/shrink-photo";
-import { type DeadlineKind, type DocumentKind, isDateOnlyKind, MAX_CYCLE_MONTHS, MAX_DEADLINE_NOTE_LENGTH } from "@/registry/registry";
-import { changeDeadline, type DeadlineFormState } from "../deadline-actions";
+import {
+  type DeadlineKind,
+  type DocumentKind,
+  isDateOnlyKind,
+  isPolicyKind,
+  MAX_CYCLE_MONTHS,
+  MAX_DEADLINE_NAME_LENGTH,
+  MAX_DEADLINE_NOTE_LENGTH,
+} from "@/registry/registry";
+import { changeDeadline, type DeadlineFormState } from "./deadline-actions";
 
 type Command = "add" | "edit" | "delete" | "complete" | "attach" | "deleteDocument";
 
@@ -23,13 +31,16 @@ export interface DocumentChoice {
   defaultKind: DocumentKind;
 }
 
+/** Czego dotyczą terminy formularza: narzędzia z karty albo pojazdu z jego strony. */
+export type DeadlineFormSubject = { toolId: string } | { vehicleId: string };
+
 /**
- * Formularz terminu: polecenie, narzędzie i termin w ukrytych polach, błąd i wynik pod polami. `confirm` pyta przed
- * wysłaniem (usunięcie), a `withFile` zmniejsza zdjęcie dokumentu przed wysłaniem.
+ * Formularz terminu: polecenie, narzędzie albo pojazd i termin w ukrytych polach, błąd i wynik pod polami. `confirm`
+ * pyta przed wysłaniem (usunięcie), a `withFile` zmniejsza zdjęcie dokumentu przed wysłaniem.
  */
 function DeadlineForm({
   command,
-  toolId,
+  subject,
   deadlineId,
   hidden = {},
   confirm,
@@ -38,7 +49,7 @@ function DeadlineForm({
   children,
 }: {
   command: Command;
-  toolId: string;
+  subject: DeadlineFormSubject;
   deadlineId?: string;
   hidden?: Record<string, string>;
   /** Pytanie przed wysłaniem. */
@@ -65,7 +76,11 @@ function DeadlineForm({
   return (
     <form onSubmit={onSubmit} className={quiet ? "deadline-inline-form" : "stack-form deadline-form"}>
       <input type="hidden" name="command" value={command} />
-      <input type="hidden" name="toolId" value={toolId} />
+      {"toolId" in subject ? (
+        <input type="hidden" name="toolId" value={subject.toolId} />
+      ) : (
+        <input type="hidden" name="vehicleId" value={subject.vehicleId} />
+      )}
       {deadlineId && <input type="hidden" name="deadlineId" value={deadlineId} />}
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
@@ -113,7 +128,13 @@ function DueOnField({ id, kind, defaultValue }: { id: string; kind: DeadlineKind
   return (
     <div className="field">
       <label htmlFor={id}>
-        {kind === "gwarancja" ? t("deadlines.warrantyUntilLabel") : kind === "zwrot" ? t("rentals.returnOn") : t("deadlines.dueOnLabel")}
+        {kind === "gwarancja"
+          ? t("deadlines.warrantyUntilLabel")
+          : kind === "zwrot"
+            ? t("rentals.returnOn")
+            : isPolicyKind(kind)
+              ? t("deadlines.policyUntilLabel")
+              : t("deadlines.dueOnLabel")}
       </label>
       <input id={id} name="dueOn" type="date" required defaultValue={defaultValue} />
     </div>
@@ -126,6 +147,23 @@ function CycleField({ id, defaultValue }: { id: string; defaultValue?: number | 
       <label htmlFor={id}>{t("deadlines.cycleLabel")}</label>
       <input id={id} name="cycleMonths" type="number" inputMode="numeric" min={1} max={MAX_CYCLE_MONTHS} step={1} defaultValue={defaultValue ?? ""} aria-describedby={`${id}-hint`} />
       <small id={`${id}-hint`}>{t("deadlines.cycleHint")}</small>
+    </div>
+  );
+}
+
+function NameField({ id, defaultValue }: { id: string; defaultValue?: string }) {
+  return (
+    <div className="field">
+      <label htmlFor={id}>{t("deadlines.nameLabel")}</label>
+      <input
+        id={id}
+        name="name"
+        required
+        maxLength={MAX_DEADLINE_NAME_LENGTH}
+        autoComplete="off"
+        placeholder={t("deadlines.namePlaceholder")}
+        defaultValue={defaultValue}
+      />
     </div>
   );
 }
@@ -161,11 +199,11 @@ function DocumentFields({ id, documents, required }: { id: string; documents: Do
   );
 }
 
-/** Nowy termin narzędzia: rodzaje, których jeszcze nie ma. Tylko właściciel. */
-export function AddDeadlineForm({ toolId, kinds }: { toolId: string; kinds: DeadlineKind[] }) {
+/** Nowy termin narzędzia albo pojazdu: rodzaje, których jeszcze nie ma (własnych pojazdu może być wiele). Tylko właściciel. */
+export function AddDeadlineForm({ subject, kinds }: { subject: DeadlineFormSubject; kinds: DeadlineKind[] }) {
   const [kind, setKind] = useState<DeadlineKind>(kinds[0]);
   return (
-    <DeadlineForm command="add" toolId={toolId}>
+    <DeadlineForm command="add" subject={subject}>
       <div className="field">
         <label htmlFor="deadline-kind">{t("deadlines.kind")}</label>
         <select id="deadline-kind" name="kind" value={kind} onChange={(event) => setKind(event.target.value as DeadlineKind)}>
@@ -176,6 +214,7 @@ export function AddDeadlineForm({ toolId, kinds }: { toolId: string; kinds: Dead
           ))}
         </select>
       </div>
+      {kind === "wlasny" && <NameField id="deadline-name" />}
       <DueOnField id="deadline-due" kind={kind} />
       {kind !== "gwarancja" && <CycleField id="deadline-cycle" />}
       <NoteField id="deadline-note" />
@@ -183,41 +222,45 @@ export function AddDeadlineForm({ toolId, kinds }: { toolId: string; kinds: Dead
   );
 }
 
-/** Zmiana daty, cyklu i opisu terminu oraz jego usunięcie. Tylko właściciel; termin zwrotu bez cyklu i usunięcia (przedłużenie). */
+/**
+ * Zmiana daty, cyklu, opisu (i nazwy własnego terminu pojazdu) oraz usunięcie terminu. Tylko właściciel; termin zwrotu
+ * bez cyklu i usunięcia (przedłużenie).
+ */
 export function EditDeadlineForm({
-  toolId,
+  subject,
   deadline,
 }: {
-  toolId: string;
-  deadline: { id: string; kind: DeadlineKind; dueOn: string | null; cycleMonths: number | null; note: string | null };
+  subject: DeadlineFormSubject;
+  deadline: { id: string; kind: DeadlineKind; name?: string; dueOn: string | null; cycleMonths: number | null; note: string | null };
 }) {
   const id = `deadline-${deadline.id}`;
   return (
     <>
-      <DeadlineForm command="edit" toolId={toolId} deadlineId={deadline.id}>
+      <DeadlineForm command="edit" subject={subject} deadlineId={deadline.id}>
+        {deadline.kind === "wlasny" && <NameField id={`${id}-name`} defaultValue={deadline.name} />}
         <DueOnField id={`${id}-due`} kind={deadline.kind} defaultValue={deadline.dueOn ?? undefined} />
         {!isDateOnlyKind(deadline.kind) && <CycleField id={`${id}-cycle`} defaultValue={deadline.cycleMonths} />}
         <NoteField id={`${id}-note`} defaultValue={deadline.note} />
       </DeadlineForm>
       {/* Termin zwrotu znika dopiero ze zwrotem do wypożyczalni. */}
-      {deadline.kind !== "zwrot" && <DeadlineForm command="delete" toolId={toolId} deadlineId={deadline.id} confirm={t("deadlines.deleteConfirm")} />}
+      {deadline.kind !== "zwrot" && <DeadlineForm command="delete" subject={subject} deadlineId={deadline.id} confirm={t("deadlines.deleteConfirm")} />}
     </>
   );
 }
 
 /**
- * Wykonany przegląd, kalibracja albo badanie UDT: dzień wykonania (najpóźniej dziś), opcjonalnie następny termin
- * i dokument, np. protokół. Właściciel i magazynier.
+ * Wykonany przegląd, kalibracja, badanie UDT albo termin pojazdu: dzień wykonania (najpóźniej dziś), opcjonalnie
+ * następny termin i dokument, np. protokół albo nowa polisa. Właściciel, a termin narzędzia też magazynier.
  */
 export function CompleteDeadlineForm({
-  toolId,
+  subject,
   deadlineId,
   operationId,
   today,
   nextHint,
   documents,
 }: {
-  toolId: string;
+  subject: DeadlineFormSubject;
   deadlineId: string;
   operationId: string;
   /** Dziś w Polsce, RRRR-MM-DD. */
@@ -228,7 +271,7 @@ export function CompleteDeadlineForm({
 }) {
   const id = `complete-${deadlineId}`;
   return (
-    <DeadlineForm command="complete" toolId={toolId} deadlineId={deadlineId} hidden={{ operationId }} withFile>
+    <DeadlineForm command="complete" subject={subject} deadlineId={deadlineId} hidden={{ operationId }} withFile>
       <div className="field">
         <label htmlFor={`${id}-day`}>{t("deadlines.doneOn")}</label>
         <input id={`${id}-day`} name="doneOn" type="date" required max={today} defaultValue={today} />
@@ -243,21 +286,31 @@ export function CompleteDeadlineForm({
   );
 }
 
-/** Dokument do terminu: PDF albo zdjęcie. Właściciel, a magazynier bez faktur. */
-export function AttachDocumentForm({ toolId, deadlineId, operationId, documents }: { toolId: string; deadlineId: string; operationId: string; documents: DocumentChoice }) {
+/** Dokument do terminu: PDF albo zdjęcie. Właściciel, a magazynier do terminów narzędzi, bez faktur. */
+export function AttachDocumentForm({
+  subject,
+  deadlineId,
+  operationId,
+  documents,
+}: {
+  subject: DeadlineFormSubject;
+  deadlineId: string;
+  operationId: string;
+  documents: DocumentChoice;
+}) {
   return (
-    <DeadlineForm command="attach" toolId={toolId} deadlineId={deadlineId} hidden={{ operationId }} withFile>
+    <DeadlineForm command="attach" subject={subject} deadlineId={deadlineId} hidden={{ operationId }} withFile>
       <DocumentFields id={`attach-${deadlineId}`} documents={documents} required />
     </DeadlineForm>
   );
 }
 
 /** Usunięcie dokumentu z potwierdzeniem. Tylko właściciel. */
-export function DeleteDocumentForm({ toolId, document }: { toolId: string; document: { id: string; fileName: string } }) {
+export function DeleteDocumentForm({ subject, document }: { subject: DeadlineFormSubject; document: { id: string; fileName: string } }) {
   return (
     <DeadlineForm
       command="deleteDocument"
-      toolId={toolId}
+      subject={subject}
       hidden={{ documentId: document.id }}
       confirm={t("deadlines.deleteDocumentConfirm", { name: document.fileName })}
       quiet

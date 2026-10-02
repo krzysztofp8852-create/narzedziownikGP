@@ -1,7 +1,7 @@
 import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { NotificationContent } from "@/registry/registry";
-import { deadlineKindName, deadlineKindWord, deadlineWhen } from "./deadline-text";
+import { deadlineKindName, deadlineLink, deadlineName, deadlineWhen, deadlineWord } from "./deadline-text";
 import { historySearch } from "./history-filters";
 import { placeAt, placeFrom } from "./place-text";
 import { qualificationName, qualificationWhen } from "./qualification-text";
@@ -60,15 +60,22 @@ export function notificationText(notification: NotificationContent): { title: st
     case "terminy": {
       const [only] = notification.deadlines;
       if (notification.deadlines.length === 1) {
-        return {
-          title: t("bell.deadline", { kind: deadlineKindName(only.kind), code: only.tool.code, name: only.tool.name, when: deadlineWhen(only) }),
-          body: t("bell.deadlineBody", { place: placeAt(only.location) }),
-        };
+        return only.tool
+          ? {
+              title: t("bell.deadline", { kind: deadlineKindName(only.kind), code: only.tool.code, name: only.tool.name, when: deadlineWhen(only) }),
+              body: t("bell.deadlineBody", { place: placeAt(only.location) }),
+            }
+          : {
+              title: t("bell.vehicleDeadline", { kind: deadlineName(only), name: only.location.name, when: deadlineWhen(only) }),
+              body: t("bell.vehicleDeadlineBody"),
+            };
       }
       return {
         title: t("bell.deadlines", { count: notification.deadlines.length }),
         body: notification.deadlines
-          .map((deadline) => t("bell.deadlineItem", { code: deadline.tool.code, kind: deadlineKindWord(deadline.kind), when: deadlineWhen(deadline) }))
+          .map((deadline) =>
+            t("bell.deadlineItem", { code: deadline.tool?.code ?? deadline.location.name, kind: deadlineWord(deadline), when: deadlineWhen(deadline) }),
+          )
           .join(" · "),
       };
     }
@@ -143,7 +150,7 @@ export function notificationLink(notification: NotificationContent): string {
     case "tylko_do_odczytu":
       return "/ustawienia";
     case "terminy":
-      return notification.deadlines.length === 1 ? `/narzedzia/${notification.deadlines[0].tool.id}#terminy` : "/terminy";
+      return notification.deadlines.length === 1 ? deadlineLink(notification.deadlines[0]) : "/terminy";
     case "uprawnienia":
       return notification.qualifications.length === 1 ? `/ludzie/${notification.qualifications[0].person.id}` : "/ludzie";
   }

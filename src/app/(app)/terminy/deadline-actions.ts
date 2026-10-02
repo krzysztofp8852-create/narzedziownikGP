@@ -16,28 +16,37 @@ export interface DeadlineFormState {
 }
 
 /**
- * Termin z karty narzędzia: dodanie, zmiana, usunięcie, wykonanie albo dokument; które, mówi pole `command`.
- * Narzędzie (`toolId`) i termin (`deadlineId`) są w ukrytych polach.
+ * Termin z karty narzędzia albo ze strony pojazdu: dodanie, zmiana, usunięcie, wykonanie albo dokument; które, mówi
+ * pole `command`. Narzędzie (`toolId`) albo pojazd (`vehicleId`) i termin (`deadlineId`) są w ukrytych polach.
  */
 export async function changeDeadline(_prev: DeadlineFormState, formData: FormData): Promise<DeadlineFormState> {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
   const toolId = formText(formData, "toolId");
+  const vehicleId = formText(formData, "vehicleId");
   const deadlineId = formText(formData, "deadlineId");
   let done = t("deadlines.saved");
   try {
     switch (formText(formData, "command")) {
-      case "add":
-        await registry.addDeadline({
-          toolId,
+      case "add": {
+        const fields = {
           kind: formText(formData, "kind") as DeadlineKind,
+          name: formText(formData, "name") || null,
           dueOn: formText(formData, "dueOn"),
           cycleMonths: cycleMonths(formData),
           note: formText(formData, "note"),
-        });
+        };
+        await registry.addDeadline(vehicleId ? { ...fields, vehicleId } : { ...fields, toolId });
         break;
+      }
       case "edit":
-        await registry.updateDeadline(deadlineId, { dueOn: formText(formData, "dueOn"), cycleMonths: cycleMonths(formData), note: formText(formData, "note") });
+        await registry.updateDeadline(deadlineId, {
+          dueOn: formText(formData, "dueOn"),
+          cycleMonths: cycleMonths(formData),
+          note: formText(formData, "note"),
+          // Nazwę ma tylko własny termin pojazdu, a formularz innych rodzajów nie ma tego pola.
+          ...(formData.has("name") && { name: formText(formData, "name") }),
+        });
         break;
       case "delete":
         await registry.deleteDeadline(deadlineId);
@@ -68,7 +77,7 @@ export async function changeDeadline(_prev: DeadlineFormState, formData: FormDat
   } catch (error) {
     return { error: errorMessage(error) };
   }
-  revalidatePath(`/narzedzia/${toolId}`);
+  revalidatePath(vehicleId ? `/pojazdy/${vehicleId}/terminy` : `/narzedzia/${toolId}`);
   revalidatePath("/terminy");
   revalidatePath("/");
   return { done };

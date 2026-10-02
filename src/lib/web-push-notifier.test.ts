@@ -100,9 +100,21 @@ describe("powiadomienie push o terminach", () => {
       },
     });
     expect(push).toMatchObject({
-      title: "Terminy sprzętu: 3",
+      title: "Terminy: 3",
       body: "H-01: przegląd, po terminie (20.02.2026) · N-01: kalibracja, termin 13.03.2026 · N-01: gwarancja, koniec 14.03.2026",
     });
+  });
+
+  it("termin pojazdu: rodzaj albo nazwa własnego terminu i pojazd zamiast kodu narzędzia", () => {
+    const liability = { ...calibration, id: "d3", kind: "oc" as const, dueOn: "2026-04-10", tool: null, location: { id: "bus", name: "Bus Ducato", kind: "pojazd" as const } };
+    expect(pushNotification({ window: "dzwonek", notificationId: "t-3", notification: { kind: "terminy", deadlines: [liability] } })).toMatchObject({
+      title: "OC pojazdu Bus Ducato: termin 10.04.2026",
+      body: "Dane pojazdu i dokumenty są na jego stronie.",
+    });
+    const tyres = { ...liability, id: "d4", kind: "wlasny" as const, name: "Wymiana opon", dueOn: "2026-03-09", overdue: true };
+    expect(
+      pushNotification({ window: "dzwonek", notificationId: "t-4", notification: { kind: "terminy", deadlines: [tyres, calibration] } }),
+    ).toMatchObject({ body: "Bus Ducato: Wymiana opon, po terminie (9.03.2026) · N-01: kalibracja, termin 13.03.2026" });
   });
 });
 

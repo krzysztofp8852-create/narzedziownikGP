@@ -13,7 +13,7 @@ import { requireSession } from "@/lib/auth";
 import { type CostPeriodChoice, costPeriodSearch, parseCostPeriod } from "@/lib/cost-period";
 import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
-import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type Site, type ToolCost } from "@/registry/registry";
+import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type Site, type ToolCost, type Vehicle } from "@/registry/registry";
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
 import { CostPeriodPicker } from "./cost-period-picker";
 
@@ -31,11 +31,13 @@ export interface PlacePage {
   manager: Site["manager"] | null;
   /** Aktywna budowa albo aktywny pojazd (baza zawsze): jest na tablicy i przyjmuje sprzęt. */
   open: boolean;
+  /** Dane pojazdu; budowa i baza ich nie mają. */
+  vehicle: Pick<Vehicle, "registrationNumber" | "vin"> | null;
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export type PlacePageTab = "" | "/koszty" | "/koszty/eksport" | "/ludzie";
+export type PlacePageTab = "" | "/koszty" | "/koszty/eksport" | "/ludzie" | "/terminy";
 
 /** Adres strony budowy, pojazdu albo bazy, np. /budowy/…/koszty albo /baza/ludzie. */
 export function locationPagePath(kind: PlacePageKind, id: string, tab: PlacePageTab = "") {
@@ -51,14 +53,22 @@ export const loadPlacePage = cache(async (id: string | null, kind: PlacePageKind
   const session = await requireSession();
   const { base, sites, vehicles } = await getRegistry().as(session.userId).locations();
   if (kind === "baza") {
-    return { session, location: { id: base.id, kind, name: base.name, address: base.address, manager: null, open: true } };
+    return { session, location: { id: base.id, kind, name: base.name, address: base.address, manager: null, open: true, vehicle: null } };
   }
   const site = kind === "budowa" ? sites.find((candidate) => candidate.id === id) : undefined;
   const vehicle = kind === "pojazd" ? vehicles.find((candidate) => candidate.id === id) : undefined;
   const location: PlacePage | null = site
-    ? { id: site.id, kind, name: site.name, address: site.address, manager: site.manager, open: site.status === "aktywna" }
+    ? { id: site.id, kind, name: site.name, address: site.address, manager: site.manager, open: site.status === "aktywna", vehicle: null }
     : vehicle
-      ? { id: vehicle.id, kind, name: vehicle.name, address: null, manager: vehicle.manager, open: vehicle.active }
+      ? {
+          id: vehicle.id,
+          kind,
+          name: vehicle.name,
+          address: null,
+          manager: vehicle.manager,
+          open: vehicle.active,
+          vehicle: { registrationNumber: vehicle.registrationNumber, vin: vehicle.vin },
+        }
       : null;
   return { session, location };
 });
@@ -76,7 +86,7 @@ const KIND_LABELS = { budowa: "locationPage.siteKind", pojazd: "locationPage.veh
 
 /**
  * Nagłówek strony budowy, pojazdu albo bazy z zakładkami: „Koszty” tylko dla tego, kto widzi koszty tej lokalizacji,
- * „Ludzie na budowie” przy budowie i bazie (każdy widzi tam to, co mu wolno).
+ * „Ludzie na budowie” przy budowie i bazie, „Dane i terminy” przy pojeździe (każdy widzi tam to, co mu wolno).
  */
 export function LocationShell({
   session,
@@ -86,11 +96,14 @@ export function LocationShell({
 }: {
   session: Session;
   location: PlacePage;
-  tab: "sprzet" | "koszty" | "ludzie";
+  tab: "sprzet" | "koszty" | "ludzie" | "terminy";
   children: ReactNode;
 }) {
   const tabs = [
     { id: "sprzet", href: locationPagePath(location.kind, location.id), label: t("locationPage.equipmentTab") },
+    ...(location.kind === "pojazd"
+      ? [{ id: "terminy", href: locationPagePath(location.kind, location.id, "/terminy"), label: t("locationPage.vehicleTab") }]
+      : []),
     ...(seesCostsOf(session, location) ? [{ id: "koszty", href: locationPagePath(location.kind, location.id, "/koszty"), label: t("costs.tab") }] : []),
     ...(location.kind !== "pojazd"
       ? [
@@ -117,6 +130,7 @@ export function LocationShell({
       </h1>
       <div className="location-details site-page-details">
         {location.address && <p className="muted">{location.address}</p>}
+        {location.vehicle?.registrationNumber && <p className="plate">{location.vehicle.registrationNumber}</p>}
         {location.manager && (
           <p>
             <SiteManagerLabel manager={location.manager} />

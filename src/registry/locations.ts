@@ -162,17 +162,33 @@ export async function placeGeocoded(sql: Sql, { locationId, address }: LocatedAd
   );
 }
 
-export interface NewVehicleInput {
+/** Dane pojazdu: oba pola opcjonalne. */
+export interface VehicleData {
+  /** Np. „WPI 4K21”; zapisuje się wielkimi literami. */
+  registrationNumber?: string | null;
+  /** 17 znaków bez I, O i Q; zapisuje się wielkimi literami bez spacji. */
+  vin?: string | null;
+}
+
+export interface NewVehicleInput extends VehicleData {
   /** Np. „Bus WX 12345”. */
   name: string;
   /** Aktywny kierownik albo właściciel z firmy właściciela. */
   managerId: string;
 }
 
-/** Pojazd (np. bus brygady): sprzęt na nim jest poza bazą. */
+export const MAX_REGISTRATION_NUMBER_LENGTH = 12;
+const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/;
+
+/**
+ * Pojazd (np. bus brygady albo osobówka bez sprzętu): sprzęt na nim jest poza bazą, a sam pojazd ma terminy (OC,
+ * przegląd techniczny).
+ */
 export interface Vehicle {
   id: string;
   name: string;
+  registrationNumber: string | null;
+  vin: string | null;
   /** Nieaktywny (np. sprzedany) nie przyjmuje sprzętu i nie ma go na tablicy. */
   active: boolean;
   /** Alarm po progu dni; domyślnie wyłączony. */
@@ -183,13 +199,35 @@ export interface Vehicle {
 export async function addVehicle(sql: Sql, session: Session, raw: NewVehicleInput, now: Date): Promise<{ locationId: string }> {
   const name = raw.name.trim();
   if (!name) throw new RegistryError("invalid_input");
+  const data = checkVehicleData(raw);
   await requireSiteManagerCandidate(sql, raw.managerId);
   const [vehicle] = await sql<{ id: string }>(
-    `insert into app.locations (company_id, kind, name, manager_id, active, alarm_enabled, created_at)
-     values ($1, 'pojazd', $2, $3, true, false, $4) returning id`,
-    [session.company.id, name, raw.managerId, now],
+    `insert into app.locations (company_id, kind, name, manager_id, active, alarm_enabled, registration_number, vin, created_at)
+     values ($1, 'pojazd', $2, $3, true, false, $4, $5, $6) returning id`,
+    [session.company.id, name, raw.managerId, data.registrationNumber, data.vin, now],
   );
   return { locationId: vehicle.id };
+}
+
+export async function changeVehicleData(sql: Sql, vehicleId: string, raw: VehicleData) {
+  const data = checkVehicleData(raw);
+  await requireActiveVehicle(sql, vehicleId);
+  await sql("update app.locations set registration_number = $2, vin = $3 where id = $1", [vehicleId, data.registrationNumber, data.vin]);
+}
+
+/**
+ * Numer rejestracyjny wielkimi literami z pojedynczymi spacjami (litery i cyfry, do 12 znaków) i VIN wielkimi literami
+ * bez spacji (17 znaków bez I, O i Q: `vin_invalid`); puste to brak.
+ */
+function checkVehicleData(raw: VehicleData): { registrationNumber: string | null; vin: string | null } {
+  const text = (value: unknown) => (typeof value === "string" ? value : "");
+  const registrationNumber = text(raw.registrationNumber).trim().toUpperCase().replace(/\s+/g, " ") || null;
+  if (registrationNumber && !(/^[A-Z0-9 ]+$/.test(registrationNumber) && registrationNumber.length <= MAX_REGISTRATION_NUMBER_LENGTH)) {
+    throw new RegistryError("invalid_input");
+  }
+  const vin = text(raw.vin).replace(/\s+/g, "").toUpperCase() || null;
+  if (vin && !VIN_PATTERN.test(vin)) throw new RegistryError("vin_invalid");
+  return { registrationNumber, vin };
 }
 
 export async function changeVehicleManager(sql: Sql, vehicleId: string, managerId: string) {
@@ -313,13 +351,15 @@ export async function vehicles(sql: Sql, { activeOnly }: { activeOnly: boolean }
   const rows = await sql<{
     id: string;
     name: string;
+    registration_number: string | null;
+    vin: string | null;
     active: boolean;
     alarm_enabled: boolean;
     manager_id: string;
     manager_name: string;
     manager_active: boolean;
   }>(
-    `select l.id, l.name, l.active, l.alarm_enabled,
+    `select l.id, l.name, l.registration_number, l.vin, l.active, l.alarm_enabled,
             u.user_id as manager_id, u.full_name as manager_name, u.active as manager_active
      from app.locations l join app.users u on u.user_id = l.manager_id
      where l.kind = 'pojazd' and ($1 = false or l.active)
@@ -329,6 +369,8 @@ export async function vehicles(sql: Sql, { activeOnly }: { activeOnly: boolean }
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
+    registrationNumber: row.registration_number,
+    vin: row.vin,
     active: row.active,
     alarmEnabled: row.alarm_enabled,
     manager: { id: row.manager_id, fullName: row.manager_name, active: row.manager_active },

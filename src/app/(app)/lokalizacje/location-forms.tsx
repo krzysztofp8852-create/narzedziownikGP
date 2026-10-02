@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
-import type { SiteManagerCandidate, Vehicle } from "@/registry/registry";
+import { MAX_REGISTRATION_NUMBER_LENGTH, type SiteManagerCandidate, type Vehicle } from "@/registry/registry";
 import {
   type AddressFormState,
   addService,
@@ -11,11 +11,13 @@ import {
   addVehicle,
   type ChangeManagerState,
   changeSiteAddress,
+  changeVehicleData,
   deactivateVehicle,
   type LocationFormState,
   setBaseAddress,
   setVehicleAlarm,
   type VehicleActionState,
+  type VehicleDataState,
 } from "./actions";
 
 function FormError({ state }: { state: { error?: string } }) {
@@ -94,6 +96,7 @@ export function AddVehicleForm({ managers }: { managers: SiteManagerCandidate[] 
           <label htmlFor="vehicle-manager">{t("locations.manager")}</label>
           <ManagerSelect id="vehicle-manager" managers={managers} defaultValue="" />
         </div>
+        <VehicleDataFields id="vehicle" />
         <FormError state={state} />
         <div className="form-actions">
           <button className="button" type="submit" disabled={pending}>
@@ -102,6 +105,62 @@ export function AddVehicleForm({ managers }: { managers: SiteManagerCandidate[] 
         </div>
       </form>
     </div>
+  );
+}
+
+/** Numer rejestracyjny i VIN pojazdu: oba opcjonalne. */
+function VehicleDataFields({ id, vehicle }: { id: string; vehicle?: Pick<Vehicle, "registrationNumber" | "vin"> }) {
+  return (
+    <>
+      <div className="field">
+        <label htmlFor={`${id}-registration`}>{t("locations.registrationNumber")}</label>
+        <input
+          id={`${id}-registration`}
+          name="registrationNumber"
+          autoComplete="off"
+          autoCapitalize="characters"
+          maxLength={MAX_REGISTRATION_NUMBER_LENGTH}
+          placeholder={t("locations.registrationNumberPlaceholder")}
+          defaultValue={vehicle?.registrationNumber ?? ""}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor={`${id}-vin`}>{t("locations.vin")}</label>
+        <input
+          id={`${id}-vin`}
+          name="vin"
+          autoComplete="off"
+          autoCapitalize="characters"
+          maxLength={20}
+          spellCheck={false}
+          defaultValue={vehicle?.vin ?? ""}
+          aria-describedby={`${id}-vin-hint`}
+        />
+        <small id={`${id}-vin-hint`}>{t("locations.vinHint")}</small>
+      </div>
+    </>
+  );
+}
+
+/** Zmiana numeru rejestracyjnego i VIN aktywnego pojazdu. Tylko właściciel. */
+export function VehicleDataForm({ vehicle }: { vehicle: Pick<Vehicle, "id" | "registrationNumber" | "vin"> }) {
+  const [state, formAction, pending] = useActionState<VehicleDataState, FormData>(changeVehicleData.bind(null, vehicle.id), {});
+
+  return (
+    <form onSubmit={submitKeepingValues(formAction)} className="stack-form">
+      <VehicleDataFields id={`vehicle-${vehicle.id}`} vehicle={vehicle} />
+      <FormError state={state} />
+      {state.saved && !state.error && (
+        <p className="checklist-done" role="status">
+          {t("locations.vehicleDataSaved")}
+        </p>
+      )}
+      <div className="form-actions">
+        <button className="button" type="submit" disabled={pending}>
+          {pending ? t("locations.submitting") : t("locations.submitVehicleData")}
+        </button>
+      </div>
+    </form>
   );
 }
 

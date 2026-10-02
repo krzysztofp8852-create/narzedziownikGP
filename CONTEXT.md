@@ -81,8 +81,8 @@ _Avoid_: projekt, inwestycja, obiekt
 Zewnętrzny punkt naprawy; sprzęt w serwisie nie jest ani zaginiony, ani na budowie.
 
 **Pojazd**:
-Lokalizacja ruchoma (np. bus brygady) z przypisanym kierownikiem (kierownik albo właściciel, który sam nim jeździ); sprzęt na pojeździe jest poza bazą.
-_Avoid_: bus, auto, samochód (jako nazwa rodzaju lokalizacji)
+Lokalizacja ruchoma (np. bus brygady) z przypisanym kierownikiem (kierownik albo właściciel, który sam nim jeździ); sprzęt na pojeździe jest poza bazą. Ma opcjonalny numer rejestracyjny i VIN oraz terminy pojazdu. Każdy pojazd floty jest pojazdem, także osobówka bez sprzętu; maszyny (koparka, wywrotka) są narzędziami.
+_Avoid_: bus, auto, samochód (jako nazwa rodzaju lokalizacji), flota (jako nazwa pojedynczego pojazdu)
 
 **Poza bazą**:
 Każda lokalizacja inna niż baza i serwis. Łączna wartość sprzętu poza bazą to miara ryzyka dla właściciela.
@@ -130,12 +130,16 @@ _Avoid_: dostawca, wynajmujący
 ## Terminy
 
 **Termin**:
-Data przeglądu, kalibracji, badania UDT, końca gwarancji albo zwrotu sprzętu wynajętego przy narzędziu, najwyżej jeden każdego rodzaju, z opcjonalnym cyklem w miesiącach.
+Data przeglądu, kalibracji, badania UDT, końca gwarancji albo zwrotu sprzętu wynajętego przy narzędziu, najwyżej jeden każdego rodzaju, z opcjonalnym cyklem w miesiącach. Przy pojeździe to termin pojazdu.
 _Avoid_: deadline, zadanie, przegląd (jako ogólne pojęcie)
 
 **Wykonanie**:
-Wpis, że przegląd, kalibracja albo badanie UDT się odbyły; następny termin to dzień wykonania plus cykl. Gwarancji się nie wykonuje, tylko wygasa.
+Wpis, że przegląd, kalibracja, badanie UDT albo termin pojazdu się odbyły (przy OC i AC: polisę odnowiono); następny termin to dzień wykonania plus cykl, a przy trwającej jeszcze polisie koniec starej plus cykl. Gwarancji się nie wykonuje, tylko wygasa.
 _Avoid_: zamknięcie terminu, odhaczenie
+
+**Termin pojazdu**:
+Termin przy pojeździe zamiast narzędzia: przegląd techniczny, OC, AC, legalizacja tachografu albo własny z nazwą (np. wymiana opon). Najwyżej jeden każdego rodzaju na pojazd, własnych wiele, z cyklem, wykonaniem i dokumentami jak termin narzędzia. Odnowienie OC i AC przed końcem polisy liczy następny termin od końca starej. Dodaje go, wykonuje i zmienia tylko właściciel, widzi każdy w firmie. Przypomina 30 dni przed OC, AC i tachografem, tydzień przed przeglądem i własnym, i raz po, właścicielowi i kierownikowi pojazdu. Nieaktywny pojazd nie przypomina.
+_Avoid_: termin floty, ubezpieczenie (jako ogólne pojęcie), badanie techniczne
 
 **Termin zwrotu**:
 Dzień, do którego sprzęt wynajęty ma wrócić do wypożyczalni. Powstaje z przyjęciem, bez cyklu i wykonania; przedłużenie to zmiana tej daty przez tych, którzy mogą zapisać zwrot do wypożyczalni. Przypomina dzień przed i raz po, a po nim tablica ma dopisek „po terminie zwrotu”, który niczego nie blokuje.
@@ -146,7 +150,7 @@ Stan terminu, którego data minęła bez wpisanego wykonania. Nie blokuje ruchó
 _Avoid_: przeterminowany, zaległy
 
 **Dokument terminu**:
-Zdjęcie albo PDF przy terminie: świadectwo kalibracji, protokół, karta gwarancyjna, faktura albo inny. Fakturę widzi tylko właściciel, bo ma cenę.
+Zdjęcie albo PDF przy terminie: świadectwo kalibracji, protokół, karta gwarancyjna, faktura albo inny, a przy terminie pojazdu też polisa i dowód rejestracyjny. Fakturę widzi tylko właściciel, bo ma cenę. Dokumenty terminu pojazdu widzą tylko właściciel i kierownik pojazdu.
 _Avoid_: załącznik, teczka
 
 **Przypomnienie o terminie**:

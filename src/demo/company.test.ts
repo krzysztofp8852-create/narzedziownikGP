@@ -58,7 +58,13 @@ describe("firma demo", () => {
     const board = await bed.registry.as(owner.userId).whereIsWhat();
 
     expect(board.sites.length).toBe(5);
-    expect(board.vehicles.length).toBe(3);
+    // Trzy busy brygad i osobówka właściciela bez sprzętu, każdy z numerem rejestracyjnym.
+    expect(board.vehicles.map((vehicle) => [vehicle.registrationNumber, vehicle.tools.length > 0])).toEqual([
+      ["WPI 4K21", true],
+      ["WPI 7M08", true],
+      ["WPZ 2C55", true],
+      ["PO 5T812", false],
+    ]);
     expect(board.alarmCount).toBe(5);
     expect(board.services.flatMap((service) => service.tools).length).toBe(2);
     expect(board.lost.length).toBe(1);
@@ -68,15 +74,22 @@ describe("firma demo", () => {
     expect(await registry.toolReports()).toHaveLength(2);
     expect((await registry.issues()).filter((issue) => issue.status === "otwarte")).toHaveLength(3);
     expect(await registry.finishedSites()).toHaveLength(1);
-    // Terminy z najbliższego miesiąca: kalibracja po terminie, podnośnik po terminie zwrotu, zwrot zagęszczarki i kalibracja
-    // za kilka dni, przegląd agregatu i koniec gwarancji.
-    expect((await registry.upcomingDeadlines()).map((deadline) => [deadline.tool.code, deadline.kind, deadline.overdue])).toEqual([
+    // Terminy z najbliższego miesiąca: przegląd busa i kalibracja po terminie, podnośnik po terminie zwrotu, zwrot
+    // zagęszczarki, kalibracja, wymiana opon i przegląd osobówki za kilka dni, przegląd agregatu, OC i AC busa, koniec
+    // gwarancji i legalizacja tachografu.
+    expect((await registry.upcomingDeadlines()).map((deadline) => [deadline.tool?.code ?? deadline.location.name, deadline.kind, deadline.overdue])).toEqual([
+      ["Bus WPI 7M08 (Transit)", "przeglad_techniczny", true],
       ["M-04", "kalibracja", true],
       ["R-06", "zwrot", true],
       ["Z-07", "zwrot", false],
       ["M-01", "kalibracja", false],
+      ["Bus WPI 4K21 (Ducato)", "wlasny", false],
+      ["Skoda Octavia", "przeglad_techniczny", false],
       ["A-01", "przeglad", false],
+      ["Bus WPI 4K21 (Ducato)", "oc", false],
+      ["Bus WPI 4K21 (Ducato)", "ac", false],
       ["H-01", "gwarancja", false],
+      ["Bus WPZ 2C55 (Master)", "tachograf", false],
     ]);
 
     const marek = bed.registry.as(manager.userId);

@@ -267,6 +267,7 @@ export const LOGGED_DEMO_COMMANDS = [
   "addService",
   "addVehicle",
   "changeVehicleManager",
+  "changeVehicleData",
   "setVehicleAlarm",
   "deactivateVehicle",
   "closeSite",

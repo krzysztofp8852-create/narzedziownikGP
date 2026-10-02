@@ -18,6 +18,7 @@ export type RegistryErrorCode =
   | "site_finished"
   | "site_not_empty"
   | "vehicle_inactive"
+  | "vin_invalid"
   | "vehicle_not_empty"
   | "movement_conflict"
   | "not_undoable"

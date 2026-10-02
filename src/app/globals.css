@@ -4075,3 +4075,21 @@ a.tool-row:hover .tool-row-name {
 .cost-summary-group + .cost-summary-group {
   margin-top: 16px;
 }
+
+/* Zakładka „Dane i terminy” pojazdu: numer rejestracyjny i VIN obok siebie, a na telefonie jeden pod drugim. */
+.vehicle-data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  margin: 0 0 12px;
+}
+
+.vehicle-data dd {
+  margin: 2px 0 0;
+}
+
+.vehicle-vin {
+  font-family: var(--font-plate), ui-monospace, monospace;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
