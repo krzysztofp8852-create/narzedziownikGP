@@ -165,11 +165,7 @@ async function lostTools(sql: Sql, now: Date, withValues: boolean): Promise<Lost
     value: string | null;
   }>(
     `select t.id, t.code, t.name, t.located_since, l.id as location_id, l.name as location_name,
-            (select u.full_name from app.movement_tools mt
-             join app.movements m on m.id = mt.movement_id
-             join app.users u on u.user_id = m.responsible_user_id
-             where mt.tool_id = t.id and m.to_state = 'zaginione'
-             order by m.sequence_number desc limit 1) as responsible,
+            ${LOST_RESPONSIBLE} as responsible,
             ${valueColumn(withValues)}
      from app.tools t
      join app.locations l on l.id = t.location_id
@@ -187,20 +183,27 @@ async function lostTools(sql: Sql, now: Date, withValues: boolean): Promise<Lost
   }));
 }
 
+/** Kierownik, który odpowiadał za zaginione narzędzie `t`: z ostatniego ruchu do zaginionych. */
+export const LOST_RESPONSIBLE = `(select u.full_name from app.movement_tools mt
+             join app.movements m on m.id = mt.movement_id
+             join app.users u on u.user_id = m.responsible_user_id
+             where mt.tool_id = t.id and m.to_state = 'zaginione'
+             order by m.sequence_number desc limit 1)`;
+
 /**
  * Kolumna `value` z wartością narzędzia (tekst, bez utraty groszy) albo null. Wartości czyta tylko
  * właściciel; dla innych ról zapytanie nie dotyka tabeli wartości.
  */
-function valueColumn(withValues: boolean) {
+export function valueColumn(withValues: boolean) {
   return withValues ? "v.value::text as value" : "null as value";
 }
 
 /** Dołącza wartości narzędzi `t` jako `v`, gdy aktor je widzi. */
-function valueJoin(withValues: boolean) {
+export function valueJoin(withValues: boolean) {
   return withValues ? "left join app.tool_values v on v.tool_id = t.id" : "";
 }
 
-function parseValue(value: string | null) {
+export function parseValue(value: string | null) {
   return value === null ? null : Number(value);
 }
 

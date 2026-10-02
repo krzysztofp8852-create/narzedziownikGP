@@ -72,6 +72,7 @@
       "company": "Firma"
     },
     "board": "Tablica",
+    "tools": "Narzędzia",
     "deadlines": "Terminy",
     "history": "Historia",
     "stickers": "Naklejki",
@@ -453,6 +454,28 @@
     "openCard": "Otwórz kartę →",
     "saved": "Zapisano zmiany.",
     "importLink": "Masz listę narzędzi w Excelu? Importuj z pliku →"
+  },
+  "toolsPage": {
+    "title": "Narzędzia",
+    "back": "← Tablica",
+    "intro": "Cały sprzęt firmy: gdzie jest, od ilu dni i kto za niego odpowiada. Kliknij narzędzie, żeby otworzyć kartę z historią.",
+    "filters": "Filtry",
+    "query": "Szukaj",
+    "queryPlaceholder": "np. H-03, niwelator albo Hilti",
+    "category": "Kategoria",
+    "place": "Gdzie jest",
+    "any": "Wszystkie",
+    "lost": "Zaginione",
+    "withRetiredAndReturned": "Pokaż też wycofane i zwrócone do wypożyczalni",
+    "count": "Narzędzia: {count}",
+    "totalValue": "wartość w obiegu {amount}",
+    "empty": "Firma nie ma jeszcze narzędzi.",
+    "noMatches": "Nic nie pasuje do filtrów.",
+    "outOfCirculation": "{state}, ostatnio: {place}",
+    "lostResponsible": "odpowiadał: {name}",
+    "lostFor": "zaginione od {days}",
+    "stateFor": "od {days}",
+    "import": "Importuj z pliku"
   },
   "toolReports": {
     "title": "Zgłoszone narzędzia",

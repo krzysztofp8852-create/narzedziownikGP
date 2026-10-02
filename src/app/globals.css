@@ -1809,6 +1809,18 @@ a.tool-row:hover .tool-row-name {
   max-width: 880px;
 }
 
+/* Strona Narzędzia: cały sprzęt firmy z filtrami. */
+.tool-browser {
+  display: grid;
+  gap: 16px;
+  max-width: 880px;
+  margin-top: 16px;
+}
+
+.tool-browser-retired {
+  margin-top: 12px;
+}
+
 .found {
   display: grid;
   gap: 8px;

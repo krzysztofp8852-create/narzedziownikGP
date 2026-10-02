@@ -491,6 +491,11 @@ export async function uniqueOr<T>(query: Promise<T>): Promise<T> {
 }
 
 
+/** Kolejność kodów jak na liście: H-2 przed H-10. */
+export function byCode(a: { code: string }, b: { code: string }) {
+  return a.code.localeCompare(b.code, "pl", { numeric: true });
+}
+
 export function daysSince(since: Date, now: Date) {
   return Math.max(0, Math.floor((now.getTime() - new Date(since).getTime()) / DAY_MS));
 }
