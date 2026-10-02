@@ -1,6 +1,7 @@
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
+import { byCode } from "./tools";
 import { UUID_PATTERN } from "./validation";
 
 /** Które naklejki drukujemy: wybrane narzędzia albo wszystkie jeszcze nieoklejone (bez sprzętu wynajętego). */
@@ -12,11 +13,6 @@ export interface StickerBatch {
   printedAt: Date;
   /** Po kodzie. `toolId` trafia do adresu w kodzie QR. */
   stickers: { toolId: string; code: string }[];
-}
-
-/** Kolejność kodów jak na liście: H-2 przed H-10. */
-function byCode(a: { code: string }, b: { code: string }) {
-  return a.code.localeCompare(b.code, "pl", { numeric: true });
 }
 
 /** Narzędzie, któremu można wydrukować naklejkę. */

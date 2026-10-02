@@ -30,7 +30,7 @@ test("właściciel widzi cały sprzęt z wartościami, zawęża listę i otwiera
   await expect(page.getByRole("heading", { name: "Narzędzia", level: 1 })).toBeVisible();
   const list = page.getByTestId("tools-list");
   await expect(list.getByRole("link")).toHaveCount(3);
-  await expect(page.getByTestId("tools-count")).toHaveText("Narzędzia: 3 · wartość 4030,50 zł");
+  await expect(page.getByTestId("tools-count")).toHaveText("Narzędzia: 3 · wartość w obiegu 4030,50 zł");
   const hammer = list.getByRole("link", { name: /H-01/ });
   await expect(hammer).toContainText("Młoty");
   await expect(hammer).toContainText("Rataje");
@@ -47,7 +47,7 @@ test("właściciel widzi cały sprzęt z wartościami, zawęża listę i otwiera
   await expect(list.getByRole("link")).toHaveCount(2);
   await filters.getByLabel("Kategoria").selectOption("Szlifierki");
   await expect(list.getByRole("link")).toHaveText([/S-01/]);
-  await expect(page.getByTestId("tools-count")).toHaveText("Narzędzia: 1 · wartość 450,50 zł");
+  await expect(page.getByTestId("tools-count")).toHaveText("Narzędzia: 1 · wartość w obiegu 450,50 zł");
   await filters.getByLabel("Gdzie jest").selectOption({ label: "Wszystkie" });
   await filters.getByLabel("Szukaj").fill("mała");
   await expect(list.getByRole("link")).toHaveText([/S-02/]);

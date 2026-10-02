@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ListedTool } from "@/registry/registry";
-import { ALL, filterTools, LOST, toolListOptions } from "./tool-list";
+import { ALL, filterTools, LOST, toolListOptions } from "./tool-list-filters";
 
 const base = { id: "b", name: "Magazyn Swarzędz", kind: "baza" } as const;
 const rataje = { id: "r", name: "Rataje", kind: "budowa" } as const;
@@ -36,12 +36,12 @@ const tools = [
 ];
 
 const codes = (list: ListedTool[]) => list.map((item) => item.code);
-const noFilters = { query: "", category: ALL, place: ALL, withRetired: false };
+const noFilters = { query: "", category: ALL, place: ALL, withRetiredAndReturned: false };
 
 describe("filtry listy narzędzi", () => {
   it("bez filtrów pokazuje sprzęt w obiegu i zaginiony, a wycofany i zwrócony dopiero na życzenie", () => {
     expect(codes(filterTools(tools, noFilters))).toEqual(["H-01", "H-02", "S-01", "S-02", "S-04"]);
-    expect(codes(filterTools(tools, { ...noFilters, withRetired: true }))).toEqual(codes(tools));
+    expect(codes(filterTools(tools, { ...noFilters, withRetiredAndReturned: true }))).toEqual(codes(tools));
   });
 
   it("pole szuka jak lupa: po słowach w nazwie, kategorii, marce i modelu albo po kodzie bez kresek", () => {
@@ -54,7 +54,7 @@ describe("filtry listy narzędzi", () => {
     expect(codes(filterTools(tools, { ...noFilters, category: "Szlifierki" }))).toEqual(["S-01", "S-02", "S-04"]);
     expect(codes(filterTools(tools, { ...noFilters, place: "r" }))).toEqual(["H-01"]);
     expect(codes(filterTools(tools, { ...noFilters, place: LOST }))).toEqual(["S-02"]);
-    expect(codes(filterTools(tools, { ...noFilters, place: "b", withRetired: true }))).toEqual(["S-04"]);
+    expect(codes(filterTools(tools, { ...noFilters, place: "b", withRetiredAndReturned: true }))).toEqual(["S-04"]);
     expect(codes(filterTools(tools, { ...noFilters, category: "Szlifierki", place: "v", query: "kątowa" }))).toEqual(["S-01"]);
   });
 
@@ -63,8 +63,8 @@ describe("filtry listy narzędzi", () => {
       categories: ["Maszyny", "Młotowiertarki", "Szlifierki"],
       places: [base, rataje, bus, serwis],
       hasLost: true,
-      hasRetired: true,
+      hasRetiredOrReturned: true,
     });
-    expect(toolListOptions([tool("S-04")])).toEqual({ categories: ["Szlifierki"], places: [base], hasLost: false, hasRetired: false });
+    expect(toolListOptions([tool("S-04")])).toEqual({ categories: ["Szlifierki"], places: [base], hasLost: false, hasRetiredOrReturned: false });
   });
 });

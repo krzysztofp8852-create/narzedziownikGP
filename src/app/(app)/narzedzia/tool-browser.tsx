@@ -9,17 +9,18 @@ import { VehicleIcon } from "@/components/vehicle-icon";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import { ALL, filterTools, LOST, type ToolListFilters, toolListOptions } from "@/lib/tool-list";
+import { ALL, filterTools, LOST, type ToolListFilters, toolListOptions } from "@/lib/tool-list-filters";
 import type { ListedTool } from "@/registry/registry";
 
 /** Lista całego sprzętu z filtrami, które zawężają ją od razu w przeglądarce. Każde narzędzie otwiera swoją kartę. */
 export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withValues: boolean }) {
-  const [filters, setFilters] = useState<ToolListFilters>({ query: "", category: ALL, place: ALL, withRetired: false });
+  const [filters, setFilters] = useState<ToolListFilters>({ query: "", category: ALL, place: ALL, withRetiredAndReturned: false });
   const change = (changes: Partial<ToolListFilters>) => setFilters((current) => ({ ...current, ...changes }));
   const options = toolListOptions(tools);
   const shown = filterTools(tools, filters);
-  // Sumujemy w groszach, żeby nie zgubić ich na ułamkach.
-  const totalCents = shown.reduce((sum, tool) => sum + Math.round((tool.value ?? 0) * 100), 0);
+  // Jak na tablicy: zaginione i wycofane nie wchodzą do sumy sprzętu w obiegu. Sumujemy w groszach.
+  const inCirculation = shown.filter((tool) => tool.state === "w_obiegu");
+  const totalCents = inCirculation.reduce((sum, tool) => sum + Math.round((tool.value ?? 0) * 100), 0);
 
   return (
     <div className="tool-browser">
@@ -61,10 +62,10 @@ export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withVa
             </select>
           </div>
         </div>
-        {options.hasRetired && (
+        {options.hasRetiredOrReturned && (
           <label className="checkbox tool-browser-retired">
-            <input type="checkbox" checked={filters.withRetired} onChange={(event) => change({ withRetired: event.target.checked })} />
-            {t("toolsPage.withRetired")}
+            <input type="checkbox" checked={filters.withRetiredAndReturned} onChange={(event) => change({ withRetiredAndReturned: event.target.checked })} />
+            {t("toolsPage.withRetiredAndReturned")}
           </label>
         )}
       </form>
@@ -72,7 +73,7 @@ export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withVa
       <section className="found" aria-live="polite" aria-label={t("toolsPage.title")}>
         <p className="muted" data-testid="tools-count">
           {t("toolsPage.count", { count: shown.length })}
-          {withValues && shown.length > 0 && ` · ${t("toolsPage.totalValue", { amount: formatMoney(totalCents / 100) })}`}
+          {withValues && inCirculation.length > 0 && ` · ${t("toolsPage.totalValue", { amount: formatMoney(totalCents / 100) })}`}
         </p>
         {shown.length === 0 ? (
           <p className="empty">{t("toolsPage.noMatches")}</p>

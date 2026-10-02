@@ -12,11 +12,11 @@ export interface ToolListFilters {
   category: string;
   place: string;
   /** Pokaż też wycofane i zwrócone do wypożyczalni. */
-  withRetired: boolean;
+  withRetiredAndReturned: boolean;
 }
 
 const inCirculation = (tool: ListedTool) => tool.state === "w_obiegu";
-const retired = (tool: ListedTool) => tool.state === "wycofane" || tool.state === "zwrocone";
+const retiredOrReturned = (tool: ListedTool) => tool.state === "wycofane" || tool.state === "zwrocone";
 
 /**
  * Narzędzia pasujące do filtrów. Miejsce to lokalizacja, w której sprzęt jest teraz, więc zawęża do sprzętu w obiegu;
@@ -25,7 +25,7 @@ const retired = (tool: ListedTool) => tool.state === "wycofane" || tool.state ==
 export function filterTools(tools: ListedTool[], filters: ToolListFilters): ListedTool[] {
   return tools.filter(
     (tool) =>
-      (filters.withRetired || !retired(tool)) &&
+      (filters.withRetiredAndReturned || !retiredOrReturned(tool)) &&
       (filters.category === ALL || tool.category === filters.category) &&
       (filters.place === ALL ||
         (filters.place === LOST ? tool.state === "zaginione" : inCirculation(tool) && tool.location.id === filters.place)) &&
@@ -42,6 +42,6 @@ export function toolListOptions(tools: ListedTool[]) {
     categories: [...new Set(tools.map((tool) => tool.category))].sort((a, b) => a.localeCompare(b, "pl")),
     places: [...places.values()].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.name.localeCompare(b.name, "pl")),
     hasLost: tools.some((tool) => tool.state === "zaginione"),
-    hasRetired: tools.some(retired),
+    hasRetiredOrReturned: tools.some(retiredOrReturned),
   };
 }
