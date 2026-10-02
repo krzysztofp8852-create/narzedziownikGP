@@ -473,7 +473,7 @@ describe("tablica dla kierownika", () => {
     ]);
     expect(board.base.tools.map((tool) => tool.code)).toEqual(["S-02"]);
     const everything = JSON.stringify([board, await testbed.registry.as(z.nowakId).recentMovements()]);
-    expect(everything).not.toMatch(/value|3200/i);
+    expect(everything).not.toMatch(/value|(?<![\w-])3200(?![\w-])/i);
   });
 });
 

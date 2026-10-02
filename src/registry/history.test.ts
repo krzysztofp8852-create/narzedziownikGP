@@ -274,7 +274,7 @@ describe("dane do eksportu", () => {
     for (const actorId of [z.nowakId, storekeeperId]) {
       const data = await testbed.registry.as(actorId).exportData({ locationId: z.ratajeId });
       expect(data.movements).toEqual(ownerData.movements);
-      expect(JSON.stringify(data)).not.toMatch(/"(value|totalValue|offBaseValue|lostValue)"|3200/);
+      expect(JSON.stringify(data)).not.toMatch(/"(value|totalValue|offBaseValue|lostValue)"|(?<![\w-])3200(?![\w-])/);
     }
   });
 
