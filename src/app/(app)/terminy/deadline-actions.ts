@@ -77,7 +77,8 @@ export async function changeDeadline(_prev: DeadlineFormState, formData: FormDat
   } catch (error) {
     return { error: errorMessage(error) };
   }
-  revalidatePath(vehicleId ? `/pojazdy/${vehicleId}/terminy` : `/narzedzia/${toolId}`);
+  // Terminy pojazdu widać też na stronie Pojazdy.
+  revalidatePath(vehicleId ? "/pojazdy" : `/narzedzia/${toolId}`, vehicleId ? "layout" : "page");
   revalidatePath("/terminy");
   revalidatePath("/");
   return { done };

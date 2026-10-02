@@ -22,8 +22,8 @@ const link = (href: string, label: string, visible = true): MenuItem[] => (visib
 
 /**
  * Podstrony, które aktor może otworzyć, w grupach menu pod trzema kreskami. Widoczność według tych samych funkcji
- * uprawnień, których pilnują strony, żeby menu nie prowadziło na „brak dostępu”. Budowy, pojazdy i dokumenty nie mają
- * jeszcze własnych stron, więc prowadzą do swoich sekcji tablicy i ustawień. Strona Ludzie pokazuje magazynierowi
+ * uprawnień, których pilnują strony, żeby menu nie prowadziło na „brak dostępu”. Budowy i dokumenty nie mają jeszcze
+ * własnych stron, więc prowadzą do swoich sekcji tablicy i ustawień. Strona Ludzie pokazuje magazynierowi
  * i pracownikowi tylko ich własne uprawnienia, a strona Czas na budowie tylko ich własny czas, stąd inne nazwy pozycji. Puste grupy znikają.
  */
 export function appMenu(session: Session): MenuGroup[] {
@@ -42,7 +42,7 @@ export function appMenu(session: Session): MenuGroup[] {
       label: t("menu.groups.places"),
       items: [
         ...link("/#budowy", t("menu.sites")),
-        ...link("/#board-vehicles", t("menu.vehicles")),
+        ...link("/pojazdy", t("menu.vehicles")),
         ...link("/koszty", t("menu.costs"), canSeeCosts(session)),
       ],
     },

@@ -105,6 +105,7 @@
     "vehicleEmpty": "Na tym pojeździe nie ma jeszcze narzędzi.",
     "vehiclesTitle": "Pojazdy",
     "addVehicle": "Dodaj pojazd",
+    "vehiclesLink": "Wszystkie pojazdy",
     "vehicleAlarmOff": "bez alarmu po progu",
     "noSites": "Nie ma aktywnych budów.",
     "addSite": "Dodaj budowę",
@@ -477,6 +478,17 @@
     "lostFor": "zaginione od {days}",
     "stateFor": "od {days}",
     "import": "Importuj z pliku"
+  },
+  "vehiclesPage": {
+    "title": "Pojazdy",
+    "back": "← Tablica",
+    "intro": "Pojazdy firmy: kto nimi jeździ, jaki sprzęt jest na pokładzie i jakie terminy zbliżają się w ciągu {days} dni. Kliknij pojazd, żeby otworzyć jego stronę.",
+    "empty": "Firma nie ma jeszcze pojazdów.",
+    "emptyOwner": "Firma nie ma jeszcze pojazdów. Dodaj bus brygady albo osobówkę, żeby widzieć sprzęt na pokładzie i pilnować OC i przeglądu.",
+    "deadlines": "Terminy pojazdu",
+    "noDeadlines": "Bez terminów w najbliższych {days} dniach.",
+    "deadlinesLink": "Dane i terminy",
+    "inactiveTitle": "Nieaktywne"
   },
   "toolReports": {
     "title": "Zgłoszone narzędzia",
