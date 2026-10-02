@@ -5,6 +5,7 @@ import {
   canManageSettings,
   canPrintStickers,
   canSeeCosts,
+  canSeeReports,
   canSeeTimeOnSiteSummary,
   hasTutorial,
   type Session,
@@ -56,6 +57,7 @@ export function appMenu(session: Session): MenuGroup[] {
     {
       label: t("menu.groups.company"),
       items: [
+        ...link("/raporty", t("menu.reports"), canSeeReports(session)),
         ...link("/ustawienia#legal", t("menu.documents"), canManageSettings(session)),
         ...link("/ustawienia", t("menu.settings"), canManageSettings(session)),
         ...link("/samouczek", t("menu.tutorial"), hasTutorial(session)),

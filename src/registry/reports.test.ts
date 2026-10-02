@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import type { NotificationContent, RegisteredKind } from "./registry";
+import { canSeeReports, type NotificationContent, type RegisteredKind, reportKindsOf, type Role, type Session } from "./registry";
 import { setupRegistryTestbed } from "./testing/harness";
 
 const testbed = setupRegistryTestbed();
@@ -292,5 +292,45 @@ describe("raport piątkowy", () => {
     testbed.clock.set("2026-04-10T14:30:00Z");
     expect(await sendDueReports()).toEqual({ weekly: 0, friday: 1 });
     expect(await bellOf(z.nowakId)).toEqual([expect.objectContaining({ kind: "raport_piatkowy" })]);
+  });
+});
+
+describe("raporty otrzymane i rodzaje na teraz", () => {
+  it("aktor widzi raporty ze swojego dzwonka od najnowszego, bez innych powiadomień; kto ich nie dostaje, ma pustą listę", async () => {
+    const z = await givenZawbud();
+    await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.s01]);
+    testbed.clock.set("2026-03-06T16:10:00+01:00");
+    await sendDueReports();
+    testbed.clock.set("2026-03-09T07:10:00+01:00");
+    await sendDueReports();
+
+    const received = async (userId: string) => (await testbed.registry.as(userId).receivedReports()).map((report) => [report.kind, report.day]);
+    expect(await received(z.zawbud.ownerId)).toEqual([
+      ["tygodniowy", "2026-03-09"],
+      ["piatkowy", "2026-03-06"],
+    ]);
+    expect(await received(z.nowakId)).toEqual([["piatkowy", "2026-03-06"]]);
+    expect(await received(z.kowalskiId)).toEqual([]);
+    expect(await received(z.storekeeperId)).toEqual([]);
+    expect(await testbed.registry.as(z.zawbud.ownerId).receivedReports()).toEqual([
+      await z.owner.sentReport("tygodniowy", "2026-03-09"),
+      await z.owner.sentReport("piatkowy", "2026-03-06"),
+    ]);
+  });
+
+  it("raporty na teraz: właściciel tygodniowy i piątkowy, kierownik piątkowy, magazynier i pracownik żadnego", () => {
+    const as = (role: Role): Session => ({
+      userId: randomUUID(),
+      fullName: "Jan Testowy",
+      role,
+      mustChangePassword: false,
+      company: { id: randomUUID(), name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
+    });
+    expect(reportKindsOf(as("wlasciciel"))).toEqual(["tygodniowy", "piatkowy"]);
+    expect(reportKindsOf(as("kierownik"))).toEqual(["piatkowy"]);
+    expect(reportKindsOf(as("magazynier"))).toEqual([]);
+    expect(reportKindsOf(as("pracownik"))).toEqual([]);
+    const roles = ["wlasciciel", "kierownik", "magazynier", "pracownik"] as const;
+    expect(roles.map((role) => canSeeReports(as(role)))).toEqual([true, true, false, false]);
   });
 });

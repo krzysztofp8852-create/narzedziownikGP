@@ -65,6 +65,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Ludzie",
     "Czas na budowie",
     "Odbicia do wyjaśnienia",
+    "Raporty",
     "Dokumenty",
     "Ustawienia",
     "Samouczek",
@@ -107,6 +108,20 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
   await expect(menu(page).getByRole("link", { name: "Historia" })).toHaveAttribute("aria-current", "page");
   await expect(menu(page).getByRole("link", { name: "Tablica" })).not.toHaveAttribute("aria-current", "page");
 
+  // Raporty: oba na teraz i pusta lista otrzymanych w nowej firmie.
+  await menu(page).getByRole("link", { name: "Raporty" }).click();
+  await expect(page).toHaveURL(/\/raporty$/);
+  await expect(page.getByRole("heading", { name: "Raporty", level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Otrzymane" })).toContainText("Jeszcze nie przyszedł żaden raport.");
+  await page.getByRole("region", { name: "Na teraz" }).getByRole("link", { name: /Raport tygodniowy/ }).click();
+  await expect(page).toHaveURL(/\/raporty\/tygodniowy$/);
+  await expect(page.getByRole("heading", { name: "Raport tygodniowy", level: 1 })).toBeVisible();
+  await expect(page.getByText(/^Stan w tej chwili, /)).toBeVisible();
+  await page.getByRole("link", { name: "← Wszystkie raporty" }).click();
+  await expect(page).toHaveURL(/\/raporty$/);
+  await expect(page.getByRole("region", { name: "Na teraz" }).getByRole("link", { name: /Raport piątkowy/ })).toBeVisible();
+
+  await menuButton(page).click();
   await menu(page).getByRole("link", { name: "Ustawienia" }).click();
   await expect(page).toHaveURL(/\/ustawienia$/);
   await expect(page.getByRole("heading", { name: "Ustawienia", level: 1 })).toBeVisible();
@@ -130,8 +145,16 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
     "Ludzie",
     "Czas na budowie",
     "Odbicia do wyjaśnienia",
+    "Raporty",
     "Samouczek",
   ]);
+  // Kierownik ma na teraz tylko raport piątkowy ze swoimi lokalizacjami; tygodniowy jest właściciela.
+  await menu(page).getByRole("link", { name: "Raporty" }).click();
+  await expect(page).toHaveURL(/\/raporty$/);
+  await expect(page.getByRole("region", { name: "Na teraz" }).getByRole("link")).toHaveText(["Raport piątkowyStan w tej chwili"]);
+  await page.goto("/raporty/tygodniowy");
+  await expect(page).toHaveURL(/\/raporty$/);
+  await menuButton(page).click();
   await menu(page).getByRole("link", { name: "Samouczek" }).click();
   await expect(page).toHaveURL(/\/samouczek$/);
   await signOutFromMenu(page);
@@ -153,6 +176,11 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
   await menu(page).getByRole("link", { name: "Mój czas na budowie" }).click();
   await expect(page).toHaveURL(/\/czas$/);
   await expect(page.getByRole("heading", { name: "Czas na budowie", level: 1 })).toBeVisible();
+  // Pracownik raportów nie dostaje: strona Raporty i raport na teraz odsyłają go na tablicę.
+  for (const path of ["/raporty", "/raporty/piatkowy"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/$/);
+  }
   await signOutFromMenu(page);
 });
 

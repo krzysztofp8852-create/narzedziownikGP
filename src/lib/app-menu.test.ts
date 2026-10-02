@@ -23,20 +23,23 @@ describe("menu pod trzema kreskami", () => {
       ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
       ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
-      ["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
+      [
+        "Firma",
+        ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"],
+      ],
     ]);
   });
 
-  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też czas na budowie i odbicia do wyjaśnienia, a magazynier własny czas", () => {
-    for (const [role, people] of [
-      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
-      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
+  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też czas na budowie, odbicia do wyjaśnienia i raporty, a magazynier własny czas", () => {
+    for (const [role, people, company] of [
+      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"], ["Raporty /raporty", "Samouczek /samouczek", "Wyloguj"]],
+      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"], ["Samouczek /samouczek", "Wyloguj"]],
     ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
         ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
         ["Ludzie", people],
-        ["Firma", ["Samouczek /samouczek", "Wyloguj"]],
+        ["Firma", company],
       ]);
     }
   });
@@ -61,6 +64,9 @@ describe("menu pod trzema kreskami", () => {
   });
 
   it("w firmie demo nie ma samouczka, bo demo ma własny przewodnik", () => {
-    expect(shown("wlasciciel", { demo: true }).at(-1)).toEqual(["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Wyloguj"]]);
+    expect(shown("wlasciciel", { demo: true }).at(-1)).toEqual([
+      "Firma",
+      ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Wyloguj"],
+    ]);
   });
 });

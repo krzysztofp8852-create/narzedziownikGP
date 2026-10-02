@@ -288,7 +288,7 @@ export {
 export type { OwnTimeOnSite, PlaceTime, TimeOnSiteSummary } from "./time-on-site";
 export { canSeeTimeOnSiteSummary } from "./time-on-site";
 export { normalizePosterCode } from "./poster-code";
-export { isReportKind } from "./reports";
+export { canSeeReports, isReportKind, reportKindsOf } from "./reports";
 export type { Bell, BellEntry } from "./bell";
 export type {
   CloseIssueInput,
@@ -967,6 +967,8 @@ export interface Registry {
     fridayReport(): Promise<FridayReport>;
     /** Raport z dzwonka aktora z danego dnia (RRRR-MM-DD), tak jak go wtedy dostał; null, gdy go nie dostał. */
     sentReport(kind: ReportKind, day: string): Promise<Report | null>;
+    /** Ostatnie raporty z dzwonka aktora, tak jak je wtedy dostał, od najnowszego. */
+    receivedReports(): Promise<Report[]>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;
     /**
@@ -1906,6 +1908,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         weeklyReport: () => asMember((sql, session) => reports.weeklyReport(sql, session, deps.clock.now())),
         fridayReport: () => asMember((sql, session) => reports.fridayReport(sql, session, deps.clock.now())),
         sentReport: (kind, day) => asMember((sql, session) => reports.sentReport(sql, session, kind, day)),
+        receivedReports: () => asMember((sql, session) => reports.receivedReports(sql, session)),
         settings: () =>
           asMember((sql, session) => {
             settings.requireSettingsManager(session);
