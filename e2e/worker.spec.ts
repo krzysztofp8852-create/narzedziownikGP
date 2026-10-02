@@ -21,25 +21,39 @@ async function signIn(page: Page, login: string, password: string) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użytkownika i widzi tablicę bez złotówek i ruchów", async ({
+test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a ten loguje się nazwą użytkownika i widzi tablicę bez złotówek i ruchów", async ({
   page,
 }) => {
   const company = seedCompany();
 
   await signIn(page, company.owner.email, company.owner.password);
-  // Przejście dalej dopiero po zalogowaniu; inaczej /ustawienia odeśle z powrotem do logowania.
+  // Przejście dalej dopiero po zalogowaniu; inaczej /ludzie odeśle z powrotem do logowania.
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await page.goto("/ustawienia");
-  const team = page.locator("#zespol");
-  await team.locator("summary", { hasText: "Dodaj osobę" }).click();
-  await team.getByLabel("Imię").fill("Jan");
-  await team.getByLabel("Nazwisko").fill("Kowalski");
-  await team.getByLabel("Rola").selectOption({ label: "Pracownik" });
-  await team.getByLabel("Nazwa użytkownika").fill("jan.kowalski");
-  await team.locator("form").getByRole("button", { name: "Dodaj osobę" }).click();
-  await expect(team.getByText("Nazwa użytkownika do logowania: jan.kowalski")).toBeVisible();
-  const temporaryPassword = await team.getByTestId("temporary-password").innerText();
-  await expect(team.getByText("Login: jan.kowalski")).toBeVisible();
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("link", { name: "Ludzie" }).click();
+  await expect(page).toHaveURL(/\/ludzie$/);
+  const people = page.locator("#ludzie");
+  await people.locator("summary", { hasText: "Dopisz osobę bez konta" }).click();
+  await people.getByLabel("Imię i nazwisko").first().fill("Jan Kowalski");
+  await people.getByLabel("Notatka (opcjonalnie)").first().fill("Brygada Rataje");
+  await people.locator("form").first().getByRole("button", { name: "Dopisz osobę", exact: true }).click();
+  const person = people.locator("li", { hasText: "Jan Kowalski" });
+  await expect(person).toContainText("Bez konta");
+  await expect(person).toContainText("Brygada Rataje");
+
+  // Konto dla osoby z kartoteki: ten sam wpis, bez drugiej osoby.
+  await person.getByRole("link", { name: "Załóż konto tej osobie" }).click();
+  const account = page.locator("#konto");
+  await expect(account.getByLabel("Dla kogo")).toHaveValue(/.+/);
+  await expect(account.getByLabel("Imię")).toHaveCount(0);
+  await account.getByLabel("Rola").selectOption({ label: "Pracownik" });
+  await account.getByLabel("Nazwa użytkownika").fill("jan.kowalski");
+  await account.locator("form").getByRole("button", { name: "Załóż konto" }).click();
+  await expect(account.getByText("Nazwa użytkownika do logowania: jan.kowalski")).toBeVisible();
+  const temporaryPassword = await account.getByTestId("temporary-password").innerText();
+  await expect(people.locator("li", { hasText: "Jan Kowalski" })).toHaveCount(1);
+  await expect(person).toContainText("Konto: Pracownik");
+  await expect(person.getByText("Login: jan.kowalski")).toBeVisible();
 
   await page.getByRole("button", { name: "Menu" }).click();
 
@@ -72,8 +86,8 @@ test("właściciel dodaje pracownika bez e-maila, a ten loguje się nazwą użyt
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.owner.email, company.owner.password);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await page.goto("/ustawienia");
-  const member = team.locator("li", { hasText: "Jan Kowalski" });
+  await page.goto("/ludzie");
+  const member = people.locator("li", { hasText: "Jan Kowalski" });
   await member.locator("summary", { hasText: "Konto: hasło, dezaktywacja" }).click();
   await member.getByRole("button", { name: "Nowe hasło tymczasowe" }).click();
   const resetPassword = await member.getByTestId("temporary-password").innerText();

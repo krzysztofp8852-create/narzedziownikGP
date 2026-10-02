@@ -810,7 +810,7 @@ a.tool-row:hover .tool-row-name {
   font-variant-numeric: tabular-nums;
 }
 
-/* Zespół */
+/* Ludzie */
 .member-list {
   list-style: none;
   display: grid;
@@ -1417,7 +1417,8 @@ a.tool-row:hover .tool-row-name {
 }
 
 .location-more summary,
-.member-more summary {
+.member-more summary,
+.member-link {
   cursor: pointer;
   color: var(--accent);
   font-size: 0.9rem;

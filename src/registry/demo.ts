@@ -75,7 +75,7 @@ const DEMO_PAID_DAYS = 3650;
 
 /**
  * Firma staje się obecnym demo (od `now`): próg „Średni” i abonament opłacony na lata. Konta poprzednich firm demo
- * są dezaktywowane, a ich identyfikatory wracają, żeby zablokować też logowanie.
+ * (z ich osobami) są dezaktywowane, a ich identyfikatory wracają, żeby zablokować też logowanie.
  */
 export async function activateDemoCompany(sql: Sql, companyId: string, now: Date): Promise<string[]> {
   const retired = await sql<{ user_id: string }>(
@@ -84,6 +84,7 @@ export async function activateDemoCompany(sql: Sql, companyId: string, now: Date
      returning user_id`,
     [companyId],
   );
+  await sql("update app.people set active = false where user_id = any($1::uuid[])", [retired.map((row) => row.user_id)]);
   const [company] = await sql<{ id: string }>("update app.companies set demo_since = $2 where id = $1 returning id", [companyId, now]);
   if (!company) throw new RegistryError("not_found");
   const paidUntil = new Date(now.getTime() + DEMO_PAID_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -255,6 +256,10 @@ export const LOGGED_DEMO_COMMANDS = [
   "commentOnIssue",
   "closeIssue",
   "addMember",
+  "addPerson",
+  "editPerson",
+  "deactivatePerson",
+  "addPersonAccount",
   "addSite",
   "changeSiteManager",
   "changeSiteAddress",

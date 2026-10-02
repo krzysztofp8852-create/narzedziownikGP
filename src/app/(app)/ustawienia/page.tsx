@@ -7,23 +7,21 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canManageSettings, canPrintStickers } from "@/registry/registry";
 import { BaseAddressForm } from "../lokalizacje/location-forms";
 import { ServicesSection } from "../lokalizacje/services-section";
-import { TeamSection } from "../zespol/team-section";
 import { CostSettingsSection, DailyRatesSection, IssueSettingsSection, LegalSection, SettingsSection } from "./settings-section";
 import { SubscriptionSection } from "./subscription-section";
 
 export const metadata: Metadata = { title: t("settingsPage.title") };
 
 /**
- * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, zespół, serwisy, próg alarmu, kto widzi zgłoszenia,
+ * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, serwisy, próg alarmu, kto widzi zgłoszenia,
  * stawki dzienne kosztu sprzętu i kto widzi koszty, adres bazy na mapie, naklejki QR, dokumenty prawne.
  */
 export default async function SettingsPage() {
   const session = await requireSession();
   if (!canManageSettings(session)) redirect("/");
   const registry = getRegistry().as(session.userId);
-  const [subscription, members, locations, settings, stickerCandidates, dailyRates, categories] = await Promise.all([
+  const [subscription, locations, settings, stickerCandidates, dailyRates, categories] = await Promise.all([
     registry.subscription(),
-    registry.team(),
     registry.locations(),
     registry.settings(),
     canPrintStickers(session) ? registry.stickerCandidates() : null,
@@ -67,7 +65,6 @@ export default async function SettingsPage() {
           </section>
         )}
         <ServicesSection services={locations.services} />
-        <TeamSection session={session} members={members} recorders={subscription.recorders} />
         <LegalSection />
       </div>
     </>

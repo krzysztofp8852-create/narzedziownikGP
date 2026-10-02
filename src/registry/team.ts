@@ -3,6 +3,7 @@ import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
 import type { Role, Session } from "./registry";
 import { isUniqueViolation } from "./errors";
+import * as people from "./people";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
 
 /** Role, które właściciel nadaje osobom w zespole. */
@@ -22,14 +23,23 @@ const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{1,31}$/;
  */
 const TECHNICAL_EMAIL_DOMAIN = "pracownicy.narzedziownik.gp-engineering.pl";
 
-export interface NewMemberInput {
-  firstName: string;
-  lastName: string;
+/** Konto logowania z rolą. */
+export interface NewAccountInput {
   /** Wymagany poza pracownikiem; pracownik może go nie mieć (pusty). */
   email: string;
   /** Tylko i zawsze pracownik: nazwa użytkownika do logowania, unikalna w firmie. */
   username?: string;
   role: MemberRole;
+}
+
+export interface NewMemberInput extends NewAccountInput {
+  firstName: string;
+  lastName: string;
+}
+
+/** Konto dla osoby z kartoteki Ludzie; imię i nazwisko konta to jej imię i nazwisko. */
+export interface PersonAccountInput extends NewAccountInput {
+  personId: string;
 }
 
 export interface TeamMember {
@@ -72,19 +82,23 @@ export function requireTeamManager(session: Session) {
 export function normalizeNewMember(raw: NewMemberInput): NewMember {
   const firstName = raw.firstName.trim();
   const lastName = raw.lastName.trim();
-  const email = raw.email.trim().toLowerCase() || null;
+  if (!firstName || !lastName) throw new RegistryError("invalid_input");
+  return normalizeAccount(`${firstName} ${lastName}`, raw);
+}
+
+/** Konto osoby `fullName` po sprawdzeniu roli, e-maila i nazwy użytkownika. */
+export function normalizeAccount(fullName: string, raw: NewAccountInput): NewMember {
+  const email = String(raw.email ?? "").trim().toLowerCase() || null;
   const username = raw.username?.trim().toLowerCase() || null;
   const worker = raw.role === "pracownik";
   if (
-    !firstName ||
-    !lastName ||
     !MEMBER_ROLES.includes(raw.role) ||
     (email === null ? !worker : !EMAIL_PATTERN.test(email)) ||
     (username === null ? worker : !worker || !USERNAME_PATTERN.test(username))
   ) {
     throw new RegistryError("invalid_input");
   }
-  return { fullName: `${firstName} ${lastName}`, email, username, role: raw.role };
+  return { fullName, email, username, role: raw.role };
 }
 
 /** Nazwa użytkownika, której firma aktora jeszcze nie nadała; zajęta to `username_taken`. */
@@ -116,12 +130,16 @@ export async function signInEmails(sql: Sql, login: string): Promise<string[]> {
   return rows.map((row) => row.email);
 }
 
+/**
+ * Konto osoby w firmie aktora: nowa osoba w kartotece Ludzie, a z `personId` ta osoba z kartoteki (bez drugiego wpisu).
+ */
 export async function insertMember(
   sql: Sql,
   session: Session,
   userId: string,
   member: NewMember,
   now: Date,
+  personId: string | null = null,
 ) {
   try {
     await sql(
@@ -134,6 +152,8 @@ export async function insertMember(
     // Równolegle dodana osoba zajęła tę nazwę po naszym sprawdzeniu.
     throw isUniqueViolation(error, "users_username_per_company") ? new RegistryError("username_taken") : error;
   }
+  if (personId) await people.linkAccount(sql, personId, userId);
+  else await people.insertPerson(sql, session.company.id, { fullName: member.fullName, note: null }, now, userId);
 }
 
 /** Zespół firmy: najpierw aktywni, potem według roli i imienia i nazwiska. */
@@ -162,6 +182,8 @@ export async function markPasswordTemporary(sql: Sql, memberId: string, now: Dat
   ]);
 }
 
+/** Konto i jego osoba w kartotece przestają być aktywne. */
 export async function deactivate(sql: Sql, memberId: string) {
   await sql("update app.users set active = false where user_id = $1", [memberId]);
+  await people.deactivatePersonOfAccount(sql, memberId);
 }

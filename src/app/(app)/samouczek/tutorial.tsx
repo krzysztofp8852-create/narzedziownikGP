@@ -9,7 +9,7 @@ import { type MovementEntry, type MovementRole, movementScreens } from "./screen
 
 /** Dokąd prowadzi każdy z pierwszych kroków właściciela. */
 const FIRST_STEP_LINKS: Record<FirstStepId, string> = {
-  kierownik: "/ustawienia#zespol",
+  kierownik: "/ludzie?konto#konto",
   budowa: "/#budowy",
   narzedzia: "/narzedzia/import",
   naklejki: "/naklejki",

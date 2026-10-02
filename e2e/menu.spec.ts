@@ -61,7 +61,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Budowy",
     "Pojazdy",
     "Koszty sprzętu",
-    "Zespół",
+    "Ludzie",
     "Dokumenty",
     "Ustawienia",
     "Samouczek",

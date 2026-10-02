@@ -78,7 +78,7 @@
     "sites": "Budowy",
     "vehicles": "Pojazdy",
     "costs": "Koszty sprzętu",
-    "team": "Zespół",
+    "people": "Ludzie",
     "documents": "Dokumenty",
     "settings": "Ustawienia",
     "tutorial": "Samouczek",
@@ -199,7 +199,6 @@
     "back": "← Wróć do tablicy"
   },
   "team": {
-    "title": "Zespół",
     "addTitle": "Dodaj osobę",
     "firstName": "Imię",
     "lastName": "Nazwisko",
@@ -237,6 +236,32 @@
     "recorderLimitContact": "Wyższy pakiet ustalisz z GP Engineering:",
     "recorderLimitChat": "napisz na czacie z supportem",
     "recorderLimitSales": "albo skontaktuj się z działem handlowym."
+  },
+  "people": {
+    "title": "Ludzie",
+    "back": "← Tablica",
+    "intro": "Wszyscy w firmie: konta w programie i osoby bez konta, np. robotnicy bez telefonu. Osoba bez konta nie loguje się i nie zajmuje miejsca w pakiecie wdrożenia, a konto założysz jej później bez drugiego wpisu.",
+    "listTitle": "Osoby",
+    "addTitle": "Dopisz osobę bez konta",
+    "fullName": "Imię i nazwisko",
+    "noteOptional": "Notatka (opcjonalnie)",
+    "addHint": "Bez konta, więc bez logowania i bez miejsca w pakiecie wdrożenia.",
+    "addSubmit": "Dopisz osobę",
+    "adding": "Dopisywanie…",
+    "accountTitle": "Załóż konto",
+    "accountFor": "Dla kogo",
+    "newPerson": "Nowa osoba",
+    "accountSubmit": "Załóż konto",
+    "withAccount": "Konto: {role}",
+    "withoutAccount": "Bez konta",
+    "statusNoAccount": "Bez konta",
+    "statusInactive": "Nieaktywna",
+    "edit": "Zmień dane",
+    "saveSubmit": "Zapisz",
+    "saving": "Zapisywanie…",
+    "saved": "Zapisano.",
+    "giveAccount": "Załóż konto tej osobie",
+    "deactivateConfirm": "Dezaktywować: {name}? Osoba zniknie z aktywnych, ale zostanie w kartotece z całą historią."
   },
   "noAccess": {
     "title": "Brak dostępu",
@@ -283,7 +308,7 @@
     "document_invalid": "Dokument musi być plikiem PDF albo zdjęciem JPG, PNG lub WEBP i mieć najwyżej 4 MB.",
     "issue_closed": "To zgłoszenie jest już zamknięte.",
     "message_required": "Napisz wiadomość albo dołącz zdjęcie.",
-    "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w zespole działają.",
+    "demo_locked": "W wersji demo nie da się dezaktywować konta ani nadać hasła tymczasowego, żeby każdy mógł wejść do każdej roli. Pozostałe zmiany w kartotece Ludzie działają.",
     "demo_chat": "W wersji demo czat z supportem jest wyłączony, bo z konta tej roli korzystają wszyscy oglądający.",
     "demo_push": "W wersji demo powiadomienia push są wyłączone, bo z konta tej roli korzystają wszyscy oglądający.",
     "demo_delete": "Firmy demo nie usuwa się z panelu. Zastępuje ją nowe demo, a poprzednie znika samo.",
@@ -910,7 +935,7 @@
         "many": "Za {days} dni NarzędziownikGP przejdzie w tryb tylko do odczytu"
       },
       "lead": "Abonament NarzędziownikaGP jest opłacony do {paidUntil}. Jeśli do tego czasu nie wpłynie opłata, od {from} firma przejdzie w tryb tylko do odczytu.",
-      "effect": "W tym trybie wszyscy nadal zobaczą tablicę, historię i eksport, ale nikt nie zapisze zmian (ruchów, narzędzi, zespołu). Żadne dane nie zostaną usunięte.",
+      "effect": "W tym trybie wszyscy nadal zobaczą tablicę, historię i eksport, ale nikt nie zapisze zmian (ruchów, narzędzi, ludzi). Żadne dane nie zostaną usunięte.",
       "action": "Po zaksięgowaniu przelewu wszystko działa od razu. W razie pytań napisz do GP Engineering."
     }
   },
@@ -1204,6 +1229,7 @@
         "dzwonek": "Dzwonek",
         "lokalizacje": "Lokalizacje",
         "zespol": "Zespół",
+        "ludzie": "Ludzie",
         "ustawienia": "Ustawienia",
         "naklejki": "Naklejki QR",
         "budowy": "Budowy",
@@ -1231,7 +1257,11 @@
         "fileIssue": "Nowe zgłoszenie",
         "commentOnIssue": "Komentarz w zgłoszeniu",
         "closeIssue": "Zamknięcie zgłoszenia",
-        "addMember": "Dodanie osoby do zespołu",
+        "addMember": "Założenie konta",
+        "addPerson": "Dopisanie osoby bez konta",
+        "editPerson": "Zmiana danych osoby",
+        "deactivatePerson": "Dezaktywacja osoby",
+        "addPersonAccount": "Konto dla osoby z kartoteki",
         "addSite": "Dodanie budowy",
         "changeSiteManager": "Zmiana kierownika budowy",
         "changeSiteAddress": "Zmiana adresu budowy",
@@ -1432,7 +1462,7 @@
   "demo": {
     "title": "Wersja demo",
     "heading": "Zobacz NarzędziownikGP w działaniu",
-    "lead": "To przykładowa firma budowlana „DemoBud”: kilkadziesiąt narzędzi, pięć budów, trzy busy, dwa serwisy, dziewięcioosobowy zespół i kilka tygodni historii. Wejdź bez logowania w dowolną rolę. Na każdej stronie przełączysz się na inną paskiem u góry.",
+    "lead": "To przykładowa firma budowlana „DemoBud”: kilkadziesiąt narzędzi, pięć budów, trzy busy, dwa serwisy, dziewięć kont, brygada bez kont w kartotece Ludzie i kilka tygodni historii. Wejdź bez logowania w dowolną rolę. Na każdej stronie przełączysz się na inną paskiem u góry.",
     "enter": "Wejdź jako {role}",
     "entering": "Wchodzę…",
     "person": "W demo: {name}",
@@ -1440,7 +1470,7 @@
     "roles": {
       "wlasciciel": {
         "summary": "Widzi całą firmę i pilnuje pieniędzy.",
-        "points": "Tablica „Gdzie jest co” z wartością sprzętu w zł i kwotą poza bazą\nAlarmy: co za długo stoi na budowie, co zaginęło, co jest w serwisie\nAkceptuje narzędzia kupione przez kierowników, robi korekty i wycofania\nBudowy, busy, zespół, naklejki QR, import z Excela i raporty"
+        "points": "Tablica „Gdzie jest co” z wartością sprzętu w zł i kwotą poza bazą\nAlarmy: co za długo stoi na budowie, co zaginęło, co jest w serwisie\nAkceptuje narzędzia kupione przez kierowników, robi korekty i wycofania\nBudowy, busy, kartoteka Ludzie, naklejki QR, import z Excela i raporty"
       },
       "kierownik": {
         "summary": "Rusza sprzęt na swoich budowach i busie.",
@@ -1541,7 +1571,7 @@
       },
       "menu": {
         "title": "Menu",
-        "text": "Pod trzema kreskami są wszystkie podstrony: terminy, historia, naklejki QR, zespół i ustawienia firmy (próg dni alarmu, kto widzi zgłoszenia, serwisy, abonament). Budowy i pojazdy dodajesz na tablicy."
+        "text": "Pod trzema kreskami są wszystkie podstrony: terminy, historia, naklejki QR, kartoteka Ludzie i ustawienia firmy (próg dni alarmu, kto widzi zgłoszenia, serwisy, abonament). Budowy i pojazdy dodajesz na tablicy."
       },
       "finish": {
         "title": "Gotowe",
@@ -1752,8 +1782,8 @@
       "doneTag": "zrobione",
       "kierownik": {
         "title": "Dodaj kierownika",
-        "text": "W ustawieniach, w sekcji „Zespół”, załóż konto kierownika. Hasło tymczasowe przekażesz mu osobiście.",
-        "link": "Przejdź do zespołu"
+        "text": "Na stronie „Ludzie” załóż konto kierownika. Hasło tymczasowe przekażesz mu osobiście.",
+        "link": "Przejdź do kartoteki Ludzie"
       },
       "budowa": {
         "title": "Dodaj budowę",

@@ -23,6 +23,14 @@ Rola w firmie obsługująca bazę; rejestruje ruchy dla wszystkich lokalizacji.
 Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłoszenia. Loguje się nazwą użytkownika nadaną przez właściciela, bez wymogu e-maila.
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
+**Ludzie**:
+Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w menu. Prowadzi ją i ogląda właściciel; przy osobie widać, czy ma konto i jaką rolę.
+_Avoid_: zespół, kadry, pracownicy (pracownik to rola)
+
+**Osoba**:
+Wpis w kartotece Ludzie: imię i nazwisko, notatka, aktywna albo nieaktywna i najwyżej jedno konto (konto ma jedną osobę). Osoba bez konta, np. robotnik bez telefonu, nie loguje się i nie zajmuje miejsca w pakiecie wdrożenia; konto zakłada się jej później bez drugiego wpisu. Nieaktywna (odeszła z firmy) znika z aktywnych, a jej historia zostaje; dezaktywacja osoby z kontem blokuje też konto.
+_Avoid_: użytkownik, członek zespołu, pracownik (to rola)
+
 **Firma demo**:
 Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie, które znika w całości; co godzinę demo, w którym ktoś był i skończył oglądać, zastępuje świeże.
 _Avoid_: konto testowe, piaskownica
@@ -45,7 +53,7 @@ _Avoid_: support (jako nazwa roli), administrator
 
 **Usunięcie firmy**:
 Nieodwracalne usunięcie firmy w całości, z historią, plikami i kontami, przez super-admina na polecenie firmy po końcu umowy. Tylko w trybie tylko do odczytu i po wpisaniu nazwy firmy; zostaje wpis w dzienniku usuniętych firm.
-_Avoid_: archiwizacja, dezaktywacja (to konto osoby)
+_Avoid_: archiwizacja, dezaktywacja (to osoba albo jej konto)
 
 **Dziennik usuniętych firm**:
 Lista usunięć dla super-admina: która firma (nazwa), kiedy i kto ją usunął. Zostaje po usunięciu, żeby potwierdzić firmie wykonanie polecenia.
@@ -251,7 +259,7 @@ Mały (do 2 osób zapisujących ruchy), średni (3–6) albo duży (7 i więcej,
 _Avoid_: próg wdrożenia (próg to abonament)
 
 **Osoba zapisująca ruchy**:
-Aktywne konto właściciela, kierownika albo magazyniera; zajmuje miejsce w pakiecie wdrożenia. Pracownik i dezaktywowane konto miejsca nie zajmują.
+Aktywne konto właściciela, kierownika albo magazyniera; zajmuje miejsce w pakiecie wdrożenia. Pracownik, osoba bez konta i dezaktywowane konto miejsca nie zajmują.
 _Avoid_: użytkownik płatny, licencja
 
 **Tryb tylko do odczytu**:

@@ -1,9 +1,9 @@
 import { t } from "@/i18n/t";
 import { type DemoEvent, LOGGED_DEMO_COMMANDS, type LoggedDemoCommand } from "@/registry/registry";
 
-type Screen = "tablica" | "historia" | "narzedzia" | "karta" | "import" | "ruch" | "szukaj" | "terminy" | "zgloszenia" | "dzwonek" | "lokalizacje" | "zespol" | "ustawienia" | "naklejki" | "budowy" | "do-wyjasnienia" | "czat" | "raporty";
+type Screen = "tablica" | "historia" | "narzedzia" | "karta" | "import" | "ruch" | "szukaj" | "terminy" | "zgloszenia" | "dzwonek" | "lokalizacje" | "zespol" | "ludzie" | "ustawienia" | "naklejki" | "budowy" | "do-wyjasnienia" | "czat" | "raporty";
 
-const SECTIONS = new Set<Screen>(["historia", "narzedzia", "ruch", "szukaj", "terminy", "zgloszenia", "dzwonek", "lokalizacje", "zespol", "ustawienia", "naklejki", "budowy", "do-wyjasnienia", "czat", "raporty"]);
+const SECTIONS = new Set<Screen>(["historia", "narzedzia", "ruch", "szukaj", "terminy", "zgloszenia", "dzwonek", "lokalizacje", "zespol", "ludzie", "ustawienia", "naklejki", "budowy", "do-wyjasnienia", "czat", "raporty"]);
 
 /** Nazwa ekranu aplikacji po ścieżce, np. „Karta narzędzia” dla `/narzedzia/…`; null dla nieznanej ścieżki. */
 export function demoScreen(path: string): string | null {
