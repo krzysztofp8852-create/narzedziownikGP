@@ -1179,7 +1179,12 @@
     "readyTitle": "Nagrania do zatwierdzenia",
     "readyItem": "Nagranie z {when}",
     "recordedAt": "Nagranie z {when}",
-    "discard": "Odrzuć"
+    "discard": "Odrzuć",
+    "punchPerson": {
+      "wejscie": "Odbicie {name}, wejście: {place}",
+      "wyjscie": "Odbicie {name}, wyjście: {place}",
+      "przejscie": "Odbicie {name}, przejście na: {place}"
+    }
   },
   "toClarify": {
     "title": "Do wyjaśnienia",
@@ -2185,7 +2190,7 @@
     "historyEmpty": "Nikt się tu jeszcze nie odbił.",
     "posterTitle": "Plakat budowy",
     "posterBaseTitle": "Plakat bazy",
-    "posterHint": "Wydrukuj plakat i powieś go przy wejściu albo przy kontenerze. Każdy z kontem w programie skanuje go przy wejściu i przy wyjściu.",
+    "posterHint": "Wydrukuj plakat i powieś go przy wejściu albo przy kontenerze. Każdy z kontem w programie skanuje go przy wejściu i przy wyjściu, a kierownik po skanie odbija też osoby bez telefonu.",
     "posterDownload": "Pobierz plakat (PDF)",
     "posterCode": "Kod plakatu do wpisania ręcznie: {code}",
     "renew": "Nowy kod",
@@ -2203,7 +2208,7 @@
     "explain": "Wyjaśnione",
     "toClarifyTitle": "Odbicia do wyjaśnienia",
     "toClarifyIntroOwner": "Odbicia poza budową, bez położenia telefonu albo na budowie bez położenia. Zdecyduj, czy wszystko jest w porządku, i oznacz je jako wyjaśnione.",
-    "toClarifyIntroManager": "Odbicia na Twoich budowach poza budową, bez położenia telefonu albo bez sprawdzenia. Własne odbicia wyjaśnia właściciel.",
+    "toClarifyIntroManager": "Odbicia na Twoich budowach poza budową, bez położenia telefonu albo bez sprawdzenia. Własne odbicia i te, które odbijasz za innych, wyjaśnia właściciel.",
     "toClarifyEmpty": "Nie ma odbić do wyjaśnienia.",
     "openPlace": "Ludzie: {place}",
     "posterHeading": "Odbij się przy wejściu i przy wyjściu",
@@ -2229,7 +2234,25 @@
       "budowa_zakonczona": "budowa została zakończona, zanim skan dotarł",
       "pozniejsze_odbicie": "w międzyczasie zapisano późniejsze odbicie tej osoby",
       "nie_odbity_tu": "wyjście, a osoba nie była tu odbita",
-      "juz_odbity_tu": "wejście, a osoba była tu już odbita"
-    }
+      "juz_odbity_tu": "wejście, a osoba była tu już odbita",
+      "osoba_nieaktywna": "osoba nie jest już aktywna w kartotece"
+    },
+    "punchedBy": "odbił: {name}",
+    "entryPunchedBy": "wejście odbił: {name}",
+    "exitPunchedBy": "wyjście odbił: {name}",
+    "peopleTitle": "Odbij też…",
+    "peopleHint": "Zaznacz osoby z kartoteki, które nie mają telefonu albo konta. Program sprawdzi położenie Twojego telefonu i zapisze przy odbiciu, kto odbijał.",
+    "peopleOfflineHint": "Lista z ostatniego odbicia z zasięgiem.",
+    "peopleEntry": "wejście",
+    "peopleExit": "wyjście",
+    "peopleTransfer": "przejście z: {from}",
+    "peopleTransferUnknown": "przejście z innego miejsca",
+    "peopleSubmit": "Odbij zaznaczonych ({count})",
+    "peopleDoneEntry": "{name}: wejście, {time}",
+    "peopleDoneExit": "{name}: wyjście, {time}",
+    "peopleDoneTransfer": "{name}: przejście {from} → {place}, {time}",
+    "peopleAlreadyHere": "{name}: ktoś odbił tę osobę tutaj w międzyczasie. Zeskanuj plakat jeszcze raz, żeby odbić jej wyjście.",
+    "peopleNotHere": "{name}: ktoś odbił tę osobę w międzyczasie gdzie indziej, więc wyjścia nie zapisałem. Zeskanuj plakat jeszcze raz.",
+    "peopleQueued": "Brak zasięgu. Odbicia {count} os. zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć."
   }
 }

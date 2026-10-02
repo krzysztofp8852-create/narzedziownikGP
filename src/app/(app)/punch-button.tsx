@@ -11,9 +11,9 @@ import { CameraScanner } from "./ruch/camera-scanner";
 /**
  * „Odbij się” na górze tablicy: skaner w programie (ten sam co przy naklejkach, z ręcznym wpisaniem kodu z plakatu)
  * prowadzi na stronę odbicia, tak jak kod QR plakatu zeskanowany aparatem telefonu. Bez zasięgu odbicie trafia od
- * razu do kolejki offline z chwilą skanu.
+ * razu do kolejki offline z chwilą skanu, a właściciel i kierownik (`punchesOthers`) odbijają też osoby z kartoteki.
  */
-export function PunchButton({ userId }: { userId: string }) {
+export function PunchButton({ userId, punchesOthers }: { userId: string; punchesOthers: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [camera, setCamera] = useState(true);
@@ -48,7 +48,7 @@ export function PunchButton({ userId }: { userId: string }) {
       <button className={open ? "button" : "button button-quiet"} type="button" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>
         {t("punches.button")}
       </button>
-      {open && offlineCode && <OfflinePunch key={offlineCode} userId={userId} code={offlineCode} onClose={close} />}
+      {open && offlineCode && <OfflinePunch key={offlineCode} userId={userId} code={offlineCode} punchesOthers={punchesOthers} onClose={close} />}
       {open && !offlineCode && (
         <div className="scanner-input">
           {camera && <CameraScanner onScan={go} hint={t("punches.cameraHint")} />}

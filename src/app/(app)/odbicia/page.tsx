@@ -89,6 +89,7 @@ function PunchConflictEntry({ conflict, children }: { conflict: PunchConflict; c
         {t(`punches.conflictReasons.${conflict.reason}`)}
         {conflict.check && ` · ${punchCheckText(conflict.check)}`}
       </p>
+      {conflict.punchedByName && <p className="muted movement-meta">{t("punches.punchedBy", { name: conflict.punchedByName })}</p>}
       {conflict.place && (
         <p className="movement-meta">
           <Link href={locationPagePath(conflict.place.kind, conflict.place.id, "/ludzie")}>{t("punches.openPlace", { place: conflict.place.name })}</Link>

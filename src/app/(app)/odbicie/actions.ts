@@ -5,10 +5,15 @@ import { errorMessage } from "@/lib/error-message";
 import type { QueuedPunch, SendOutcome } from "@/lib/offline/queue";
 import { revalidatePunchPages } from "@/lib/punch-pages";
 import { getRegistry } from "@/lib/registry-instance";
-import type { PhonePosition, PunchOutcome } from "@/registry/registry";
+import type { PersonPunchOutcome, PhonePosition, PunchOutcome, PunchPeopleInput } from "@/registry/registry";
 
 export interface PunchState {
   outcome?: PunchOutcome;
+  error?: string;
+}
+
+export interface PunchPeopleState {
+  outcomes?: PersonPunchOutcome[];
   error?: string;
 }
 
@@ -22,6 +27,18 @@ export async function punch(input: { posterToken: string; operationId: string; p
     const outcome = await getRegistry().as(session.userId).punch(input);
     if (outcome.action !== "potwierdz_wyjscie") revalidatePunchPages();
     return { outcome };
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+}
+
+/** „Odbij też…”: właściciel albo kierownik odbija zaznaczone osoby z kartoteki. Położenia też tu nie zapisujemy. */
+export async function punchPeople(input: PunchPeopleInput): Promise<PunchPeopleState> {
+  const session = await requireSession();
+  try {
+    const outcomes = await getRegistry().as(session.userId).punchPeople(input);
+    revalidatePunchPages();
+    return { outcomes };
   } catch (error) {
     return { error: errorMessage(error) };
   }
@@ -44,6 +61,7 @@ export async function sendQueuedPunch(item: QueuedPunch): Promise<SendOutcome> {
         position: item.position,
         confirmExit: item.action === "wyjscie",
         scannedAt: new Date(item.scannedAt),
+        personId: item.person?.id,
       });
     revalidatePunchPages();
     return result.status;

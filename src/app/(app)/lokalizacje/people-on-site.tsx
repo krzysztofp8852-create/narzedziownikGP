@@ -2,15 +2,19 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { t } from "@/i18n/t";
 import { formatPosterCode } from "@/posters/url";
-import { distanceText, punchChecksText, punchTimeText } from "@/lib/punch-text";
+import { distanceText, punchChecksText, punchedByText, punchTimeText } from "@/lib/punch-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import { canPrintPoster, canSetPunchRadius, type Poster, type Punch } from "@/registry/registry";
 import { LocationShell, loadPlacePage, type PlacePageKind } from "./location-page";
 import { PunchRadiusForm, RenewPosterForm } from "./punch-forms";
 
-/** Odbicie na liście: kto, kiedy, wyniki sprawdzenia położenia, „do wyjaśnienia” albo wyjaśnienie; `children` pod spodem. */
+/**
+ * Odbicie na liście: kto, kiedy, wyniki sprawdzenia położenia, kto odbijał za osobę, „do wyjaśnienia” albo
+ * wyjaśnienie; `children` pod spodem.
+ */
 export function PunchEntry({ punch, showPlace = false, children }: { punch: Punch; showPlace?: boolean; children?: ReactNode }) {
+  const punchedBy = punchedByText(punch);
   return (
     <li className="movement" data-testid="punch">
       <div className="movement-head">
@@ -20,6 +24,11 @@ export function PunchEntry({ punch, showPlace = false, children }: { punch: Punc
       </div>
       <p className="muted movement-meta">{punchTimeText(punch)}</p>
       <p className="movement-meta">{punchChecksText(punch)}</p>
+      {punchedBy && (
+        <p className="muted movement-meta" data-testid="punch-punched-by">
+          {punchedBy}
+        </p>
+      )}
       {punch.explained && (
         <p className="muted movement-meta">
           {punch.explained.note
