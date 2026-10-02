@@ -39,7 +39,8 @@ test("kierownik wydaje dwie szlifierki z bazy checklistą na tablicy i widzi je 
   await expect(rataje.getByRole("link", { name: /S-01/ })).toContainText("0 dni");
   await expect(rataje.getByRole("link", { name: /S-02/ })).toBeVisible();
   const base = page.getByRole("region", { name: "Baza Magazyn" });
-  await expect(base.getByRole("link")).toHaveCount(1);
+  // Nazwa bazy to odnośnik do strony bazy; liczymy narzędzia z listy.
+  await expect(base.getByRole("list").getByRole("link")).toHaveCount(1);
   await expect(base.getByRole("link", { name: /S-03/ })).toBeVisible();
   const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
   await expect(recent.getByRole("listitem").first()).toContainText("Wydanie");

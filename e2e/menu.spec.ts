@@ -62,6 +62,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Pojazdy",
     "Koszty sprzętu",
     "Ludzie",
+    "Odbicia do wyjaśnienia",
     "Dokumenty",
     "Ustawienia",
     "Samouczek",
@@ -112,7 +113,7 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
   await signIn(page, company.manager);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   await menuButton(page).click();
-  await expect(menu(page).getByRole("link")).toHaveText(["Tablica", "Terminy", "Historia", "Budowy", "Pojazdy", "Ludzie", "Samouczek"]);
+  await expect(menu(page).getByRole("link")).toHaveText(["Tablica", "Terminy", "Historia", "Budowy", "Pojazdy", "Ludzie", "Odbicia do wyjaśnienia", "Samouczek"]);
   await menu(page).getByRole("link", { name: "Samouczek" }).click();
   await expect(page).toHaveURL(/\/samouczek$/);
   await signOutFromMenu(page);

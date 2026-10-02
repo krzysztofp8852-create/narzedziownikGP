@@ -1,5 +1,6 @@
 const TIME_ZONE = "Europe/Warsaw";
 const dateTime = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeStyle: "short", timeZone: TIME_ZONE });
+const time = new Intl.DateTimeFormat("pl-PL", { timeStyle: "short", timeZone: TIME_ZONE });
 const wallClockParts = new Intl.DateTimeFormat("en-US", {
   timeZone: TIME_ZONE,
   hourCycle: "h23",
@@ -14,6 +15,11 @@ const wallClockParts = new Intl.DateTimeFormat("en-US", {
 /** „25.09.2026, 14:03” (dzień bez zera z przodu: „1.10.2026”) czasu polskiego, niezależnie od strefy serwera. */
 export function formatDateTime(date: Date): string {
   return dateTime.format(date);
+}
+
+/** „7:02” czasu polskiego. */
+export function formatTime(date: Date): string {
+  return time.format(date);
 }
 
 /**

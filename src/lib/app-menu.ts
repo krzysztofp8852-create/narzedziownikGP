@@ -1,5 +1,5 @@
 import { t } from "@/i18n/t";
-import { canManageQualifications, canManageSettings, canPrintStickers, canSeeCosts, hasTutorial, type Session } from "@/registry/registry";
+import { canClarifyPunches, canManageQualifications, canManageSettings, canPrintStickers, canSeeCosts, hasTutorial, type Session } from "@/registry/registry";
 
 export type MenuItem = { kind: "link"; href: string; label: string } | { kind: "signOut"; label: string };
 
@@ -37,7 +37,10 @@ export function appMenu(session: Session): MenuGroup[] {
     },
     {
       label: t("menu.groups.people"),
-      items: link("/ludzie", canManageQualifications(session) ? t("menu.people") : t("menu.myQualifications")),
+      items: [
+        ...link("/ludzie", canManageQualifications(session) ? t("menu.people") : t("menu.myQualifications")),
+        ...link("/odbicia", t("menu.punchesToClarify"), canClarifyPunches(session)),
+      ],
     },
     {
       label: t("menu.groups.company"),

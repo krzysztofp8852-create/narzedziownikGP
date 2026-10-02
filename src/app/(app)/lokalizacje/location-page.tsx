@@ -17,54 +17,90 @@ import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type S
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
 import { CostPeriodPicker } from "./cost-period-picker";
 
-/** Budowa albo pojazd: lokalizacje z własną stroną i zakładką „Koszty”. */
+/** Budowa albo pojazd: lokalizacje z zakładką „Koszty”. */
 export type SiteOrVehicleKind = "budowa" | "pojazd";
+/** Lokalizacje z własną stroną: budowa, pojazd i baza. Budowa i baza mają też zakładkę „Ludzie”. */
+export type PlacePageKind = SiteOrVehicleKind | "baza";
 
-interface SiteOrVehicle {
+export interface PlacePage {
   id: string;
-  kind: SiteOrVehicleKind;
+  kind: PlacePageKind;
   name: string;
   address: string | null;
-  manager: Site["manager"];
-  /** Aktywna budowa albo aktywny pojazd: jest na tablicy i przyjmuje sprzęt. */
+  /** Kierownik budowy albo pojazdu; baza go nie ma. */
+  manager: Site["manager"] | null;
+  /** Aktywna budowa albo aktywny pojazd (baza zawsze): jest na tablicy i przyjmuje sprzęt. */
   open: boolean;
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-/** Adres strony budowy albo pojazdu, np. /budowy/…/koszty. */
-export function locationPagePath(kind: SiteOrVehicleKind, id: string, tab: "" | "/koszty" | "/koszty/eksport" = "") {
+export type PlacePageTab = "" | "/koszty" | "/koszty/eksport" | "/ludzie";
+
+/** Adres strony budowy, pojazdu albo bazy, np. /budowy/…/koszty albo /baza/ludzie. */
+export function locationPagePath(kind: PlacePageKind, id: string, tab: PlacePageTab = "") {
+  if (kind === "baza") return `/baza${tab}`;
   return `${kind === "budowa" ? "/budowy" : "/pojazdy"}/${id}${tab}`;
 }
 
-/** Budowa (także zakończona) albo pojazd (także nieaktywny) raz na żądanie; null, gdy nie ma takiej lokalizacji. */
-export const loadSiteOrVehicle = cache(async (id: string, kind: SiteOrVehicleKind): Promise<{ session: Session; location: SiteOrVehicle | null }> => {
+/**
+ * Budowa (także zakończona), pojazd (także nieaktywny) albo baza (bez `id`) raz na żądanie; null, gdy nie ma takiej
+ * lokalizacji.
+ */
+export const loadPlacePage = cache(async (id: string | null, kind: PlacePageKind): Promise<{ session: Session; location: PlacePage | null }> => {
   const session = await requireSession();
-  const { sites, vehicles } = await getRegistry().as(session.userId).locations();
+  const { base, sites, vehicles } = await getRegistry().as(session.userId).locations();
+  if (kind === "baza") {
+    return { session, location: { id: base.id, kind, name: base.name, address: base.address, manager: null, open: true } };
+  }
   const site = kind === "budowa" ? sites.find((candidate) => candidate.id === id) : undefined;
   const vehicle = kind === "pojazd" ? vehicles.find((candidate) => candidate.id === id) : undefined;
-  const location: SiteOrVehicle | null = site
-    ? { id, kind, name: site.name, address: site.address, manager: site.manager, open: site.status === "aktywna" }
+  const location: PlacePage | null = site
+    ? { id: site.id, kind, name: site.name, address: site.address, manager: site.manager, open: site.status === "aktywna" }
     : vehicle
-      ? { id, kind, name: vehicle.name, address: null, manager: vehicle.manager, open: vehicle.active }
+      ? { id: vehicle.id, kind, name: vehicle.name, address: null, manager: vehicle.manager, open: vehicle.active }
       : null;
   return { session, location };
 });
 
 export async function siteOrVehicleTitle(id: string, kind: SiteOrVehicleKind) {
-  return (await loadSiteOrVehicle(id, kind)).location?.name;
+  return (await loadPlacePage(id, kind)).location?.name;
 }
 
 /** Czy aktor widzi koszty tej budowy albo pojazdu: właściciel, a kierownik swojej, gdy właściciel na to pozwolił. */
-function seesCostsOf(session: Session, location: SiteOrVehicle) {
-  return canSeeCostsOf(session, { managerId: location.manager.id });
+function seesCostsOf(session: Session, location: PlacePage) {
+  return location.kind !== "baza" && location.manager !== null && canSeeCostsOf(session, { managerId: location.manager.id });
 }
 
-/** Nagłówek strony budowy albo pojazdu z zakładkami; „Koszty” tylko dla tego, kto widzi koszty tej lokalizacji. */
-function LocationShell({ session, location, tab, children }: { session: Session; location: SiteOrVehicle; tab: "sprzet" | "koszty"; children: ReactNode }) {
+const KIND_LABELS = { budowa: "locationPage.siteKind", pojazd: "locationPage.vehicleKind", baza: "locationPage.baseKind" } as const;
+
+/**
+ * Nagłówek strony budowy, pojazdu albo bazy z zakładkami: „Koszty” tylko dla tego, kto widzi koszty tej lokalizacji,
+ * „Ludzie na budowie” przy budowie i bazie (każdy widzi tam to, co mu wolno).
+ */
+export function LocationShell({
+  session,
+  location,
+  tab,
+  children,
+}: {
+  session: Session;
+  location: PlacePage;
+  tab: "sprzet" | "koszty" | "ludzie";
+  children: ReactNode;
+}) {
   const tabs = [
     { id: "sprzet", href: locationPagePath(location.kind, location.id), label: t("locationPage.equipmentTab") },
     ...(seesCostsOf(session, location) ? [{ id: "koszty", href: locationPagePath(location.kind, location.id, "/koszty"), label: t("costs.tab") }] : []),
+    ...(location.kind !== "pojazd"
+      ? [
+          {
+            id: "ludzie",
+            href: locationPagePath(location.kind, location.id, "/ludzie"),
+            label: location.kind === "baza" ? t("punches.tabBase") : t("punches.tab"),
+          },
+        ]
+      : []),
   ];
   return (
     <>
@@ -75,15 +111,17 @@ function LocationShell({ session, location, tab, children }: { session: Session;
       </p>
       <h1 className="display page-title">
         <span className="location-kind">
-          {location.kind === "pojazd" && <VehicleIcon />} {location.kind === "budowa" ? t("locationPage.siteKind") : t("locationPage.vehicleKind")}
+          {location.kind === "pojazd" && <VehicleIcon />} {t(KIND_LABELS[location.kind])}
         </span>{" "}
         {location.name}
       </h1>
       <div className="location-details site-page-details">
         {location.address && <p className="muted">{location.address}</p>}
-        <p>
-          <SiteManagerLabel manager={location.manager} />
-        </p>
+        {location.manager && (
+          <p>
+            <SiteManagerLabel manager={location.manager} />
+          </p>
+        )}
         {!location.open && <p className="tag">{location.kind === "budowa" ? t("locationPage.finished") : t("locationPage.inactive")}</p>}
       </div>
       {tabs.length > 1 && (
@@ -101,23 +139,24 @@ function LocationShell({ session, location, tab, children }: { session: Session;
 }
 
 /** Zakładka „Sprzęt”: narzędzia, które są tu teraz (jak na tablicy), i odnośnik do historii ruchów lokalizacji. */
-export async function EquipmentPage({ id, kind }: { id: string; kind: SiteOrVehicleKind }) {
-  const { session, location } = await loadSiteOrVehicle(id, kind);
+export async function EquipmentPage({ id, kind }: { id: string | null; kind: PlacePageKind }) {
+  const { session, location } = await loadPlacePage(id, kind);
   if (!location) notFound();
   const board = await getRegistry().as(session.userId).whereIsWhat();
-  const onBoard = (kind === "budowa" ? board.sites : board.vehicles).find((candidate) => candidate.id === id);
+  const onBoard = kind === "baza" ? board.base : (kind === "budowa" ? board.sites : board.vehicles).find((candidate) => candidate.id === id);
   const tools = onBoard?.tools ?? [];
+  const empty = { budowa: "locationPage.siteEmpty", pojazd: "locationPage.vehicleEmpty", baza: "locationPage.baseEmpty" } as const;
 
   return (
     <LocationShell session={session} location={location} tab="sprzet">
       <section className="board-section" aria-label={t("locationPage.equipmentTab")}>
         {tools.length === 0 ? (
-          <p className="empty">{kind === "budowa" ? t("locationPage.siteEmpty") : t("locationPage.vehicleEmpty")}</p>
+          <p className="empty">{t(empty[kind])}</p>
         ) : (
-          <ToolList tools={tools} wide />
+          <ToolList tools={tools} wide atBase={kind === "baza"} />
         )}
         <p>
-          <Link href={`/historia${historySearch({ locationId: id })}`}>{t("locationPage.history")}</Link>
+          <Link href={`/historia${historySearch({ locationId: location.id })}`}>{t("locationPage.history")}</Link>
         </p>
       </section>
     </LocationShell>
@@ -126,7 +165,7 @@ export async function EquipmentPage({ id, kind }: { id: string; kind: SiteOrVehi
 
 /** Zakładka „Koszty”: koszt sprzętu w wybranym okresie z eksportem do Excela. Tylko dla tego, kto widzi koszty tej lokalizacji. */
 export async function CostsPage({ id, kind, searchParams }: { id: string; kind: SiteOrVehicleKind; searchParams: SearchParams }) {
-  const { session, location } = await loadSiteOrVehicle(id, kind);
+  const { session, location } = await loadPlacePage(id, kind);
   if (!location) notFound();
   if (!seesCostsOf(session, location)) redirect(locationPagePath(kind, id));
   const registry = getRegistry().as(session.userId);
@@ -149,7 +188,7 @@ export async function CostsPage({ id, kind, searchParams }: { id: string; kind: 
           </p>
         </section>
       ) : (
-        <SiteOrVehicleCosts location={location} costs={costs} choice={choice} owner={canManageRates(session)} />
+        <SiteOrVehicleCosts location={{ ...location, kind }} costs={costs} choice={choice} owner={canManageRates(session)} />
       )}
     </LocationShell>
   );
@@ -161,7 +200,7 @@ function SiteOrVehicleCosts({
   choice,
   owner,
 }: {
-  location: SiteOrVehicle;
+  location: PlacePage & { kind: SiteOrVehicleKind };
   costs: Extract<LocationCosts, { status: "koszty" }>;
   choice: CostPeriodChoice;
   /** Właściciel sam dopisuje wartość albo kwotę narzędzia; kierownikowi mówimy, że robi to właściciel. */

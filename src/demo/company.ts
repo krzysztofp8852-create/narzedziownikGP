@@ -174,7 +174,8 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
  * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, sprzęt wynajęty z terminem zwrotu, także po terminie,
  * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu, osoby z brygad bez konta w kartotece Ludzie,
- * uprawnienia ludzi, w tym szkolenie BHP po terminie), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
+ * uprawnienia ludzi, w tym szkolenie BHP po terminie, plakaty budów i odbicia z ostatnich dni, w tym jedno do wyjaśnienia), a potem robi
+ * z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
  * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
 export async function createDemoCompany(
@@ -500,8 +501,87 @@ export async function createDemoCompany(
   await owner.setDailyRate({ kind: "firma" }, 1);
   await owner.setDailyRate({ kind: "kategoria", categoryId: categoryIds.M }, 2);
   await owner.setDailyRate({ kind: "narzedzie", toolId: tools.podest }, 25);
+  await punchScenario({ deps, owner, people, places, daysAgo, now });
   const { purged } = await registry.system().activateDemoCompany(company.companyId);
   return { companyId: company.companyId, purged };
+}
+
+/** Położenie baz i budów demo (pinezki stawia właściciel, bo demo nie geokoduje adresów), żeby odbicia miały odległość. */
+const PINS = {
+  base: { lat: 52.4037, lng: 16.9913 },
+  tarasy: { lat: 52.3886, lng: 17.0108 },
+  komorniki: { lat: 52.3368, lng: 16.8117 },
+  szkola: { lat: 52.4021, lng: 16.889 },
+  suchyLas: { lat: 52.4741, lng: 16.8807 },
+  jezyce: { lat: 52.4108, lng: 16.9035 },
+};
+type PinnedPlace = keyof typeof PINS;
+
+/**
+ * Odbicia z ostatnich trzech dni i z dzisiejszego ranka: ludzie z kontem wchodzą rano i wychodzą po południu, Jan raz
+ * przechodzi z Tarasów do Komornik, a dziś rano część jest jeszcze odbita. Jan raz odbił się bez GPS (kierownik
+ * to wyjaśnił), a Piotr raz z domu, 3,4 km od budowy (czeka na wyjaśnienie). Firma nie jest jeszcze demo, więc
+ * położenie się sprawdza. Odbicia nie zależą od ruchów sprzętu, więc idą własnym zegarem po całej reszcie scenariusza.
+ */
+async function punchScenario({
+  deps,
+  owner,
+  people,
+  places,
+  daysAgo,
+  now,
+}: {
+  deps: DemoCompanyDeps;
+  owner: ReturnType<ReturnType<typeof createRegistry>["as"]>;
+  people: Record<string, string>;
+  places: Record<PinnedPlace | "base", string>;
+  daysAgo: (days: number, hour: number, minute?: number) => Date;
+  now: Date;
+}) {
+  await owner.setBaseAddress("ul. Krańcowa 28, Poznań");
+  const codes = {} as Record<PinnedPlace, string>;
+  for (const place of Object.keys(PINS) as PinnedPlace[]) {
+    await owner.moveMapPin(places[place], PINS[place]);
+    codes[place] = (await owner.poster(places[place])).code;
+  }
+  const clock = new ScenarioClock(daysAgo(3, 6), now);
+  const registry = createRegistry({ ...deps, clock, notifier: silentNotifier, geocoder: noGeocoder });
+  /** Skan plakatu `metersAway` metrów na północ od miejsca (null: telefon bez położenia). */
+  const punch = async (who: string, at: Date, place: PinnedPlace, metersAway: number | null, confirmExit = false) => {
+    clock.set(at);
+    const position = metersAway === null ? null : { lat: PINS[place].lat + metersAway / 111_195, lng: PINS[place].lng, accuracy: 12 };
+    return registry.as(people[who]).punch({ operationId: randomUUID(), posterToken: codes[place], position, confirmExit });
+  };
+
+  for (const days of [3, 2, 1]) {
+    await punch("krzysztof", daysAgo(days, 6, 40), "base", 25);
+    await punch("marek", daysAgo(days, 6, 50), "tarasy", 40);
+    const janEntry = await punch("jan", daysAgo(days, 6, 55), "tarasy", days === 3 ? null : 60);
+    await punch("anna", daysAgo(days, 7, 0), "szkola", 35);
+    await punch("piotr", daysAgo(days, 7, 5), "komorniki", days === 2 ? 3_400 : 80);
+    await punch("pawel", daysAgo(days, 7, 10), "jezyce", 50);
+    if (days === 3 && janEntry.action === "wejscie") {
+      clock.set(daysAgo(days, 9, 30));
+      await registry.as(people.marek).explainPunch({ punchId: janEntry.punch.id, note: "Telefon bez GPS w piwnicy, Jan był od rana." });
+    }
+    if (days === 1) await punch("jan", daysAgo(days, 11, 30), "komorniki", 70);
+    await punch("jan", daysAgo(days, 15, 20), days === 1 ? "komorniki" : "tarasy", 50, true);
+    await punch("piotr", daysAgo(days, 15, 25), "komorniki", 60, true);
+    await punch("marek", daysAgo(days, 15, 30), "tarasy", 30, true);
+    await punch("anna", daysAgo(days, 15, 40), "szkola", 20, true);
+    await punch("pawel", daysAgo(days, 15, 45), "jezyce", 40, true);
+    await punch("krzysztof", daysAgo(days, 16, 0), "base", 15, true);
+  }
+  // Dziś rano, o ile demo zakładamy po tej porze.
+  const today: [string, Date, PinnedPlace, number][] = [
+    ["krzysztof", daysAgo(0, 6, 30), "base", 20],
+    ["marek", daysAgo(0, 6, 45), "tarasy", 35],
+    ["jan", daysAgo(0, 6, 52), "tarasy", 55],
+    ["anna", daysAgo(0, 6, 55), "szkola", 40],
+  ];
+  for (const [who, at, place, meters] of today) {
+    if (at.getTime() <= now.getTime()) await punch(who, at, place, meters);
+  }
 }
 
 /** Tyle po ostatnim wejściu do demo oglądający raczej już skończył; wcześniej zadanie godzinowe demo nie odświeża. */

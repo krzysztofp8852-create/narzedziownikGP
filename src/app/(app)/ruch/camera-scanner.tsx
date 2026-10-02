@@ -57,10 +57,10 @@ async function createFrameReader(): Promise<ReadFrame> {
 type CameraStatus = "starting" | "on" | "denied" | "insecure" | "unavailable";
 
 /**
- * Podgląd tylnego aparatu, który odczytuje kolejne naklejki QR i przekazuje ich treść. Naklejka
- * trzymana w kadrze liczy się raz. Aparat gaśnie, gdy komponent znika.
+ * Podgląd tylnego aparatu, który odczytuje kolejne kody QR (naklejki, plakat budowy) i przekazuje ich treść. Kod
+ * trzymany w kadrze liczy się raz. Aparat gaśnie, gdy komponent znika. `hint`: co nakierować na aparat.
  */
-export function CameraScanner({ onScan }: { onScan: (text: string) => void }) {
+export function CameraScanner({ onScan, hint = t("scanner.cameraHint") }: { onScan: (text: string) => void; hint?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<CameraStatus>("starting");
   const onScanRef = useRef(onScan);
@@ -124,7 +124,7 @@ export function CameraScanner({ onScan }: { onScan: (text: string) => void }) {
     <div className="camera">
       {/* Safari na iPhonie odtwarza podgląd w stronie tylko z playsInline i bez dźwięku. */}
       <video ref={videoRef} className="camera-video" playsInline muted aria-label={t("scanner.cameraPreview")} />
-      <p className="muted">{t(status === "on" ? "scanner.cameraHint" : "scanner.cameraStarting")}</p>
+      <p className="muted">{status === "on" ? hint : t("scanner.cameraStarting")}</p>
     </div>
   );
 }

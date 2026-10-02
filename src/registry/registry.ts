@@ -58,6 +58,8 @@ import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as people from "./people";
 import type { NewPersonInput, Person } from "./people";
+import * as punches from "./punches";
+import type { ExplainPunchInput, PeopleOnSite, Poster, Punch, PunchInput, PunchOutcome, PunchPreview } from "./punches";
 import * as qualificationReminders from "./qualification-reminders";
 import * as qualifications from "./qualifications";
 import type {
@@ -208,6 +210,33 @@ export {
   QUALIFICATION_KINDS,
   UPCOMING_QUALIFICATION_DAYS,
 } from "./qualifications";
+export type {
+  ExplainPunchInput,
+  PeopleOnSite,
+  PhonePosition,
+  Poster,
+  Punch,
+  PunchAction,
+  PunchCheck,
+  PunchExitVia,
+  PunchInput,
+  PunchOutcome,
+  PunchPlace,
+  PunchPlaceKind,
+  PunchPreview,
+  PunchResult,
+} from "./punches";
+export {
+  canClarifyPunches,
+  canPrintPoster,
+  canSetPunchRadius,
+  DEFAULT_PUNCH_RADIUS_M,
+  MAX_PUNCH_EXPLANATION_LENGTH,
+  MAX_PUNCH_RADIUS_M,
+  MIN_PUNCH_RADIUS_M,
+  PUNCH_RESULTS,
+} from "./punches";
+export { normalizePosterCode } from "./poster-code";
 export { isReportKind } from "./reports";
 export type { Bell, BellEntry } from "./bell";
 export type {
@@ -624,6 +653,39 @@ export interface Registry {
     qualificationDocument(documentId: string): Promise<{ file: Blob; fileName: string } | null>;
     /** Uprawnienia aktywnych osób z najbliższych 30 dni i po terminie, które aktor widzi, od najwcześniejszego. */
     upcomingQualifications(): Promise<UpcomingQualification[]>;
+    /**
+     * Co zrobi skan plakatu budowy albo bazy (kod z kodu QR albo wpisany ręcznie): wejście, wyjście z tej budowy (strona
+     * pyta „Kończysz na tej budowie?”) albo przejście z innej. Niczego nie zapisuje. Nieważny kod (także stary po „Nowy
+     * kod” i z innej firmy): `poster_invalid`; zakończona budowa: `site_finished`.
+     */
+    punchPreview(posterToken: string): Promise<PunchPreview>;
+    /**
+     * Odbicie aktora skanem plakatu: wejście zapisuje się od razu, wyjście z tej samej budowy dopiero z `confirmExit`
+     * (bez niego wynik `potwierdz_wyjscie` i nic się nie zapisuje), a skan na innej budowie to przejście (wyjście
+     * z tamtej i wejście na tę). Rejestr liczy odległość telefonu od położenia budowy i zapisuje tylko wynik
+     * (`na_budowie` do promienia odbicia, `poza_budowa`, `brak_polozenia`, `bez_sprawdzenia`) i odległość;
+     * współrzędnych nigdzie. W firmie demo położenia nie sprawdza („na budowie”). Odbija się każdy z kontem. Ponowne
+     * wysłanie tej samej operacji zwraca pierwotny wynik.
+     */
+    punch(input: PunchInput): Promise<PunchOutcome>;
+    /**
+     * Zakładka „Ludzie na budowie” budowy albo bazy: odbici teraz i ostatnie odbicia, z promieniem odbicia. Właściciel
+     * widzi wszystkie, kierownik na swoich budowach, a każdy własne. Pojazd i serwis: `not_found`.
+     */
+    peopleOnSite(locationId: string): Promise<PeopleOnSite>;
+    /**
+     * Odbicia do wyjaśnienia (wynik wejścia albo wyjścia inny niż „na budowie”), od najnowszego: właściciel wszystkie,
+     * kierownik na swoich budowach bez własnych. Pracownik i magazynier: `forbidden`.
+     */
+    punchesToClarify(): Promise<Punch[]>;
+    /** „Wyjaśnione” z opcjonalną notatką: odbicie znika z listy do wyjaśnienia. Ci, którzy je tam widzą. */
+    explainPunch(input: ExplainPunchInput): Promise<void>;
+    /** Plakat budowy (właściciel albo jej kierownik) albo bazy z adresem (właściciel, bez adresu `poster_no_address`). */
+    poster(locationId: string): Promise<Poster>;
+    /** „Nowy kod”: stary plakat przestaje działać. Właściciel, a na swojej aktywnej budowie jej kierownik. */
+    renewPosterToken(locationId: string): Promise<void>;
+    /** Promień odbicia budowy albo bazy, 50–5000 m. Tylko właściciel. */
+    setPunchRadius(locationId: string, radiusM: number): Promise<void>;
     /**
      * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście, i jego osobę
      * w kartotece Ludzie.
@@ -1453,6 +1515,23 @@ export function createRegistry(deps: RegistryDeps): Registry {
           return file ? { file, fileName: document.fileName } : null;
         },
         upcomingQualifications: () => asMember((sql) => qualifications.upcomingQualifications(sql, deps.clock.now())),
+        punchPreview: (posterToken) => asMember((sql, session) => punches.punchPreview(sql, session, posterToken)),
+        punch: async (input) => {
+          const attempt = () => asWriter((sql, session) => punches.punch(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległy skan tej osoby albo ponowka tej samej operacji; drugie podejście zobaczy jego wynik.
+            if (error instanceof ReplayedOperationError || error instanceof punches.ConcurrentPunchError) return attempt();
+            throw error;
+          }
+        },
+        peopleOnSite: (locationId) => asMember((sql) => punches.peopleOnSite(sql, locationId)),
+        punchesToClarify: () => asMember((sql, session) => punches.punchesToClarify(sql, session)),
+        explainPunch: (input) => asWriter((sql, session) => punches.explainPunch(sql, session, input, deps.clock.now())),
+        poster: (locationId) => asMember((sql, session) => punches.poster(sql, session, locationId)),
+        renewPosterToken: (locationId) => asWriter((sql, session) => punches.renewPosterToken(sql, session, locationId)),
+        setPunchRadius: (locationId, radiusM) => asWriter((sql, session) => punches.setPunchRadius(sql, session, locationId, radiusM)),
         resetMemberPassword: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);

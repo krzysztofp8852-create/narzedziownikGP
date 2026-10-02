@@ -24,6 +24,7 @@ const COMPANY_TABLES = [
   "qualification_documents",
   "qualifications",
   "qualification_kinds",
+  "punches",
   "threshold_alerts",
   "notifications",
   "issue_entries",

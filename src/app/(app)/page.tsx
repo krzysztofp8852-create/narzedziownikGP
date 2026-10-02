@@ -45,6 +45,7 @@ import {
 } from "./lokalizacje/location-forms";
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
+import { PunchButton } from "./punch-button";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
 import { TutorialCard } from "./samouczek/tutorial";
@@ -368,6 +369,8 @@ export default async function BoardPage(props: PageProps<"/">) {
       {tutorial?.closed === null && (
         <TutorialCard tutorial={tutorial} entry={{ textEntry: textEntryEnabled(), voiceEntry: voiceEntryEnabled() }} />
       )}
+      {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy. */}
+      {!session.company.readOnly && <PunchButton />}
       <div className="board" data-fetched-at={fetchedAt}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
           <OperationsPanel
@@ -451,7 +454,7 @@ export default async function BoardPage(props: PageProps<"/">) {
             <section className="location" aria-labelledby="location-base">
               <div className="location-head">
                 <h2 id="location-base" className="display location-name">
-                  <span className="location-kind location-kind-base">{t("board.baseKind")}</span> <span>{base.name}</span>
+                  <span className="location-kind location-kind-base">{t("board.baseKind")}</span> <Link href={locationPagePath("baza", base.id)}>{base.name}</Link>
                 </h2>
                 <LocationTotals count={base.tools.length} totalValue={base.totalValue} />
               </div>

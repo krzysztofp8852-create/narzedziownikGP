@@ -42,6 +42,10 @@ async function givenCompanyWithHistory(adminId: string) {
   const { qualificationId } = await owner.addQualification({ personId, kind: "wlasny", customKindId: kindId, dueOn: "2026-03-20" });
   await owner.addQualificationDocument({ operationId: randomUUID(), qualificationId, file: jpeg(), fileName: "zaswiadczenie.jpg" });
   await testbed.registry.system().notifyCompanyDueQualifications(company.companyId);
+  const { code: posterToken } = await owner.poster(siteId);
+  const manager = testbed.registry.as(managerId);
+  await manager.punch({ operationId: randomUUID(), posterToken, position: null });
+  await owner.explainPunch({ punchId: (await owner.punchesToClarify())[0].id, note: "Piwnica bez GPS" });
   await owner.sendSupportMessage({ operationId: randomUUID(), text: "Zrzut ekranu", photo: jpeg() });
   return { ...company, managerId };
 }
