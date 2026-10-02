@@ -103,12 +103,24 @@ function mondayOf(day: string): string {
   return daysBefore(day, (weekday + 6) % 7);
 }
 
+/** Raporty, które aktor może zobaczyć w danej chwili: właściciel tygodniowy i piątkowy, kierownik piątkowy. */
+export function reportKindsOf(session: Session): ReportKind[] {
+  if (session.role === "wlasciciel") return ["tygodniowy", "piatkowy"];
+  if (session.role === "kierownik") return ["piatkowy"];
+  return [];
+}
+
+/** Strona Raporty: tylko role, które dostają raporty. */
+export function canSeeReports(session: Session): boolean {
+  return reportKindsOf(session).length > 0;
+}
+
 export function requireWeeklyReportReader(session: Session) {
-  if (session.role !== "wlasciciel") throw new RegistryError("forbidden");
+  if (!reportKindsOf(session).includes("tygodniowy")) throw new RegistryError("forbidden");
 }
 
 export function requireFridayReportReader(session: Session) {
-  if (session.role !== "wlasciciel" && session.role !== "kierownik") throw new RegistryError("forbidden");
+  if (!reportKindsOf(session).includes("piatkowy")) throw new RegistryError("forbidden");
 }
 
 /**
@@ -213,6 +225,19 @@ export async function sentReport(sql: Sql, session: Session, kind: ReportKind, d
     [session.userId, reportKey(kind, day)],
   );
   return row?.content.report ?? null;
+}
+
+/** Ile ostatnich raportów z dzwonka pokazuje strona Raporty (około pół roku tygodniowych i piątkowych). */
+const RECEIVED_REPORTS_LIMIT = 52;
+
+/** Raporty z dzwonka aktora, tak jak je wtedy dostał, od najnowszego. */
+export async function receivedReports(sql: Sql, session: Session): Promise<Report[]> {
+  const rows = await sql<{ content: { report: Report } }>(
+    `select content from app.notifications where recipient_id = $1 and kind in ('raport_tygodniowy', 'raport_piatkowy')
+     order by created_at desc, id desc limit $2`,
+    [session.userId, RECEIVED_REPORTS_LIMIT],
+  );
+  return rows.map((row) => row.content.report);
 }
 
 /** Aktywni właściciele firmy, z e-mailem, od najdawniej dodanego. Transakcja systemowa. */

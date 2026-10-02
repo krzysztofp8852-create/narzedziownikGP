@@ -187,6 +187,7 @@ describe("polecenia i zapytania w trybie tylko do odczytu", () => {
       z.owner.finishedSites(),
       z.owner.weeklyReport(),
       nowak.fridayReport(),
+      nowak.receivedReports(),
       z.owner.categories(),
       z.owner.suggestCode(z.grinders.id),
       z.owner.toolCatalog(),
