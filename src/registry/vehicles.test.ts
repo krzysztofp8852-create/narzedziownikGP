@@ -65,6 +65,8 @@ describe("dodawanie pojazdu", () => {
     const vehicle = {
       id: locationId,
       name: "Bus WX 12345",
+      registrationNumber: null,
+      vin: null,
       active: true,
       alarmEnabled: false,
       manager: { id: nowakId, fullName: "Adam Nowak", active: true },

@@ -12,7 +12,7 @@ import * as costs from "./costs";
 import type { CostPeriod, CostSummary, DailyRates, LocationCosts, RateChange, RateTarget } from "./costs";
 import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
-import type { AddDocumentInput, CompleteDeadlineInput, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
+import type { AddDocumentInput, CompleteDeadlineInput, Deadline, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
 import * as demo from "./demo";
 import type { DemoAccount, DemoDevice, DemoUse, DemoVisit } from "./demo";
 import * as history from "./history";
@@ -21,7 +21,7 @@ import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, Issue
 import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
 import type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 import * as locations from "./locations";
-import type { LocatedAddress, MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, Vehicle } from "./locations";
+import type { LocatedAddress, MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, Vehicle, VehicleData } from "./locations";
 import * as movements from "./movements";
 import type { Movement, RecentMovement, RegisterMovementInput, UndoMovementInput } from "./movements";
 import * as notifications from "./notifications";
@@ -109,17 +109,19 @@ export type { CatalogTool } from "./catalog";
 export type {
   AddDocumentInput,
   CompleteDeadlineInput,
+  Deadline,
   DeadlineChanges,
   DeadlineDocument,
   DeadlineKind,
   DeadlineStatus,
+  DeadlineSubject,
   DeadlineSummary,
   DocumentKind,
   NewDeadlineInput,
   NewDocument,
   NextDeadline,
-  ToolDeadline,
   UpcomingDeadline,
+  VehicleDeadlineKind,
 } from "./deadlines";
 export {
   canAttachDocument,
@@ -128,10 +130,15 @@ export {
   ADDABLE_DEADLINE_KINDS,
   DEADLINE_KINDS,
   DOCUMENT_KINDS,
+  deadlineSubject,
+  documentKindsOf,
   isDateOnlyKind,
+  isPolicyKind,
   MAX_CYCLE_MONTHS,
+  MAX_DEADLINE_NAME_LENGTH,
   MAX_DEADLINE_NOTE_LENGTH,
   UPCOMING_DAYS,
+  VEHICLE_DEADLINE_KINDS,
 } from "./deadlines";
 export type { AddToolInput, Category, EditToolInput, HistoryEntry, LocationKind, LostTool, ToolCard, ToolRental, ToolState } from "./tools";
 export type { AddRentedToolInput, ReturnToRentalInput } from "./rentals";
@@ -163,9 +170,9 @@ export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
 export { isCalendarDay, isMonth, shiftMonth, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 export { canCorrectTools, TOOL_STATES } from "./corrections";
-export type { MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, SiteStatus, Vehicle } from "./locations";
+export type { MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, SiteStatus, Vehicle, VehicleData } from "./locations";
 export type { MapPosition } from "./ports";
-export { canManageLocations } from "./locations";
+export { canManageLocations, MAX_REGISTRATION_NUMBER_LENGTH } from "./locations";
 export type { FinishedSite, ForceCloseSiteInput } from "./site-closing";
 export { canCloseSite, canForceCloseSites } from "./site-closing";
 export type {
@@ -558,34 +565,42 @@ export interface Registry {
     /** Karta narzędzia albo null, gdy użytkownik go nie widzi (nie ma go albo jest w innej firmie). */
     toolCard(toolId: string): Promise<ToolCard | null>;
     /**
-     * Termin przy narzędziu: przegląd, kalibracja, badanie UDT albo koniec gwarancji, jeden każdego rodzaju
-     * (drugi: `deadline_taken`), z opcjonalnym cyklem w miesiącach. Tylko właściciel; widzi je każdy w firmie.
+     * Termin przy narzędziu (przegląd, kalibracja, badanie UDT albo koniec gwarancji) albo przy aktywnym pojeździe
+     * (przegląd techniczny, OC, AC, legalizacja tachografu albo własny z nazwą), jeden każdego rodzaju, a własne z różnymi
+     * nazwami (drugi: `deadline_taken`), z opcjonalnym cyklem w miesiącach. Tylko właściciel; widzi je każdy w firmie.
      */
     addDeadline(input: NewDeadlineInput): Promise<{ deadlineId: string }>;
     /**
-     * Zmienia datę, cykl albo opis terminu. Tylko właściciel; termin zwrotu wynajętego (przedłużenie, bez cyklu)
-     * zmienia też kierownik lokalizacji, w której sprzęt stoi, i magazynier.
+     * Zmienia datę, cykl, opis albo nazwę własnego terminu pojazdu. Tylko właściciel; termin zwrotu wynajętego
+     * (przedłużenie, bez cyklu) zmienia też kierownik lokalizacji, w której sprzęt stoi, i magazynier.
      */
     updateDeadline(deadlineId: string, changes: DeadlineChanges): Promise<void>;
     /** Usuwa termin razem z dokumentami. Tylko właściciel. */
     deleteDeadline(deadlineId: string): Promise<void>;
     /**
-     * Wykonany przegląd, kalibracja albo badanie UDT (najpóźniej dziś w Polsce), z opcjonalnym dokumentem (np.
-     * protokołem): następny termin to podany, a bez niego liczy się z cyklu (bez cyklu go nie ma). Właściciel
-     * i magazynier. Ponowne wysłanie tej samej operacji zwraca bieżący termin. Zwraca następny termin.
+     * Wykonany przegląd, kalibracja, badanie UDT albo termin pojazdu (najpóźniej dziś w Polsce), z opcjonalnym
+     * dokumentem (np. protokołem): następny termin to podany, a bez niego liczy się z cyklu od dnia wykonania, przy OC
+     * i AC od końca polisy, która jeszcze trwała (bez cyklu go nie ma). Właściciel, a termin narzędzia też magazynier.
+     * Ponowne wysłanie tej samej operacji zwraca bieżący termin. Zwraca następny termin.
      */
     completeDeadline(input: CompleteDeadlineInput): Promise<{ dueOn: string | null }>;
     /**
-     * Dokument przy terminie: PDF albo zdjęcie do 4 MB (inaczej `document_invalid`). Właściciel, a magazynier bez faktur.
-     * Każdy w firmie go widzi, poza fakturą (ma cenę), którą widzi tylko właściciel.
+     * Dokument przy terminie: PDF albo zdjęcie do 4 MB (inaczej `document_invalid`). Właściciel, a magazynier do terminów
+     * narzędzi, bez faktur. Dokument terminu narzędzia widzi każdy w firmie, a terminu pojazdu właściciel i kierownik
+     * pojazdu; fakturę (ma cenę) tylko właściciel.
      */
     addDeadlineDocument(input: AddDocumentInput): Promise<{ documentId: string }>;
     /** Usuwa dokument terminu. Tylko właściciel. */
     deleteDeadlineDocument(documentId: string): Promise<void>;
     /** Plik dokumentu z nazwą; null, gdy aktor go nie widzi. */
     deadlineDocument(documentId: string): Promise<{ file: Blob; fileName: string } | null>;
-    /** Terminy sprzętu w obiegu w najbliższych 30 dniach i te po terminie (bez wygasłych gwarancji). Widzi je każda rola. */
+    /**
+     * Terminy sprzętu w obiegu i aktywnych pojazdów w najbliższych 30 dniach i te po terminie (bez wygasłych gwarancji).
+     * Widzi je każda rola.
+     */
     upcomingDeadlines(): Promise<UpcomingDeadline[]>;
+    /** Terminy pojazdu (także nieaktywnego) z dokumentami, które aktor widzi; pusta lista, gdy go nie widzi. */
+    vehicleDeadlines(vehicleId: string): Promise<Deadline[]>;
     /**
      * Druk naklejek QR: wybrane narzędzia albo wszystkie jeszcze nieoklejone. `print` robi z nich plik
      * w tej samej transakcji, więc datę druku (wydrukowane przestają być nieoklejone) zapisujemy tylko
@@ -830,8 +845,13 @@ export interface Registry {
     moveMapPin(locationId: string, position: MapPosition): Promise<void>;
     /** Serwis jako lokalizacja, np. „Serwis Hilti Poznań”. Tylko właściciel. */
     addService(input: { name: string }): Promise<{ locationId: string }>;
-    /** Nowy aktywny pojazd (np. „Bus WX 12345”) z kierownikiem i wyłączonym alarmem po progu dni. Tylko właściciel. */
+    /**
+     * Nowy aktywny pojazd (np. „Bus WX 12345” albo osobówka bez sprzętu) z kierownikiem, wyłączonym alarmem po progu
+     * dni i opcjonalnie numerem rejestracyjnym i VIN (zły: `vin_invalid`). Tylko właściciel.
+     */
     addVehicle(input: NewVehicleInput): Promise<{ locationId: string }>;
+    /** Numer rejestracyjny i VIN aktywnego pojazdu; null albo puste czyści pole. Tylko właściciel. */
+    changeVehicleData(vehicleId: string, data: VehicleData): Promise<void>;
     /** Przekazuje aktywny pojazd innemu aktywnemu kierownikowi. Tylko właściciel. */
     changeVehicleManager(vehicleId: string, managerId: string): Promise<void>;
     /** Włącza albo wyłącza alarm po progu dni dla aktywnego pojazdu. Tylko właściciel. */
@@ -1487,6 +1507,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
           await removeFiles(deps.documents, fileKeys);
         },
         upcomingDeadlines: () => asMember((sql) => deadlines.upcomingDeadlines(sql, deps.clock.now())),
+        vehicleDeadlines: (vehicleId) => asMember((sql) => deadlines.deadlinesOf(sql, { vehicleId }, deps.clock.now())),
         deadlineDocument: async (documentId) => {
           const document = await asMember((sql) => deadlines.visibleDocument(sql, documentId));
           const file = document && (await deps.documents.read(document.key));
@@ -1755,6 +1776,11 @@ export function createRegistry(deps: RegistryDeps): Registry {
           asWriter((sql, session) => {
             locations.requireLocationManager(session);
             return locations.changeVehicleManager(sql, vehicleId, managerId);
+          }),
+        changeVehicleData: (vehicleId, data) =>
+          asWriter((sql, session) => {
+            locations.requireLocationManager(session);
+            return locations.changeVehicleData(sql, vehicleId, data);
           }),
         setVehicleAlarm: (vehicleId, enabled) =>
           asWriter((sql, session) => {

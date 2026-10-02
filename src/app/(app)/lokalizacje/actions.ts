@@ -52,9 +52,35 @@ export async function addVehicle(_prev: LocationFormState, formData: FormData): 
   const session = await requireSession();
   try {
     const name = formText(formData, "name");
-    const { locationId } = await getRegistry().as(session.userId).addVehicle({ name, managerId: formText(formData, "managerId") });
+    const { locationId } = await getRegistry()
+      .as(session.userId)
+      .addVehicle({
+        name,
+        managerId: formText(formData, "managerId"),
+        registrationNumber: formText(formData, "registrationNumber"),
+        vin: formText(formData, "vin"),
+      });
     revalidatePath("/");
     return { added: { id: locationId, name: name.trim() } };
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+}
+
+export interface VehicleDataState {
+  error?: string;
+  saved?: boolean;
+}
+
+/** Numer rejestracyjny i VIN z zakładki „Dane i terminy” pojazdu. */
+export async function changeVehicleData(vehicleId: string, _prev: VehicleDataState, formData: FormData): Promise<VehicleDataState> {
+  const session = await requireSession();
+  try {
+    await getRegistry()
+      .as(session.userId)
+      .changeVehicleData(vehicleId, { registrationNumber: formText(formData, "registrationNumber"), vin: formText(formData, "vin") });
+    revalidatePath(`/pojazdy/${vehicleId}`, "layout");
+    return { saved: true };
   } catch (error) {
     return { error: errorMessage(error) };
   }

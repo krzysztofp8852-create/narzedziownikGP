@@ -1,7 +1,15 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { formatDay } from "@/i18n/dates";
 import { type Clock, noGeocoder, type Notifier } from "@/registry/ports";
-import { createRegistry, DEMO_EMAIL_DOMAIN, type MemberRole, type NewQualificationInput, type RegisteredKind, type RegistryDeps } from "@/registry/registry";
+import {
+  createRegistry,
+  DEMO_EMAIL_DOMAIN,
+  type MemberRole,
+  type NewQualificationInput,
+  type RegisteredKind,
+  type RegistryDeps,
+  type VehicleDeadlineKind,
+} from "@/registry/registry";
 
 /**
  * Z czego demo korzysta w Rejestrze; zegar i powiadomienia ma własne, a geokodowania nie ma wcale: mapa demo
@@ -303,21 +311,45 @@ export async function createDemoCompany(
   await advanceTo(daysAgo(46, 10));
   const { base } = await owner.locations();
   const site = async (name: string, address: string, manager: string) => (await owner.addSite({ name, address, managerId: people[manager] })).locationId;
-  const vehicle = async (name: string, manager: string) => (await owner.addVehicle({ name, managerId: people[manager] })).locationId;
+  const vehicle = async (name: string, managerId: string, registrationNumber: string, vin: string | null) =>
+    (await owner.addVehicle({ name, managerId, registrationNumber, vin })).locationId;
   const places = {
     base: base.id,
     tarasy: await site("Osiedle Zielone Tarasy", "ul. Szczepankowo 112, Poznań", "marek"),
     komorniki: await site("Hala magazynowa Komorniki", "ul. Polna 3, Komorniki", "marek"),
     szkola: await site("Termomodernizacja SP nr 12", "ul. Grunwaldzka 55, Poznań", "anna"),
     malta: await site("Biurowiec Malta Office", "ul. Baraniaka 6, Poznań", "pawel"),
-    busMarek: await vehicle("Bus WPI 4K21 (Ducato)", "marek"),
-    busAnna: await vehicle("Bus WPI 7M08 (Transit)", "anna"),
-    busPawel: await vehicle("Bus WPZ 2C55 (Master)", "pawel"),
+    busMarek: await vehicle("Bus WPI 4K21 (Ducato)", people.marek, "WPI 4K21", "ZFA25000002K44167"),
+    busAnna: await vehicle("Bus WPI 7M08 (Transit)", people.anna, "WPI 7M08", "WF0XXXTTGXKA51208"),
+    busPawel: await vehicle("Bus WPZ 2C55 (Master)", people.pawel, "WPZ 2C55", null),
+    // Osobówka właściciela bez sprzętu: pojazd tylko dla terminów.
+    car: await vehicle("Skoda Octavia", company.ownerUserId, "PO 5T812", "TMBJG7NE8K0123456"),
     hilti: (await owner.addService({ name: "Serwis Hilti Poznań" })).locationId,
     swarzedz: (await owner.addService({ name: "Serwis elektronarzędzi Swarzędz" })).locationId,
     suchyLas: "",
     jezyce: "",
   };
+
+  // Terminy pojazdów: przegląd busa Anny po terminie, wymiana opon i OC busa Marka, przegląd osobówki i legalizacja
+  // tachografu w Masterze w najbliższym miesiącu, reszta później.
+  const vehicleDeadline = (
+    place: keyof typeof places,
+    kind: VehicleDeadlineKind,
+    days: number,
+    cycleMonths: number | null,
+    extra: { name?: string; note?: string } = {},
+  ) => owner.addDeadline({ vehicleId: places[place], kind, dueOn: dayFromNow(days), cycleMonths, ...extra });
+  await vehicleDeadline("busMarek", "oc", 21, 12, { note: "PZU, polisa nr 1048837261" });
+  await vehicleDeadline("busMarek", "ac", 21, 12, { note: "PZU, razem z OC" });
+  await vehicleDeadline("busMarek", "przeglad_techniczny", 140, 12);
+  await vehicleDeadline("busMarek", "wlasny", 6, 12, { name: "Wymiana opon na zimowe" });
+  await vehicleDeadline("busAnna", "przeglad_techniczny", -4, 12);
+  await vehicleDeadline("busAnna", "oc", 75, 12, { note: "Warta" });
+  await vehicleDeadline("busPawel", "tachograf", 26, 24);
+  await vehicleDeadline("busPawel", "oc", 200, 12);
+  await vehicleDeadline("busPawel", "przeglad_techniczny", 95, 12);
+  await vehicleDeadline("car", "przeglad_techniczny", 12, 12);
+  await vehicleDeadline("car", "oc", 290, 12);
 
   const move = async (
     who: string,

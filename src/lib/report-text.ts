@@ -3,7 +3,7 @@ import { formatDays } from "@/i18n/days";
 import { formatMoney, formatMoneyChange } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { type FridayReport, type Report, type ReportKind, UPCOMING_DAYS, UPCOMING_QUALIFICATION_DAYS, type WeeklyReport } from "@/registry/registry";
-import { upcomingDeadlineText } from "./deadline-text";
+import { deadlineLink, upcomingDeadlineText } from "./deadline-text";
 import { upcomingQualificationText } from "./qualification-text";
 
 /** Nagłówek i jedno zdanie raportu: w dzwonku i w pushu. */
@@ -62,9 +62,9 @@ export function reportHeading(report: Report): { title: string; day: string; int
 
 /** Wiersz sekcji raportu (narzędzie albo osoba), z jednym wierszem szczegółów. */
 export interface ReportItem {
-  /** Karta narzędzia albo osoby w aplikacji. */
+  /** Karta narzędzia albo osoby, albo strona pojazdu w aplikacji. */
   href: string;
-  /** Kod narzędzia; osoba go nie ma. */
+  /** Kod narzędzia; osoba i pojazd go nie mają. */
   code: string | null;
   name: string;
   detail: string;
@@ -130,7 +130,11 @@ function weeklySections(report: WeeklyReport): ReportSection[] {
       ? [
           {
             title: t("reports.deadlines", { days: UPCOMING_DAYS }),
-            items: report.deadlines.map((deadline) => toolItem(deadline.tool, upcomingDeadlineText(deadline))),
+            items: report.deadlines.map((deadline) =>
+              deadline.tool
+                ? toolItem(deadline.tool, upcomingDeadlineText(deadline))
+                : { href: deadlineLink(deadline), code: null, name: deadline.location.name, detail: upcomingDeadlineText(deadline) },
+            ),
             empty: t("reports.deadlinesEmpty", { days: UPCOMING_DAYS }),
             ...(report.deadlines.length > 0 && { link: { href: "/terminy", label: t("reports.deadlinesLink") } }),
           },

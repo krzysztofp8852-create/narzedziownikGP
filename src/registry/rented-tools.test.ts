@@ -285,7 +285,7 @@ describe("termin zwrotu", () => {
     expect(await testbed.registry.system().notifyDueDeadlines()).toEqual({ deadlines: 0 });
 
     const reminders = async (userId: string) =>
-      (await bellOf(userId)).flatMap((n) => (n.kind === "terminy" ? n.deadlines.map((d) => [d.kind, d.tool.id, d.overdue]) : []));
+      (await bellOf(userId)).flatMap((n) => (n.kind === "terminy" ? n.deadlines.map((d) => [d.kind, d.tool?.id, d.overdue]) : []));
     expect(await reminders(z.ownerId)).toEqual([
       ["zwrot", toolId, true],
       ["zwrot", toolId, false],

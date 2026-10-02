@@ -1,5 +1,5 @@
 import { canManageRates, currentToolRate, type EffectiveRate } from "./costs";
-import { type DeadlineSummary, summarizeDeadlines, type ToolDeadline, toolDeadlines } from "./deadlines";
+import { type Deadline, type DeadlineSummary, deadlinesOf, summarizeDeadlines } from "./deadlines";
 import { isUniqueViolation, RegistryError, type RegistryErrorCode, ReplayedOperationError } from "./errors";
 import { canHandleRentalsAt, type MovementKind, type MovementSource } from "./movements";
 import type { Sql } from "./ports";
@@ -63,7 +63,7 @@ export interface ToolCard extends DeadlineSummary {
   /** Sprzęt wynajęty z wypożyczalni; null przy własnym. */
   rental: ToolRental | null;
   /** Przeglądy, kalibracje, badania UDT, gwarancja i termin zwrotu wynajętego, od najbliższego terminu. */
-  deadlines: ToolDeadline[];
+  deadlines: Deadline[];
   history: HistoryEntry[];
 }
 
@@ -423,7 +423,7 @@ export async function toolCard(
         )
       : [];
 
-  const deadlines = await toolDeadlines(sql, toolId, now);
+  const deadlines = await deadlinesOf(sql, { toolId }, now);
   return {
     id: row.id,
     code: row.code,

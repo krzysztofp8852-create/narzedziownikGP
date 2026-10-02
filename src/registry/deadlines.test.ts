@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import type { RegisteredKind } from "./registry";
+import type { NewDeadlineInput, RegisteredKind } from "./registry";
 import { withActor } from "./registry";
 import { setupRegistryTestbed } from "./testing/harness";
 
@@ -113,7 +113,7 @@ describe("terminy narzędzia", () => {
   it("jeden termin każdego rodzaju na narzędzie, z poprawną datą, cyklem 1–120 miesięcy i bez cyklu przy gwarancji", async () => {
     const z = await givenZawbud();
     await z.owner.addDeadline({ toolId: z.n01, kind: "kalibracja", dueOn: "2026-04-15" });
-    const add = (input: Partial<Parameters<typeof z.owner.addDeadline>[0]>) =>
+    const add = (input: Partial<Omit<NewDeadlineInput, "vehicleId">> & { toolId?: string }) =>
       z.owner.addDeadline({ toolId: z.n01, kind: "przeglad", dueOn: "2026-05-01", ...input });
 
     await expect(add({ kind: "kalibracja" })).rejects.toMatchObject({ code: "deadline_taken" });
@@ -509,7 +509,7 @@ describe("przypomnienia o terminach", () => {
     expect(await testbed.registry.system().notifyDueDeadlines()).toEqual({ deadlines: 4 });
 
     const codes = async (userId: string) =>
-      (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => [d.tool.code, d.location.kind]));
+      (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => [d.tool?.code, d.location.kind]));
     expect(await codes(z.ownerId)).toEqual([
       [
         ["H-01", "baza"],
@@ -531,7 +531,7 @@ describe("przypomnienia o terminach", () => {
 
     expect(await testbed.registry.system().notifyDueDeadlines()).toEqual({ deadlines: 2 });
 
-    const codes = async (userId: string) => (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => d.tool.code).sort());
+    const codes = async (userId: string) => (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => d.tool?.code).sort());
     expect(await codes(z.ownerId)).toEqual([["H-01", "N-01"]]);
     expect(await codes(z.nowakId)).toEqual([["N-01"]]);
   });
@@ -552,7 +552,7 @@ describe("przypomnienia o terminach", () => {
     expect(await testbed.registry.system().notifyDueDeadlines()).toEqual({ deadlines: 2 });
 
     const dueDays = async (userId: string) =>
-      (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => [d.tool.name, d.dueOn, d.overdue]));
+      (await bellOf(userId)).map((n) => n.kind === "terminy" && n.deadlines.map((d) => [d.tool?.name, d.dueOn, d.overdue]));
     expect(await dueDays(z.ownerId)).toEqual([[["Młotowiertarka Hilti", "2026-04-02", false]], [["Młotowiertarka Hilti", "2026-03-05", false]]]);
     expect(await dueDays(other.ownerId)).toEqual([[["Młot Budrexu", "2026-03-08", true]], [["Młot Budrexu", "2026-03-08", false]]]);
   });
