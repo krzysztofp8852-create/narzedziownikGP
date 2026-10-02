@@ -4,6 +4,7 @@ import type { NotificationContent } from "@/registry/registry";
 import { deadlineKindName, deadlineKindWord, deadlineWhen } from "./deadline-text";
 import { historySearch } from "./history-filters";
 import { placeAt, placeFrom } from "./place-text";
+import { qualificationName, qualificationWhen } from "./qualification-text";
 import { reportLink, reportText } from "./report-text";
 
 /** Tekst powiadomienia w dzwonku: nagłówek i jedno zdanie szczegółów. */
@@ -81,6 +82,20 @@ export function notificationText(notification: NotificationContent): { title: st
           day: formatCalendarDay(notification.returnOn),
         }),
       };
+    case "uprawnienia": {
+      const item = (qualification: (typeof notification.qualifications)[number]) => ({
+        person: qualification.person.fullName,
+        name: qualificationName(qualification),
+        when: qualificationWhen(qualification),
+      });
+      if (notification.qualifications.length === 1) {
+        return { title: t("bell.qualification", item(notification.qualifications[0])), body: t("bell.qualificationBody") };
+      }
+      return {
+        title: t("bell.qualifications", { count: notification.qualifications.length }),
+        body: notification.qualifications.map((qualification) => t("bell.qualificationItem", item(qualification))).join(" · "),
+      };
+    }
     case "tylko_do_odczytu":
       return {
         title: t("bell.readOnly"),
@@ -92,7 +107,7 @@ export function notificationText(notification: NotificationContent): { title: st
   }
 }
 
-/** Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica, terminy albo abonament w ustawieniach. */
+/** Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica, terminy, kartoteka Ludzie albo abonament w ustawieniach. */
 export function notificationLink(notification: NotificationContent): string {
   switch (notification.kind) {
     case "narzedzia_zabrane":
@@ -114,6 +129,8 @@ export function notificationLink(notification: NotificationContent): string {
       return "/ustawienia";
     case "terminy":
       return notification.deadlines.length === 1 ? `/narzedzia/${notification.deadlines[0].tool.id}#terminy` : "/terminy";
+    case "uprawnienia":
+      return notification.qualifications.length === 1 ? `/ludzie/${notification.qualifications[0].person.id}` : "/ludzie";
   }
 }
 

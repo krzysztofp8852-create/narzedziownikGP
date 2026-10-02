@@ -146,7 +146,7 @@ function reportEmail(recipient: { email: string; fullName: string }, report: Rep
       section.title.toUpperCase(),
       ...(section.lead ?? []),
       ...(section.items.length === 0 && section.empty ? [section.empty] : []),
-      ...section.items.map((item) => `- ${item.code} ${item.name}: ${item.detail}`),
+      ...section.items.map((item) => `- ${item.code ? `${item.code} ` : ""}${item.name}: ${item.detail}`),
     ]),
     ...(url ? ["", t("reports.open", { url })] : []),
     "",
@@ -177,7 +177,7 @@ ${
     ? `<ul style="margin:0;padding:0;list-style:none;">${section.items
         .map(
           (item) =>
-            `<li style="padding:10px 0;border-top:1px solid #e5e5e0;"><strong style="font-family:Menlo,Consolas,monospace;">${escapeHtml(item.code)}</strong> ${escapeHtml(item.name)}<br><span style="${muted}font-size:15px;">${escapeHtml(item.detail)}</span></li>`,
+            `<li style="padding:10px 0;border-top:1px solid #e5e5e0;">${item.code ? `<strong style="font-family:Menlo,Consolas,monospace;">${escapeHtml(item.code)}</strong> ` : ""}${escapeHtml(item.name)}<br><span style="${muted}font-size:15px;">${escapeHtml(item.detail)}</span></li>`,
         )
         .join("")}</ul>`
     : ""

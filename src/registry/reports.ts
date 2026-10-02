@@ -5,6 +5,7 @@ import { RegistryError } from "./errors";
 import { type EmailedNotification, type Notification, type Recipient, reportKey } from "./notifications";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
+import { type UpcomingQualification, upcomingQualifications } from "./qualifications";
 import type { Session } from "./registry";
 import { toolReports } from "./tool-reports";
 import { daysSince, type LocationKind } from "./tools";
@@ -48,6 +49,8 @@ export interface WeeklyReport {
   longestUnused: { id: string; code: string; name: string; days: number }[];
   /** Terminy w najbliższych 30 dniach i te po terminie, od najwcześniejszego; brak w raportach sprzed terminów. */
   deadlines?: UpcomingDeadline[];
+  /** Uprawnienia ludzi w najbliższych 30 dniach i po terminie, od najwcześniejszego; brak w raportach sprzed uprawnień. */
+  qualifications?: UpcomingQualification[];
 }
 
 /** Krótka lista sprzętu poza bazą przed weekendem, w piątek o 16:00. */
@@ -109,7 +112,8 @@ export function requireFridayReportReader(session: Session) {
 }
 
 /**
- * Raport tygodniowy firmy aktora w danej chwili, z tych samych danych co tablica „Gdzie jest co”, i terminy sprzętu.
+ * Raport tygodniowy firmy aktora w danej chwili, z tych samych danych co tablica „Gdzie jest co”, terminy sprzętu
+ * i uprawnienia ludzi.
  * Kwotę poza bazą porównuje z raportem z poniedziałku poprzedniego tygodnia. Tylko właściciel (wartości w zł).
  */
 export async function weeklyReport(sql: Sql, session: Session, now: Date): Promise<WeeklyReport> {
@@ -169,6 +173,7 @@ export async function weeklyReport(sql: Sql, session: Session, now: Date): Promi
       .slice(0, LONGEST_UNUSED_COUNT)
       .map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, days: tool.daysInPlace })),
     deadlines: await upcomingDeadlines(sql, now),
+    qualifications: await upcomingQualifications(sql, now),
   };
 }
 

@@ -34,6 +34,8 @@ export type RegistryErrorCode =
   | "tool_required"
   | "photo_invalid"
   | "deadline_taken"
+  | "qualification_taken"
+  | "qualification_kind_taken"
   | "document_invalid"
   | "issue_closed"
   | "message_required"

@@ -19,7 +19,7 @@ function jpeg() {
   return new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...new Array(500).fill(1)])], { type: "image/jpeg" });
 }
 
-/** Firma z panelu z właścicielem po zmianie hasła, kierownikiem, budową, narzędziem ze stawką, ruchem, zgłoszeniem, terminem i czatem. */
+/** Firma z panelu z właścicielem po zmianie hasła, kierownikiem, budową, narzędziem ze stawką, ruchem, zgłoszeniem, terminem, uprawnieniem i czatem. */
 async function givenCompanyWithHistory(adminId: string) {
   const created = await testbed.registry.superAdmin(adminId).createCompany(zawbud);
   const owner = testbed.registry.as(created.ownerUserId);
@@ -37,6 +37,11 @@ async function givenCompanyWithHistory(adminId: string) {
   await owner.commentOnIssue({ operationId: randomUUID(), issueId, text: "Dokupimy" });
   const { deadlineId } = await owner.addDeadline({ toolId, kind: "przeglad", dueOn: "2026-06-01", cycleMonths: 12 });
   await owner.addDeadlineDocument({ operationId: randomUUID(), deadlineId, kind: "protokol", file: jpeg(), fileName: "protokol.jpg" });
+  const { personId } = await owner.addPerson({ fullName: "Zbigniew Kaczmarek", note: null });
+  const { kindId } = await owner.addQualificationKind({ name: "Operator koparki" });
+  const { qualificationId } = await owner.addQualification({ personId, kind: "wlasny", customKindId: kindId, dueOn: "2026-03-20" });
+  await owner.addQualificationDocument({ operationId: randomUUID(), qualificationId, file: jpeg(), fileName: "zaswiadczenie.jpg" });
+  await testbed.registry.system().notifyCompanyDueQualifications(company.companyId);
   await owner.sendSupportMessage({ operationId: randomUUID(), text: "Zrzut ekranu", photo: jpeg() });
   return { ...company, managerId };
 }
@@ -50,7 +55,7 @@ describe("usunięcie firmy przez super-admina", () => {
     await admin.setManualReadOnly(company.companyId, true);
     expect(testbed.photos.photos.size).toBe(1);
     expect(testbed.chatPhotos.photos.size).toBe(1);
-    expect(testbed.documents.photos.size).toBe(1);
+    expect(testbed.documents.photos.size).toBe(2);
 
     expect(await admin.deleteCompany(company.companyId, "  Zawbud ")).toEqual({ leftovers: 0 });
 

@@ -2,8 +2,9 @@ import { formatCalendarDay } from "@/i18n/dates";
 import { formatDays } from "@/i18n/days";
 import { formatMoney, formatMoneyChange } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import { type FridayReport, type Report, type ReportKind, UPCOMING_DAYS, type WeeklyReport } from "@/registry/registry";
+import { type FridayReport, type Report, type ReportKind, UPCOMING_DAYS, UPCOMING_QUALIFICATION_DAYS, type WeeklyReport } from "@/registry/registry";
 import { upcomingDeadlineText } from "./deadline-text";
+import { upcomingQualificationText } from "./qualification-text";
 
 /** Nagłówek i jedno zdanie raportu: w dzwonku i w pushu. */
 export function reportText(report: Report): { title: string; body: string } {
@@ -22,7 +23,9 @@ function weeklyText(report: WeeklyReport): { title: string; body: string } {
         over: report.overThreshold.length,
         lost: report.lost.length,
         reports: report.toolReports.length,
-      }) + (report.deadlines?.length ? t("reports.bell.weeklyDeadlines", { count: report.deadlines.length }) : ""),
+      }) +
+      (report.deadlines?.length ? t("reports.bell.weeklyDeadlines", { count: report.deadlines.length }) : "") +
+      (report.qualifications?.length ? t("reports.bell.weeklyQualifications", { count: report.qualifications.length }) : ""),
   };
 }
 
@@ -57,12 +60,19 @@ export function reportHeading(report: Report): { title: string; day: string; int
   };
 }
 
-/** Narzędzie w sekcji raportu, z jednym wierszem szczegółów. */
+/** Wiersz sekcji raportu (narzędzie albo osoba), z jednym wierszem szczegółów. */
 export interface ReportItem {
-  toolId: string;
-  code: string;
+  /** Karta narzędzia albo osoby w aplikacji. */
+  href: string;
+  /** Kod narzędzia; osoba go nie ma. */
+  code: string | null;
   name: string;
   detail: string;
+}
+
+/** Wiersz z narzędziem: prowadzi na jego kartę. */
+function toolItem(tool: { id: string; code: string; name: string }, detail: string): ReportItem {
+  return { href: `/narzedzia/${tool.id}`, code: tool.code, name: tool.name, detail };
 }
 
 /** Sekcja raportu, tak samo na stronie i w e-mailu. */
@@ -99,28 +109,20 @@ function weeklySections(report: WeeklyReport): ReportSection[] {
     },
     {
       title: t("reports.overThreshold", { days: report.thresholdDays }),
-      items: report.overThreshold.map((tool) => ({
-        toolId: tool.id,
-        code: tool.code,
-        name: tool.name,
-        detail: t("reports.overThresholdItem", {
-          place: tool.location.name,
-          days: formatDays(tool.days),
-          manager: tool.manager,
-        }),
-      })),
+      items: report.overThreshold.map((tool) =>
+        toolItem(tool, t("reports.overThresholdItem", { place: tool.location.name, days: formatDays(tool.days), manager: tool.manager })),
+      ),
       empty: t("reports.overThresholdEmpty"),
     },
     {
       title: t("reports.lost"),
-      items: report.lost.map((tool) => ({
-        toolId: tool.id,
-        code: tool.code,
-        name: tool.name,
-        detail:
+      items: report.lost.map((tool) =>
+        toolItem(
+          tool,
           t("reports.lostItem", { days: formatDays(tool.days), place: tool.lastLocation.name }) +
-          (tool.responsible ? t("reports.lostResponsible", { name: tool.responsible }) : ""),
-      })),
+            (tool.responsible ? t("reports.lostResponsible", { name: tool.responsible }) : ""),
+        ),
+      ),
       empty: t("reports.lostEmpty"),
     },
     // Raporty sprzed terminów nie mają tej sekcji.
@@ -128,36 +130,39 @@ function weeklySections(report: WeeklyReport): ReportSection[] {
       ? [
           {
             title: t("reports.deadlines", { days: UPCOMING_DAYS }),
-            items: report.deadlines.map((deadline) => ({
-              toolId: deadline.tool.id,
-              code: deadline.tool.code,
-              name: deadline.tool.name,
-              detail: upcomingDeadlineText(deadline),
-            })),
+            items: report.deadlines.map((deadline) => toolItem(deadline.tool, upcomingDeadlineText(deadline))),
             empty: t("reports.deadlinesEmpty", { days: UPCOMING_DAYS }),
             ...(report.deadlines.length > 0 && { link: { href: "/terminy", label: t("reports.deadlinesLink") } }),
           },
         ]
       : []),
+    // Raporty sprzed uprawnień ludzi nie mają tej sekcji.
+    ...(report.qualifications
+      ? [
+          {
+            title: t("reports.qualifications", { days: UPCOMING_QUALIFICATION_DAYS }),
+            items: report.qualifications.map((qualification) => ({
+              href: `/ludzie/${qualification.person.id}`,
+              code: null,
+              name: qualification.person.fullName,
+              detail: upcomingQualificationText(qualification),
+            })),
+            empty: t("reports.qualificationsEmpty", { days: UPCOMING_QUALIFICATION_DAYS }),
+            ...(report.qualifications.length > 0 && { link: { href: "/ludzie", label: t("reports.qualificationsLink") } }),
+          },
+        ]
+      : []),
     {
       title: t("reports.toolReports"),
-      items: report.toolReports.map((tool) => ({
-        toolId: tool.id,
-        code: tool.code,
-        name: tool.name,
-        detail: t("reports.toolReportsItem", { place: tool.location.name, name: tool.reportedBy, days: formatDays(tool.daysWaiting) }),
-      })),
+      items: report.toolReports.map((tool) =>
+        toolItem(tool, t("reports.toolReportsItem", { place: tool.location.name, name: tool.reportedBy, days: formatDays(tool.daysWaiting) })),
+      ),
       empty: t("reports.toolReportsEmpty"),
       ...(report.toolReports.length > 0 && { link: { href: "/zgloszenia#zgloszone-narzedzia", label: t("reports.toolReportsLink") } }),
     },
     {
       title: t("reports.longestUnused"),
-      items: report.longestUnused.map((tool) => ({
-        toolId: tool.id,
-        code: tool.code,
-        name: tool.name,
-        detail: t("reports.longestUnusedItem", { days: formatDays(tool.days) }),
-      })),
+      items: report.longestUnused.map((tool) => toolItem(tool, t("reports.longestUnusedItem", { days: formatDays(tool.days) }))),
       empty: t("reports.longestUnusedEmpty"),
     },
   ];
@@ -167,11 +172,6 @@ function fridaySections(report: FridayReport): ReportSection[] {
   if (report.locations.length === 0) return [{ title: t("reports.offBase"), items: [], empty: t("reports.fridayEmpty") }];
   return report.locations.map((location) => ({
     title: t("reports.fridayLocation", { place: location.name, manager: location.manager.fullName }),
-    items: location.tools.map((tool) => ({
-      toolId: tool.id,
-      code: tool.code,
-      name: tool.name,
-      detail: t("reports.toolDays", { days: formatDays(tool.days) }),
-    })),
+    items: location.tools.map((tool) => toolItem(tool, t("reports.toolDays", { days: formatDays(tool.days) }))),
   }));
 }

@@ -20,6 +20,10 @@ const COMPANY_TABLES = [
   "deadline_alerts",
   "tool_deadline_documents",
   "tool_deadlines",
+  "qualification_alerts",
+  "qualification_documents",
+  "qualifications",
+  "qualification_kinds",
   "threshold_alerts",
   "notifications",
   "issue_entries",
@@ -57,7 +61,10 @@ export async function purgeCompany(sql: Sql, companyId: string): Promise<PurgedC
       `select m.photo_path as key from app.support_messages m join app.support_threads t on t.user_id = m.thread_id
        where t.company_id = $1 and m.photo_path is not null`,
     ),
-    documentKeys: await keys("select file_path as key from app.tool_deadline_documents where company_id = $1"),
+    documentKeys: await keys(
+      `select file_path as key from app.tool_deadline_documents where company_id = $1
+       union all select file_path from app.qualification_documents where company_id = $1`,
+    ),
   };
   for (const table of COMPANY_TABLES) {
     if (table === "support_messages") {

@@ -29,6 +29,15 @@ describe("izolacja firm", () => {
     ]);
     // Osoba bez konta z kartoteki Ludzie firmy B.
     const { personId: personB } = await ownerB.addPerson({ fullName: "Zbigniew Kaczmarek", note: "Brygada Budreksu" });
+    // Uprawnienie tej osoby (własnego rodzaju firmy B) z dokumentem.
+    const { kindId: kindB } = await ownerB.addQualificationKind({ name: "Operator koparki" });
+    const { qualificationId: qualificationB } = await ownerB.addQualification({ personId: personB, kind: "wlasny", customKindId: kindB, dueOn: "2026-05-01" });
+    const { documentId: qualificationDocumentB } = await ownerB.addQualificationDocument({
+      operationId: randomUUID(),
+      qualificationId: qualificationB,
+      file: new Blob(["%PDF-1.7\nUprawnienia\n%%EOF"], { type: "application/pdf" }),
+      fileName: "uprawnienia.pdf",
+    });
     // Sprzęt wynajęty firmy B: stawka wypożyczalni i termin zwrotu.
     const { toolId: rentedB } = await ownerB.addRentedTool({
       operationId: randomUUID(),
@@ -52,7 +61,9 @@ describe("izolacja firm", () => {
     });
 
     expect(visibleToA).toContain(a.companyId);
-    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB, personB]) expect(visibleToA).not.toContain(idOfB);
+    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB, personB, kindB, qualificationB, qualificationDocumentB]) {
+      expect(visibleToA).not.toContain(idOfB);
+    }
   });
 
   it("każda tabela schematu app ma włączone RLS", async () => {
