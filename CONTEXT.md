@@ -203,6 +203,10 @@ _Avoid_: kod budowy (kod to identyfikator narzędzia), tablica (to ekran „Gdzi
 Odległość od położenia budowy albo bazy, do której skan liczy się jako „na budowie”; domyślnie 300 m, zmienia go właściciel (np. dla dużego placu). Budowa bez położenia ma odbicia „bez sprawdzenia”.
 _Avoid_: geofence, strefa
 
+**Czas na budowie**:
+Ile godzin osoba była na budowie albo bazie: suma odbić od wejścia do wyjścia, na osobę, miejsce i miesiąc w Polsce, na stronie „Czas na budowie” z eksportem do Excela. Odbicie bez wyjścia i odbicie trwające teraz się nie liczą. Przejście daje osobne wpisy na obu budowach i kończy pobyt na poprzedniej w chwili skanu na nowej, a przerwa między wyjściem a następnym wejściem (dojazd) nie liczy się nigdzie. Zestawienie miesięczne widzi właściciel (cała firma) i kierownik (jego budowy), a pracownik i magazynier własne odbicia i sumy z tego i poprzedniego miesiąca. To nie jest ewidencja czasu pracy z Kodeksu pracy.
+_Avoid_: ewidencja czasu pracy, czas pracy, godziny pracy
+
 ## Ruchy
 
 **Ruch**:

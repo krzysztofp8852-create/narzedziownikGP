@@ -28,13 +28,18 @@ export function punchTimeText(punch: Pick<Punch, "enteredAt" | "leftAt" | "exitV
   return `${formatDateTime(punch.enteredAt)} – ${left}`;
 }
 
+/** „8 godz. 30 min”, a poniżej godziny „45 min”. */
+export function durationText(timeMs: number) {
+  const totalMinutes = Math.round(timeMs / 60_000);
+  const [hours, minutes] = [Math.floor(totalMinutes / 60), totalMinutes % 60];
+  return hours === 0 ? t("punches.minutes", { minutes }) : t("punches.hoursMinutes", { hours, minutes });
+}
+
 /** „Czas na budowie: 8 godz. 30 min”; przy odbiciu „bez wyjścia”, że się nie liczy; odbita teraz: null. */
 export function timeOnSiteText(punch: Pick<Punch, "timeOnSiteMs" | "exitVia">) {
   if (punch.exitVia === "bez_wyjscia") return t("punches.timeOnSiteMissing");
   if (punch.timeOnSiteMs === null) return null;
-  const totalMinutes = Math.round(punch.timeOnSiteMs / 60_000);
-  const [hours, minutes] = [Math.floor(totalMinutes / 60), totalMinutes % 60];
-  return t("punches.timeOnSite", { time: hours === 0 ? t("punches.minutes", { minutes }) : t("punches.hoursMinutes", { hours, minutes }) });
+  return t("punches.timeOnSite", { time: durationText(punch.timeOnSiteMs) });
 }
 
 /**

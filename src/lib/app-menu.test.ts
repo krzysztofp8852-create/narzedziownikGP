@@ -22,15 +22,15 @@ describe("menu pod trzema kreskami", () => {
     expect(shown("wlasciciel")).toEqual([
       ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
-      ["Ludzie", ["Ludzie /ludzie", "Odbicia do wyjaśnienia /odbicia"]],
+      ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
       ["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
     ]);
   });
 
-  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też odbicia do wyjaśnienia", () => {
+  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też czas na budowie i odbicia do wyjaśnienia, a magazynier własny czas", () => {
     for (const [role, people] of [
-      ["kierownik", ["Ludzie /ludzie", "Odbicia do wyjaśnienia /odbicia"]],
-      ["magazynier", ["Moje uprawnienia /ludzie"]],
+      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
+      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
     ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
@@ -51,11 +51,11 @@ describe("menu pod trzema kreskami", () => {
     }
   });
 
-  it("pracownik ma własne uprawnienia, nie ma samouczka, a wylogowanie zostaje", () => {
+  it("pracownik ma własne uprawnienia i własny czas na budowie, nie ma samouczka, a wylogowanie zostaje", () => {
     expect(shown("pracownik")).toEqual([
       ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
-      ["Ludzie", ["Moje uprawnienia /ludzie"]],
+      ["Ludzie", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
       ["Firma", ["Wyloguj"]],
     ]);
   });
