@@ -77,6 +77,8 @@ import type {
   QueuedPunchInput,
   QueuedPunchResult,
 } from "./punches";
+import * as timeOnSite from "./time-on-site";
+import type { OwnTimeOnSite, TimeOnSiteSummary } from "./time-on-site";
 import * as qualificationReminders from "./qualification-reminders";
 import * as qualifications from "./qualifications";
 import type {
@@ -158,7 +160,7 @@ export type {
 export { IMPLEMENTATION_TIERS, TIERS } from "./subscriptions";
 export { confirmsCompanyName } from "./company-deletion";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
-export { isCalendarDay, UUID_PATTERN } from "./validation";
+export { isCalendarDay, isMonth, shiftMonth, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 export { canCorrectTools, TOOL_STATES } from "./corrections";
 export type { MapPin, NewSiteInput, NewVehicleInput, Service, Site, SiteManagerCandidate, SiteStatus, Vehicle } from "./locations";
@@ -273,6 +275,8 @@ export {
   PUNCH_CONFLICT_REASONS,
   PUNCH_RESULTS,
 } from "./punches";
+export type { OwnTimeOnSite, PlaceTime, TimeOnSiteSummary } from "./time-on-site";
+export { canSeeTimeOnSiteSummary } from "./time-on-site";
 export { normalizePosterCode } from "./poster-code";
 export { isReportKind } from "./reports";
 export type { Bell, BellEntry } from "./bell";
@@ -778,6 +782,19 @@ export interface Registry {
     renewPosterToken(locationId: string): Promise<void>;
     /** Promień odbicia budowy albo bazy, 50–5000 m. Tylko właściciel. */
     setPunchRadius(locationId: string, radiusM: number): Promise<void>;
+    /**
+     * Zestawienie czasu na budowie w miesiącu (RRRR-MM, zły: `invalid_input`): każda osoba na każdej budowie i bazie
+     * z sumami. Liczy się czas od wejścia do wyjścia odbicia w części przypadającej na miesiąc w Polsce; odbicia „bez
+     * wyjścia” (dopóki nikt nie uzupełni wyjścia) i osoby odbite teraz się nie liczą, a przejście daje osobne wpisy
+     * na obu budowach. Właściciel całą firmę, kierownik budowy, których jest kierownikiem; pracownik i magazynier:
+     * `forbidden`.
+     */
+    timeOnSiteSummary(month: string): Promise<TimeOnSiteSummary>;
+    /**
+     * Własny czas na budowie aktora w bieżącym i poprzednim miesiącu w Polsce, od bieżącego: sumy na każdym miejscu
+     * liczone jak w zestawieniu i własne odbicia z miesiąca (także odbicie teraz i „bez wyjścia”). Każdy z kontem.
+     */
+    ownTimeOnSite(): Promise<OwnTimeOnSite[]>;
     /**
      * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście, i jego osobę
      * w kartotece Ludzie.
@@ -1666,6 +1683,8 @@ export function createRegistry(deps: RegistryDeps): Registry {
         poster: (locationId) => asMember((sql, session) => punches.poster(sql, session, locationId)),
         renewPosterToken: (locationId) => asWriter((sql, session) => punches.renewPosterToken(sql, session, locationId)),
         setPunchRadius: (locationId, radiusM) => asWriter((sql, session) => punches.setPunchRadius(sql, session, locationId, radiusM)),
+        timeOnSiteSummary: (month) => asMember((sql, session) => timeOnSite.timeOnSiteSummary(sql, session, month)),
+        ownTimeOnSite: () => asMember((sql, session) => timeOnSite.ownTimeOnSite(sql, session, deps.clock.now())),
         resetMemberPassword: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);

@@ -45,6 +45,13 @@ export function formatCalendarDay(day: string): string {
   return calendarDay.format(new Date(`${day}T00:00:00Z`));
 }
 
+const monthName = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Miesiąc zapisany jako RRRR-MM, np. „marzec 2026”. */
+export function formatMonth(month: string): string {
+  return monthName.format(new Date(`${month}-01T00:00:00Z`));
+}
+
 /** Wartość pola `datetime-local` (RRRR-MM-DDTHH:MM) z godziną w Polsce. */
 export function dateTimeInputValue(date: Date): string {
   return warsawWallClock(date).toISOString().slice(0, 16);

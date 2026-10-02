@@ -1,5 +1,5 @@
 import { formatDay } from "@/i18n/dates";
-import { type CostPeriod, isCalendarDay } from "@/registry/registry";
+import { type CostPeriod, isCalendarDay, isMonth, shiftMonth } from "@/registry/registry";
 
 /** Parametry adresu okresu kosztów, np. /budowy/…/koszty?miesiac=2026-03 albo ?od=2026-03-05&do=2026-03-20. */
 export const COST_PARAMS = { month: "miesiac", from: "od", to: "do" } as const;
@@ -9,19 +9,20 @@ export type CostPeriodChoice = { mode: "cala" } | { mode: "miesiac"; month: stri
 
 type SearchParams = URLSearchParams | Record<string, string | string[] | undefined>;
 
-const MONTH_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])$/;
+/** Pierwsza wartość parametru adresu bez spacji; pusty tekst, gdy go nie ma. */
+function param(params: SearchParams, name: string) {
+  const value = params instanceof URLSearchParams ? params.get(name) : params[name];
+  return (Array.isArray(value) ? value[0] : value)?.trim() || "";
+}
 
 /** Okres z adresu: poprawny zakres przed miesiącem, a bez nich (albo przy złych) cała budowa. */
 export function parseCostPeriod(params: SearchParams): CostPeriodChoice {
-  const get = (name: string) => {
-    const value = params instanceof URLSearchParams ? params.get(name) : params[name];
-    return (Array.isArray(value) ? value[0] : value)?.trim() || "";
-  };
+  const get = (name: string) => param(params, name);
   const from = get(COST_PARAMS.from);
   const to = get(COST_PARAMS.to);
   if (isCalendarDay(from) && isCalendarDay(to) && from <= to) return { mode: "zakres", period: { from, to } };
   const month = get(COST_PARAMS.month);
-  if (MONTH_PATTERN.test(month)) return { mode: "miesiac", month, period: monthPeriod(month) };
+  if (isMonth(month)) return { mode: "miesiac", month, period: monthPeriod(month) };
   return { mode: "cala" };
 }
 
@@ -42,11 +43,8 @@ export function monthPeriod(month: string): CostPeriod {
   return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
 }
 
-/** Miesiąc RRRR-MM przesunięty o `delta` miesięcy. */
-export function shiftMonth(month: string, delta: number): string {
-  const [year, number] = month.split("-").map(Number);
-  return new Date(Date.UTC(year, number - 1 + delta, 1)).toISOString().slice(0, 7);
-}
+/** Miesiąc RRRR-MM przesunięty o `delta` miesięcy (z Rejestru). */
+export { shiftMonth };
 
 /** Bieżący miesiąc w Polsce (RRRR-MM). */
 export function currentMonth(now = new Date()): string {
@@ -59,4 +57,10 @@ export function parseSummaryPeriod(params: SearchParams, now = new Date()): Excl
   if (choice.mode !== "cala") return choice;
   const month = currentMonth(now);
   return { mode: "miesiac", month, period: monthPeriod(month) };
+}
+
+/** Miesiąc RRRR-MM z adresu (?miesiac=…), a bez niego albo przy złym bieżący miesiąc w Polsce. */
+export function parseMonth(params: SearchParams, now = new Date()): string {
+  const month = param(params, COST_PARAMS.month);
+  return isMonth(month) ? month : currentMonth(now);
 }

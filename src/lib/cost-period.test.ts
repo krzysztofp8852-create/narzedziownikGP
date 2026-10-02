@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costPeriodSearch, monthPeriod, parseCostPeriod, parseSummaryPeriod, shiftMonth } from "./cost-period";
+import { costPeriodSearch, monthPeriod, parseCostPeriod, parseMonth, parseSummaryPeriod, shiftMonth } from "./cost-period";
 
 describe("okres zestawienia kosztów w adresie", () => {
   it("bez parametrów to cała budowa", () => {
@@ -38,5 +38,16 @@ describe("okres zestawienia wszystkich budów i pojazdów", () => {
       period: { from: "2026-04-01", to: "2026-04-30" },
     });
     expect(parseSummaryPeriod({ od: "2026-03-05", do: "2026-03-20" })).toEqual({ mode: "zakres", period: { from: "2026-03-05", to: "2026-03-20" } });
+  });
+});
+
+describe("miesiąc zestawienia czasu na budowie w adresie", () => {
+  it("podany miesiąc zostaje, a bez niego albo przy złym to bieżący miesiąc w Polsce", () => {
+    const now = new Date("2026-03-31T23:30:00Z");
+    expect(parseMonth({ miesiac: "2026-02" }, now)).toBe("2026-02");
+    expect(parseMonth(new URLSearchParams("miesiac=2025-12"), now)).toBe("2025-12");
+    for (const params of [{}, { miesiac: "2026-13" }, { miesiac: "marzec" }]) {
+      expect(parseMonth(params, now), JSON.stringify(params)).toBe("2026-04");
+    }
   });
 });

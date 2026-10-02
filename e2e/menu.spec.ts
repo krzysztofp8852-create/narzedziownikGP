@@ -62,6 +62,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Pojazdy",
     "Koszty sprzętu",
     "Ludzie",
+    "Czas na budowie",
     "Odbicia do wyjaśnienia",
     "Dokumenty",
     "Ustawienia",
@@ -113,7 +114,17 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
   await signIn(page, company.manager);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   await menuButton(page).click();
-  await expect(menu(page).getByRole("link")).toHaveText(["Tablica", "Terminy", "Historia", "Budowy", "Pojazdy", "Ludzie", "Odbicia do wyjaśnienia", "Samouczek"]);
+  await expect(menu(page).getByRole("link")).toHaveText([
+    "Tablica",
+    "Terminy",
+    "Historia",
+    "Budowy",
+    "Pojazdy",
+    "Ludzie",
+    "Czas na budowie",
+    "Odbicia do wyjaśnienia",
+    "Samouczek",
+  ]);
   await menu(page).getByRole("link", { name: "Samouczek" }).click();
   await expect(page).toHaveURL(/\/samouczek$/);
   await signOutFromMenu(page);
@@ -122,9 +133,10 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   await menuButton(page).click();
-  await expect(menu(page).getByRole("link")).toHaveText(["Tablica", "Terminy", "Historia", "Budowy", "Pojazdy", "Moje uprawnienia"]);
-  await menu(page).getByRole("link", { name: "Terminy" }).click();
-  await expect(page).toHaveURL(/\/terminy$/);
+  await expect(menu(page).getByRole("link")).toHaveText(["Tablica", "Terminy", "Historia", "Budowy", "Pojazdy", "Moje uprawnienia", "Mój czas na budowie"]);
+  await menu(page).getByRole("link", { name: "Mój czas na budowie" }).click();
+  await expect(page).toHaveURL(/\/czas$/);
+  await expect(page.getByRole("heading", { name: "Czas na budowie", level: 1 })).toBeVisible();
   await signOutFromMenu(page);
 });
 

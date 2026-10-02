@@ -1730,6 +1730,21 @@ a.tool-row:hover .tool-row-name {
   text-align: right;
 }
 
+.time-table tbody th {
+  background: none;
+  font-weight: 600;
+}
+
+.time-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.time-without-exit {
+  display: block;
+  font-weight: 400;
+  white-space: normal;
+}
+
 .import-row-invalid td {
   background: var(--danger-soft);
 }

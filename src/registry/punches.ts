@@ -2,7 +2,7 @@ import { isUniqueViolation, RegistryError, ReplayedOperationError } from "./erro
 import type { Sql } from "./ports";
 import { normalizePosterCode } from "./poster-code";
 import type { Session } from "./registry";
-import { UUID_PATTERN } from "./validation";
+import { UUID_PATTERN, warsawMonthEnd, warsawMonthStart } from "./validation";
 
 export const PUNCH_RESULTS = ["na_budowie", "poza_budowa", "brak_polozenia", "bez_sprawdzenia"] as const;
 /**
@@ -449,6 +449,17 @@ function punchFromRow(row: PunchRow, session: Session): Punch {
     entryPunchedByName: row.entry_punched_by_name,
     exitPunchedByName: row.left_at === null ? null : row.exit_punched_by_name,
   };
+}
+
+/** Własne odbicia aktora z wejściem albo wyjściem w miesiącu RRRR-MM w Polsce (także odbicie teraz), od najnowszego. */
+export async function ownPunchesInMonth(sql: Sql, session: Session, month: string): Promise<Punch[]> {
+  const rows = await sql<PunchRow>(
+    `${PUNCH_SELECT}
+     where pe.user_id = $1 and p.entered_at < ${warsawMonthEnd("$2")} and (p.left_at is null or p.left_at > ${warsawMonthStart("$2")})
+     order by p.entered_at desc, p.sequence_number desc`,
+    [session.userId, `${month}-01`],
+  );
+  return rows.map((row) => punchFromRow(row, session));
 }
 
 async function punchById(sql: Sql, session: Session, punchId: string): Promise<Punch> {
