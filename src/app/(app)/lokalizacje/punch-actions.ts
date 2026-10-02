@@ -48,3 +48,15 @@ export async function explainPunch(punchId: string, _prev: PunchFormState, formD
     return { error: errorMessage(error) };
   }
 }
+
+/** „Wyjaśnione” przy skanie z kolejki offline, który się nie zapisał, z opcjonalną notatką. */
+export async function explainPunchConflict(conflictId: string, _prev: PunchFormState, formData: FormData): Promise<PunchFormState> {
+  const session = await requireSession();
+  try {
+    await getRegistry().as(session.userId).explainPunchConflict({ conflictId, note: formText(formData, "note") });
+    revalidatePunchPages();
+    return { done: true };
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+}

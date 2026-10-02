@@ -369,8 +369,8 @@ export default async function BoardPage(props: PageProps<"/">) {
       {tutorial?.closed === null && (
         <TutorialCard tutorial={tutorial} entry={{ textEntry: textEntryEnabled(), voiceEntry: voiceEntryEnabled() }} />
       )}
-      {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy. */}
-      {!session.company.readOnly && <PunchButton />}
+      {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy, a bez sieci do kolejki. */}
+      {!session.company.readOnly && <PunchButton userId={session.userId} />}
       <div className="board" data-fetched-at={fetchedAt}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
           <OperationsPanel

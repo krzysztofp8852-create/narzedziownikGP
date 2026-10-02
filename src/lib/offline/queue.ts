@@ -3,7 +3,7 @@
 
 import { t } from "@/i18n/t";
 import type { Proposal } from "@/interpretation/proposal";
-import type { RegisteredKind, RegisterSource } from "@/registry/registry";
+import type { PhonePosition, PunchAction, RegisteredKind, RegisterSource } from "@/registry/registry";
 
 /** Miejsce na kolejkę (IndexedDB w telefonie). */
 export interface QueueStore<T> {
@@ -34,32 +34,59 @@ export interface QueuedMovement {
   summary: string;
 }
 
-/** Co serwer zrobił z ruchem: zapisał, odrzucił na listę „Do wyjaśnienia” albo każe spróbować później. */
+/**
+ * Skan plakatu budowy zrobiony bez zasięgu, czekający na wysłanie. Współrzędne czekają tylko tu, w telefonie: serwer
+ * policzy z nich odległość od budowy i ich nie zapisze.
+ */
+export interface QueuedPunch {
+  /** Identyfikator operacji klienta: ponowne wysłanie nie zdubluje odbicia. */
+  operationId: string;
+  userId: string;
+  /** Kod plakatu (po normalizacji). */
+  posterCode: string;
+  position: PhonePosition | null;
+  /** Co według telefonu zrobił skan; wyjście osoba potwierdziła („Kończysz?”). */
+  action: PunchAction;
+  /** Chwila skanu (ISO): czas wejścia albo wyjścia. */
+  scannedAt: string;
+  queuedAt: number;
+  /** Nazwa miejsca, jeśli telefon ją zna, albo kod plakatu, do listy oczekujących. */
+  summary: string;
+}
+
+/** Pozycja kolejki wysyłanej po kolei: ruch albo odbicie. */
+interface Sendable {
+  operationId: string;
+  userId: string;
+  queuedAt: number;
+}
+
+/** Co serwer zrobił z ruchem albo odbiciem: zapisał, odrzucił do wyjaśnienia albo każe spróbować później. */
 export type SendOutcome = "registered" | "rejected" | "retry";
 
 export interface FlushResult {
   registered: number;
   rejected: number;
-  /** Ile ruchów tej osoby dalej czeka. */
+  /** Ile pozycji tej osoby dalej czeka. */
   pending: number;
 }
 
-/** Ruchy osoby w kolejności zapisu. */
-export async function pendingMovements(store: QueueStore<QueuedMovement>, userId: string): Promise<QueuedMovement[]> {
+/** Pozycje osoby w kolejności zapisu. */
+export async function pendingInQueue<T extends Sendable>(store: QueueStore<T>, userId: string): Promise<T[]> {
   return (await store.all()).filter((item) => item.userId === userId).sort((a, b) => a.queuedAt - b.queuedAt);
 }
 
 /**
- * Wysyła ruchy osoby po kolei, w kolejności zapisu. Zapisany albo odrzucony ruch wychodzi z kolejki.
- * Bez sieci (wyjątek) albo przy „spróbuj później” zatrzymuje się, żeby późniejsze ruchy nie wyprzedziły
+ * Wysyła ruchy albo odbicia osoby po kolei, w kolejności zapisu. Zapisana albo odrzucona pozycja wychodzi z kolejki.
+ * Bez sieci (wyjątek) albo przy „spróbuj później” zatrzymuje się, żeby późniejsze pozycje nie wyprzedziły
  * wcześniejszych.
  */
-export async function flushMovements(
-  store: QueueStore<QueuedMovement>,
+export async function flushQueue<T extends Sendable>(
+  store: QueueStore<T>,
   userId: string,
-  send: (item: QueuedMovement) => Promise<SendOutcome>,
+  send: (item: T) => Promise<SendOutcome>,
 ): Promise<FlushResult> {
-  const queue = await pendingMovements(store, userId);
+  const queue = await pendingInQueue(store, userId);
   const result: FlushResult = { registered: 0, rejected: 0, pending: queue.length };
   for (const item of queue) {
     let outcome: SendOutcome;

@@ -37,7 +37,7 @@ export default async function PunchPage(props: PageProps<"/odbicie/[kod]">) {
       <h1 className="display page-title">{t("punches.title")}</h1>
       {preview ? (
         // Każde otwarcie strony to nowe odbicie; ponowne wysłanie z tej samej strony idzie pod tym samym identyfikatorem.
-        <PunchFlow code={kod} preview={preview} operationId={randomUUID()} />
+        <PunchFlow userId={session.userId} code={kod} preview={preview} operationId={randomUUID()} />
       ) : (
         <p className="form-error" role="alert">
           {refused}

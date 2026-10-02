@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Proposal } from "@/interpretation/proposal";
 import {
-  flushMovements,
+  flushQueue,
   flushRecordings,
   MAX_TRANSCRIPTION_ATTEMPTS,
   type QueuedMovement,
@@ -54,7 +54,7 @@ describe("wysyłanie kolejki ruchów", () => {
     const store = givenQueue(movement("b", 2000), movement("a", 1000), movement("c", 3000));
     const sent: string[] = [];
 
-    const result = await flushMovements(store, NOWAK, async (item) => {
+    const result = await flushQueue(store, NOWAK, async (item) => {
       sent.push(item.operationId);
       return "registered";
     });
@@ -67,7 +67,7 @@ describe("wysyłanie kolejki ruchów", () => {
   it("odrzucony ruch znika z kolejki (jest na liście „Do wyjaśnienia” na serwerze), a kolejne idą dalej", async () => {
     const store = givenQueue(movement("a", 1000), movement("b", 2000));
 
-    const result = await flushMovements(store, NOWAK, async (item) => (item.operationId === "a" ? "rejected" : "registered"));
+    const result = await flushQueue(store, NOWAK, async (item) => (item.operationId === "a" ? "rejected" : "registered"));
 
     expect(result).toEqual({ registered: 1, rejected: 1, pending: 0 });
     expect(store.items.size).toBe(0);
@@ -77,12 +77,12 @@ describe("wysyłanie kolejki ruchów", () => {
     const store = givenQueue(movement("a", 1000), movement("b", 2000), movement("c", 3000));
     const sent: string[] = [];
 
-    const offline = await flushMovements(store, NOWAK, async (item) => {
+    const offline = await flushQueue(store, NOWAK, async (item) => {
       sent.push(item.operationId);
       if (item.operationId === "b") throw new TypeError("Failed to fetch");
       return "registered";
     });
-    const retry = await flushMovements(store, NOWAK, async (item) => {
+    const retry = await flushQueue(store, NOWAK, async (item) => {
       sent.push(item.operationId);
       return "retry";
     });
@@ -97,7 +97,7 @@ describe("wysyłanie kolejki ruchów", () => {
     const store = givenQueue(movement("a", 1000), movement("k", 1500, "user-kowalski"));
     const sent: string[] = [];
 
-    const result = await flushMovements(store, NOWAK, async (item) => {
+    const result = await flushQueue(store, NOWAK, async (item) => {
       sent.push(item.operationId);
       return "registered";
     });

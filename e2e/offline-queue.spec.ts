@@ -31,7 +31,7 @@ test("kierownik bez zasięgu wydaje dwie szlifierki: ruchy czekają w kolejce, p
   }
   await expect(page.getByTestId("pending-count")).toHaveText("⏳ Oczekuje: 2");
   await page.getByTestId("pending-count").click();
-  const pending = page.getByRole("list", { name: "Ruchy czekające na sieć" });
+  const pending = page.getByRole("list", { name: "Czekające na sieć" });
   await expect(pending.getByRole("listitem")).toHaveCount(2);
   await expect(pending.getByRole("listitem").first()).toContainText("oczekuje");
 

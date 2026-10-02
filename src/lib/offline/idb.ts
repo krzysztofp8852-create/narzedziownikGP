@@ -3,11 +3,11 @@
 import type { QueueStore } from "./queue";
 
 const DB_NAME = "narzedziownik-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
-/** Magazyny kolejki: ruchy, nagrania do transkrypcji i propozycje z nagrań do zatwierdzenia. */
-export type StoreName = "ruchy" | "nagrania" | "propozycje";
-const KEYS: Record<StoreName, string> = { ruchy: "operationId", nagrania: "id", propozycje: "id" };
+/** Magazyny kolejki: ruchy, odbicia, nagrania do transkrypcji i propozycje z nagrań do zatwierdzenia. */
+export type StoreName = "ruchy" | "odbicia" | "nagrania" | "propozycje";
+const KEYS: Record<StoreName, string> = { ruchy: "operationId", odbicia: "operationId", nagrania: "id", propozycje: "id" };
 
 let opening: Promise<IDBDatabase> | null = null;
 

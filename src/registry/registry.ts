@@ -59,7 +59,19 @@ import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-
 import * as people from "./people";
 import type { NewPersonInput, Person } from "./people";
 import * as punches from "./punches";
-import type { ExplainPunchInput, PeopleOnSite, Poster, Punch, PunchInput, PunchOutcome, PunchPreview } from "./punches";
+import type {
+  ExplainPunchConflictInput,
+  ExplainPunchInput,
+  PeopleOnSite,
+  Poster,
+  Punch,
+  PunchConflict,
+  PunchInput,
+  PunchOutcome,
+  PunchPreview,
+  QueuedPunchInput,
+  QueuedPunchResult,
+} from "./punches";
 import * as qualificationReminders from "./qualification-reminders";
 import * as qualifications from "./qualifications";
 import type {
@@ -211,6 +223,7 @@ export {
   UPCOMING_QUALIFICATION_DAYS,
 } from "./qualifications";
 export type {
+  ExplainPunchConflictInput,
   ExplainPunchInput,
   PeopleOnSite,
   PhonePosition,
@@ -218,6 +231,8 @@ export type {
   Punch,
   PunchAction,
   PunchCheck,
+  PunchConflict,
+  PunchConflictReason,
   PunchExitVia,
   PunchInput,
   PunchOutcome,
@@ -225,6 +240,9 @@ export type {
   PunchPlaceKind,
   PunchPreview,
   PunchResult,
+  QueuedPunchInput,
+  QueuedPunchResult,
+  SavedPunchOutcome,
 } from "./punches";
 export {
   canClarifyPunches,
@@ -234,6 +252,7 @@ export {
   MAX_PUNCH_EXPLANATION_LENGTH,
   MAX_PUNCH_RADIUS_M,
   MIN_PUNCH_RADIUS_M,
+  PUNCH_CONFLICT_REASONS,
   PUNCH_RESULTS,
 } from "./punches";
 export { normalizePosterCode } from "./poster-code";
@@ -669,6 +688,15 @@ export interface Registry {
      */
     punch(input: PunchInput): Promise<PunchOutcome>;
     /**
+     * Skan plakatu zrobiony bez zasięgu, z kolejki offline telefonu (ADR 0033): zapisuje się jak `punch` w chwili skanu
+     * (`scannedAt`, z przyszłości przycięty do teraz), z oznaczeniem „zapisane offline”; wyjście telefon już potwierdził
+     * (`confirmExit`). Skan, który nie pasuje do odbić zapisanych w międzyczasie (późniejsze odbicie, wyjście bez
+     * wejścia, drugie wejście, stary kod, zakończona budowa), nie zapisuje się, tylko trafia jako konflikt do
+     * wyjaśnienia. Ponowne wysłanie tej samej operacji zwraca pierwotny wynik. Błędy, po których warto ponowić (np. tryb
+     * tylko do odczytu), rzuca.
+     */
+    registerQueuedPunch(input: QueuedPunchInput): Promise<QueuedPunchResult>;
+    /**
      * Zakładka „Ludzie na budowie” budowy albo bazy: odbici teraz i ostatnie odbicia, z promieniem odbicia. Właściciel
      * widzi wszystkie, kierownik na swoich budowach, a każdy własne. Pojazd i serwis: `not_found`.
      */
@@ -680,6 +708,13 @@ export interface Registry {
     punchesToClarify(): Promise<Punch[]>;
     /** „Wyjaśnione” z opcjonalną notatką: odbicie znika z listy do wyjaśnienia. Ci, którzy je tam widzą. */
     explainPunch(input: ExplainPunchInput): Promise<void>;
+    /**
+     * Skany z kolejki offline, które nie pasowały do odbić zapisanych w międzyczasie, od najnowszego: właściciel
+     * wszystkie, kierownik na swoich budowach bez własnych. Pracownik i magazynier: `forbidden`.
+     */
+    punchConflictsToClarify(): Promise<PunchConflict[]>;
+    /** „Wyjaśnione” z opcjonalną notatką: konflikt znika z listy. Ci, którzy go tam widzą. */
+    explainPunchConflict(input: ExplainPunchConflictInput): Promise<void>;
     /** Plakat budowy (właściciel albo jej kierownik) albo bazy z adresem (właściciel, bez adresu `poster_no_address`). */
     poster(locationId: string): Promise<Poster>;
     /** „Nowy kod”: stary plakat przestaje działać. Właściciel, a na swojej aktywnej budowie jej kierownik. */
@@ -1526,9 +1561,21 @@ export function createRegistry(deps: RegistryDeps): Registry {
             throw error;
           }
         },
+        registerQueuedPunch: async (input) => {
+          const attempt = () => asWriter((sql, session) => punches.queuedPunch(sql, session, input, deps.clock.now()));
+          try {
+            return await attempt();
+          } catch (error) {
+            // Równoległy skan tej osoby albo ponowka tej samej operacji; drugie podejście zobaczy jego wynik.
+            if (error instanceof ReplayedOperationError || error instanceof punches.ConcurrentPunchError) return attempt();
+            throw error;
+          }
+        },
         peopleOnSite: (locationId) => asMember((sql) => punches.peopleOnSite(sql, locationId)),
         punchesToClarify: () => asMember((sql, session) => punches.punchesToClarify(sql, session)),
         explainPunch: (input) => asWriter((sql, session) => punches.explainPunch(sql, session, input, deps.clock.now())),
+        punchConflictsToClarify: () => asMember((sql, session) => punches.punchConflictsToClarify(sql, session)),
+        explainPunchConflict: (input) => asWriter((sql, session) => punches.explainPunchConflict(sql, session, input, deps.clock.now())),
         poster: (locationId) => asMember((sql, session) => punches.poster(sql, session, locationId)),
         renewPosterToken: (locationId) => asWriter((sql, session) => punches.renewPosterToken(sql, session, locationId)),
         setPunchRadius: (locationId, radiusM) => asWriter((sql, session) => punches.setPunchRadius(sql, session, locationId, radiusM)),

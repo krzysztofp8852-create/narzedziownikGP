@@ -1164,8 +1164,13 @@
     "pageBoard": "Otwórz tablicę",
     "pending": "⏳ Oczekuje: {count}",
     "pendingTag": "oczekuje",
-    "pendingList": "Ruchy czekające na sieć",
-    "pendingHint": "Te ruchy są zapisane w telefonie i wyślą się same, gdy wróci zasięg. Czas w historii będzie z chwili zapisu.",
+    "pendingList": "Czekające na sieć",
+    "pendingHint": "Te ruchy i odbicia są zapisane w telefonie i wyślą się same, gdy wróci zasięg. Czas w historii będzie z chwili zapisu.",
+    "punch": {
+      "wejscie": "Odbicie, wejście: {place}",
+      "wyjscie": "Odbicie, wyjście: {place}",
+      "przejscie": "Odbicie, przejście na: {place}"
+    },
     "queued": "Brak zasięgu. Zapisano w telefonie: {summary}. Wyślę sam, gdy wróci sieć.",
     "recording": "Nagranie z {when}",
     "ready": "🎙 Do zatwierdzenia: {count}",
@@ -2206,6 +2211,25 @@
     "posterStep1": "Zeskanuj kod QR aparatem telefonu albo przyciskiem „Odbij się” na tablicy w NarzędziownikuGP. Bez aparatu wpisz kod spod kodu QR.",
     "posterStep2": "Pierwszy skan zapisuje wejście. Przy wyjściu zeskanuj kod jeszcze raz i potwierdź „Kończysz na tej budowie?”. Skan na innej budowie zapisuje przejście.",
     "posterStep3": "Program sprawdza położenie telefonu tylko w chwili skanu i zapisuje tylko odległość od budowy, a nie miejsce, w którym stoisz.",
-    "posterFileName": "plakat-odbicia.pdf"
+    "posterFileName": "plakat-odbicia.pdf",
+    "offlineMark": "zapisane offline",
+    "unknownPlace": "kod {code}",
+    "queuedEntry": "Brak zasięgu. Wejście zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć.",
+    "queuedExit": "Brak zasięgu. Wyjście zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć.",
+    "queuedTransfer": "Brak zasięgu. Przejście zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć.",
+    "queuedPrivacy": "Położenie telefonu z chwili skanu czeka tylko w telefonie. Po wysłaniu program zapisze tylko odległość od budowy, a nie miejsce skanu.",
+    "conflictsTitle": "Odbicia offline niezapisane",
+    "conflictsIntro": "Skany zapisane w telefonie bez zasięgu, które nie pasowały do odbić zapisanych w międzyczasie, więc nie weszły do czasu na budowie. Sprawdź z osobą, jak było, i oznacz je jako wyjaśnione.",
+    "conflictScan": "Skan w telefonie {scanned}: {action}. Dotarł {received}.",
+    "conflictEntry": "wejście",
+    "conflictExit": "wyjście potwierdzone „Kończysz?”",
+    "conflictUnknownPlace": "nieaktualny kod plakatu",
+    "conflictReasons": {
+      "kod_niewazny": "kod plakatu już nie działa (nowy kod albo plakat z innej firmy)",
+      "budowa_zakonczona": "budowa została zakończona, zanim skan dotarł",
+      "pozniejsze_odbicie": "w międzyczasie zapisano późniejsze odbicie tej osoby",
+      "nie_odbity_tu": "wyjście, a osoba nie była tu odbita",
+      "juz_odbity_tu": "wejście, a osoba była tu już odbita"
+    }
   }
 }

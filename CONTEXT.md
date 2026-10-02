@@ -180,8 +180,12 @@ Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, po
 ## Odbijanie na budowie
 
 **Odbicie**:
-Pobyt osoby na budowie albo bazie zapisany skanem plakatu budowy: wejście, a potem wyjście (skan na tej samej budowie, po pytaniu „Kończysz na tej budowie?”) albo przejście (skan na innej budowie zamyka ten pobyt i otwiera nowy). Przy każdym skanie program sprawdza położenie telefonu i zapisuje tylko wynik (na budowie, poza budową z odległością, brak położenia, bez sprawdzenia) i odległość, nigdy współrzędne. Odbicie z wynikiem innym niż „na budowie” się zapisuje, ale trafia do wyjaśnienia: wyjaśnia je właściciel albo kierownik budowy (własne odbicia kierownika wyjaśnia właściciel), z opcjonalną notatką. Odbija się każdy z kontem; widzi je właściciel, kierownik na swoich budowach i każdy własne. W firmie demo położenia się nie sprawdza.
+Pobyt osoby na budowie albo bazie zapisany skanem plakatu budowy: wejście, a potem wyjście (skan na tej samej budowie, po pytaniu „Kończysz na tej budowie?”) albo przejście (skan na innej budowie zamyka ten pobyt i otwiera nowy). Przy każdym skanie program sprawdza położenie telefonu i zapisuje tylko wynik (na budowie, poza budową z odległością, brak położenia, bez sprawdzenia) i odległość, nigdy współrzędne. Odbicie z wynikiem innym niż „na budowie” się zapisuje, ale trafia do wyjaśnienia: wyjaśnia je właściciel albo kierownik budowy (własne odbicia kierownika wyjaśnia właściciel), z opcjonalną notatką. Odbija się każdy z kontem; widzi je właściciel, kierownik na swoich budowach i każdy własne. W firmie demo położenia się nie sprawdza. Skan bez zasięgu w skanerze programu czeka w kolejce offline i zapisuje się z chwilą skanu, z oznaczeniem „zapisane offline”.
 _Avoid_: check-in, ewidencja czasu pracy, wejściówka
+
+**Konflikt odbicia**:
+Skan z kolejki offline, który po dotarciu na serwer nie pasuje do odbić zapisanych w międzyczasie: osoba ma już późniejsze odbicie, telefon potwierdził wyjście, a osoba nie jest tu odbita, telefon nie wiedział, że osoba jest tu już odbita, kod plakatu przestał działać albo budowę zakończono. Nie zapisuje się jako odbicie, tylko czeka na liście „Odbicia do wyjaśnienia” właściciela i kierownika budowy (własne kierownika wyjaśnia właściciel, a skan z nieaktualnym kodem tylko właściciel).
+_Avoid_: odrzucony ruch (to ruch z kolejki), błąd odbicia
 
 **Plakat budowy**:
 Kartka A4 z nazwą budowy, kodem QR i instrukcją, wisząca przy wejściu albo kontenerze; ma ją też baza z adresem. Kod QR prowadzi na stronę odbicia po losowym kodzie plakatu, który nie zdradza budowy; ten sam kod jest wydrukowany do wpisania ręcznie. Drukuje go właściciel albo kierownik budowy, a „Nowy kod” unieważnia stary plakat. Pojazd i serwis plakatu nie mają.

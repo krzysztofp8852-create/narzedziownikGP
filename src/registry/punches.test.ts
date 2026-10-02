@@ -415,6 +415,211 @@ describe("odbicia do wyjaśnienia", () => {
   });
 });
 
+describe("odbicie z kolejki offline", () => {
+  const HOUR = 60 * 60 * 1000;
+
+  /** Skan bez zasięgu `hoursAgo` godzin temu, wysłany teraz z kolejki telefonu. */
+  function queuedPunch(
+    actorId: string,
+    posterToken: string,
+    position: PhonePosition | null,
+    options: { scannedAt: Date; confirmExit?: boolean; operationId?: string },
+  ) {
+    return testbed.registry.as(actorId).registerQueuedPunch({
+      operationId: options.operationId ?? randomUUID(),
+      posterToken,
+      position,
+      confirmExit: options.confirmExit,
+      scannedAt: options.scannedAt,
+    });
+  }
+
+  const hoursAgo = (hours: number) => new Date(testbed.clock.now().getTime() - hours * HOUR);
+
+  it("skan bez zasięgu zapisuje wejście z prawdziwym czasem skanu i oznaczeniem „zapisane offline”", async () => {
+    const z = await givenZawbud();
+    const scannedAt = testbed.clock.now();
+    testbed.clock.advance(3 * HOUR);
+
+    const result = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 40), { scannedAt });
+
+    expect(result).toMatchObject({
+      status: "registered",
+      outcome: { action: "wejscie", punch: { enteredAt: scannedAt, entry: { result: "na_budowie", distanceM: 40 }, entryOffline: true, exitOffline: false } },
+    });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual(["Jan Mazur"]);
+    const online = await punch(z.nowakId, z.tokens.rataje, north(RATAJE, 10));
+    expect(online).toMatchObject({ punch: { entryOffline: false } });
+  });
+
+  it("cały dzień bez zasięgu: wejście, przejście i potwierdzone wyjście dochodzą po kolei, każde z czasem skanu", async () => {
+    const z = await givenZawbud();
+    const entry = testbed.clock.now();
+    testbed.clock.advance(3 * HOUR);
+    const transfer = testbed.clock.now();
+    testbed.clock.advance(5 * HOUR);
+    const exit = testbed.clock.now();
+    testbed.clock.advance(HOUR);
+
+    await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt: entry });
+    const moved = await queuedPunch(z.janId, z.tokens.winogrady, north(WINOGRADY, 10), { scannedAt: transfer });
+    const left = await queuedPunch(z.janId, z.tokens.winogrady, north(WINOGRADY, 10), { scannedAt: exit, confirmExit: true });
+
+    expect(moved).toMatchObject({
+      status: "registered",
+      outcome: {
+        action: "przejscie",
+        left: { place: { name: "Rataje" }, enteredAt: entry, leftAt: transfer, exitOffline: true },
+        punch: { place: { name: "Winogrady" }, enteredAt: transfer, entryOffline: true },
+      },
+    });
+    expect(left).toMatchObject({
+      status: "registered",
+      outcome: { action: "wyjscie", punch: { enteredAt: transfer, leftAt: exit, exit: { result: "na_budowie", distanceM: 10 }, exitOffline: true } },
+    });
+    expect(await presentAt(z.zawbud.ownerId, z.winogradyId)).toEqual([]);
+  });
+
+  it("ponowne wysłanie tej samej operacji (np. po zerwanym połączeniu) zwraca to samo odbicie i go nie dubluje", async () => {
+    const z = await givenZawbud();
+    const operationId = randomUUID();
+    const scannedAt = testbed.clock.now();
+    testbed.clock.advance(HOUR);
+    const first = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt, operationId });
+    testbed.clock.advance(HOUR);
+
+    const again = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt, operationId });
+
+    expect(again).toEqual(first);
+    expect((await z.owner.peopleOnSite(z.ratajeId)).history).toHaveLength(1);
+  });
+
+  it("odbicie wysłane online, którego odpowiedź nie doszła, z kolejki zwraca się tak, jak je zapisano", async () => {
+    const z = await givenZawbud();
+    const operationId = randomUUID();
+    const scannedAt = testbed.clock.now();
+    const online = await punch(z.janId, z.tokens.rataje, north(RATAJE, 10), { operationId });
+    testbed.clock.advance(HOUR);
+
+    const queued = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt, operationId });
+
+    expect(queued).toEqual({ status: "registered", outcome: online });
+  });
+
+  it("czas skanu z przyszłości (spieszący się zegar telefonu) to chwila dotarcia na serwer", async () => {
+    const z = await givenZawbud();
+
+    const result = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt: new Date(testbed.clock.now().getTime() + 2 * HOUR) });
+
+    expect(result).toMatchObject({ outcome: { punch: { enteredAt: testbed.clock.now() } } });
+  });
+
+  it("skan sprzed odbicia zapisanego w międzyczasie nie zapisuje się, tylko trafia do wyjaśnienia z czasem skanu i wynikiem położenia", async () => {
+    const z = await givenZawbud();
+    const scannedAt = testbed.clock.now();
+    testbed.clock.advance(HOUR);
+    // Jan odbił się w międzyczasie z drugiego telefonu, który miał zasięg.
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 10));
+    testbed.clock.advance(HOUR);
+
+    const result = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 5_000), { scannedAt });
+
+    const conflict = {
+      person: { fullName: "Jan Mazur" },
+      place: { id: z.ratajeId, name: "Rataje" },
+      scannedAt,
+      receivedAt: testbed.clock.now(),
+      confirmExit: false,
+      check: { result: "poza_budowa", distanceM: 5_000 },
+      reason: "pozniejsze_odbicie",
+    };
+    expect(result).toMatchObject({ status: "rejected", conflict });
+    expect((await z.owner.peopleOnSite(z.ratajeId)).history).toHaveLength(1);
+    expect(await z.owner.punchConflictsToClarify()).toMatchObject([conflict]);
+    expect(await testbed.registry.as(z.nowakId).punchConflictsToClarify()).toMatchObject([conflict]);
+    expect(await testbed.registry.as(z.kowalskiId).punchConflictsToClarify()).toEqual([]);
+
+    testbed.clock.advance(HOUR);
+    if (result.status !== "rejected") throw new Error("Skan powinien trafić do wyjaśnienia");
+    const again = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 5_000), { scannedAt, operationId: result.conflict.operationId });
+    expect(again).toEqual(result);
+    expect(await z.owner.punchConflictsToClarify()).toHaveLength(1);
+  });
+
+  it("wyjście, które telefon potwierdził, a osoba nie jest tu odbita, i wejście tam, gdzie już jest odbita, trafiają do wyjaśnienia", async () => {
+    const z = await givenZawbud();
+
+    const exit = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt: testbed.clock.now(), confirmExit: true });
+    await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10));
+    testbed.clock.advance(HOUR);
+    const entry = await queuedPunch(z.ewaId, z.tokens.base, north(FRANOWO, 10), { scannedAt: testbed.clock.now() });
+
+    expect(exit).toMatchObject({ status: "rejected", conflict: { reason: "nie_odbity_tu", confirmExit: true } });
+    expect(entry).toMatchObject({ status: "rejected", conflict: { reason: "juz_odbity_tu", confirmExit: false } });
+    expect(await presentAt(z.zawbud.ownerId, z.ratajeId)).toEqual([]);
+    expect(await presentAt(z.zawbud.ownerId, z.baseId)).toEqual(["Ewa Wiśniewska"]);
+  });
+
+  it("stary kod po „Nowy kod” i budowa zakończona przed wysłaniem trafiają do wyjaśnienia; nieznany kod widzi tylko właściciel", async () => {
+    const z = await givenZawbud();
+    const scannedAt = testbed.clock.now();
+    await z.owner.renewPosterToken(z.winogradyId);
+    await z.owner.closeSite(z.ratajeId);
+    testbed.clock.advance(HOUR);
+
+    const renewed = await queuedPunch(z.janId, z.tokens.winogrady, north(WINOGRADY, 10), { scannedAt });
+    const finished = await queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt });
+
+    expect(renewed).toMatchObject({ status: "rejected", conflict: { reason: "kod_niewazny", place: null, check: null } });
+    expect(finished).toMatchObject({ status: "rejected", conflict: { reason: "budowa_zakonczona", place: { name: "Rataje" } } });
+    expect((await z.owner.punchConflictsToClarify()).map((conflict) => conflict.reason)).toEqual(["budowa_zakonczona", "kod_niewazny"]);
+    expect((await testbed.registry.as(z.kowalskiId).punchConflictsToClarify()).map((conflict) => conflict.reason)).toEqual([]);
+  });
+
+  it("„wyjaśnione” z notatką zdejmuje konflikt z listy; kierownik nie wyjaśnia własnych, pracownik żadnych", async () => {
+    const z = await givenZawbud();
+    await queuedPunch(z.janId, z.tokens.rataje, null, { scannedAt: testbed.clock.now(), confirmExit: true });
+    await queuedPunch(z.nowakId, z.tokens.rataje, null, { scannedAt: testbed.clock.now(), confirmExit: true });
+    const [nowakOwn, jan] = await z.owner.punchConflictsToClarify();
+    const nowak = testbed.registry.as(z.nowakId);
+
+    expect((await nowak.punchConflictsToClarify()).map((conflict) => conflict.person.fullName)).toEqual(["Jan Mazur"]);
+    await expect(nowak.explainPunchConflict({ conflictId: nowakOwn.id, note: null })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(testbed.registry.as(z.janId).punchConflictsToClarify()).rejects.toMatchObject({ code: "forbidden" });
+    await expect(testbed.registry.as(z.janId).explainPunchConflict({ conflictId: jan.id, note: null })).rejects.toMatchObject({ code: "forbidden" });
+
+    await nowak.explainPunchConflict({ conflictId: jan.id, note: "Był od 7:00, poprawię" });
+
+    expect(await nowak.punchConflictsToClarify()).toEqual([]);
+    expect((await z.owner.punchConflictsToClarify()).map((conflict) => conflict.person.fullName)).toEqual(["Adam Nowak"]);
+  });
+
+  it("w trybie tylko do odczytu odbicie z kolejki czeka w telefonie (błąd do ponowienia), a nie trafia do wyjaśnienia", async () => {
+    const z = await givenZawbud();
+    const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
+    await admin.setManualReadOnly(z.zawbud.companyId, true);
+
+    await expect(queuedPunch(z.janId, z.tokens.rataje, north(RATAJE, 10), { scannedAt: testbed.clock.now() })).rejects.toMatchObject({ code: "read_only" });
+    expect(await z.owner.punchConflictsToClarify()).toEqual([]);
+  });
+
+  it("współrzędnych z kolejki nie ma w wyniku, odbiciu ani konflikcie w bazie", async () => {
+    const z = await givenZawbud();
+    const position = { lat: 52.398765, lng: 16.954321, accuracy: 23.5 };
+    const scannedAt = testbed.clock.now();
+    testbed.clock.advance(HOUR);
+    const results = [
+      await queuedPunch(z.janId, z.tokens.rataje, position, { scannedAt }),
+      await queuedPunch(z.janId, z.tokens.winogrady, position, { scannedAt: hoursAgo(2) }),
+    ];
+    const stored = await testbed.db.transaction(async (sql) => [await sql("select * from app.punches"), await sql("select * from app.punch_conflicts")]);
+    const text = JSON.stringify([results, stored, await z.owner.punchConflictsToClarify()]);
+
+    for (const coordinate of ["52.398", "16.954", "23.5"]) expect(text).not.toContain(coordinate);
+    expect(stored.map((rows) => rows.length)).toEqual([1, 1]);
+  });
+});
+
 describe("tryb tylko do odczytu", () => {
   it("blokuje odbicia, wyjaśnienia i nowy kod, a lista obecnych działa", async () => {
     const z = await givenZawbud();
@@ -435,6 +640,39 @@ describe("tryb tylko do odczytu", () => {
 });
 
 describe("baza danych", () => {
+  it("pracownik nie wyjaśni ani nie dopisze konfliktu z kolejki offline z pominięciem Rejestru", async () => {
+    const z = await givenZawbud();
+    await testbed.registry.as(z.janId).registerQueuedPunch({
+      operationId: randomUUID(),
+      posterToken: z.tokens.rataje,
+      position: null,
+      confirmExit: true,
+      scannedAt: testbed.clock.now(),
+    });
+    const [conflict] = await z.owner.punchConflictsToClarify();
+
+    await expect(
+      withActor(testbed.db, z.janId, (sql) =>
+        sql("update app.punch_conflicts set explained_at = now(), explained_by = $2 where id = $1 returning id", [conflict.id, z.janId]).then(
+          (rows) => {
+            if (rows.length === 0) throw new Error("RLS nie przepuściło zmiany");
+          },
+        ),
+      ),
+    ).rejects.toThrow();
+    const kowalskiPerson = (await z.owner.people()).find((person) => person.account?.userId === z.kowalskiId)!;
+    await expect(
+      withActor(testbed.db, z.janId, (sql) =>
+        sql(
+          `insert into app.punch_conflicts (company_id, person_id, location_id, punched_by, operation_id, scanned_at, received_at,
+                                            confirm_exit, reason)
+           values ($1, $2, $3, $4, gen_random_uuid(), now(), now(), false, 'juz_odbity_tu')`,
+          [z.zawbud.companyId, kowalskiPerson.personId, z.ratajeId, z.janId],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+
   it("pracownik nie wpisze sobie wyjaśnienia ani cudzego odbicia, nawet z pominięciem Rejestru", async () => {
     const z = await givenZawbud();
     await punch(z.janId, z.tokens.rataje, null);
