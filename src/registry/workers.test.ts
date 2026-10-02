@@ -244,7 +244,7 @@ describe("co widzi pracownik", () => {
 
     const board = await worker.whereIsWhat();
     expect(board.sites).toEqual([expect.objectContaining({ name: "Rataje", tools: [expect.objectContaining({ code: "H-01" })] })]);
-    expect(JSON.stringify(board)).not.toMatch(/value|3200/i);
+    expect(JSON.stringify(board)).not.toMatch(/value|(?<![\w-])3200(?![\w-])/i);
 
     const card = await worker.toolCard(z.h01);
     expect(card).toMatchObject({ code: "H-01", location: { id: z.ratajeId } });

@@ -4,7 +4,7 @@ import { useActionState, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { MAX_PUNCH_EXPLANATION_LENGTH, MAX_PUNCH_RADIUS_M, MIN_PUNCH_RADIUS_M } from "@/registry/registry";
-import { explainPunch, type PunchFormState, renewPosterToken, setPunchRadius } from "./punch-actions";
+import { explainPunch, explainPunchConflict, type PunchFormState, renewPosterToken, setPunchRadius } from "./punch-actions";
 
 function FormError({ state }: { state: PunchFormState }) {
   return (
@@ -94,13 +94,22 @@ export function PunchRadiusForm({ locationId, radiusM }: { locationId: string; r
 
 /** „Wyjaśnione” z opcjonalną notatką; po zapisie odbicie znika z listy. */
 export function ExplainPunchForm({ punchId }: { punchId: string }) {
-  const [state, formAction, pending] = useActionState<PunchFormState, FormData>(explainPunch.bind(null, punchId), {});
+  return <ExplainForm id={punchId} action={explainPunch} />;
+}
+
+/** „Wyjaśnione” przy skanie z kolejki offline, który się nie zapisał; po zapisie znika z listy. */
+export function ExplainPunchConflictForm({ conflictId }: { conflictId: string }) {
+  return <ExplainForm id={conflictId} action={explainPunchConflict} />;
+}
+
+function ExplainForm({ id, action }: { id: string; action: (id: string, prev: PunchFormState, formData: FormData) => Promise<PunchFormState> }) {
+  const [state, formAction, pending] = useActionState<PunchFormState, FormData>(action.bind(null, id), {});
 
   return (
     <form onSubmit={submitKeepingValues(formAction)} className="undo">
       <div className="field">
-        <label htmlFor={`note-${punchId}`}>{t("punches.explainNote")}</label>
-        <input id={`note-${punchId}`} name="note" maxLength={MAX_PUNCH_EXPLANATION_LENGTH} autoComplete="off" />
+        <label htmlFor={`note-${id}`}>{t("punches.explainNote")}</label>
+        <input id={`note-${id}`} name="note" maxLength={MAX_PUNCH_EXPLANATION_LENGTH} autoComplete="off" />
       </div>
       <button className="button button-quiet button-small" type="submit" disabled={pending}>
         {pending ? t("punches.saving") : t("punches.explain")}

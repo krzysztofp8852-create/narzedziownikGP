@@ -54,6 +54,14 @@ describe("izolacja firm", () => {
     const { code: posterB } = await ownerB.poster(baseB);
     const punchB = await ownerB.punch({ operationId: randomUUID(), posterToken: posterB, position: null });
     if (punchB.action !== "wejscie") throw new Error("Odbicie B powinno być wejściem");
+    // Skan B z kolejki offline sprzed tego odbicia: konflikt do wyjaśnienia.
+    const conflictB = await ownerB.registerQueuedPunch({
+      operationId: randomUUID(),
+      posterToken: posterB,
+      position: null,
+      scannedAt: new Date(testbed.clock.now().getTime() - 60_000),
+    });
+    if (conflictB.status !== "rejected") throw new Error("Skan B z kolejki powinien trafić do wyjaśnienia");
 
     const visibleToA = await withActor(testbed.db, a.ownerId, async (sql) => {
       const tables = await sql<{ name: string }>(
@@ -67,7 +75,7 @@ describe("izolacja firm", () => {
     });
 
     expect(visibleToA).toContain(a.companyId);
-    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB, personB, kindB, qualificationB, qualificationDocumentB, posterB, punchB.punch.id]) {
+    for (const idOfB of [b.companyId, b.ownerId, baseB, categoryB.id, toolB, rentedB, personB, kindB, qualificationB, qualificationDocumentB, posterB, punchB.punch.id, conflictB.conflict.id]) {
       expect(visibleToA).not.toContain(idOfB);
     }
   });

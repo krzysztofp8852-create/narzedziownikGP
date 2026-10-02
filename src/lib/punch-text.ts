@@ -25,9 +25,14 @@ export function punchTimeText(punch: Pick<Punch, "enteredAt" | "leftAt">) {
   return `${formatDateTime(punch.enteredAt)} – ${left}`;
 }
 
-/** Wejście i wyjście z wynikami: „Wejście: na budowie, 120 m · Wyjście: przejście na inną budowę”. */
-export function punchChecksText(punch: Pick<Punch, "entry" | "exit" | "exitVia">) {
-  const entry = t("punches.entry", { check: punchCheckText(punch.entry) });
-  if (punch.exitVia === "przejscie") return `${entry} · ${t("punches.exitTransfer")}`;
-  return punch.exit ? `${entry} · ${t("punches.exit", { check: punchCheckText(punch.exit) })}` : entry;
+/**
+ * Wejście i wyjście z wynikami i oznaczeniem odbić z kolejki offline: „Wejście: na budowie, 120 m (zapisane offline) ·
+ * Wyjście: przejście na inną budowę”.
+ */
+export function punchChecksText(punch: Pick<Punch, "entry" | "exit" | "exitVia" | "entryOffline" | "exitOffline">) {
+  const offline = (text: string, queued: boolean) => (queued ? `${text} (${t("punches.offlineMark")})` : text);
+  const entry = offline(t("punches.entry", { check: punchCheckText(punch.entry) }), punch.entryOffline);
+  const exit =
+    punch.exitVia === "przejscie" ? t("punches.exitTransfer") : punch.exit ? t("punches.exit", { check: punchCheckText(punch.exit) }) : null;
+  return exit ? `${entry} · ${offline(exit, punch.exitOffline)}` : entry;
 }

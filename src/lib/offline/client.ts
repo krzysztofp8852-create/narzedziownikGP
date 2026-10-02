@@ -1,11 +1,12 @@
-// Kolejka offline po stronie przeglądarki: wkładanie ruchów i powiadamianie o zmianach.
+// Kolejka offline po stronie przeglądarki: wkładanie ruchów i odbić i powiadamianie o zmianach.
 
 import { hasOfflineQueue, idbStore } from "./idb";
-import type { QueuedMovement, QueuedRecording, ReadyRecording } from "./queue";
+import type { QueuedMovement, QueuedPunch, QueuedRecording, ReadyRecording } from "./queue";
 
 const CHANGED = "narzedziownik:kolejka";
 
 export const movementQueue = () => idbStore<QueuedMovement>("ruchy");
+export const punchQueue = () => idbStore<QueuedPunch>("odbicia");
 export const recordingQueue = () => idbStore<QueuedRecording>("nagrania");
 /** Propozycje z nagrań z kolejki, czekające na zatwierdzenie. */
 export const readyRecordings = () => idbStore<ReadyRecording>("propozycje");
@@ -22,6 +23,11 @@ export function onQueueChanged(listener: () => void) {
 
 export async function enqueueMovement(item: Omit<QueuedMovement, "queuedAt">) {
   await movementQueue().put({ ...item, queuedAt: Date.now() });
+  queueChanged();
+}
+
+export async function enqueuePunch(item: Omit<QueuedPunch, "queuedAt">) {
+  await punchQueue().put({ ...item, queuedAt: Date.now() });
   queueChanged();
 }
 

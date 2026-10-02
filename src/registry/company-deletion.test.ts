@@ -46,6 +46,9 @@ async function givenCompanyWithHistory(adminId: string) {
   const manager = testbed.registry.as(managerId);
   await manager.punch({ operationId: randomUUID(), posterToken, position: null });
   await owner.explainPunch({ punchId: (await owner.punchesToClarify())[0].id, note: "Piwnica bez GPS" });
+  // Skan z kolejki offline sprzed odbicia kierownika: konflikt do wyjaśnienia.
+  await manager.registerQueuedPunch({ operationId: randomUUID(), posterToken, position: null, scannedAt: new Date(0) });
+  await owner.explainPunchConflict({ conflictId: (await owner.punchConflictsToClarify())[0].id, note: null });
   await owner.sendSupportMessage({ operationId: randomUUID(), text: "Zrzut ekranu", photo: jpeg() });
   return { ...company, managerId };
 }

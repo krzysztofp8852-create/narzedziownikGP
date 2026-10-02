@@ -3,25 +3,39 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { t } from "@/i18n/t";
+import { hasOfflineQueue } from "@/lib/offline/idb";
 import { readPoster } from "@/posters/url";
+import { OfflinePunch } from "./odbicie/offline-punch";
 import { CameraScanner } from "./ruch/camera-scanner";
 
 /**
  * „Odbij się” na górze tablicy: skaner w programie (ten sam co przy naklejkach, z ręcznym wpisaniem kodu z plakatu)
- * prowadzi na stronę odbicia, tak jak kod QR plakatu zeskanowany aparatem telefonu.
+ * prowadzi na stronę odbicia, tak jak kod QR plakatu zeskanowany aparatem telefonu. Bez zasięgu odbicie trafia od
+ * razu do kolejki offline z chwilą skanu.
  */
-export function PunchButton() {
+export function PunchButton({ userId }: { userId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [camera, setCamera] = useState(true);
   const [typed, setTyped] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [offlineCode, setOfflineCode] = useState<string | null>(null);
 
   function go(text: string) {
     const poster = readPoster(text);
     if (!poster) return setFeedback(t("punches.notPoster"));
     navigator.vibrate?.(60);
+    if (hasOfflineQueue() && !navigator.onLine) {
+      setFeedback(null);
+      setTyped("");
+      return setOfflineCode(poster.code);
+    }
     router.push(`/odbicie/${poster.code}`);
+  }
+
+  function close() {
+    setOfflineCode(null);
+    setOpen(false);
   }
 
   function onTyped(event: FormEvent<HTMLFormElement>) {
@@ -31,10 +45,11 @@ export function PunchButton() {
 
   return (
     <section className="punch-button" aria-label={t("punches.button")}>
-      <button className={open ? "button" : "button button-quiet"} type="button" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+      <button className={open ? "button" : "button button-quiet"} type="button" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>
         {t("punches.button")}
       </button>
-      {open && (
+      {open && offlineCode && <OfflinePunch key={offlineCode} userId={userId} code={offlineCode} onClose={close} />}
+      {open && !offlineCode && (
         <div className="scanner-input">
           {camera && <CameraScanner onScan={go} hint={t("punches.cameraHint")} />}
           <button className="button button-quiet" type="button" onClick={() => setCamera((on) => !on)}>
