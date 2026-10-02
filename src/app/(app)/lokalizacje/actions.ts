@@ -48,6 +48,12 @@ export async function addService(_prev: LocationFormState, formData: FormData): 
   }
 }
 
+/** Pojazd widać na tablicy, na stronie Pojazdy i na jego własnych stronach. */
+function revalidateVehicles() {
+  revalidatePath("/");
+  revalidatePath("/pojazdy", "layout");
+}
+
 export async function addVehicle(_prev: LocationFormState, formData: FormData): Promise<LocationFormState> {
   const session = await requireSession();
   try {
@@ -60,7 +66,7 @@ export async function addVehicle(_prev: LocationFormState, formData: FormData): 
         registrationNumber: formText(formData, "registrationNumber"),
         vin: formText(formData, "vin"),
       });
-    revalidatePath("/");
+    revalidateVehicles();
     return { added: { id: locationId, name: name.trim() } };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -79,7 +85,7 @@ export async function changeVehicleData(vehicleId: string, _prev: VehicleDataSta
     await getRegistry()
       .as(session.userId)
       .changeVehicleData(vehicleId, { registrationNumber: formText(formData, "registrationNumber"), vin: formText(formData, "vin") });
-    revalidatePath(`/pojazdy/${vehicleId}`, "layout");
+    revalidateVehicles();
     return { saved: true };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -90,7 +96,7 @@ export async function changeVehicleManager(vehicleId: string, _prev: ChangeManag
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).changeVehicleManager(vehicleId, formText(formData, "managerId"));
-    revalidatePath("/");
+    revalidateVehicles();
     return { changed: true };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -101,7 +107,7 @@ export async function setVehicleAlarm(vehicleId: string, enabled: boolean): Prom
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).setVehicleAlarm(vehicleId, enabled);
-    revalidatePath("/");
+    revalidateVehicles();
     return {};
   } catch (error) {
     return { error: errorMessage(error) };
@@ -112,7 +118,7 @@ export async function deactivateVehicle(vehicleId: string): Promise<VehicleActio
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).deactivateVehicle(vehicleId);
-    revalidatePath("/");
+    revalidateVehicles();
     return {};
   } catch (error) {
     return { error: errorMessage(error) };

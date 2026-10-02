@@ -1,11 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { MovementEntry } from "@/components/movement-entry";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { Money, ToolList } from "@/components/tool-list";
-import { VehicleIcon } from "@/components/vehicle-icon";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -34,16 +32,10 @@ import {
   UPCOMING_DAYS,
   type WhereIsWhat,
 } from "@/registry/registry";
-import { changeSiteManager, changeVehicleManager } from "./lokalizacje/actions";
+import { changeSiteManager } from "./lokalizacje/actions";
+import { AddLocationTile, LocationTotals, VehicleCard } from "./lokalizacje/location-cards";
 import { locationPagePath } from "./lokalizacje/location-page";
-import {
-  AddSiteForm,
-  AddVehicleForm,
-  ChangeManagerForm,
-  ChangeSiteAddressForm,
-  DeactivateVehicleForm,
-  VehicleAlarmForm,
-} from "./lokalizacje/location-forms";
+import { AddSiteForm, AddVehicleForm, ChangeManagerForm, ChangeSiteAddressForm } from "./lokalizacje/location-forms";
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
 import { PunchButton } from "./punch-button";
@@ -54,16 +46,6 @@ import { DemoSiteMap, type MapDevice, type MapPlace } from "./demo-site-map";
 import { SiteMap, type SiteMapPin } from "./site-map";
 
 export const metadata: Metadata = { title: t("board.title") };
-
-/** Liczba sztuk i, dla właściciela, suma wartości lokalizacji. */
-function LocationTotals({ count, totalValue }: { count: number; totalValue?: number }) {
-  return (
-    <span className="location-totals">
-      <span className="location-count">{t("board.toolCount", { count })}</span>
-      <Money amount={totalValue} className="location-value" />
-    </span>
-  );
-}
 
 function Services({ services }: { services: WhereIsWhat["services"] }) {
   const withTools = services.filter((service) => service.tools.length > 0);
@@ -242,64 +224,6 @@ function SiteCard({
 }
 
 /**
- * Pojazd na tablicy, jak budowa: kierownik i sprzęt, który jest poza bazą. Właściciel zmienia tu
- * kierownika, włącza alarm po progu dni i dezaktywuje pusty pojazd.
- */
-function VehicleCard({ vehicle, managers }: { vehicle: WhereIsWhat["vehicles"][number]; managers: SiteManagerCandidate[] | null }) {
-  return (
-    <section className="location location-site location-vehicle" aria-labelledby={`location-${vehicle.id}`}>
-      <div className="location-head">
-        <h3 id={`location-${vehicle.id}`} className="display location-name">
-          <span className="location-kind">
-            <VehicleIcon /> {t("board.vehicleKind")}
-          </span>{" "}
-          <Link href={locationPagePath("pojazd", vehicle.id)}>{vehicle.name}</Link>
-        </h3>
-        <LocationTotals count={vehicle.tools.length} totalValue={vehicle.totalValue} />
-      </div>
-      <div className="location-details">
-        <p>
-          <SiteManagerLabel manager={vehicle.manager} />
-        </p>
-        {!vehicle.alarmEnabled && <p className="muted">{t("board.vehicleAlarmOff")}</p>}
-      </div>
-      {vehicle.tools.length === 0 ? <p className="empty">{t("board.vehicleEmpty")}</p> : <ToolList tools={vehicle.tools} />}
-      {managers && (
-        <>
-          <details className="location-more">
-            <summary>{t("locations.changeManager")}</summary>
-            <ChangeManagerForm
-              action={changeVehicleManager.bind(null, vehicle.id)}
-              location={vehicle}
-              label={t("locations.newVehicleManager", { name: vehicle.name })}
-              managers={managers}
-            />
-          </details>
-          <details className="location-more">
-            <summary>{t("locations.vehicleAlarm")}</summary>
-            <VehicleAlarmForm vehicle={vehicle} />
-          </details>
-          <details className="location-more">
-            <summary>{t("locations.deactivateVehicle")}</summary>
-            <DeactivateVehicleForm vehicle={vehicle} empty={vehicle.tools.length === 0} />
-          </details>
-        </>
-      )}
-    </section>
-  );
-}
-
-/** Kafelek dodawania budowy albo pojazdu. Kierownika jest zawsze z kogo wybrać, bo może nim być sam właściciel. */
-function AddLocationTile({ title, form }: { title: string; form: ReactNode }) {
-  return (
-    <details className="location location-add">
-      <summary className="panel-summary">{title}</summary>
-      {form}
-    </details>
-  );
-}
-
-/**
  * Mapa firmy demo (ADR 0026): rejestr nie zna lokalizatorów, więc „urządzeniami z lokalizatorem” są pierwsze
  * narzędzia z każdego miejsca. Prawdziwa firma tego nie widzi.
  */
@@ -330,9 +254,12 @@ function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; m
   if (vehicles.length === 0 && !managers) return null;
   return (
     <section className="board-section" aria-labelledby="board-vehicles">
-      <h2 id="board-vehicles" className="display section-title">
-        {t("board.vehiclesTitle")}
-      </h2>
+      <div className="section-head">
+        <h2 id="board-vehicles" className="display section-title">
+          {t("board.vehiclesTitle")}
+        </h2>
+        <Link href="/pojazdy">{t("board.vehiclesLink")}</Link>
+      </div>
       <div className="site-grid">
         {vehicles.map((vehicle) => (
           <VehicleCard key={vehicle.id} vehicle={vehicle} managers={managers} />

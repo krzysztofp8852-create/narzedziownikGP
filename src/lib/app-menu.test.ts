@@ -21,7 +21,7 @@ describe("menu pod trzema kreskami", () => {
   it("właściciel widzi wszystkie podstrony w czterech grupach", () => {
     expect(shown("wlasciciel")).toEqual([
       ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
-      ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
+      ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /pojazdy", "Koszty sprzętu /koszty"]],
       ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
       [
         "Firma",
@@ -37,7 +37,7 @@ describe("menu pod trzema kreskami", () => {
     ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
-        ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
+        ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /pojazdy"]],
         ["Ludzie", people],
         ["Firma", company],
       ]);
@@ -47,17 +47,17 @@ describe("menu pod trzema kreskami", () => {
   it("kierownik widzi koszty sprzętu, gdy właściciel na to pozwolił; magazynier i pracownik nigdy", () => {
     expect(shown("kierownik", { siteManagersSeeCosts: true })[1]).toEqual([
       "Budowy i pojazdy",
-      ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"],
+      ["Budowy /#budowy", "Pojazdy /pojazdy", "Koszty sprzętu /koszty"],
     ]);
     for (const role of ["magazynier", "pracownik"] as const) {
-      expect(shown(role, { siteManagersSeeCosts: true })[1]).toEqual(["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]]);
+      expect(shown(role, { siteManagersSeeCosts: true })[1]).toEqual(["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /pojazdy"]]);
     }
   });
 
   it("pracownik ma własne uprawnienia i własny czas na budowie, nie ma samouczka, a wylogowanie zostaje", () => {
     expect(shown("pracownik")).toEqual([
       ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
-      ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
+      ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /pojazdy"]],
       ["Ludzie", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
       ["Firma", ["Wyloguj"]],
     ]);

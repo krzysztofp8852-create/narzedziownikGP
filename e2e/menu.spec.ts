@@ -100,6 +100,28 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
   await expect(page).toHaveURL(/\/narzedzia$/);
   await expect(page.getByRole("heading", { name: "Narzędzia", level: 1 })).toBeVisible();
 
+  // Pojazdy: pusta flota z zachętą, a właściciel dodaje pierwszy pojazd na tej stronie.
+  await menuButton(page).click();
+  await menu(page).getByRole("link", { name: "Pojazdy" }).click();
+  await expect(page).toHaveURL(/\/pojazdy$/);
+  await expect(page.getByRole("heading", { name: "Pojazdy", level: 1 })).toBeVisible();
+  await expect(page.getByText(/^Firma nie ma jeszcze pojazdów\. Dodaj/)).toBeVisible();
+  await page.locator("summary", { hasText: "Dodaj pojazd" }).click();
+  await page.getByLabel("Nazwa pojazdu").fill("Bus brygady");
+  await page.getByLabel("Kierownik", { exact: true }).selectOption({ label: "Adam Nowak" });
+  await page.getByLabel("Numer rejestracyjny (opcjonalnie)").fill("PO 12345");
+  await page.getByRole("button", { name: "Dodaj pojazd" }).click();
+  await expect(page.getByText("Dodano pojazd Bus brygady.")).toBeVisible();
+  const vehicle = page.getByRole("region", { name: "Pojazd Bus brygady" });
+  await expect(vehicle).toContainText("PO 12345");
+  await expect(vehicle).toContainText("Kierownik: Adam Nowak");
+  await expect(vehicle.getByRole("group", { name: "Terminy pojazdu" })).toContainText("Bez terminów w najbliższych 30 dniach.");
+  await expect(vehicle.getByRole("link", { name: "Dane i terminy" })).toHaveAttribute("href", /\/pojazdy\/[0-9a-f-]+\/terminy$/);
+  await expect(page.getByText(/^Firma nie ma jeszcze pojazdów/)).toHaveCount(0);
+  await menuButton(page).click();
+  await expect(menu(page).getByRole("link", { name: "Pojazdy" })).toHaveAttribute("aria-current", "page");
+  await page.keyboard.press("Escape");
+
   await menuButton(page).click();
   await menu(page).getByRole("link", { name: "Historia" }).click();
   await expect(page).toHaveURL(/\/historia$/);
@@ -173,6 +195,12 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
     "Moje uprawnienia",
     "Mój czas na budowie",
   ]);
+  // Pracownik widzi pustą flotę bez dodawania pojazdu.
+  await menu(page).getByRole("link", { name: "Pojazdy" }).click();
+  await expect(page).toHaveURL(/\/pojazdy$/);
+  await expect(page.getByText("Firma nie ma jeszcze pojazdów.", { exact: true })).toBeVisible();
+  await expect(page.locator("summary", { hasText: "Dodaj pojazd" })).toHaveCount(0);
+  await menuButton(page).click();
   await menu(page).getByRole("link", { name: "Mój czas na budowie" }).click();
   await expect(page).toHaveURL(/\/czas$/);
   await expect(page.getByRole("heading", { name: "Czas na budowie", level: 1 })).toBeVisible();

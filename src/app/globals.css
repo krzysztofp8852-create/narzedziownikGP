@@ -4100,6 +4100,15 @@ a.tool-row:hover .tool-row-name {
   margin: 2px 0 0;
 }
 
+/* Terminy pojazdu na karcie pojazdu na stronie Pojazdy. */
+.vehicle-deadline-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .vehicle-vin {
   font-family: var(--font-plate), ui-monospace, monospace;
   letter-spacing: 0.03em;
