@@ -4,7 +4,7 @@ import type { LegalDocumentId } from "./documents";
 import { type LegalDocument, parseLegalDocument } from "./parse";
 
 /** Folder z treścią dokumentów; `next.config.ts` dołącza go do wdrożenia. */
-const LEGAL_MESSAGES_DIR = "messages/prawne";
+export const LEGAL_MESSAGES_DIR = "messages/prawne";
 
 /** Dokument prawny po polsku z `messages/prawne/<id>.pl.md`. */
 export async function readLegalDocument(id: LegalDocumentId): Promise<LegalDocument> {

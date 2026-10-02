@@ -1,6 +1,6 @@
 ---
 title: Umowa powierzenia przetwarzania danych osobowych
-version: 1 października 2026
+version: 2 października 2026
 draft: tak
 ---
 
@@ -36,6 +36,7 @@ Umowa zostaje zawarta razem z umową o świadczenie usługi na zasadach [regulam
    - prowadzi rejestr kategorii czynności przetwarzania (art. 30 ust. 2 RODO).
 2. Podmiot przetwarzający pomaga Administratorowi odpowiadać na żądania osób, których dane dotyczą. Większość z nich Administrator wykona sam w programie (eksport, poprawienie danych konta, korekta, dezaktywacja). Ponieważ historia w programie tylko się dopisuje, dane osoby, których nie da się usunąć funkcjami programu, Podmiot przetwarzający usuwa albo anonimizuje na polecenie Administratora w ciągu 30 dni.
 3. Podmiot przetwarzający pomaga Administratorowi wywiązać się z obowiązków z art. 32–36 RODO, w szczególności przy ocenie skutków dla ochrony danych, w zakresie, w jakim dotyczą one programu.
+4. Podmiot przetwarzający udostępnia Administratorowi (w programie, a do czasu wprowadzenia odbijania na budowie e-mailem) wzór informacji dla osób, które odbijają się na budowie, opisujący, co program sprawdza i zapisuje. Administrator uzupełnia go o swoje dane, podstawę prawną i okres przechowywania i przekazuje go tym osobom (art. 13 i 14 RODO).
 
 ## § 5. Podprocesorzy
 
@@ -78,12 +79,17 @@ Umowa zostaje zawarta razem z umową o świadczenie usługi na zasadach [regulam
 ### Osoby, których dane dotyczą
 
 - właściciel, kierownicy, magazynierzy i pracownicy Administratora, którym założono konta w programie, w tym pracownicy logujący się nazwą użytkownika bez e-maila,
+- osoby, które Administrator wpisał do kartoteki Ludzie bez konta w programie, np. pracownicy bez telefonu albo ludzie podwykonawcy,
 - osoby, których dane Administrator wpisuje w programie, np. inwestorzy w adresie lub nazwie budowy, pracownicy serwisów,
 - osoby, które przypadkiem widać na zdjęciach albo słychać w nagraniach.
 
 ### Rodzaje danych
 
 - dane kont: imię, nazwisko, e-mail albo nazwa użytkownika, rola, przypisanie do budów i pojazdów, stan konta (aktywne, dezaktywowane), data hasła tymczasowego, skrót hasła i sesje logowania,
+- kartoteka Ludzie: imię i nazwisko, notatka, stan (aktywna, nieaktywna) i konto, jeśli osoba je ma,
+- uprawnienia osób: rodzaj (np. szkolenie BHP, SEP, UDT z opisem urządzenia, prawo jazdy z kategorią, kurs pierwszej pomocy, rodzaj własny Administratora), data ważności, cykl, data ostatniego wykonania, notatka i dokumenty (zdjęcia albo PDF, np. zaświadczenia ze szkolenia),
+- badania lekarskie (okresowe i do pracy na wysokości): tylko daty (ważne do, ostatnie badanie) i, jeśli Administrator go doda, skan orzeczenia,
+- odbicia na budowie: kto, na której budowie albo bazie, godzina wejścia i wyjścia, wynik sprawdzenia położenia w chwili odbicia (na budowie, poza budową, bez położenia, bez sprawdzenia) z odległością od budowy w metrach, oznaczenie odbicia zapisanego bez zasięgu, kto odbił osobę bez telefonu (wtedy sprawdza się położenie telefonu odbijającego), poprawki godzin z powodem i notatki wyjaśnień, oraz liczony z odbić czas na budowie,
 - dane o pracy ze sprzętem: kto, kiedy i dokąd wydał, zwrócił, przeniósł lub wysłał do serwisu narzędzie, cofnięcia ruchów, korekty z powodem, zgłoszenia nowych narzędzi,
 - tekst wpisów i rozpoznany tekst nagrań głosowych oraz, tylko na czas zamiany na tekst, same nagrania,
 - zgłoszenia uszkodzeń, braków i innych spraw z opisem, zdjęciami i komentarzami,
@@ -92,11 +98,13 @@ Umowa zostaje zawarta razem z umową o świadczenie usługi na zasadach [regulam
 - adresy budów i bazy oraz ich położenie na mapie budów (z geokodowania adresu albo wskazane ręcznie),
 - powiadomienia w programie, subskrypcje powiadomień push (adres i klucze) oraz stan samouczka.
 
-Administrator nie powierza danych szczególnych kategorii (art. 9 RODO) ani danych o wyrokach (art. 10 RODO), a program nie jest do nich przeznaczony. Program nie zbiera lokalizacji GPS telefonów.
+Danymi szczególnych kategorii (art. 9 RODO) są w programie tylko dane o badaniach lekarskich (okresowych i do pracy na wysokości): daty orzeczenia i jego skan. Z badań program zapisuje tylko daty, bez treści orzeczenia, a skan dodaje i otwiera tylko właściciel firmy. Innych danych szczególnych kategorii ani danych o wyrokach (art. 10 RODO) Administrator nie powierza, a program nie jest do nich przeznaczony.
+
+Program nie śledzi położenia telefonów. Tylko w chwili odbicia na budowie telefon wysyła położenie, a serwer liczy z niego odległość od budowy i zapisuje samą odległość w metrach i wynik sprawdzenia. Współrzędnych program nie zapisuje w bazie danych ani w logach; bez zasięgu czekają tylko w telefonie, do wysłania odbicia.
 
 ### Charakter i cel przetwarzania
 
-Przechowywanie, porządkowanie, wyświetlanie, eksport, wysyłka powiadomień e-mailem i push, zamiana nagrań na tekst i tekstu na propozycję ruchu przez dostawcę sztucznej inteligencji, udzielanie pomocy na czacie z supportem i usuwanie Danych, w celu świadczenia usługi NarzędziownikGP.
+Przechowywanie, porządkowanie, wyświetlanie, eksport, wysyłka powiadomień e-mailem i push (w tym przypomnień o terminach uprawnień i o wyjściu z budowy), zamiana nagrań na tekst i tekstu na propozycję ruchu przez dostawcę sztucznej inteligencji, liczenie odległości od budowy w chwili odbicia i czasu na budowie, udzielanie pomocy na czacie z supportem i usuwanie Danych, w celu świadczenia usługi NarzędziownikGP.
 
 ## Załącznik 2. Środki bezpieczeństwa
 
@@ -104,6 +112,9 @@ Przechowywanie, porządkowanie, wyświetlanie, eksport, wysyłka powiadomień e-
 - Szyfrowanie połączeń (TLS) i szyfrowanie danych na dyskach u dostawcy infrastruktury.
 - Oddzielenie danych firm w samej bazie danych (Row Level Security), sprawdzane testami automatycznymi przy każdej zmianie programu.
 - Uprawnienia zależne od roli, wymuszane po stronie serwera; wartości sprzętu nie opuszczają serwera dla ról, które nie mogą ich widzieć.
+- Skany orzeczeń lekarskich dostępne tylko dla właściciela firmy, także w samej bazie danych i w magazynie plików; kierownik widzi przy badaniach tylko „ważne do” albo „po terminie”.
+- Odbicia widoczne według roli: właściciel wszystkie, kierownik na budowach, którymi kieruje, pozostali tylko własne. Osoba nie poprawia własnych odbić, a poprawka godziny zawsze ma powód i zostaje w historii.
+- Współrzędne telefonu przy odbiciu służą tylko do policzenia odległości od budowy i nie są zapisywane w bazie danych ani w logach serwera.
 - Hasła przechowywane tylko jako skrót kryptograficzny; wymuszona zmiana hasła tymczasowego przy pierwszym logowaniu; dezaktywacja kont.
 - Historia, która tylko się dopisuje: błędy poprawia korekta z powodem, pierwotny wpis zostaje.
 - Zdjęcia, dokumenty i nagrania w prywatnych magazynach plików, dostępnych tylko dla serwera programu.
