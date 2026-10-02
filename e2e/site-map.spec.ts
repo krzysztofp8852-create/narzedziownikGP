@@ -53,9 +53,12 @@ test("budowa prawdziwej firmy stoi na mapie pod swoim adresem; właściciel prze
 
   await page.reload();
   await expect(rataje).toHaveAttribute("data-lat", "52.25");
+  // Przeładowanie przed końcem zapisu przerwałoby go, więc czekamy na odpowiedź akcji serwera.
+  const saved = page.waitForResponse((response) => response.request().method() === "POST");
   await page.evaluate(() =>
     (window as unknown as { __stubMap: { drag(title: string, lat: number, lng: number): void } }).__stubMap.drag("Budowa: Rataje", 52.3, 17),
   );
+  await saved;
   await expect(map.getByRole("alert")).toHaveCount(0);
   await page.reload();
   await expect(rataje).toHaveAttribute("data-lat", "52.3");
