@@ -1,6 +1,6 @@
 ---
 title: Regulamin usługi NarzędziownikGP
-version: 29 września 2026
+version: 2 października 2026
 draft: tak
 ---
 
@@ -19,7 +19,7 @@ Ten regulamin opisuje, na jakich zasadach GP Engineering udostępnia program Nar
 3. **Klient**: przedsiębiorca, który zawarł z Usługodawcą umowę o świadczenie Usługi (dalej: **Umowa**). W Programie Klient to firma.
 4. **Użytkownik**: osoba, której konto w Programie założono dla Klienta: właściciel, kierownik, magazynier albo pracownik.
 5. **Właściciel**: Użytkownik działający w imieniu Klienta, z pełnymi uprawnieniami w firmie, w tym do zakładania kont pozostałych Użytkowników.
-6. **Dane Klienta**: wszystko, co Klient i jego Użytkownicy zapisują w Programie: narzędzia, lokalizacje, ruchy, historia, zgłoszenia, zdjęcia, dokumenty, dane Użytkowników.
+6. **Dane Klienta**: wszystko, co Klient i jego Użytkownicy zapisują w Programie: narzędzia, lokalizacje, ruchy, historia, zgłoszenia, zdjęcia, dokumenty, dane Użytkowników i osób z kartoteki Ludzie, ich uprawnienia i odbicia na budowie.
 7. **Abonament**: opłata roczna za Usługę w progu zależnym od liczby narzędzi.
 8. **Wdrożenie**: jednorazowa usługa przygotowania Programu do pracy u Klienta: import ewidencji, naklejki QR i szkolenie.
 9. **Tryb tylko do odczytu**: stan firmy, w którym Dane Klienta można przeglądać i eksportować, ale nie można zapisywać nowych.
