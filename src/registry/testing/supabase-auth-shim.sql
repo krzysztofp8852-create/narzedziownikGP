@@ -19,12 +19,10 @@ create table auth.users (
 create function auth.uid() returns uuid
 language sql stable
 as $$
-  select nullif(
-    coalesce(
-      current_setting('request.jwt.claim.sub', true),
-      (current_setting('request.jwt.claims', true)::jsonb ->> 'sub')
-    ),
-    ''
+  -- Jak na Supabase: puste ustawienie (np. w transakcji systemowej po transakcji użytkownika) to brak aktora.
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
   )::uuid
 $$;
 grant execute on function auth.uid() to anon, authenticated, service_role;

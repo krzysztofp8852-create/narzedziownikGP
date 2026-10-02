@@ -1,8 +1,11 @@
 /**
  * Firma do testu dymnego odbijania: właściciel, kierownik Nowak (Rataje z pinezką w stałym punkcie, bez Google),
  * pracownik z nazwą użytkownika i Wojciech Lis z kartoteki, bez konta. Wypisuje kod plakatu Rataje, położenie budowy i dane logowania jako JSON.
+ * Z `--zapomniane-wyjscie` pracownik ma też wczorajsze odbicie na Rataje zamknięte o północy „bez wyjścia”, a JSON
+ * podaje godzinę wyjścia (pole daty i godziny) osiem godzin po tamtym wejściu.
  */
 import { randomUUID } from "node:crypto";
+import { dateTimeInputValue } from "@/i18n/dates";
 import { getRegistry } from "@/lib/registry-instance";
 
 const registry = getRegistry();
@@ -32,6 +35,15 @@ const { locationId: siteId } = await owner.addSite({ name: "Rataje", address: "u
 await owner.moveMapPin(siteId, RATAJE);
 const { code } = await owner.poster(siteId);
 
+let forgottenExitAt: string | null = null;
+if (process.argv.includes("--zapomniane-wyjscie")) {
+  // Pełna minuta, tak jak w polu daty i godziny, żeby czas na budowie wyszedł równo osiem godzin.
+  const scannedAt = new Date(Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 60_000) * 60_000);
+  await registry.as(worker.userId).registerQueuedPunch({ operationId: randomUUID(), posterToken: code, position: { ...RATAJE, accuracy: 10 }, scannedAt });
+  await registry.system().closeCompanyForgottenExits(company.companyId);
+  forgottenExitAt = dateTimeInputValue(new Date(scannedAt.getTime() + 8 * 60 * 60 * 1000));
+}
+
 console.log(
   JSON.stringify({
     companyName,
@@ -40,6 +52,7 @@ console.log(
     site: RATAJE,
     manager: { login: managerEmail, password: managerPassword },
     worker: { login: username, password: workerPassword },
+    forgottenExitAt,
   }),
 );
 process.exit(0);

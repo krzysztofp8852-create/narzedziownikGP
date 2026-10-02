@@ -58,8 +58,10 @@ import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as people from "./people";
 import type { NewPersonInput, Person } from "./people";
+import * as punchReminders from "./punch-reminders";
 import * as punches from "./punches";
 import type {
+  CorrectPunchInput,
   ExplainPunchConflictInput,
   ExplainPunchInput,
   PeopleOnSite,
@@ -180,6 +182,7 @@ export { readOnlyWarning } from "./notifications";
 export type {
   DeadlinesNotification,
   EmailedNotification,
+  ForgottenExitNotification,
   FridayReportNotification,
   MovementRejectedNotification,
   Notification,
@@ -187,6 +190,7 @@ export type {
   NotificationContent,
   NotificationKind,
   NotifiedDeadline,
+  NotifiedPunch,
   QualificationsNotification,
   ReadOnlyNotification,
   ReadOnlySoonNotification,
@@ -226,6 +230,7 @@ export {
   UPCOMING_QUALIFICATION_DAYS,
 } from "./qualifications";
 export type {
+  CorrectPunchInput,
   ExplainPunchConflictInput,
   ExplainPunchInput,
   PeopleOnSite,
@@ -238,6 +243,9 @@ export type {
   PunchCheck,
   PunchConflict,
   PunchConflictReason,
+  PunchCorrection,
+  PunchCorrectionField,
+  PunchEnd,
   PunchExitVia,
   PunchInput,
   PunchOutcome,
@@ -252,11 +260,13 @@ export type {
 } from "./punches";
 export {
   canClarifyPunches,
+  canCorrectPunches,
   canPrintPoster,
   canPunchOthers,
   canSetPunchRadius,
   DEFAULT_PUNCH_RADIUS_M,
   MAX_PEOPLE_PER_PUNCH,
+  MAX_PUNCH_CORRECTION_REASON_LENGTH,
   MAX_PUNCH_EXPLANATION_LENGTH,
   MAX_PUNCH_RADIUS_M,
   MIN_PUNCH_RADIUS_M,
@@ -448,6 +458,20 @@ export interface Registry {
     notifyDueQualifications(): Promise<{ qualifications: number }>;
     /** Przypomnienia o uprawnieniach (jak `notifyDueQualifications`) tylko dla jednej firmy (scenariusz demo). */
     notifyCompanyDueQualifications(companyId: string): Promise<{ qualifications: number }>;
+    /**
+     * Zadanie harmonogramu od 18:00 w Polsce: przypomnienie o wyjściu (dzwonek i push) dla każdego odbicia otwartego
+     * teraz, raz na odbicie. Dostaje je ten, kto odbił wejście: osoba sama albo kierownik za osobę z kartoteki. Przed
+     * 18:00 nic. Zwraca, o ilu odbiciach przypomniało.
+     */
+    notifyForgottenExits(): Promise<{ punches: number }>;
+    /**
+     * Zadanie harmonogramu o północy w Polsce: odbicia otwarte z poprzednich dni zamykają się „bez wyjścia” o północy po
+     * dniu wejścia, trafiają do wyjaśnienia i nie liczą się do czasu na budowie, dopóki ktoś nie uzupełni wyjścia.
+     * Zwraca, ile odbić zamknęło.
+     */
+    closeForgottenExits(): Promise<{ punches: number }>;
+    /** Zamknięcie odbić bez wyjścia (jak `closeForgottenExits`) tylko w jednej firmie (scenariusz demo). */
+    closeCompanyForgottenExits(companyId: string): Promise<{ punches: number }>;
     /**
      * Zadanie dzienne: właściciele firm dostają ostrzeżenie 7 dni i 1 dzień przed trybem tylko do odczytu
      * (dzwonek, push i e-mail) i wpis o samym przełączeniu (dzwonek i push), każde raz na termin. Przy ręcznym
@@ -726,12 +750,21 @@ export interface Registry {
      */
     peopleOnSite(locationId: string): Promise<PeopleOnSite>;
     /**
-     * Odbicia do wyjaśnienia (wynik wejścia albo wyjścia inny niż „na budowie”), od najnowszego: właściciel wszystkie,
-     * kierownik na swoich budowach bez własnych i bez odbitych przez siebie. Pracownik i magazynier: `forbidden`.
+     * Odbicia do wyjaśnienia (wynik wejścia albo wyjścia inny niż „na budowie” albo „bez wyjścia”), od najnowszego:
+     * właściciel wszystkie, kierownik na swoich budowach bez własnych i bez odbitych przez siebie. Pracownik
+     * i magazynier: `forbidden`.
      */
     punchesToClarify(): Promise<Punch[]>;
     /** „Wyjaśnione” z opcjonalną notatką: odbicie znika z listy do wyjaśnienia. Ci, którzy je tam widzą. */
     explainPunch(input: ExplainPunchInput): Promise<void>;
+    /**
+     * Poprawka godziny wejścia, wyjścia albo obu naraz (jedna transakcja) z powodem (bez niego `reason_required`), także
+     * uzupełnienie wyjścia osoby odbitej teraz albo odbicia „bez wyjścia”; poprzednie godziny zostają w historii odbicia.
+     * Właściciel, a kierownik na swoich budowach bez własnych odbić; pracownik i magazynier: `forbidden`. Godzina
+     * z przyszłości, wejście nie przed wyjściem, bez żadnej godziny albo bez zmiany: `invalid_input`; nachodzi na inne
+     * odbicie tej osoby: `punch_overlap`.
+     */
+    correctPunch(input: CorrectPunchInput): Promise<Punch>;
     /**
      * Skany z kolejki offline, które nie pasowały do odbić zapisanych w międzyczasie, od najnowszego: właściciel
      * wszystkie, kierownik na swoich budowach bez własnych. Pracownik i magazynier: `forbidden`.
@@ -1042,6 +1075,24 @@ export function createRegistry(deps: RegistryDeps): Registry {
         return { qualifications: count };
       },
       notifyCompanyDueQualifications: async (companyId) => ({ qualifications: await remindQualifications(deps, companyId, deps.clock.now()) }),
+      notifyForgottenExits: async () => {
+        const now = deps.clock.now();
+        const companyIds = await deps.db.transaction((sql) => punchReminders.companiesWithOpenPunches(sql));
+        let count = 0;
+        // Każda firma w osobnej transakcji: błąd jednej nie zabiera przypomnień pozostałym.
+        for (const companyId of companyIds) {
+          try {
+            count += await remindForgottenExits(deps, companyId, now);
+          } catch (error) {
+            console.error(`Nie przypomniano o wyjściach w firmie ${companyId}`, error);
+          }
+        }
+        return { punches: count };
+      },
+      closeForgottenExits: async () => ({ punches: await deps.db.transaction((sql) => punchReminders.closeForgottenExits(sql, deps.clock.now())) }),
+      closeCompanyForgottenExits: async (companyId) => ({
+        punches: await deps.db.transaction((sql) => punchReminders.closeForgottenExits(sql, deps.clock.now(), companyId)),
+      }),
       sendCompanyDueReports: (companyId) => sendDueReportsOf(deps, companyId, deps.clock.now()),
       geocodeUnplacedLocations: async () => {
         const unplaced = await deps.db.transaction((sql) => locations.unplacedLocations(sql));
@@ -1606,9 +1657,10 @@ export function createRegistry(deps: RegistryDeps): Registry {
             throw error;
           }
         },
-        peopleOnSite: (locationId) => asMember((sql) => punches.peopleOnSite(sql, locationId)),
+        peopleOnSite: (locationId) => asMember((sql, session) => punches.peopleOnSite(sql, session, locationId)),
         punchesToClarify: () => asMember((sql, session) => punches.punchesToClarify(sql, session)),
         explainPunch: (input) => asWriter((sql, session) => punches.explainPunch(sql, session, input, deps.clock.now())),
+        correctPunch: (input) => asWriter((sql, session) => punches.correctPunch(sql, session, input, deps.clock.now())),
         punchConflictsToClarify: () => asMember((sql, session) => punches.punchConflictsToClarify(sql, session)),
         explainPunchConflict: (input) => asWriter((sql, session) => punches.explainPunchConflict(sql, session, input, deps.clock.now())),
         poster: (locationId) => asMember((sql, session) => punches.poster(sql, session, locationId)),
@@ -1937,6 +1989,13 @@ async function remindQualifications(deps: RegistryDeps, companyId: string, now: 
   const result = await deps.db.transaction((sql) => qualificationReminders.notifyDueQualifications(sql, companyId, now));
   await sendPushCopies(deps, result.copies);
   return result.qualifications;
+}
+
+/** Przypomnienia o wyjściu w jednej firmie w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę odbić. */
+async function remindForgottenExits(deps: RegistryDeps, companyId: string, now: Date): Promise<number> {
+  const result = await deps.db.transaction((sql) => punchReminders.notifyForgottenExits(sql, companyId, now));
+  await sendPushCopies(deps, result.copies);
+  return result.punches;
 }
 
 /** Raporty jednej firmy, na które przyszła pora. Każdy osobno: błąd jednego nie zabiera pozostałych. */

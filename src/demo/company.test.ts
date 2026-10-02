@@ -133,7 +133,7 @@ describe("firma demo", () => {
     expect(await kinds(manager.userId)).not.toContain("uprawnienia");
   });
 
-  it("ma plakaty i odbicia z ostatnich dni: ludzie są dziś na budowach (brygadę bez telefonu odbija kierownik), a jedno odbicie poza budową czeka na wyjaśnienie", async () => {
+  it("ma plakaty i odbicia z ostatnich dni: ludzie są dziś na budowach (brygadę bez telefonu odbija kierownik), zapomniane wyjście jest uzupełnione, a jedno odbicie poza budową czeka na wyjaśnienie", async () => {
     await demo();
     const [ownerAccount] = await bed.registry.system().demoAccounts();
     const owner = bed.registry.as(ownerAccount.userId);
@@ -145,6 +145,14 @@ describe("firma demo", () => {
     expect(onTarasy.present.find((punch) => punch.person.fullName === "Zbigniew Kaczmarek")).toMatchObject({ entryPunchedByName: "Marek Kowalczyk" });
     expect(onTarasy.history.filter((punch) => punch.leftAt !== null).length).toBeGreaterThanOrEqual(4);
     expect(onTarasy.history.some((punch) => punch.explained?.note)).toBe(true);
+    // Zapomniane wyjście Jana: zamknięte o północy, a rano Marek uzupełnił je z powodem.
+    const forgotten = onTarasy.history.find((punch) => punch.exitVia === "uzupelnione");
+    expect(forgotten).toMatchObject({
+      person: { fullName: "Jan Mazur" },
+      toClarify: false,
+      corrections: [{ field: "wyjscie", from: null, byName: "Marek Kowalczyk", reason: expect.stringContaining("zapomniał") }],
+    });
+    expect(forgotten!.timeOnSiteMs).toBeGreaterThan(8 * 60 * 60 * 1000);
     expect((await owner.peopleOnSite(base.id)).present.map((punch) => punch.person.fullName)).toEqual(["Krzysztof Lewandowski"]);
 
     const toClarify = await owner.punchesToClarify();

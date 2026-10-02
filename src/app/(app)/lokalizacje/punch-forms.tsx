@@ -3,8 +3,16 @@
 import { useActionState, useState, useTransition } from "react";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
-import { MAX_PUNCH_EXPLANATION_LENGTH, MAX_PUNCH_RADIUS_M, MIN_PUNCH_RADIUS_M } from "@/registry/registry";
-import { explainPunch, explainPunchConflict, type PunchFormState, renewPosterToken, setPunchRadius } from "./punch-actions";
+import { MAX_PUNCH_CORRECTION_REASON_LENGTH, MAX_PUNCH_EXPLANATION_LENGTH, MAX_PUNCH_RADIUS_M, MIN_PUNCH_RADIUS_M } from "@/registry/registry";
+import {
+  type CorrectedPunch,
+  correctPunch,
+  explainPunch,
+  explainPunchConflict,
+  type PunchFormState,
+  renewPosterToken,
+  setPunchRadius,
+} from "./punch-actions";
 
 function FormError({ state }: { state: PunchFormState }) {
   return (
@@ -116,5 +124,42 @@ function ExplainForm({ id, action }: { id: string; action: (id: string, prev: Pu
       </button>
       <FormError state={state} />
     </form>
+  );
+}
+
+/**
+ * „Popraw godziny”: prawdziwa godzina wejścia albo wyjścia (także uzupełnienie wyjścia, którego nie było) z powodem.
+ * Formularz z nowymi godzinami po zapisie daje strona (inny `key`).
+ */
+export function CorrectPunchForm({ punch }: { punch: CorrectedPunch }) {
+  const [state, formAction, pending] = useActionState<PunchFormState, FormData>(correctPunch.bind(null, punch), {});
+  const id = (field: string) => `correct-${field}-${punch.id}`;
+
+  return (
+    <details className="panel">
+      <summary className="panel-summary">{t("punches.correctTitle")}</summary>
+      <form onSubmit={submitKeepingValues(formAction)} className="stack-form">
+        <p className="muted">{t("punches.correctHint")}</p>
+        <div className="field">
+          <label htmlFor={id("entry")}>{t("punches.correctEntry")}</label>
+          <input id={id("entry")} name="entry" type="datetime-local" defaultValue={punch.entry} required />
+        </div>
+        <div className="field">
+          <label htmlFor={id("exit")}>{t("punches.correctExit")}</label>
+          <input id={id("exit")} name="exit" type="datetime-local" defaultValue={punch.exit} />
+        </div>
+        <div className="field">
+          <label htmlFor={id("reason")}>{t("punches.correctReason")}</label>
+          <input id={id("reason")} name="reason" maxLength={MAX_PUNCH_CORRECTION_REASON_LENGTH} autoComplete="off" required />
+        </div>
+        <div className="form-actions">
+          <button className="button button-quiet button-small" type="submit" disabled={pending}>
+            {pending ? t("punches.saving") : t("punches.correctSave")}
+          </button>
+        </div>
+        <FormError state={state} />
+        {state.done && !pending && <p role="status">{t("punches.corrected")}</p>}
+      </form>
+    </details>
   );
 }

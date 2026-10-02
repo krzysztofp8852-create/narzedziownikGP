@@ -1,20 +1,22 @@
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { dateTimeInputValue } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { formatPosterCode } from "@/posters/url";
-import { distanceText, punchChecksText, punchedByText, punchTimeText } from "@/lib/punch-text";
+import { distanceText, punchChecksText, punchCorrectionText, punchedByText, punchTimeText, timeOnSiteText } from "@/lib/punch-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import { canPrintPoster, canSetPunchRadius, type Poster, type Punch } from "@/registry/registry";
 import { LocationShell, loadPlacePage, type PlacePageKind } from "./location-page";
-import { PunchRadiusForm, RenewPosterForm } from "./punch-forms";
+import { CorrectPunchForm, PunchRadiusForm, RenewPosterForm } from "./punch-forms";
 
 /**
- * Odbicie na liście: kto, kiedy, wyniki sprawdzenia położenia, kto odbijał za osobę, „do wyjaśnienia” albo
- * wyjaśnienie; `children` pod spodem.
+ * Odbicie na liście: kto, kiedy, wyniki sprawdzenia położenia, czas na budowie, kto odbijał za osobę, poprawki godzin,
+ * „do wyjaśnienia” albo wyjaśnienie; `children` pod spodem.
  */
 export function PunchEntry({ punch, showPlace = false, children }: { punch: Punch; showPlace?: boolean; children?: ReactNode }) {
   const punchedBy = punchedByText(punch);
+  const timeOnSite = timeOnSiteText(punch);
   return (
     <li className="movement" data-testid="punch">
       <div className="movement-head">
@@ -24,11 +26,21 @@ export function PunchEntry({ punch, showPlace = false, children }: { punch: Punc
       </div>
       <p className="muted movement-meta">{punchTimeText(punch)}</p>
       <p className="movement-meta">{punchChecksText(punch)}</p>
+      {timeOnSite && (
+        <p className="muted movement-meta" data-testid="punch-time-on-site">
+          {timeOnSite}
+        </p>
+      )}
       {punchedBy && (
         <p className="muted movement-meta" data-testid="punch-punched-by">
           {punchedBy}
         </p>
       )}
+      {punch.corrections.map((correction, index) => (
+        <p key={index} className="muted movement-meta" data-testid="punch-correction">
+          {punchCorrectionText(correction)}
+        </p>
+      ))}
       {punch.explained && (
         <p className="muted movement-meta">
           {punch.explained.note
@@ -39,6 +51,16 @@ export function PunchEntry({ punch, showPlace = false, children }: { punch: Punc
       {children}
     </li>
   );
+}
+
+/** „Popraw godziny” przy odbiciu, które aktor może poprawić; po poprawce nowy `key` daje formularz z nowymi godzinami. */
+export function CorrectPunch({ punch }: { punch: Punch }) {
+  const shown = {
+    id: punch.id,
+    entry: dateTimeInputValue(punch.enteredAt),
+    exit: punch.leftAt === null || punch.exitVia === "bez_wyjscia" ? "" : dateTimeInputValue(punch.leftAt),
+  };
+  return <CorrectPunchForm key={`${shown.entry}:${shown.exit}`} punch={shown} />;
 }
 
 /**
@@ -67,7 +89,9 @@ export async function PeopleOnSitePage({ id, kind }: { id: string | null; kind: 
         ) : (
           <ol className="movements" aria-label={here}>
             {people.present.map((punch) => (
-              <PunchEntry key={punch.id} punch={punch} />
+              <PunchEntry key={punch.id} punch={punch}>
+                {writable && punch.correctable && <CorrectPunch punch={punch} />}
+              </PunchEntry>
             ))}
           </ol>
         )}
@@ -112,7 +136,9 @@ export async function PeopleOnSitePage({ id, kind }: { id: string | null; kind: 
         ) : (
           <ol className="movements" aria-label={t("punches.historyTitle")}>
             {people.history.map((punch) => (
-              <PunchEntry key={punch.id} punch={punch} />
+              <PunchEntry key={punch.id} punch={punch}>
+                {writable && punch.correctable && <CorrectPunch punch={punch} />}
+              </PunchEntry>
             ))}
           </ol>
         )}

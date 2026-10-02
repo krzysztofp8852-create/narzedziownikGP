@@ -96,6 +96,17 @@ export function notificationText(notification: NotificationContent): { title: st
         body: notification.qualifications.map((qualification) => t("bell.qualificationItem", item(qualification))).join(" · "),
       };
     }
+    case "przypomnienie_wyjscia": {
+      const item = (punch: (typeof notification.punches)[number]) => ({ person: punch.person.fullName, place: punch.place.name });
+      if (notification.punches.length === 1) {
+        const [only] = notification.punches;
+        return { title: t("bell.forgottenExit", item(only)), body: t("bell.forgottenExitBody", { when: formatDateTime(only.enteredAt) }) };
+      }
+      return {
+        title: t("bell.forgottenExits", { count: notification.punches.length }),
+        body: notification.punches.map((punch) => t("bell.forgottenExitItem", item(punch))).join(" · "),
+      };
+    }
     case "tylko_do_odczytu":
       return {
         title: t("bell.readOnly"),
@@ -107,7 +118,10 @@ export function notificationText(notification: NotificationContent): { title: st
   }
 }
 
-/** Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica, terminy, kartoteka Ludzie albo abonament w ustawieniach. */
+/**
+ * Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica (także z „Odbij się” po przypomnieniu o wyjściu),
+ * terminy, kartoteka Ludzie albo abonament w ustawieniach.
+ */
 export function notificationLink(notification: NotificationContent): string {
   switch (notification.kind) {
     case "narzedzia_zabrane":
@@ -118,6 +132,7 @@ export function notificationLink(notification: NotificationContent): string {
     case "sprzet_wynajety":
       return `/narzedzia/${notification.tool.id}`;
     case "progi_przekroczone":
+    case "przypomnienie_wyjscia":
       return "/";
     case "ruch_odrzucony":
       return "/do-wyjasnienia";

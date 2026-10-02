@@ -13,10 +13,13 @@ interface SeededCompany {
   site: { lat: number; lng: number };
   manager: Credentials;
   worker: Credentials;
+  /** Z `forgottenExit`: godzina wyjścia do uzupełnienia przy wczorajszym odbiciu „bez wyjścia”. */
+  forgottenExitAt: string | null;
 }
 
-function seedCompany(): SeededCompany {
-  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-punch.mts"], { encoding: "utf8" });
+function seedCompany({ forgottenExit = false } = {}): SeededCompany {
+  const args = ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-punch.mts", ...(forgottenExit ? ["--zapomniane-wyjscie"] : [])];
+  const output = execFileSync("npx", args, { encoding: "utf8" });
   return JSON.parse(output.trim().split("\n").at(-1)!) as SeededCompany;
 }
 
@@ -115,6 +118,34 @@ test("odbicie 5 km od budowy przyciskiem „Odbij się” zapisuje się z oznacz
   await toClarify.getByLabel("Notatka (opcjonalnie)").fill("Był na budowie, zły GPS");
   await toClarify.getByRole("button", { name: "Wyjaśnione" }).click();
   await expect(page.getByText("Nie ma odbić do wyjaśnienia.")).toBeVisible();
+});
+
+test("kierownik uzupełnia z powodem wyjście odbicia zamkniętego o północy „bez wyjścia”: odbicie znika z wyjaśnienia, a poprawka zostaje w historii", async ({
+  page,
+}) => {
+  const company = seedCompany({ forgottenExit: true });
+  await page.goto("/logowanie");
+  await fillLogin(page, company.manager);
+  await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
+
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  const toClarify = page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
+  await expect(toClarify.getByTestId("punch")).toHaveCount(1);
+  await expect(toClarify).toContainText("Wyjście: bez wyjścia, zamknięte o północy");
+  await expect(toClarify.getByTestId("punch-time-on-site")).toHaveText("Nie liczy się do czasu na budowie, dopóki ktoś nie uzupełni wyjścia.");
+
+  await toClarify.getByText("Popraw godziny").click();
+  await toClarify.getByLabel("Wyjście", { exact: true }).fill(company.forgottenExitAt!);
+  await toClarify.getByLabel("Powód").fill("Zapomniał odbić, potwierdził brygadzista");
+  await toClarify.getByRole("button", { name: "Zapisz poprawkę" }).click();
+  await expect(page.getByText("Nie ma odbić do wyjaśnienia.")).toBeVisible();
+
+  await page.goto(`/budowy/${company.siteId}/ludzie`);
+  const history = page.getByRole("list", { name: "Historia odbić" });
+  await expect(history.getByTestId("punch-correction")).toContainText("Uzupełnione wyjście");
+  await expect(history.getByTestId("punch-correction")).toContainText("Zapomniał odbić, potwierdził brygadzista (Adam Nowak");
+  await expect(history.getByTestId("punch-time-on-site")).toHaveText("Czas na budowie: 8 godz. 0 min");
 });
 
 test("pracownik bez zasięgu odbija wejście i wyjście skanerem programu: telefon pyta „Kończysz?”, a po powrocie sieci odbicie ma oznaczenie „zapisane offline”", async ({
