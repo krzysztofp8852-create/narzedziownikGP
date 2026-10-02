@@ -36,6 +36,15 @@ function fridayText(report: FridayReport): { title: string; body: string } {
   };
 }
 
+/** Krótko, co jest w raporcie, bez jego nazwy (w wierszu listy raportów), np. „poza bazą: 12 szt.”. */
+export function reportSummary(report: Report): string {
+  if (report.kind === "piatkowy") return t("reports.page.fridaySummary", { count: fridayToolCount(report) });
+  const value = formatMoney(report.offBaseValue);
+  return report.offBaseChange === null
+    ? t("reports.page.weeklySummary", { value })
+    : t("reports.page.weeklySummaryChange", { value, change: formatMoneyChange(report.offBaseChange) });
+}
+
 /** Ile sztuk sprzętu jest poza bazą w raporcie piątkowym. */
 export function fridayToolCount(report: FridayReport): number {
   return report.locations.reduce((sum, location) => sum + location.tools.length, 0);
@@ -51,12 +60,16 @@ export function reportTitle(kind: ReportKind): string {
   return t(kind === "tygodniowy" ? "reports.weeklyTitle" : "reports.fridayTitle");
 }
 
-/** Tytuł raportu, dzień i (w piątek) przypomnienie, np. „Raport tygodniowy”, „Stan na 6.04.2026”. */
-export function reportHeading(report: Report): { title: string; day: string; intro: string | null } {
+/**
+ * Tytuł raportu, dzień i (w piątek) przypomnienie, np. „Raport tygodniowy”, „Stan na 6.04.2026”. Raport na teraz
+ * (`live`) mówi, że to stan w tej chwili, i nie przypomina o weekendzie, bo bywa otwierany w środku tygodnia.
+ */
+export function reportHeading(report: Report, { live = false } = {}): { title: string; day: string; intro: string | null } {
+  const day = formatCalendarDay(report.day);
   return {
     title: reportTitle(report.kind),
-    day: t("reports.dayOf", { day: formatCalendarDay(report.day) }),
-    intro: report.kind === "piatkowy" && report.locations.length > 0 ? t("reports.fridayIntro") : null,
+    day: live ? t("reports.liveDayOf", { day }) : t("reports.dayOf", { day }),
+    intro: !live && report.kind === "piatkowy" && report.locations.length > 0 ? t("reports.fridayIntro") : null,
   };
 }
 

@@ -1267,7 +1267,10 @@
       "live": "Na teraz",
       "liveItem": "Stan w tej chwili",
       "received": "Otrzymane",
-      "receivedEmpty": "Jeszcze nie przyszedł żaden raport."
+      "receivedEmpty": "Jeszcze nie przyszedł żaden raport.",
+      "weeklySummary": "poza bazą {value}",
+      "weeklySummaryChange": "poza bazą {value} ({change} w tydzień)",
+      "fridaySummary": "poza bazą: {count} szt."
     },
     "notFound": "Nie ma tu takiego raportu. Raporty przychodzą do dzwonka: tygodniowy w poniedziałek o 7:00, piątkowy w piątek o 16:00.",
     "offBase": "Sprzęt poza bazą",

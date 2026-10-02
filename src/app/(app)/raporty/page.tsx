@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { formatCalendarDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
-import { reportHeading, reportLink, reportText, reportTitle } from "@/lib/report-text";
+import { reportLink, reportSummary, reportTitle } from "@/lib/report-text";
 import { canSeeReports, reportKindsOf } from "@/registry/registry";
 
 export const metadata: Metadata = { title: t("reports.page.title") };
@@ -57,8 +58,10 @@ export default async function ReportsPage() {
               <li key={reportLink(report)}>
                 <Link href={reportLink(report)} className="tool-row report-row">
                   <span className="tool-row-name">
-                    {reportText(report).title}
-                    <span className="tool-row-sub muted">{reportHeading(report).day}</span>
+                    {reportTitle(report.kind)}
+                    <span className="tool-row-sub muted">
+                      {t("reports.dayOf", { day: formatCalendarDay(report.day) })} · {reportSummary(report)}
+                    </span>
                   </span>
                 </Link>
               </li>

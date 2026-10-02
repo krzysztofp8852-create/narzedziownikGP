@@ -1,21 +1,16 @@
 import Link from "next/link";
-import { formatCalendarDay } from "@/i18n/dates";
-import { t } from "@/i18n/t";
 import { reportHeading, reportSections } from "@/lib/report-text";
 import type { Report } from "@/registry/registry";
 
-/**
- * Raport na stronie: nagłówek i sekcje. Raport z dzwonka pokazuje dzień, z którego jest; raport na teraz mówi, że to
- * stan w tej chwili, i nie przypomina o weekendzie, bo bywa otwierany w środku tygodnia.
- */
+/** Raport na stronie: nagłówek i sekcje, z dzwonka albo na teraz (`live`). */
 export function ReportView({ report, live = false }: { report: Report; live?: boolean }) {
-  const heading = reportHeading(report);
+  const heading = reportHeading(report, { live });
   return (
     <>
       <div>
         <h1 className="display page-title">{heading.title}</h1>
-        <p className="muted">{live ? t("reports.liveDayOf", { day: formatCalendarDay(report.day) }) : heading.day}</p>
-        {heading.intro && !live && <p>{heading.intro}</p>}
+        <p className="muted">{heading.day}</p>
+        {heading.intro && <p>{heading.intro}</p>}
       </div>
       {reportSections(report).map((section, index) => (
         <section key={index} className="location" aria-label={section.title}>

@@ -330,11 +330,7 @@ describe("raporty otrzymane i rodzaje na teraz", () => {
     expect(reportKindsOf(as("kierownik"))).toEqual(["piatkowy"]);
     expect(reportKindsOf(as("magazynier"))).toEqual([]);
     expect(reportKindsOf(as("pracownik"))).toEqual([]);
-    expect([canSeeReports(as("wlasciciel")), canSeeReports(as("kierownik")), canSeeReports(as("magazynier")), canSeeReports(as("pracownik"))]).toEqual([
-      true,
-      true,
-      false,
-      false,
-    ]);
+    const roles = ["wlasciciel", "kierownik", "magazynier", "pracownik"] as const;
+    expect(roles.map((role) => canSeeReports(as(role)))).toEqual([true, true, false, false]);
   });
 });

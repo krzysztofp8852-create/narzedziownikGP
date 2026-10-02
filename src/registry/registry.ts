@@ -967,7 +967,7 @@ export interface Registry {
     fridayReport(): Promise<FridayReport>;
     /** Raport z dzwonka aktora z danego dnia (RRRR-MM-DD), tak jak go wtedy dostał; null, gdy go nie dostał. */
     sentReport(kind: ReportKind, day: string): Promise<Report | null>;
-    /** Raporty z dzwonka aktora (ostatnie 52), tak jak je wtedy dostał, od najnowszego. */
+    /** Ostatnie raporty z dzwonka aktora, tak jak je wtedy dostał, od najnowszego. */
     receivedReports(): Promise<Report[]>;
     /** Ustawienia firmy. Tylko właściciel. */
     settings(): Promise<CompanySettings>;

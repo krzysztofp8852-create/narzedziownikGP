@@ -23,7 +23,10 @@ describe("menu pod trzema kreskami", () => {
       ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
       ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
-      ["Firma", ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
+      [
+        "Firma",
+        ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"],
+      ],
     ]);
   });
 
@@ -61,6 +64,9 @@ describe("menu pod trzema kreskami", () => {
   });
 
   it("w firmie demo nie ma samouczka, bo demo ma własny przewodnik", () => {
-    expect(shown("wlasciciel", { demo: true }).at(-1)).toEqual(["Firma", ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Wyloguj"]]);
+    expect(shown("wlasciciel", { demo: true }).at(-1)).toEqual([
+      "Firma",
+      ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Wyloguj"],
+    ]);
   });
 });

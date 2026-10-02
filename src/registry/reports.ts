@@ -227,7 +227,7 @@ export async function sentReport(sql: Sql, session: Session, kind: ReportKind, d
   return row?.content.report ?? null;
 }
 
-/** Ile ostatnich raportów z dzwonka pokazuje strona Raporty (około pół roku tygodniowych i piątkowych). */
+/** Ile ostatnich raportów z dzwonka pokazuje strona Raporty: właścicielowi około pół roku, kierownikowi około roku. */
 const RECEIVED_REPORTS_LIMIT = 52;
 
 /** Raporty z dzwonka aktora, tak jak je wtedy dostał, od najnowszego. */
