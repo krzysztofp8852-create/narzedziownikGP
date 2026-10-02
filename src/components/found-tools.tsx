@@ -6,7 +6,8 @@ import type { SearchTool } from "@/lib/tool-search";
 import { DamagedIcon } from "./damaged-icon";
 import { VehicleIcon } from "./vehicle-icon";
 
-const KIND_LABELS = { baza: "board.baseKind", budowa: "board.siteKind", serwis: "board.serviceKind", pojazd: "board.vehicleKind" } as const;
+/** Nazwa rodzaju lokalizacji przy miejscu narzędzia. */
+export const KIND_LABELS = { baza: "board.baseKind", budowa: "board.siteKind", serwis: "board.serviceKind", pojazd: "board.vehicleKind" } as const;
 
 /**
  * Znalezione narzędzia (wyszukiwanie i odpowiedź na „gdzie jest …”): kod i nazwa, a pod nimi gdzie są, od ilu dni,

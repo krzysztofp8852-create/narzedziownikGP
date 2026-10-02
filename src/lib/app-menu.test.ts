@@ -20,7 +20,7 @@ const shown = (role: Role, options?: { demo?: boolean; siteManagersSeeCosts?: bo
 describe("menu pod trzema kreskami", () => {
   it("właściciel widzi wszystkie podstrony w czterech grupach", () => {
     expect(shown("wlasciciel")).toEqual([
-      ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
+      ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia", "Naklejki /naklejki"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles", "Koszty sprzętu /koszty"]],
       ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
       ["Firma", ["Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"]],
@@ -33,7 +33,7 @@ describe("menu pod trzema kreskami", () => {
       ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
     ] as const) {
       expect(shown(role)).toEqual([
-        ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
+        ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
         ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
         ["Ludzie", people],
         ["Firma", ["Samouczek /samouczek", "Wyloguj"]],
@@ -53,7 +53,7 @@ describe("menu pod trzema kreskami", () => {
 
   it("pracownik ma własne uprawnienia i własny czas na budowie, nie ma samouczka, a wylogowanie zostaje", () => {
     expect(shown("pracownik")).toEqual([
-      ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
+      ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
       ["Ludzie", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
       ["Firma", ["Wyloguj"]],

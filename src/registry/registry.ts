@@ -96,6 +96,8 @@ import * as stickers from "./stickers";
 import type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
 import * as toolReports from "./tool-reports";
 import type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
+import * as toolList from "./tool-list";
+import type { ListedTool } from "./tool-list";
 import * as tools from "./tools";
 import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
 import * as tutorial from "./tutorial";
@@ -106,6 +108,7 @@ export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { CatalogTool } from "./catalog";
+export type { ListedTool } from "./tool-list";
 export type {
   AddDocumentInput,
   CompleteDeadlineInput,
@@ -543,6 +546,11 @@ export interface Registry {
      * (dla interpretacji tekstu i wyszukiwania).
      */
     toolCatalog(): Promise<CatalogTool[]>;
+    /**
+     * Cały sprzęt firmy na stronę Narzędzia, także zaginiony, wycofany i zwrócony do wypożyczalni: kategoria, marka,
+     * gdzie jest (albo było ostatnio), od ilu dni, kto odpowiada; wartość w zł tylko dla właściciela.
+     */
+    toolList(): Promise<ListedTool[]>;
     categories(): Promise<Category[]>;
     addCategory(input: { name: string; prefix: string }): Promise<Category>;
     /** Kolejny wolny kod w kategorii, np. S-05. */
@@ -1451,6 +1459,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         },
         whereIsWhat: () => asMember((sql, session) => board.whereIsWhat(sql, session, deps.clock.now())),
         toolCatalog: () => asMember((sql) => catalog.toolCatalog(sql, deps.clock.now())),
+        toolList: () => asMember((sql, session) => toolList.toolList(sql, session, deps.clock.now())),
         categories: () => asMember((sql) => tools.listCategories(sql)),
         addCategory: (input) =>
           asWriter((sql, session) => {

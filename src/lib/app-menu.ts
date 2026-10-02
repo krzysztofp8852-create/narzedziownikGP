@@ -31,6 +31,7 @@ export function appMenu(session: Session): MenuGroup[] {
       label: t("menu.groups.equipment"),
       items: [
         ...link("/", t("menu.board")),
+        ...link("/narzedzia", t("menu.tools")),
         ...link("/terminy", t("menu.deadlines")),
         ...link("/historia", t("menu.history")),
         ...link("/naklejki", t("menu.stickers"), canPrintStickers(session)),

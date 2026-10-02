@@ -190,6 +190,7 @@ describe("polecenia i zapytania w trybie tylko do odczytu", () => {
       z.owner.categories(),
       z.owner.suggestCode(z.grinders.id),
       z.owner.toolCatalog(),
+      z.owner.toolList(),
       z.owner.previewToolImport([{ name: "Szlifierka", category: "S" }]),
       nowak.movementsToClarify(),
       nowak.bell(),
