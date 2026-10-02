@@ -58,6 +58,17 @@ import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as people from "./people";
 import type { NewPersonInput, Person } from "./people";
+import * as qualificationReminders from "./qualification-reminders";
+import * as qualifications from "./qualifications";
+import type {
+  AddQualificationDocumentInput,
+  CompleteQualificationInput,
+  CustomQualificationKind,
+  NewQualificationInput,
+  PersonQualifications,
+  QualificationChanges,
+  UpcomingQualification,
+} from "./qualifications";
 import * as team from "./team";
 import type { AddedMember, NewMemberInput, PersonAccountInput, TeamMember } from "./team";
 import * as stickers from "./stickers";
@@ -159,6 +170,7 @@ export type {
   NotificationContent,
   NotificationKind,
   NotifiedDeadline,
+  QualificationsNotification,
   ReadOnlyNotification,
   ReadOnlySoonNotification,
   ThresholdExceededNotification,
@@ -167,6 +179,35 @@ export type {
   WeeklyReportNotification,
 } from "./notifications";
 export type { FridayReport, Report, ReportKind, WeeklyReport } from "./reports";
+export type {
+  AddQualificationDocumentInput,
+  CompleteQualificationInput,
+  CustomQualificationKind,
+  NewQualificationDocument,
+  NewQualificationInput,
+  NotifiedQualification,
+  PersonQualifications,
+  Qualification,
+  QualificationChanges,
+  QualificationDocument,
+  QualificationKind,
+  QualificationStatus,
+  UpcomingQualification,
+} from "./qualifications";
+export {
+  canAddQualificationKinds,
+  canAttachQualificationDocument,
+  canDeleteQualifications,
+  canManageQualifications,
+  detailOf,
+  hasNote,
+  isMedicalKind,
+  MAX_QUALIFICATION_DETAIL_LENGTH,
+  MAX_QUALIFICATION_KIND_NAME_LENGTH,
+  MAX_QUALIFICATION_NOTE_LENGTH,
+  QUALIFICATION_KINDS,
+  UPCOMING_QUALIFICATION_DAYS,
+} from "./qualifications";
 export { isReportKind } from "./reports";
 export type { Bell, BellEntry } from "./bell";
 export type {
@@ -344,6 +385,13 @@ export interface Registry {
     notifyDueDeadlines(): Promise<{ deadlines: number }>;
     /** Przypomnienia o terminach (jak `notifyDueDeadlines`) tylko dla jednej firmy (scenariusz demo). */
     notifyCompanyDueDeadlines(companyId: string): Promise<{ deadlines: number }>;
+    /**
+     * Zadanie dzienne: przypomnienia o uprawnieniach aktywnych osób, 30 dni przed końcem ważności w Polsce i raz po nim,
+     * każde raz. Właściciel dostaje jedno zbiorcze, a osoba z kontem o własnych; kierownik o innych osobach nic.
+     */
+    notifyDueQualifications(): Promise<{ qualifications: number }>;
+    /** Przypomnienia o uprawnieniach (jak `notifyDueQualifications`) tylko dla jednej firmy (scenariusz demo). */
+    notifyCompanyDueQualifications(companyId: string): Promise<{ qualifications: number }>;
     /**
      * Zadanie dzienne: właściciele firm dostają ostrzeżenie 7 dni i 1 dzień przed trybem tylko do odczytu
      * (dzwonek, push i e-mail) i wpis o samym przełączeniu (dzwonek i push), każde raz na termin. Przy ręcznym
@@ -538,6 +586,44 @@ export interface Registry {
      * i nazwisko konta to imię i nazwisko osoby. Tylko właściciel.
      */
     addPersonAccount(input: PersonAccountInput): Promise<AddedMember>;
+    /** Własne rodzaje uprawnień firmy (np. „Operator koparki”), po nazwie. Widzi je każdy w firmie. */
+    qualificationKinds(): Promise<CustomQualificationKind[]>;
+    /** Nowy własny rodzaj uprawnienia; ta sama nazwa drugi raz: `qualification_kind_taken`. Tylko właściciel. */
+    addQualificationKind(input: { name: string }): Promise<{ kindId: string }>;
+    /**
+     * Aktywne osoby z uprawnieniami, po imieniu i nazwisku: właściciel i kierownik wszystkie, pracownik i magazynier
+     * tylko siebie. Dokumentów badań lekarskich nie widzi nikt poza właścicielem.
+     */
+    peopleQualifications(): Promise<PersonQualifications[]>;
+    /** Osoba (także nieaktywna) z uprawnieniami albo null, gdy aktor jej nie widzi (jak `peopleQualifications`). */
+    personQualifications(personId: string): Promise<PersonQualifications | null>;
+    /**
+     * Uprawnienie aktywnej osoby: rodzaj ze stałej listy albo własny, ważne do, opcjonalny cykl, notatka (bez niej przy
+     * badaniach lekarskich) i opis (UDT: urządzenie, prawo jazdy: kategoria, SEP: grupa). Drugie tego samego rodzaju
+     * i opisu: `qualification_taken`. Właściciel i kierownik.
+     */
+    addQualification(input: NewQualificationInput): Promise<{ qualificationId: string }>;
+    /** Zmienia datę, cykl, notatkę albo opis uprawnienia. Właściciel i kierownik. */
+    updateQualification(qualificationId: string, changes: QualificationChanges): Promise<void>;
+    /** Usuwa uprawnienie razem z dokumentami. Tylko właściciel. */
+    deleteQualification(qualificationId: string): Promise<void>;
+    /**
+     * Odnowienie uprawnienia (najpóźniej dziś w Polsce), z opcjonalnym dokumentem: nowa data ważności to podana, a bez
+     * niej dzień wykonania plus cykl (bez cyklu trzeba ją podać). Właściciel i kierownik, dokument badań lekarskich
+     * tylko właściciel. Ponowne wysłanie tej samej operacji zwraca bieżącą datę.
+     */
+    completeQualification(input: CompleteQualificationInput): Promise<{ dueOn: string }>;
+    /**
+     * Dokument przy uprawnieniu: PDF albo zdjęcie do 4 MB (inaczej `document_invalid`). Właściciel, a kierownik poza
+     * badaniami lekarskimi. Widzi go każdy, kto widzi uprawnienie, poza dokumentami badań (tylko właściciel).
+     */
+    addQualificationDocument(input: AddQualificationDocumentInput): Promise<{ documentId: string }>;
+    /** Usuwa dokument uprawnienia. Tylko właściciel. */
+    deleteQualificationDocument(documentId: string): Promise<void>;
+    /** Plik dokumentu uprawnienia z nazwą; null, gdy aktor go nie widzi. */
+    qualificationDocument(documentId: string): Promise<{ file: Blob; fileName: string } | null>;
+    /** Uprawnienia aktywnych osób z najbliższych 30 dni i po terminie, które aktor widzi, od najwcześniejszego. */
+    upcomingQualifications(): Promise<UpcomingQualification[]>;
     /**
      * Zakłada konto kierownika, magazyniera lub pracownika z hasłem tymczasowym do przekazania osobiście, i jego osobę
      * w kartotece Ludzie.
@@ -741,7 +827,7 @@ export interface RegistryDeps {
   photos: PhotoStore;
   /** Zdjęcia z czatu z supportem. */
   chatPhotos: PhotoStore;
-  /** Dokumenty terminów narzędzi: zdjęcia i PDF. */
+  /** Dokumenty terminów narzędzi i uprawnień ludzi: zdjęcia i PDF. */
   documents: PhotoStore;
   /** Adres budowy albo bazy na punkt na mapie budów. */
   geocoder: Geocoder;
@@ -820,6 +906,21 @@ export function createRegistry(deps: RegistryDeps): Registry {
         return { deadlines: count };
       },
       notifyCompanyDueDeadlines: async (companyId) => ({ deadlines: await remindDeadlines(deps, companyId, deps.clock.now()) }),
+      notifyDueQualifications: async () => {
+        const now = deps.clock.now();
+        const companyIds = await deps.db.transaction((sql) => qualificationReminders.companiesWithQualifications(sql));
+        let count = 0;
+        // Każda firma w osobnej transakcji: błąd jednej nie zabiera przypomnień pozostałym.
+        for (const companyId of companyIds) {
+          try {
+            count += await remindQualifications(deps, companyId, now);
+          } catch (error) {
+            console.error(`Nie sprawdzono uprawnień firmy ${companyId}`, error);
+          }
+        }
+        return { qualifications: count };
+      },
+      notifyCompanyDueQualifications: async (companyId) => ({ qualifications: await remindQualifications(deps, companyId, deps.clock.now()) }),
       sendCompanyDueReports: (companyId) => sendDueReportsOf(deps, companyId, deps.clock.now()),
       geocodeUnplacedLocations: async () => {
         const unplaced = await deps.db.transaction((sql) => locations.unplacedLocations(sql));
@@ -1311,6 +1412,47 @@ export function createRegistry(deps: RegistryDeps): Registry {
             return { member: team.normalizeAccount(person.fullName, input), personId: input.personId };
           }),
         addMember: (input) => addAccount(async () => ({ member: team.normalizeNewMember(input), personId: null })),
+        qualificationKinds: () => asMember((sql) => qualifications.qualificationKinds(sql)),
+        addQualificationKind: (input) => asWriter((sql, session) => qualifications.addQualificationKind(sql, session, input, deps.clock.now())),
+        peopleQualifications: () => asMember((sql) => qualifications.peopleQualifications(sql, deps.clock.now())),
+        personQualifications: (personId) => asMember((sql) => qualifications.personQualifications(sql, personId, deps.clock.now())),
+        addQualification: (input) => asWriter((sql, session) => qualifications.addQualification(sql, session, input, deps.clock.now())),
+        updateQualification: (qualificationId, changes) =>
+          asWriter((sql, session) => qualifications.updateQualification(sql, session, qualificationId, changes)),
+        deleteQualification: async (qualificationId) => {
+          const { fileKeys } = await asWriter((sql, session) => qualifications.deleteQualification(sql, session, qualificationId));
+          await removeFiles(deps.documents, fileKeys);
+        },
+        completeQualification: (input) =>
+          savingPhoto(deps.documents, (save) =>
+            retryOnReplay(() =>
+              asWriter(async (sql, session) => {
+                const { dueOn, file } = await qualifications.completeQualification(sql, session, input, deps.clock.now());
+                if (file) await save(file.key, file.blob);
+                return { dueOn };
+              }),
+            ),
+          ),
+        addQualificationDocument: (input) =>
+          savingPhoto(deps.documents, (save) =>
+            retryOnReplay(() =>
+              asWriter(async (sql, session) => {
+                const { documentId, file } = await qualifications.addQualificationDocument(sql, session, input, deps.clock.now());
+                if (file) await save(file.key, file.blob);
+                return { documentId };
+              }),
+            ),
+          ),
+        deleteQualificationDocument: async (documentId) => {
+          const { fileKeys } = await asWriter((sql, session) => qualifications.deleteQualificationDocument(sql, session, documentId));
+          await removeFiles(deps.documents, fileKeys);
+        },
+        qualificationDocument: async (documentId) => {
+          const document = await asMember((sql) => qualifications.visibleQualificationDocument(sql, documentId));
+          const file = document && (await deps.documents.read(document.key));
+          return file ? { file, fileName: document.fileName } : null;
+        },
+        upcomingQualifications: () => asMember((sql) => qualifications.upcomingQualifications(sql, deps.clock.now())),
         resetMemberPassword: (memberId) =>
           asWriter(async (sql, session) => {
             team.requireTeamManager(session);
@@ -1627,6 +1769,13 @@ async function remindDeadlines(deps: RegistryDeps, companyId: string, now: Date)
   const result = await deps.db.transaction((sql) => deadlineReminders.notifyDueDeadlines(sql, companyId, now));
   await sendPushCopies(deps, result.copies);
   return result.deadlines;
+}
+
+/** Przypomnienia o uprawnieniach jednej firmy w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę nowych. */
+async function remindQualifications(deps: RegistryDeps, companyId: string, now: Date): Promise<number> {
+  const result = await deps.db.transaction((sql) => qualificationReminders.notifyDueQualifications(sql, companyId, now));
+  await sendPushCopies(deps, result.copies);
+  return result.qualifications;
 }
 
 /** Raporty jednej firmy, na które przyszła pora. Każdy osobno: błąd jednego nie zabiera pozostałych. */

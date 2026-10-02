@@ -2,6 +2,7 @@ import type { DeadlineAt } from "./deadlines";
 import type { RegistryErrorCode } from "./errors";
 import type { Movement, RegisteredKind } from "./movements";
 import type { Sql } from "./ports";
+import type { NotifiedQualification } from "./qualifications";
 import type { FridayReport, ReportKind, WeeklyReport } from "./reports";
 
 /** Budowa albo pojazd w treści powiadomienia; `kind` nie ma we wpisach sprzed pojazdów, a te dotyczą budów. */
@@ -128,6 +129,16 @@ export interface RentedToolNotification {
   addedBy: string;
 }
 
+/**
+ * Przypomnienie o uprawnieniach ludzi 30 dni przed końcem ważności albo po nim: właściciel dostaje wszystkie z danego
+ * dnia w jednym wpisie, a osoba z kontem te, które są jej własne.
+ */
+export interface QualificationsNotification {
+  kind: "uprawnienia";
+  recipient: Recipient;
+  qualifications: NotifiedQualification[];
+}
+
 /** Powiadomienie dla użytkownika firmy. Trafia do jego dzwonka, a port powiadomień wysyła kopię. */
 export type Notification =
   | ToolsTakenNotification
@@ -139,7 +150,8 @@ export type Notification =
   | ReadOnlySoonNotification
   | ReadOnlyNotification
   | DeadlinesNotification
-  | RentedToolNotification;
+  | RentedToolNotification
+  | QualificationsNotification;
 
 /**
  * Powiadomienia, których kopię port powiadomień wysyła także e-mailem; pozostałe idą tylko do dzwonka i push.
@@ -202,7 +214,7 @@ export function reportKey(kind: ReportKind, day: string): string {
 
 /**
  * Klucz zdarzenia: to samo zdarzenie daje adresatowi najwyżej jedno powiadomienie w dzwonku. Zbiorcze (progi dni,
- * terminy) nie mają klucza, bo każde narzędzie (termin) wchodzi do nich raz, gdy zadanie dzienne je wykryje, a ręczne
+ * terminy, uprawnienia) nie mają klucza, bo każde narzędzie (termin, uprawnienie) wchodzi do nich raz, gdy zadanie dzienne je wykryje, a ręczne
  * włączenie trybu tylko do odczytu, bo powiadamia o nim samo przełączenie. Ostrzeżenia przed trybem są dwa
  * na każdy termin (tydzień i dzień przed), a przełączenie po terminie jedno.
  * W transakcji użytkownika ten sam klucz składa funkcja `app.deliver_notification`.
@@ -215,6 +227,7 @@ export function dedupeKey(notification: Notification): string | null {
       return `prog:${notification.tool.id}:${notification.since.toISOString()}`;
     case "progi_przekroczone":
     case "terminy":
+    case "uprawnienia":
       return null;
     case "ruch_odrzucony":
       return `odrzucony:${notification.rejectionId}`;

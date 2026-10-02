@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { formatDay } from "@/i18n/dates";
 import { type Clock, noGeocoder, type Notifier } from "@/registry/ports";
-import { createRegistry, DEMO_EMAIL_DOMAIN, type MemberRole, type RegisteredKind, type RegistryDeps } from "@/registry/registry";
+import { createRegistry, DEMO_EMAIL_DOMAIN, type MemberRole, type NewQualificationInput, type RegisteredKind, type RegistryDeps } from "@/registry/registry";
 
 /**
  * Z czego demo korzysta w Rejestrze; zegar i powiadomienia ma własne, a geokodowania nie ma wcale: mapa demo
@@ -173,7 +173,8 @@ const TOOLS: [key: string, prefix: Prefix, name: string, brand: string, model: s
  * Zakłada nową firmę demo „DemoBud” z zespołem, sprzętem, budowami, busami, serwisami i sześcioma tygodniami
  * historii (ruchy, zgłoszenia, alarm po progu dni, zaginięcie, serwis, korekta, zgłoszenia narzędzi, ruch
  * do wyjaśnienia, terminy przeglądów, kalibracji i gwarancji, sprzęt wynajęty z terminem zwrotu, także po terminie,
- * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu, osoby z brygad bez konta w kartotece Ludzie), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
+ * alarmy, przypomnienia i raporty w dzwonkach, stawki dzienne kosztu sprzętu, osoby z brygad bez konta w kartotece Ludzie,
+ * uprawnienia ludzi, w tym szkolenie BHP po terminie), a potem robi z niej obecne demo. Każdy wpis idzie przez Rejestr, więc dane są takie,
  * jakie zostawiłaby prawdziwa firma. `now`: chwila założenia; najnowsze ruchy są sprzed kilkudziesięciu minut. Poprzednie demo znika w całości; `purged`: ile firm demo usunięto.
  */
 export async function createDemoCompany(
@@ -202,7 +203,7 @@ export async function createDemoCompany(
   });
   /**
    * Zegar idzie do `when`, a po drodze firma dostaje to, co w tym czasie dałby jej harmonogram (`vercel.json`):
-   * codzienne sprawdzenie progów dni i terminów i, w ostatnich dwóch tygodniach, raporty. Dzwonek wygląda wtedy jak
+   * codzienne sprawdzenie progów dni, terminów i uprawnień i, w ostatnich dwóch tygodniach, raporty. Dzwonek wygląda wtedy jak
    * u firmy, która pracuje od tygodni. Tylko ta firma: zadania dla wszystkich firm (`notifyExceededThresholds`,
    * `notifyDueDeadlines`, `sendDueReports`) wysłałyby alarmy, przypomnienia i raporty klientom.
    */
@@ -212,6 +213,7 @@ export async function createDemoCompany(
       if (run.daily) {
         await registry.system().notifyCompanyExceededThresholds(company.companyId);
         await registry.system().notifyCompanyDueDeadlines(company.companyId);
+        await registry.system().notifyCompanyDueQualifications(company.companyId);
       }
       if (run.reports && now.getTime() - run.at.getTime() < REPORT_DAYS * DAY_MS) {
         await registry.system().sendCompanyDueReports(company.companyId);
@@ -277,6 +279,25 @@ export async function createDemoCompany(
   await deadline("apr3020", "przeglad", 45, 12);
   await deadline("te30", "gwarancja", 25);
   const { deadlineId: te30Inspection } = await deadline("te30", "przeglad", -14, 12);
+
+  // Uprawnienia ludzi: szkolenie BHP po terminie u pomocnika bez konta, badania pracownika za kilka dni, uprawnienia
+  // operatora (własny rodzaj firmy), UDT i SEP magazyniera i prawo jazdy kierownika.
+  const personIds = new Map((await owner.people()).map((person) => [person.fullName, person.personId]));
+  const { kindId: excavatorOperator } = await owner.addQualificationKind({ name: "Operator koparki" });
+  const qualification = (fullName: string, input: Omit<NewQualificationInput, "personId" | "dueOn">, days: number) =>
+    owner.addQualification({ personId: personIds.get(fullName)!, dueOn: dayFromNow(days), ...input });
+  await qualification("Zbigniew Kaczmarek", { kind: "szkolenie_bhp", cycleMonths: 12, note: "Szkolenie okresowe w ośrodku BHP-Serwis" }, -12);
+  await qualification("Zbigniew Kaczmarek", { kind: "badania_lekarskie", cycleMonths: 24 }, 210);
+  await qualification("Tadeusz Wróbel", { kind: "wlasny", customKindId: excavatorOperator, note: "Książka operatora, kl. III" }, 900);
+  await qualification("Tadeusz Wróbel", { kind: "badania_lekarskie", cycleMonths: 24 }, 18);
+  await qualification("Grzegorz Pietrzak", { kind: "badania_wysokosc", cycleMonths: 12 }, 140);
+  await qualification("Mykola Bondarenko", { kind: "szkolenie_bhp", cycleMonths: 12 }, 40);
+  await qualification("Jan Mazur", { kind: "badania_lekarskie", cycleMonths: 24 }, 9);
+  await qualification("Jan Mazur", { kind: "szkolenie_bhp", cycleMonths: 12 }, 300);
+  await qualification("Krzysztof Lewandowski", { kind: "udt", detail: "wózki jezdniowe podnośnikowe" }, 420);
+  await qualification("Krzysztof Lewandowski", { kind: "sep", detail: "E, grupa G1", cycleMonths: 60 }, 950);
+  await qualification("Marek Kowalczyk", { kind: "prawo_jazdy", detail: "C" }, 700);
+  await qualification("Paweł Dąbrowski", { kind: "pierwsza_pomoc", cycleMonths: 36 }, 25);
 
   await advanceTo(daysAgo(46, 10));
   const { base } = await owner.locations();

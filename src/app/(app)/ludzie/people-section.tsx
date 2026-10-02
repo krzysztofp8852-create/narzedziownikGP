@@ -51,6 +51,9 @@ export function PeopleSection({
               </span>
             </div>
             {person.note && <p className="muted member-email">{person.note}</p>}
+            <Link className="member-link" href={`/ludzie/${person.personId}`}>
+              {t("people.qualificationsLink")}
+            </Link>
             {person.account && <Login account={person.account} />}
             <Status person={person} />
             {person.active && (

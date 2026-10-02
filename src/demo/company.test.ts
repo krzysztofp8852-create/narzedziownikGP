@@ -114,6 +114,25 @@ describe("firma demo", () => {
     expect((await bed.registry.as(accounts[0].userId).subscription()).recorders.recorderCount).toBe(5);
   });
 
+  it("osoby mają badania, szkolenia i uprawnienia, w tym jedno po terminie; przypomnienia trafiają do właściciela i pracownika", async () => {
+    await demo();
+    const [owner, manager, , , , worker] = await bed.registry.system().demoAccounts();
+    const registry = bed.registry.as(owner.userId);
+
+    const upcoming = await registry.upcomingQualifications();
+    expect(upcoming.filter((qualification) => qualification.overdue).map((qualification) => [qualification.person.fullName, qualification.kind])).toEqual([
+      ["Zbigniew Kaczmarek", "szkolenie_bhp"],
+    ]);
+    expect(upcoming.filter((qualification) => !qualification.overdue).length).toBeGreaterThanOrEqual(2);
+    expect(await registry.qualificationKinds()).toEqual([expect.objectContaining({ name: "Operator koparki" })]);
+    expect((await registry.peopleQualifications()).filter((entry) => entry.qualifications.length > 0).length).toBeGreaterThanOrEqual(6);
+
+    const kinds = async (userId: string) => (await bed.registry.as(userId).bell()).entries.map((entry) => entry.notification.kind);
+    expect(await kinds(owner.userId)).toContain("uprawnienia");
+    expect(await kinds(worker.userId)).toContain("uprawnienia");
+    expect(await kinds(manager.userId)).not.toContain("uprawnienia");
+  });
+
   it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();

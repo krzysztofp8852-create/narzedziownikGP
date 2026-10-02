@@ -117,6 +117,7 @@ function reviveContent(raw: Record<string, unknown>): NotificationContent {
       return { ...content, since: new Date(content.since) };
     case "progi_przekroczone":
     case "terminy":
+    case "uprawnienia":
       return content;
     case "ruch_odrzucony":
       return { ...content, occurredAt: new Date(content.occurredAt) };

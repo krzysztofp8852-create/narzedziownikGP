@@ -24,12 +24,16 @@ Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłosz
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
 **Ludzie**:
-Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w menu. Prowadzi ją i ogląda właściciel; przy osobie widać, czy ma konto i jaką rolę.
+Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w menu. Prowadzi ją właściciel; przy osobie widać, czy ma konto i jaką rolę. Kierownik widzi w niej osoby z uprawnieniami, a magazynier i pracownik tylko własne uprawnienia („Moje uprawnienia”).
 _Avoid_: zespół, kadry, pracownicy (pracownik to rola)
 
 **Osoba**:
 Wpis w kartotece Ludzie: imię i nazwisko, notatka, aktywna albo nieaktywna i najwyżej jedno konto (konto ma jedną osobę). Osoba bez konta, np. robotnik bez telefonu, nie loguje się i nie zajmuje miejsca w pakiecie wdrożenia; konto zakłada się jej później bez drugiego wpisu. Nieaktywna (odeszła z firmy) znika z aktywnych, a jej historia zostaje; dezaktywacja osoby z kontem blokuje też konto.
 _Avoid_: użytkownik, członek zespołu, pracownik (to rola)
+
+**Uprawnienie**:
+Badanie, szkolenie albo uprawnienie osoby z datą „ważne do”: badania lekarskie okresowe, szkolenie BHP okresowe, badania do pracy na wysokości, SEP E/D, UDT (z urządzeniem), prawo jazdy (z kategorią), kurs pierwszej pomocy albo własny rodzaj firmy. Ma opcjonalny cykl w miesiącach, notatkę i dokumenty, a odnowienie przesuwa datę o cykl. Z badań lekarskich zapisujemy tylko datę, a orzeczenie widzi tylko właściciel. Wpisują je właściciel i kierownik i oni widzą wszystkie, a każdy widzi własne. Przypomina 30 dni przed końcem ważności i raz po: właścicielowi zbiorczo, osobie z kontem o własnych.
+_Avoid_: certyfikat, kwalifikacja, termin (to przy narzędziu), szkolenie (jako ogólne pojęcie)
 
 **Firma demo**:
 Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie, które znika w całości; co godzinę demo, w którym ktoś był i skończył oglądać, zastępuje świeże.

@@ -27,11 +27,15 @@ describe("menu pod trzema kreskami", () => {
     ]);
   });
 
-  it("kierownik i magazynier nie widzą naklejek, kartoteki Ludzie, dokumentów ani ustawień, ale mają samouczek", () => {
-    for (const role of ["kierownik", "magazynier"] as const) {
+  it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie", () => {
+    for (const [role, people] of [
+      ["kierownik", "Ludzie /ludzie"],
+      ["magazynier", "Moje uprawnienia /ludzie"],
+    ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
         ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
+        ["Ludzie", [people]],
         ["Firma", ["Samouczek /samouczek", "Wyloguj"]],
       ]);
     }
@@ -47,10 +51,11 @@ describe("menu pod trzema kreskami", () => {
     }
   });
 
-  it("pracownik nie ma samouczka, a wylogowanie zostaje", () => {
+  it("pracownik ma własne uprawnienia, nie ma samouczka, a wylogowanie zostaje", () => {
     expect(shown("pracownik")).toEqual([
       ["Sprzęt", ["Tablica /", "Terminy /terminy", "Historia /historia"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /#board-vehicles"]],
+      ["Ludzie", ["Moje uprawnienia /ludzie"]],
       ["Firma", ["Wyloguj"]],
     ]);
   });
