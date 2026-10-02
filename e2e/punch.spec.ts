@@ -103,7 +103,8 @@ test("pracownik bez zasięgu odbija wejście i wyjście skanerem programu: telef
   await context.setOffline(true);
   for (const step of ["wejście", "wyjście"]) {
     await page.getByRole("button", { name: "Odbij się" }).click();
-    await page.getByRole("button", { name: "Wyłącz aparat" }).click();
+    // Wyłączony aparat zostaje wyłączony przy następnym otwarciu skanera.
+    if (step === "wejście") await page.getByRole("button", { name: "Wyłącz aparat" }).click();
     await page.getByLabel("Kod z plakatu").fill(typedCode);
     await page.getByRole("button", { name: "Dalej" }).click();
     if (step === "wyjście") {
