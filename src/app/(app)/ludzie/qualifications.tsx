@@ -41,10 +41,13 @@ export function QualificationList({
   session,
   entry,
   customKinds,
+  emptyText = t("qualifications.empty"),
 }: {
   session: Session;
   entry: PersonQualifications;
   customKinds: CustomQualificationKind[];
+  /** Tekst pustej listy dla kogoś, kto nią nie zarządza; na „Moje uprawnienia” mówi do osoby, a nie o niej. */
+  emptyText?: string;
 }) {
   const writable = !session.company.readOnly && canManageQualifications(session);
   const { person, qualifications } = entry;
@@ -55,7 +58,7 @@ export function QualificationList({
       </h2>
       {!person.active && <p className="muted">{t("qualifications.inactive")}</p>}
       {qualifications.length === 0 ? (
-        <p className="empty">{writable && person.active ? t("qualifications.emptyManager") : t("qualifications.empty")}</p>
+        <p className="empty">{writable && person.active ? t("qualifications.emptyManager") : emptyText}</p>
       ) : (
         <ul className="deadlines">
           {qualifications.map((qualification) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
+import { type FormEvent, type ReactNode, startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { type MessageKey, t } from "@/i18n/t";
 import { withShrunkDocument } from "@/lib/shrink-photo";
 import {
@@ -36,7 +36,8 @@ export type DeadlineFormSubject = { toolId: string } | { vehicleId: string };
 
 /**
  * Formularz terminu: polecenie, narzędzie albo pojazd i termin w ukrytych polach, błąd i wynik pod polami. `confirm`
- * pyta przed wysłaniem (usunięcie), a `withFile` zmniejsza zdjęcie dokumentu przed wysłaniem.
+ * pyta przed wysłaniem (usunięcie), a `withFile` zmniejsza zdjęcie dokumentu przed wysłaniem. Z `resetOnDone` pola
+ * wracają po zapisie do wartości ze strony, a „Zapisano…” zostaje, bo formularz się nie przemontowuje.
  */
 function DeadlineForm({
   command,
@@ -46,6 +47,8 @@ function DeadlineForm({
   confirm,
   withFile = false,
   quiet = false,
+  resetOnDone = false,
+  values,
   children,
 }: {
   command: Command;
@@ -57,11 +60,27 @@ function DeadlineForm({
   withFile?: boolean;
   /** Mały przycisk bez odstępów, np. „Usuń” przy dokumencie. */
   quiet?: boolean;
+  /** Po zapisie pola wracają do wartości ze strony: puste przy nowym terminie, wykonaniu i dokumencie, zapisane przy zmianie. */
+  resetOnDone?: boolean;
+  /**
+   * Zapisane wartości pól (np. termin i cykl): gdy się zmienią, choćby po wykonaniu terminu innym formularzem, pola
+   * wracają do nich. React ustawia `value` pola przy montowaniu, więc nowy `defaultValue` sam go już nie zmienia.
+   */
+  values?: string;
   children?: ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<DeadlineFormState, FormData>(changeDeadline, {});
   const [preparing, setPreparing] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (resetOnDone && state.done && !state.error) formRef.current?.reset();
+  }, [resetOnDone, state]);
+
+  useEffect(() => {
+    if (values !== undefined) formRef.current?.reset();
+  }, [values]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,7 +93,7 @@ function DeadlineForm({
   const label = preparing ? t("deadlines.preparing") : pending ? t("deadlines.saving") : t(SUBMIT_LABELS[command]);
   const danger = command === "delete" || command === "deleteDocument";
   return (
-    <form onSubmit={onSubmit} className={quiet ? "deadline-inline-form" : "stack-form deadline-form"}>
+    <form ref={formRef} onSubmit={onSubmit} className={quiet ? "deadline-inline-form" : "stack-form deadline-form"}>
       <input type="hidden" name="command" value={command} />
       {"toolId" in subject ? (
         <input type="hidden" name="toolId" value={subject.toolId} />
@@ -201,9 +220,11 @@ function DocumentFields({ id, documents, required }: { id: string; documents: Do
 
 /** Nowy termin narzędzia albo pojazdu: rodzaje, których jeszcze nie ma (własnych pojazdu może być wiele). Tylko właściciel. */
 export function AddDeadlineForm({ subject, kinds }: { subject: DeadlineFormSubject; kinds: DeadlineKind[] }) {
-  const [kind, setKind] = useState<DeadlineKind>(kinds[0]);
+  const [chosen, setKind] = useState<DeadlineKind>(kinds[0]);
+  // Dodany rodzaj znika z listy: wtedy wybór wraca na pierwszy wolny.
+  const kind = kinds.includes(chosen) ? chosen : kinds[0];
   return (
-    <DeadlineForm command="add" subject={subject}>
+    <DeadlineForm command="add" subject={subject} resetOnDone>
       <div className="field">
         <label htmlFor="deadline-kind">{t("deadlines.kind")}</label>
         <select id="deadline-kind" name="kind" value={kind} onChange={(event) => setKind(event.target.value as DeadlineKind)}>
@@ -236,7 +257,13 @@ export function EditDeadlineForm({
   const id = `deadline-${deadline.id}`;
   return (
     <>
-      <DeadlineForm command="edit" subject={subject} deadlineId={deadline.id}>
+      <DeadlineForm
+        command="edit"
+        subject={subject}
+        deadlineId={deadline.id}
+        values={`${deadline.dueOn}:${deadline.cycleMonths}:${deadline.note}:${deadline.name}`}
+        resetOnDone
+      >
         {deadline.kind === "wlasny" && <NameField id={`${id}-name`} defaultValue={deadline.name} />}
         <DueOnField id={`${id}-due`} kind={deadline.kind} defaultValue={deadline.dueOn ?? undefined} />
         {!isDateOnlyKind(deadline.kind) && <CycleField id={`${id}-cycle`} defaultValue={deadline.cycleMonths} />}
@@ -271,7 +298,7 @@ export function CompleteDeadlineForm({
 }) {
   const id = `complete-${deadlineId}`;
   return (
-    <DeadlineForm command="complete" subject={subject} deadlineId={deadlineId} hidden={{ operationId }} withFile>
+    <DeadlineForm command="complete" subject={subject} deadlineId={deadlineId} hidden={{ operationId }} withFile resetOnDone>
       <div className="field">
         <label htmlFor={`${id}-day`}>{t("deadlines.doneOn")}</label>
         <input id={`${id}-day`} name="doneOn" type="date" required max={today} defaultValue={today} />
@@ -299,7 +326,7 @@ export function AttachDocumentForm({
   documents: DocumentChoice;
 }) {
   return (
-    <DeadlineForm command="attach" subject={subject} deadlineId={deadlineId} hidden={{ operationId }} withFile>
+    <DeadlineForm command="attach" subject={subject} deadlineId={deadlineId} hidden={{ operationId }} withFile resetOnDone>
       <DocumentFields id={`attach-${deadlineId}`} documents={documents} required />
     </DeadlineForm>
   );

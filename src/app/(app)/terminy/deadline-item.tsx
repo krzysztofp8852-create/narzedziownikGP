@@ -78,7 +78,7 @@ export function DeadlineItem({
   const completable =
     writable && canCompleteDeadlines(session, subjectKind) && !isDateOnlyKind(deadline.kind) && deadline.dueOn !== null;
   const attachable = writable && documents.kinds.length > 0;
-  // Po zapisie strona dostaje nowe identyfikatory operacji, a nowy `key` czyści formularz.
+  // Po zapisie strona dostaje nowe identyfikatory operacji; formularz zostaje ten sam, żeby pokazać „Zapisano…”.
   const operationIds = { complete: randomUUID(), attach: randomUUID() };
   const facts = [
     deadline.cycleMonths && t("deadlines.cycle", { months: deadline.cycleMonths }),
@@ -118,7 +118,6 @@ export function DeadlineItem({
         <details className="panel">
           <summary className="panel-summary">{isPolicyKind(deadline.kind) ? t("deadlines.renew") : t("deadlines.complete")}</summary>
           <CompleteDeadlineForm
-            key={operationIds.complete}
             subject={subject}
             deadlineId={deadline.id}
             operationId={operationIds.complete}
@@ -132,7 +131,6 @@ export function DeadlineItem({
         <details className="panel">
           <summary className="panel-summary">{t("deadlines.attach")}</summary>
           <AttachDocumentForm
-            key={operationIds.attach}
             subject={subject}
             deadlineId={deadline.id}
             operationId={operationIds.attach}
@@ -143,11 +141,7 @@ export function DeadlineItem({
       {editable && (
         <details className="panel">
           <summary className="panel-summary">{returnDate ? t("deadlines.extendRental") : t("deadlines.edit")}</summary>
-          <EditDeadlineForm
-            key={`${deadline.dueOn}:${deadline.cycleMonths}:${deadline.note}:${deadline.name}`}
-            subject={subject}
-            deadline={deadline}
-          />
+          <EditDeadlineForm subject={subject} deadline={deadline} />
         </details>
       )}
     </li>

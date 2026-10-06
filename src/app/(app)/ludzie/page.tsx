@@ -26,7 +26,11 @@ export default async function PeoplePage(props: PageProps<"/ludzie">) {
         <Back />
         <h1 className="display page-title">{t("qualifications.myTitle")}</h1>
         <p className="muted">{t("qualifications.myIntro")}</p>
-        {own ? <QualificationList session={session} entry={own} customKinds={customKinds} /> : <p className="empty">{t("qualifications.myEmpty")}</p>}
+        {own ? (
+          <QualificationList session={session} entry={own} customKinds={customKinds} emptyText={t("qualifications.myEmpty")} />
+        ) : (
+          <p className="empty">{t("qualifications.myEmpty")}</p>
+        )}
       </>
     );
   }

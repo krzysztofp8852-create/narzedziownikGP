@@ -40,8 +40,7 @@ export function ToolDeadlines({ session, card }: { session: Session; card: ToolC
       {owner && missingKinds.length > 0 && (
         <details className="panel">
           <summary className="panel-summary">{t("deadlines.add")}</summary>
-          {/* Po dodaniu zostaje mniej rodzajów, a nowy `key` czyści formularz. */}
-          <AddDeadlineForm key={missingKinds.join()} subject={{ toolId: card.id }} kinds={missingKinds} />
+          <AddDeadlineForm subject={{ toolId: card.id }} kinds={missingKinds} />
         </details>
       )}
     </section>

@@ -51,7 +51,7 @@ export async function VehicleDeadlinesPage({ id }: { id: string }) {
         {writable && canManageLocations(session) && (
           <details className="panel">
             <summary className="panel-summary">{t("locationPage.vehicleDataEdit")}</summary>
-            <VehicleDataForm key={`${registrationNumber}:${vin}`} vehicle={{ id, registrationNumber, vin }} />
+            <VehicleDataForm vehicle={{ id, registrationNumber, vin }} />
           </details>
         )}
       </section>
@@ -76,8 +76,7 @@ export async function VehicleDeadlinesPage({ id }: { id: string }) {
           <>
             <details className="panel">
               <summary className="panel-summary">{t("deadlines.add")}</summary>
-              {/* Po dodaniu zostaje mniej rodzajów, a nowy `key` czyści formularz. */}
-              <AddDeadlineForm key={`${missingKinds.join()}:${deadlines.length}`} subject={{ vehicleId: id }} kinds={missingKinds} />
+              <AddDeadlineForm subject={{ vehicleId: id }} kinds={missingKinds} />
             </details>
             <p className="muted">{t("locationPage.vehicleDocumentsHint")}</p>
           </>

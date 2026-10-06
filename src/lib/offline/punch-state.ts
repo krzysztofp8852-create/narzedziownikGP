@@ -75,7 +75,7 @@ export function offlinePlaceName(state: OwnPunchState, code: string): string | n
 /** Strona odbicia otwarta z siecią: serwer mówi, gdzie osoba jest odbita teraz. */
 export function afterPreview(state: OwnPunchState, code: string, preview: PunchPreview, at: Date): OwnPunchState {
   const current = preview.action === "wejscie" ? null : { code: preview.action === "wyjscie" ? code : null, day: formatDay(at) };
-  return { current, places: withPlace(state, code, preview.place) };
+  return { ...state, current, places: withPlace(state, code, preview.place) };
 }
 
 /** Odbicie zapisane z siecią na plakacie `code`. */
@@ -85,7 +85,7 @@ export function afterOutcome(
   outcome: { action: PunchAction; place: PunchPlace },
   at: Date,
 ): OwnPunchState {
-  return { current: outcome.action === "wyjscie" ? null : { code, day: formatDay(at) }, places: withPlace(state, code, outcome.place) };
+  return { ...state, current: outcome.action === "wyjscie" ? null : { code, day: formatDay(at) }, places: withPlace(state, code, outcome.place) };
 }
 
 /** Odbicie zapisane w kolejce bez sieci. */

@@ -21,6 +21,11 @@ export function NewToolForm(props: {
 }) {
   const [operationId, setOperationId] = useState(props.operationId);
   const [added, setAdded] = useState<ToolFormState["added"]>();
+  // Po zapisie formularz dostaje nowy `key`, a kategorie ze strony bywają sprzed dodanych w nim przed chwilą.
+  const [addedCategories, setAddedCategories] = useState<Category[]>([]);
+  const categories = [...props.categories, ...addedCategories.filter((category) => !props.categories.some(({ id }) => id === category.id))].sort(
+    (a, b) => a.name.localeCompare(b.name, "pl"),
+  );
 
   async function action(prev: ToolFormState, formData: FormData) {
     const result = await addTool(prev, formData);
@@ -57,7 +62,8 @@ export function NewToolForm(props: {
       <ToolForm
         key={operationId}
         action={action}
-        categories={props.categories}
+        categories={categories}
+        onCategoryAdded={(category) => setAddedCategories((current) => [...current, category])}
         showValue={props.showValue}
         operationId={operationId}
         submitLabel={t("tools.submitAdd")}
