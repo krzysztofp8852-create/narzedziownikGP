@@ -48,6 +48,7 @@ function DeadlineForm({
   withFile = false,
   quiet = false,
   resetOnDone = false,
+  values,
   children,
 }: {
   command: Command;
@@ -61,6 +62,11 @@ function DeadlineForm({
   quiet?: boolean;
   /** Po zapisie pola wracają do wartości ze strony: puste przy nowym terminie, wykonaniu i dokumencie, zapisane przy zmianie. */
   resetOnDone?: boolean;
+  /**
+   * Zapisane wartości pól (np. termin i cykl): gdy się zmienią, choćby po wykonaniu terminu innym formularzem, pola
+   * wracają do nich. React ustawia `value` pola przy montowaniu, więc nowy `defaultValue` sam go już nie zmienia.
+   */
+  values?: string;
   children?: ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<DeadlineFormState, FormData>(changeDeadline, {});
@@ -71,6 +77,10 @@ function DeadlineForm({
   useEffect(() => {
     if (resetOnDone && state.done && !state.error) formRef.current?.reset();
   }, [resetOnDone, state]);
+
+  useEffect(() => {
+    if (values !== undefined) formRef.current?.reset();
+  }, [values]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -247,7 +257,13 @@ export function EditDeadlineForm({
   const id = `deadline-${deadline.id}`;
   return (
     <>
-      <DeadlineForm command="edit" subject={subject} deadlineId={deadline.id} resetOnDone>
+      <DeadlineForm
+        command="edit"
+        subject={subject}
+        deadlineId={deadline.id}
+        values={`${deadline.dueOn}:${deadline.cycleMonths}:${deadline.note}:${deadline.name}`}
+        resetOnDone
+      >
         {deadline.kind === "wlasny" && <NameField id={`${id}-name`} defaultValue={deadline.name} />}
         <DueOnField id={`${id}-due`} kind={deadline.kind} defaultValue={deadline.dueOn ?? undefined} />
         {!isDateOnlyKind(deadline.kind) && <CycleField id={`${id}-cycle`} defaultValue={deadline.cycleMonths} />}
