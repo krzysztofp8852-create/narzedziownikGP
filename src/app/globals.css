@@ -3385,6 +3385,30 @@ a.tool-row:hover .tool-row-name {
   }
 }
 
+/* Moduły pod hasłem: skróty do ich opisów niżej. */
+.landing-modules {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.landing-modules a {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.92rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.landing-modules a:hover {
+  border-color: var(--brand-ink);
+}
+
 /* Karta tablicy wchodzi na mapę jak dymek do pinezki. */
 .landing-preview {
   position: relative;
@@ -3510,8 +3534,18 @@ a.tool-row:hover .tool-row-name {
   border-top: 2px solid var(--brand-ink);
 }
 
-.landing-feature-group > h3 {
+.landing-feature-head {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.landing-feature-head h3 {
   font-size: 1.6rem;
+}
+
+.landing-feature-head p {
+  color: var(--text-muted);
 }
 
 .landing-feature-group ul {
@@ -3551,7 +3585,7 @@ a.tool-row:hover .tool-row-name {
     gap: 32px;
   }
 
-  .landing-feature-group > h3 {
+  .landing-feature-head {
     position: sticky;
     top: 24px;
     align-self: start;

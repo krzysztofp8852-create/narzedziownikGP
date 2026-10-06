@@ -35,14 +35,33 @@ export const metadata: Metadata = {
 /** Wąski krój nagłówków jak na tablicach budowy; tylko na tej stronie. */
 const display = Barlow_Condensed({ variable: "--font-display", subsets: ["latin", "latin-ext"], weight: ["600", "700"] });
 
+/** Moduły programu (ADR 0027), wszystkie w cenie abonamentu; ewidencja sprzętu to jeden z nich. */
 const FEATURE_GROUPS = [
-  { id: "watch", features: ["alarms", "reports", "value"] },
-  { id: "field", features: ["voice", "offline", "stickers", "places"] },
-  { id: "team", features: ["workers", "issues", "import", "chat"] },
+  { id: "tools", features: ["stickers", "places", "voice", "offline", "alarms", "deadlines", "rented", "import"] },
+  { id: "costs", features: ["dailyRate", "siteCosts", "costSummary", "value"] },
+  { id: "time", features: ["poster", "location", "crew", "forgotten", "siteHours"] },
+  { id: "people", features: ["peopleList", "certificates", "workers"] },
+  { id: "fleet", features: ["vehicleData", "vehicleDeadlines"] },
+  { id: "company", features: ["reports", "map", "issues", "chat"] },
 ] as const;
 const STEPS = ["import", "stickers", "movements", "alarms"] as const;
 /** Pytania, które właściciel firmy wpisuje w wyszukiwarkę, zanim kupi program. */
-const FAQ = ["what", "install", "stickers", "offline", "deadlines", "roles", "import", "price", "data", "demo"] as const;
+const FAQ = [
+  "what",
+  "install",
+  "hours",
+  "tracking",
+  "certificates",
+  "costs",
+  "deadlines",
+  "stickers",
+  "offline",
+  "roles",
+  "import",
+  "price",
+  "data",
+  "demo",
+] as const;
 
 /** Pinezki z podpisem; alarmowa pulsuje. */
 const PIN_LABELS = { rataje: "landing.hero.pins.rataje", tarasy: "landing.hero.pins.tarasy", polna: "landing.hero.pins.polna" } as const;
@@ -94,29 +113,29 @@ function HeroMap() {
   );
 }
 
+/** Wiersz przykładu: kod albo numer rejestracyjny, nazwa, miejsce, dopisek i jego odcień jak na tablicy. */
+const PREVIEW_TAGS: Record<string, string> = { alarm: "tag tag-alarm", rented: "tag tag-rented", done: "tag tag-done" };
+
+/** Po jednym przykładzie z modułów: sprzęt ponad próg dni, sprzęt wynajęty, odbicie i termin pojazdu. */
 function BoardPreview() {
   const rows = lines(t("landing.preview.rows")).map((row) => row.split("|"));
   return (
     <figure className="landing-preview">
       <div className="landing-preview-total">
-        <span className="muted">{t("landing.preview.outside")}</span>
-        <strong>{formatMoney(48300)}</strong>
+        <span className="muted">{t("landing.preview.cost")}</span>
+        <strong>{formatMoney(12840)}</strong>
       </div>
       <ul>
-        {rows.map(([code, name, place, days], index) => {
-          // Pierwszy wiersz przykładu stoi na budowie ponad próg dni.
-          const alarm = index === 0;
-          return (
-            <li key={code}>
-              <span className="plate">{code}</span>
-              <span className="landing-preview-tool">
-                <strong>{name}</strong>
-                <span className="muted">{place}</span>
-              </span>
-              <span className={alarm ? "tag tag-alarm" : "tag"}>{alarm ? `${days}, ${t("landing.preview.alarm")}` : days}</span>
-            </li>
-          );
-        })}
+        {rows.map(([code, name, place, tag, tone]) => (
+          <li key={code}>
+            <span className="plate">{code}</span>
+            <span className="landing-preview-tool">
+              <strong>{name}</strong>
+              <span className="muted">{place}</span>
+            </span>
+            <span className={PREVIEW_TAGS[tone] ?? "tag"}>{tag}</span>
+          </li>
+        ))}
       </ul>
       <figcaption className="muted">{t("landing.preview.label")}</figcaption>
     </figure>
@@ -175,6 +194,13 @@ export default function LandingPage() {
               {t("landing.hero.headingLead")} <span>{t("landing.hero.headingRest")}</span>
             </h1>
             <p className="landing-lead">{t("landing.hero.lead")}</p>
+            <ul className="landing-modules" aria-label={t("landing.hero.modules")}>
+              {FEATURE_GROUPS.map((group) => (
+                <li key={group.id}>
+                  <a href={`#modul-${group.id}`}>{t(`landing.features.groups.${group.id}.title`)}</a>
+                </li>
+              ))}
+            </ul>
             <div className="landing-actions">
               <Link href="/demo" className="button">
                 {t("landing.hero.demo")}
@@ -194,9 +220,13 @@ export default function LandingPage() {
           <h2 id="funkcje" className="landing-section-title">
             {t("landing.features.title")}
           </h2>
+          <p className="landing-lead">{t("landing.features.lead")}</p>
           {FEATURE_GROUPS.map((group) => (
-            <div key={group.id} className="landing-feature-group">
-              <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
+            <div key={group.id} id={`modul-${group.id}`} className="landing-feature-group">
+              <div className="landing-feature-head">
+                <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
+                <p>{t(`landing.features.groups.${group.id}.text`)}</p>
+              </div>
               <ul>
                 {group.features.map((feature, index) => (
                   <li key={feature}>
@@ -257,6 +287,7 @@ export default function LandingPage() {
                 <p className="landing-plan-limit">{plan.limit}</p>
                 <Price price={plan.price} period={plan.period} />
                 <p className="muted">{t("landing.pricing.accounts")}</p>
+                <p className="muted">{t("landing.pricing.modules")}</p>
               </li>
             ))}
           </ul>

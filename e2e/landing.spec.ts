@@ -3,12 +3,16 @@ import { expect, test } from "@playwright/test";
 test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem, kontaktem i wejściem do demo", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Wiesz, gdzie jest każde narzędzie, a system sam mówi, co leży za długo poza bazą");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cała budowa w telefonie: sprzęt, ludzie, godziny, koszty i pojazdy");
 
   // Strona o programie trafia do wyszukiwarki i ma podgląd linku, a strony aplikacji nie.
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "index, follow");
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/og\.png$/);
 
+  // Ewidencja sprzętu to jeden z modułów; skrót pod hasłem prowadzi do opisu modułu.
+  await page.getByRole("list", { name: "Moduły programu" }).getByRole("link", { name: "Odbijanie i czas na budowie" }).click();
+  await expect(page).toHaveURL(/#modul-time$/);
+  await expect(page.getByRole("heading", { name: "Plakat budowy z kodem QR" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Czat z supportem w aplikacji" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Pomoc zawsze pod ręką" })).toBeVisible();
 
@@ -16,6 +20,7 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   const pricing = page.getByRole("region", { name: "Cennik" });
   await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("do 150 narzędzi");
   await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("300 zł netto za rok");
+  await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("Wszystkie moduły w cenie");
   await expect(pricing.getByRole("listitem", { name: "Duży" })).toContainText("1 000 zł netto za rok");
   await expect(pricing.getByRole("listitem", { name: "Indywidualny" })).toContainText("ponad 1000 narzędzi");
   // Wdrożenie według liczby osób zapisujących ruchy, właściciel też się liczy.
@@ -28,8 +33,8 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   // Pytania, które wpisuje się w wyszukiwarkę; cena w odpowiedzi z tego samego cennika.
   await page.getByRole("link", { name: "Pytania" }).click();
   const faq = page.getByRole("region", { name: "Pytania i odpowiedzi" });
-  await expect(faq.getByRole("term")).toHaveCount(10);
-  await expect(faq).toContainText("do 150 narzędzi kosztuje 300 zł netto za rok");
+  await expect(faq.getByRole("term")).toHaveCount(14);
+  await expect(faq).toContainText("do 150 narzędzi kosztuje 300 zł netto za rok, ze wszystkimi modułami");
   await expect(faq).toContainText("wdrożenie ze szkoleniem, od 3 000 zł netto");
 
   const contact = page.getByRole("region", { name: "Porozmawiajmy" });

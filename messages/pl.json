@@ -3,7 +3,7 @@
     "name": "NarzędziownikGP",
     "nameLead": "Narzędziownik",
     "nameMark": "GP",
-    "description": "Ewidencja i monitorowanie narzędzi dla firm budowlanych",
+    "description": "Zarządzanie budową dla firm budowlanych: sprzęt, ludzie, czas na budowie, koszty i flota",
     "vendor": "GP Engineering"
   },
   "defaults": {
@@ -1800,82 +1800,161 @@
     "contactEmail": "Napisz:"
   },
   "landing": {
-    "title": "NarzędziownikGP: ewidencja narzędzi dla firm budowlanych",
-    "description": "Wiesz, gdzie jest każde narzędzie, a system sam mówi, co leży za długo poza bazą. Naklejki QR, ruchy z telefonu, alarmy i raporty dla małej firmy budowlanej.",
+    "title": "NarzędziownikGP: zarządzanie budową i ewidencja narzędzi",
+    "description": "Program do zarządzania budową dla firmy budowlanej: narzędzia z kodami QR, czas na budowie, uprawnienia ludzi, koszty sprzętu i terminy floty.",
     "signIn": "Zaloguj się",
     "hero": {
-      "headingLead": "Wiesz, gdzie jest każde narzędzie,",
-      "headingRest": "a system sam mówi, co leży za długo poza bazą",
-      "lead": "Ewidencja sprzętu dla małej firmy budowlanej: baza, budowy, pojazdy i serwisy w jednym miejscu, w telefonie kierownika.",
+      "headingLead": "Cała budowa w telefonie:",
+      "headingRest": "sprzęt, ludzie, godziny, koszty i pojazdy",
+      "lead": "Program do zarządzania budową dla firmy budowlanej. Wiesz, gdzie jest każde narzędzie, kto był na której budowie i ile kosztował ją sprzęt, a program sam przypomina o przeglądach, badaniach i OC.",
+      "modules": "Moduły programu",
       "demo": "Zobacz demo",
       "pricing": "Cennik",
       "pins": {
         "rataje": "Budowa Rataje · 23 dni",
-        "tarasy": "Osiedle Tarasy · 18 narzędzi",
+        "tarasy": "Tarasy · 7 osób na budowie",
         "polna": "Budowa Polna · 9 narzędzi"
       }
     },
     "preview": {
-      "label": "Przykład z tablicy właściciela",
-      "outside": "Poza bazą",
-      "rows": "H-03|Młot Hilti|Budowa Rataje|23 dni\nN-01|Niwelator Bosch|Bus brygady 2|9 dni\nS-07|Szlifierka Makita|Serwis Narzędzia-Pol|4 dni",
-      "alarm": "za długo"
+      "label": "Przykład: co dziś widzi właściciel",
+      "cost": "Koszt sprzętu w miesiącu",
+      "rows": "H-03|Młot Hilti|Budowa Rataje|23 dni, za długo|alarm\nR-12|Rusztowanie Layher|Wynajęte, Budowa Polna|zwrot jutro|rented\nJK|Jan Kowalski|Odbity na Osiedlu Tarasy|od 6:58|done\nPO 4K21|Bus brygady 2|Termin pojazdu|OC za 12 dni|"
     },
     "features": {
-      "title": "Co dostajesz",
+      "title": "Moduły w jednym programie",
+      "lead": "Każdy moduł jest w cenie abonamentu i działa od pierwszego dnia, także w demo. Nie kupujesz dodatków ani osobnych aplikacji.",
       "groups": {
-        "watch": {
+        "tools": {
+          "title": "Sprzęt i narzędzia",
+          "code": "S",
+          "text": "Gdzie jest każde narzędzie, od kiedy i kto za nie odpowiada."
+        },
+        "costs": {
+          "title": "Koszty sprzętu",
+          "code": "K",
+          "text": "Ile sprzętu zjadła budowa, w złotówkach."
+        },
+        "time": {
+          "title": "Odbijanie i czas na budowie",
+          "code": "O",
+          "text": "Kto był na której budowie i ile godzin."
+        },
+        "people": {
+          "title": "Ludzie i uprawnienia",
+          "code": "L",
+          "text": "Cała brygada z badaniami, BHP i uprawnieniami."
+        },
+        "fleet": {
+          "title": "Pojazdy",
+          "code": "P",
+          "text": "Bus brygady i osobówki z terminami, polisami i dokumentami."
+        },
+        "company": {
           "title": "Pilnuje za Ciebie",
-          "code": "P"
-        },
-        "field": {
-          "title": "Działa na budowie",
-          "code": "B"
-        },
-        "team": {
-          "title": "Cała firma w jednym miejscu",
-          "code": "F"
+          "code": "F",
+          "text": "Raporty, mapa budów, zgłoszenia i pomoc."
         }
-      },
-      "alarms": {
-        "title": "Alarm po progu dni",
-        "text": "Ustalasz, ile dni sprzęt może stać na budowie. Po tym czasie narzędzie świeci na czerwono na tablicy, a Ty dostajesz powiadomienie."
-      },
-      "reports": {
-        "title": "Raport w piątek i w poniedziałek",
-        "text": "W piątek o 16:00 lista sprzętu poza bazą przed weekendem. W poniedziałek o 7:00 podsumowanie tygodnia z terminami przeglądów i kalibracji na najbliższy miesiąc."
-      },
-      "value": {
-        "title": "Wartość sprzętu poza bazą w zł",
-        "text": "Widzisz, ile pieniędzy w sprzęcie jest teraz na budowach i pojazdach. Kwoty widzi tylko właściciel."
-      },
-      "voice": {
-        "title": "Wpis głosem i tekstem",
-        "text": "Kierownik mówi „biorę dwie szlifierki na Rataje”, a system przygotowuje propozycję ruchu do zatwierdzenia. Bez szukania po listach."
-      },
-      "offline": {
-        "title": "Działa bez zasięgu",
-        "text": "Ruch zapisany w piwnicy albo w polu wyśle się sam, gdy wróci sieć. Ostatni stan tablicy widać też bez internetu."
       },
       "stickers": {
         "title": "Naklejki QR",
         "text": "Drukujesz naklejki z kodami na zwykłych arkuszach. Skan telefonem otwiera kartę narzędzia albo dodaje je do wydania."
       },
       "places": {
-        "title": "Pojazdy i serwisy jako lokalizacje",
+        "title": "Baza, budowy, pojazdy i serwisy",
         "text": "Sprzęt na busie brygady albo w naprawie nie znika z oczu. Wiesz, który serwis ma szlifierkę i od kiedy."
       },
-      "workers": {
-        "title": "Konta pracowników bez e-maila",
-        "text": "Pracownik loguje się nazwą użytkownika, którą mu nadasz. Sprawdza, gdzie jest sprzęt, i zgłasza problemy, ale niczego nie przesunie."
+      "voice": {
+        "title": "Wpis głosem i tekstem",
+        "text": "Kierownik mówi „biorę dwie szlifierki na Rataje”, a program przygotowuje propozycję ruchu do zatwierdzenia. Głosem zapytasz też, gdzie jest niwelator."
       },
-      "issues": {
-        "title": "Zgłoszenia uszkodzeń",
-        "text": "Pracownik zgłasza uszkodzenie albo brak ze zdjęciem z telefonu. Narzędzie dostaje znak „uszkodzone”, a Ty wątek do ustaleń."
+      "offline": {
+        "title": "Działa bez zasięgu",
+        "text": "Ruch zapisany w piwnicy albo w polu wyśle się sam, gdy wróci sieć. Ostatni stan tablicy widać też bez internetu."
+      },
+      "alarms": {
+        "title": "Alarm po progu dni",
+        "text": "Ustalasz, ile dni sprzęt może stać na budowie. Po tym czasie narzędzie świeci na czerwono na tablicy, a Ty dostajesz powiadomienie."
+      },
+      "deadlines": {
+        "title": "Przeglądy, kalibracje i gwarancje",
+        "text": "Terminy przeglądu, kalibracji, badania UDT i końca gwarancji z cyklem w miesiącach, świadectwem albo protokołem i przypomnieniem tydzień wcześniej."
+      },
+      "rented": {
+        "title": "Sprzęt wynajęty",
+        "text": "Kierownik dopisuje sprzęt z wypożyczalni od ręki, ze stawką z umowy i terminem zwrotu. Dzień przed zwrotem przychodzi przypomnienie, więc nie przepłacasz za zapomniane doby."
       },
       "import": {
         "title": "Import z Excela",
         "text": "Masz listę sprzętu w arkuszu? Wczytujesz ją raz i narzędzia są w ewidencji, z kodami i wartościami."
+      },
+      "dailyRate": {
+        "title": "Stawka dzienna",
+        "text": "Ustawiasz raz procent wartości narzędzia na dzień, z wyjątkami dla kategorii albo kwotą przy narzędziu. Pierwsza stawka liczy się wstecz przez całą historię ruchów."
+      },
+      "siteCosts": {
+        "title": "Koszt sprzętu budowy i pojazdu",
+        "text": "Zakładka „Koszty” przy budowie i pojeździe: dni × stawka za całą budowę, miesiąc albo własny zakres. Każda rozpoczęta doba liczy się jak w wypożyczalni."
+      },
+      "costSummary": {
+        "title": "Zestawienie kosztów z eksportem",
+        "text": "Wszystkie budowy i pojazdy obok siebie za wybrany okres. Eksport do Excela dla inwestora albo księgowej."
+      },
+      "value": {
+        "title": "Wartość sprzętu poza bazą",
+        "text": "Widzisz, ile pieniędzy w sprzęcie jest teraz na budowach i pojazdach. Kwoty widzi tylko właściciel, a kierownik koszty swoich budów, jeśli mu pozwolisz."
+      },
+      "poster": {
+        "title": "Plakat budowy z kodem QR",
+        "text": "Drukujesz plakat i wieszasz go przy wejściu albo kontenerze. Skan zapisuje wejście, a przy wyjściu albo na innej budowie zamyka pobyt."
+      },
+      "location": {
+        "title": "Położenie tylko w chwili skanu",
+        "text": "Program sprawdza, czy telefon jest w promieniu budowy, i zapisuje tylko odległość. Zdjęcie plakatu wysłane z domu nie wystarczy, a nikt nie jest śledzony w tle."
+      },
+      "crew": {
+        "title": "Brygada bez telefonów",
+        "text": "Kierownik po skanie odbija też osoby z kartoteki, które nie mają telefonu albo konta. Przy odbiciu widać, kto je zapisał."
+      },
+      "forgotten": {
+        "title": "Bez zasięgu i zapomniane wyjścia",
+        "text": "Skan bez sieci czeka w telefonie z prawdziwą godziną. Od 18:00 przychodzi przypomnienie o wyjściu, a odbicia do wyjaśnienia trafiają do kierownika."
+      },
+      "siteHours": {
+        "title": "Czas na budowie z eksportem",
+        "text": "Zestawienie miesięczne: kto, na której budowie i ile godzin, z eksportem do Excela. Pracownik widzi własne godziny."
+      },
+      "peopleList": {
+        "title": "Kartoteka Ludzie",
+        "text": "Wszyscy w firmie na jednej liście, także osoby bez konta i telefonu. Osoba bez konta nic nie kosztuje, a konto założysz jej później bez drugiego wpisu."
+      },
+      "certificates": {
+        "title": "Badania, BHP i uprawnienia",
+        "text": "Badania okresowe, szkolenie BHP, praca na wysokości, SEP, UDT, prawo jazdy i własne rodzaje, z datą ważności, dokumentem i przypomnieniem 30 dni wcześniej."
+      },
+      "workers": {
+        "title": "Konta pracowników bez e-maila",
+        "text": "Pracownik loguje się nazwą użytkownika, którą mu nadasz. Odbija się na budowie, sprawdza, gdzie jest sprzęt, i zgłasza problemy, ale niczego nie przesunie."
+      },
+      "vehicleData": {
+        "title": "Dane pojazdu",
+        "text": "Numer rejestracyjny i VIN przy każdym pojeździe floty, także osobówce bez sprzętu. Pojazd jest też miejscem na sprzęt z własnym kierownikiem."
+      },
+      "vehicleDeadlines": {
+        "title": "OC, AC, przegląd i tachograf",
+        "text": "Terminy pojazdu z polisą i dowodem rejestracyjnym. Przypomnienie 30 dni przed końcem OC i AC, a odnowienie przed czasem liczy się od końca starej polisy."
+      },
+      "reports": {
+        "title": "Raport w piątek i w poniedziałek",
+        "text": "W piątek o 16:00 lista sprzętu poza bazą przed weekendem. W poniedziałek o 7:00 podsumowanie tygodnia z terminami sprzętu i uprawnień ludzi na najbliższy miesiąc."
+      },
+      "map": {
+        "title": "Mapa budów",
+        "text": "Baza i aktywne budowy na Mapach Google. Widzisz, gdzie firma teraz pracuje."
+      },
+      "issues": {
+        "title": "Zgłoszenia uszkodzeń i braków",
+        "text": "Pracownik zgłasza uszkodzenie albo brak ze zdjęciem z telefonu. Narzędzie dostaje znak na tablicy, a Ty wątek do ustaleń."
       },
       "chat": {
         "title": "Czat z supportem w aplikacji",
@@ -1895,31 +1974,32 @@
     "steps": {
       "title": "Jak to działa",
       "import": {
-        "title": "Import z Excela",
-        "text": "Wczytujesz swoją listę sprzętu. Każde narzędzie dostaje kod, np. H-03."
+        "title": "Wdrożenie i import",
+        "text": "Wczytujesz listę sprzętu z Excela i dopisujesz ludzi, budowy i pojazdy. Szkolimy Ciebie i zespół."
       },
       "stickers": {
-        "title": "Naklejki QR",
-        "text": "Drukujesz naklejki i przyklejasz je na sprzęt."
+        "title": "Naklejki i plakaty",
+        "text": "Naklejki QR idą na sprzęt, a plakat budowy na kontener przy wejściu."
       },
       "movements": {
-        "title": "Ruchy z telefonu",
-        "text": "Kierownicy i magazynier zapisują wydania i zwroty skanem, głosem albo z listy."
+        "title": "Telefon na budowie",
+        "text": "Kierownicy zapisują wydania i zwroty skanem, głosem albo z listy, a ludzie odbijają się skanem plakatu."
       },
       "alarms": {
-        "title": "Alarmy i raporty",
-        "text": "System sam pilnuje, co stoi za długo, i co tydzień wysyła podsumowanie."
+        "title": "Program pilnuje",
+        "text": "Alarmy, przypomnienia o terminach i uprawnieniach, koszty sprzętu i godziny na budowach liczą się same."
       }
     },
     "pricing": {
       "title": "Cennik",
-      "lead": "Płacisz za liczbę narzędzi w ewidencji. Kont dla pracowników zakładasz, ile potrzebujesz.",
+      "lead": "Płacisz za liczbę narzędzi w ewidencji, a wszystkie moduły są w cenie: koszty, odbijanie, ludzie i pojazdy. Kont dla pracowników zakładasz, ile potrzebujesz.",
       "upTo": "do {limit} narzędzi",
       "above": "ponad {limit} narzędzi",
       "perYear": "netto za rok",
       "customPrice": "Wycena",
       "customPeriod": "ustalana z Tobą",
       "accounts": "Konta dla pracowników bez limitu",
+      "modules": "Wszystkie moduły w cenie",
       "implementationTitle": "Wdrożenie",
       "implementationPeriod": "netto, jednorazowo",
       "implementationText": "Obowiązkowe na start, przy każdym progu. Cena zależy od liczby osób, które zapisują ruchy: Ciebie, kierowników i magazynierów. Konta pracowników się nie liczą. Wdrożenie obejmuje szkolenie z programu dla Ciebie i zespołu: na miejscu w Twojej firmie albo zdalnie, do wyboru.",
@@ -1931,11 +2011,31 @@
       "title": "Pytania i odpowiedzi",
       "what": {
         "question": "Co to jest NarzędziownikGP?",
-        "answer": "Program do ewidencji narzędzi i sprzętu dla firm budowlanych. Każde narzędzie ma kod i naklejkę QR, a wydania i zwroty między bazą, budowami, pojazdami i serwisem zapisujesz telefonem. Widzisz, gdzie jest sprzęt, ile jest wart i co stoi za długo poza bazą."
+        "answer": "Program do zarządzania budową dla firm budowlanych. Zaczął się od ewidencji narzędzi z kodami i naklejkami QR, a dziś ma też koszty sprzętu na budowach, odbijanie i czas na budowie, kartotekę ludzi z badaniami i uprawnieniami oraz terminy pojazdów. Wszystko obsługujesz telefonem."
       },
       "install": {
         "question": "Czy trzeba instalować aplikację?",
         "answer": "Nie. Program działa w przeglądarce na telefonie, tablecie i komputerze. Na telefonie dodajesz go do ekranu głównego i otwierasz jak zwykłą aplikację."
+      },
+      "hours": {
+        "question": "Czy program liczy, ile godzin ludzie byli na budowie?",
+        "answer": "Tak. Ludzie skanują plakat budowy przy wejściu i wyjściu, a osoby bez telefonu odbija kierownik. Z odbić powstaje zestawienie miesięczne: kto, na której budowie i ile godzin, z eksportem do Excela. To zestawienie pobytu na budowach, a nie ewidencja czasu pracy z Kodeksu pracy."
+      },
+      "tracking": {
+        "question": "Czy program śledzi pracowników przez GPS?",
+        "answer": "Nie. Położenie telefonu program sprawdza tylko w chwili skanu plakatu budowy i zapisuje sam wynik: na budowie albo w jakiej odległości od niej. Nie zapisuje współrzędnych i nie działa w tle."
+      },
+      "certificates": {
+        "question": "Czy program pilnuje badań lekarskich i szkoleń BHP?",
+        "answer": "Tak. Przy każdej osobie, także bez konta w programie, zapisujesz badania okresowe, szkolenie BHP, badania do pracy na wysokości, SEP, UDT, prawo jazdy albo własny rodzaj uprawnienia, z datą ważności i dokumentem. Przypomnienie przychodzi 30 dni przed końcem ważności. Z badań lekarskich program zapisuje tylko datę, a orzeczenie widzi tylko właściciel."
+      },
+      "costs": {
+        "question": "Czy dowiem się, ile kosztował sprzęt na budowie?",
+        "answer": "Tak. Ustawiasz stawkę dzienną jako procent wartości narzędzia albo kwotę, a program z historii wydań i zwrotów liczy koszt sprzętu każdej budowy i pojazdu, także wstecz. Sprzęt wynajęty liczy się ze stawki wypożyczalni. Zestawienie eksportujesz do Excela."
+      },
+      "deadlines": {
+        "question": "Czy program przypomina o przeglądach, kalibracjach i OC?",
+        "answer": "Tak. Przy narzędziu zapisujesz termin przeglądu, kalibracji, badania UDT albo koniec gwarancji, a przy pojeździe przegląd techniczny, OC, AC i legalizację tachografu, z cyklem w miesiącach i dokumentami. Przypomnienie przychodzi tydzień przed terminem narzędzia i 30 dni przed końcem polisy, a poniedziałkowy raport pokazuje terminy z najbliższego miesiąca."
       },
       "stickers": {
         "question": "Czy potrzebuję drukarki etykiet albo czytnika kodów?",
@@ -1943,23 +2043,19 @@
       },
       "offline": {
         "question": "Co, jeśli na budowie nie ma zasięgu?",
-        "answer": "Wydanie albo zwrot zapisany bez internetu czeka w telefonie i wyśle się sam, gdy wróci sieć. Ostatni stan tablicy widać także bez zasięgu."
-      },
-      "deadlines": {
-        "question": "Czy program przypomina o przeglądach i kalibracjach?",
-        "answer": "Tak. Przy narzędziu zapisujesz termin przeglądu, kalibracji, badania UDT albo koniec gwarancji, z cyklem w miesiącach, i dołączasz świadectwo albo protokół. Tydzień przed terminem przychodzi przypomnienie, a poniedziałkowy raport pokazuje terminy z najbliższego miesiąca."
+        "answer": "Wydanie, zwrot albo odbicie na budowie zapisane bez internetu czeka w telefonie i wyśle się samo, gdy wróci sieć, z prawdziwą godziną zapisu. Ostatni stan tablicy widać także bez zasięgu."
       },
       "roles": {
         "question": "Kto w firmie z czego korzysta?",
-        "answer": "Właściciel widzi całą firmę i wartość sprzętu. Kierownik zapisuje ruchy na swoich budowach i pojazdach, magazynier obsługuje bazę. Pracownik sprawdza, gdzie jest sprzęt, i zgłasza uszkodzenia, a loguje się nazwą użytkownika, bez e-maila."
+        "answer": "Właściciel widzi całą firmę, wartość sprzętu i koszty. Kierownik zapisuje ruchy na swoich budowach i pojazdach, odbija brygadę i wpisuje szkolenia, a magazynier obsługuje bazę. Pracownik odbija się na budowie, sprawdza, gdzie jest sprzęt, i zgłasza uszkodzenia, a loguje się nazwą użytkownika, bez e-maila."
       },
       "import": {
-        "question": "Jak przenieść obecną listę narzędzi?",
-        "answer": "Wczytujesz swój arkusz Excela z listą sprzętu, a narzędzia trafiają do ewidencji z kodami i wartościami. Wdrożenie obejmuje szkolenie dla Ciebie i zespołu, na miejscu albo zdalnie."
+        "question": "Jak przenieść obecną listę narzędzi i ludzi?",
+        "answer": "Listę sprzętu wczytujesz z arkusza Excela, a narzędzia trafiają do ewidencji z kodami i wartościami. Ludzi, budowy i pojazdy dopisujesz w programie. Wdrożenie obejmuje szkolenie dla Ciebie i zespołu, na miejscu albo zdalnie."
       },
       "price": {
-        "question": "Ile kosztuje program do ewidencji narzędzi?",
-        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok. Na start jest jednorazowe wdrożenie ze szkoleniem, od {implementation} netto, zależnie od liczby osób zapisujących ruchy. Kont dla pracowników zakładasz bez limitu."
+        "question": "Ile kosztuje program i czy moduły są płatne osobno?",
+        "answer": "Abonament zależy od liczby narzędzi w ewidencji: do {limit} narzędzi kosztuje {price} netto za rok, ze wszystkimi modułami. Na start jest jednorazowe wdrożenie ze szkoleniem, od {implementation} netto, zależnie od liczby osób zapisujących ruchy. Kont dla pracowników i osób bez konta dodajesz bez limitu."
       },
       "data": {
         "question": "Gdzie są przechowywane dane?",
@@ -1972,7 +2068,7 @@
     },
     "contact": {
       "title": "Porozmawiajmy",
-      "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojego sprzętu? Zadzwoń albo napisz. Demo otworzysz od razu, bez rejestracji i bez hasła."
+      "text": "Chcesz dobrać próg albo zobaczyć program na przykładzie swojej firmy? Zadzwoń albo napisz. Demo otworzysz od razu, bez rejestracji i bez hasła."
     },
     "footer": {
       "product": "NarzędziownikGP to program firmy GP Engineering.",

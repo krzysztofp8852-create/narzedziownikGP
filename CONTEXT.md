@@ -1,6 +1,6 @@
 # NarzędziownikGP
 
-Ewidencja i monitorowanie narzędzi dla małych firm budowlanych: gdzie w danej chwili jest każdy egzemplarz sprzętu, kto za niego odpowiada i co leży za długo poza bazą.
+Program do zarządzania budową dla firm budowlanych. Rdzeniem jest ewidencja i monitorowanie narzędzi: gdzie w danej chwili jest każdy egzemplarz sprzętu, kto za niego odpowiada i co leży za długo poza bazą. Wokół niej są moduły: koszt sprzętu, kartoteka Ludzie z uprawnieniami, odbijanie na budowie i flota.
 
 ## Ludzie i role
 
