@@ -1,6 +1,6 @@
 # NarzędziownikGP
 
-Ewidencja i monitorowanie narzędzi dla małych firm budowlanych (produkt GP Engineering).
+Zarządzanie budową dla firm budowlanych: ewidencja narzędzi, koszt sprzętu, ludzie z uprawnieniami, odbijanie na budowie i flota (produkt GP Engineering).
 Specyfikacja MVP: issue #1.
 
 Stos: Next.js 16 (App Router, TypeScript), Supabase (Postgres z RLS, Auth), Vercel (`fra1`).
