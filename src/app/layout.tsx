@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
@@ -10,6 +11,7 @@ const plate = JetBrains_Mono({ variable: "--font-plate", subsets: ["latin", "lat
 
 const siteUrl = serverEnv.siteUrl();
 const googleSiteVerification = serverEnv.googleSiteVerification();
+const googleAnalyticsId = "G-E6D4F37H36";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
@@ -36,6 +38,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         {children}
         <ServiceWorkerRegistration />
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`} strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${googleAnalyticsId}');`}
+        </Script>
       </body>
     </html>
   );
