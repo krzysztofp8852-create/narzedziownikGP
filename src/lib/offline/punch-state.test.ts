@@ -128,4 +128,19 @@ describe("osoby z listy „Odbij też…” w telefonie kierownika", () => {
 
     expect(offlinePunchAction(state, RATAJE, MONDAY)).toBe("wyjscie");
   });
+
+  it("poranny skan z siecią (podgląd, lista, własne wejście, odbici z listy) zostawia listę na skan bez sieci", () => {
+    const here: PunchPreview = { action: "wejscie", place: place("Rataje"), from: null };
+    let state = afterPreview(NO_PUNCH_STATE, RATAJE, here, MONDAY);
+    state = afterPeoplePreview(state, RATAJE, place("Rataje"), preview, MONDAY);
+    state = afterOutcome(state, RATAJE, { action: "wejscie", place: place("Rataje") }, MONDAY);
+    state = afterPeoplePunched(state, RATAJE, [{ personId: "p-zajac", action: "wejscie" }], MONDAY);
+    state = afterPreview(state, RATAJE, { action: "wyjscie", place: place("Rataje"), from: null }, MONDAY);
+
+    expect(actions(offlinePeopleToPunch(state, RATAJE, MONDAY))).toEqual([
+      ["Marek Zając", "wyjscie"],
+      ["Wojciech Lis", "wyjscie"],
+      ["Jan Mazur", "przejscie"],
+    ]);
+  });
 });

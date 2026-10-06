@@ -19,6 +19,8 @@ export interface ToolFormValues {
 interface ToolFormProps {
   action: (prev: ToolFormState, formData: FormData) => Promise<ToolFormState>;
   categories: Category[];
+  /** Kategoria dodana w formularzu, żeby rodzic pamiętał ją po przemontowaniu formularza. */
+  onCategoryAdded?: (category: Category) => void;
   /** Wartość: pole tylko dla właściciela. */
   showValue: boolean;
   /** Karta do edycji; bez niej formularz dodaje nowe narzędzie z kodem nadanym przez system. */
@@ -31,6 +33,7 @@ interface ToolFormProps {
 export function ToolForm({
   action,
   categories: initialCategories,
+  onCategoryAdded,
   showValue,
   initial,
   operationId,
@@ -113,6 +116,7 @@ export function ToolForm({
         onAdded={(category) => {
           setCategories((current) => [...current, category].sort((a, b) => a.name.localeCompare(b.name, "pl")));
           chooseCategory(category.id);
+          onCategoryAdded?.(category);
         }}
       />
     </>

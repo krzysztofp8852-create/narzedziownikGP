@@ -111,8 +111,11 @@ a {
   min-height: 48px;
 }
 
+/* Przycisk przeglądarki daje polu pliku szerokość, która w panelu przy terminie poszerzała wąski telefon. */
 .field input[type="file"] {
   padding: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /*
