@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { t } from "@/i18n/t";
 import { LEGAL_DOCUMENT_IDS, LEGAL_DOCUMENTS } from "@/legal/documents";
+import { CookieSettingsButton } from "./cookie-consent";
 
 /**
- * Odnośniki do regulaminu, polityki prywatności i umowy powierzenia (logowanie, ustawienia, strona o programie).
+ * Odnośniki do regulaminu, polityki prywatności i umowy powierzenia (logowanie, ustawienia, strona o programie) oraz
+ * zmiana zgody na pliki cookies.
  * `className` zastępuje domyślny wygląd, np. na stronie o programie odnośniki wyglądają jak reszta stopki.
  */
 export function LegalLinks({ className = "legal-links" }: { className?: string }) {
@@ -14,6 +16,7 @@ export function LegalLinks({ className = "legal-links" }: { className?: string }
           {t(`legal.documents.${id}`)}
         </Link>
       ))}
+      <CookieSettingsButton />
     </nav>
   );
 }

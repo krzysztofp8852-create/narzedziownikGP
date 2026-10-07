@@ -9,7 +9,17 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
-  use: { baseURL, trace: "retain-on-failure", locale: "pl-PL" },
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+    locale: "pl-PL",
+    // Wybór cookies zapisany z góry („Tylko niezbędne”): baner nie zasłania przycisków, a testy nie wołają Google
+    // Analytics. Też w kontekstach z `browser.newContext()`. Sam baner sprawdza e2e/cookies.spec.ts.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: "zgoda-cookies", value: "niezbedne" }] }],
+    },
+  },
   // Test dymny nigdy nie łączy się z Google Maps: adres się nie rozwiązuje, więc mapa pokazuje, że się nie wczytała.
   // Test mapy podmienia skrypt Google na atrapę (e2e/support/google-maps-stub.js), zanim zapytanie wyjdzie do sieci.
   projects: [

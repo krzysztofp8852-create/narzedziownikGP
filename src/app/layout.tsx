@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
+import { CookieConsent } from "@/components/cookie-consent";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
-import { GOOGLE_ADS_ID, GOOGLE_ANALYTICS_ID } from "@/lib/google-tags";
 import "./globals.css";
 
 const body = Barlow({ variable: "--font-body", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"] });
@@ -38,19 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         {children}
         <ServiceWorkerRegistration />
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`} strategy="afterInteractive" />
-        {/*
-         * Google Ads tylko mierzy konwersje (formularz „oddzwonimy”), bez ciasteczek reklamowych: przy odmowie
-         * ad_storage Google dostaje pingi bez ciasteczek i modeluje konwersje.
-         */}
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
-gtag('js', new Date());
-gtag('config', '${GOOGLE_ANALYTICS_ID}');
-gtag('config', '${GOOGLE_ADS_ID}');`}
-        </Script>
+        <CookieConsent />
       </body>
     </html>
   );
