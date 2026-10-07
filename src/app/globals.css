@@ -4022,6 +4022,71 @@ a.tool-row:hover .tool-row-name {
   text-underline-offset: 3px;
 }
 
+/* Przycisk, który wygląda jak odnośnik obok dokumentów prawnych (zmiana zgody na cookies). */
+.link-button {
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.landing-nav .link-button {
+  font-weight: inherit;
+  padding: 6px 0;
+  text-decoration: none;
+  text-underline-offset: 4px;
+}
+
+.landing-nav .link-button:hover {
+  text-decoration: underline;
+}
+
+/* Baner zgody na cookies: na dole ekranu, nad przewodnikiem demo, dopóki ktoś nie wybierze. */
+.cookie-consent {
+  position: fixed;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: var(--gutter);
+  z-index: 1100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--brand);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgb(20 23 28 / 0.25);
+}
+
+.cookie-consent p {
+  flex: 1 1 320px;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.cookie-consent a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.cookie-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cookie-consent-actions .button {
+  flex: 1 1 auto;
+}
+
 .auth-legal-links {
   justify-content: center;
   margin-top: 16px;

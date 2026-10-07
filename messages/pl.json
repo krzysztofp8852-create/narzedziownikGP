@@ -2222,6 +2222,14 @@
     "settingsTitle": "Dokumenty prawne",
     "settingsHint": "Regulamin usługi, polityka prywatności i umowa powierzenia przetwarzania danych osobowych Twoich ludzi. Przydadzą się, gdy informujesz pracowników o przetwarzaniu ich danych."
   },
+  "cookies": {
+    "title": "Pliki cookies.",
+    "text": "Używamy niezbędnych plików cookies, żeby program działał, a za Twoją zgodą także Google Analytics, żeby wiedzieć, jak ludzie korzystają ze strony. Zgodę możesz w każdej chwili zmienić w stopce.",
+    "more": "Więcej w polityce prywatności",
+    "accept": "Akceptuję",
+    "reject": "Tylko niezbędne",
+    "settings": "Ustawienia cookies"
+  },
   "costs": {
     "tab": "Koszty",
     "title": "Koszt sprzętu",
