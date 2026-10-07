@@ -5,6 +5,7 @@ import Script from "next/script";
 import { useSyncExternalStore } from "react";
 import { t } from "@/i18n/t";
 import { GOOGLE_ADS_ID, GOOGLE_ANALYTICS_ID } from "@/lib/google-tags";
+import { useInApp } from "@/lib/platform";
 
 // Wybór zapamiętany w tej przeglądarce. Bez wyboru Google Analytics się nie wczytuje, a baner czeka na decyzję.
 const CHOICE_KEY = "zgoda-cookies";
@@ -68,13 +69,15 @@ function choose(choice: Choice) {
 /**
  * Baner zgody na pliki cookies na każdej stronie. Google Analytics wczytuje się dopiero po „Akceptuję” i tylko do
  * statystyk (bez reklam). Dziennik demo (`DemoPageLog`) od tej zgody nie zależy: zapisuje ekrany demo jak dotąd.
+ * W aplikacji nie ma ani banera, ani Google Analytics, także przy zgodzie zapisanej wcześniej.
  *
  * Razem z Analytics wczytuje się Google Ads, który tylko mierzy konwersje (formularz „oddzwonimy”), bez ciasteczek
  * reklamowych: przy odmowie ad_storage Google dostaje pingi bez ciasteczek i modeluje konwersje.
  */
 export function CookieConsent() {
   const choice = useChoice();
-  if (choice === undefined) return null;
+  const inApp = useInApp();
+  if (choice === undefined || inApp) return null;
   if (choice === "analityka") {
     return (
       <>
@@ -115,8 +118,10 @@ gtag('config', '${GOOGLE_ADS_ID}');`}
   );
 }
 
-/** Odnośnik w stopce: kasuje wybór, więc baner wraca i można zmienić zdanie. */
+/** Odnośnik w stopce: kasuje wybór, więc baner wraca i można zmienić zdanie. W aplikacji nie ma czego ustawiać. */
 export function CookieSettingsButton() {
+  const inApp = useInApp();
+  if (inApp) return null;
   return (
     <button type="button" className="link-button" onClick={() => writeChoice(null)}>
       {t("cookies.settings")}
