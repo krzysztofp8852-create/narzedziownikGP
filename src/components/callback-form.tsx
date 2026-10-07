@@ -5,6 +5,7 @@ import { useActionState, useEffect } from "react";
 import { requestCallback } from "@/app/actions";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
+import { CONTACT_CONVERSION } from "@/lib/google-tags";
 import { type CallbackSource, MAX_CALLBACK_NAME_LENGTH } from "@/registry/callback-requests";
 
 export interface CallbackFormState {
@@ -21,13 +22,16 @@ declare global {
 
 /**
  * „Zostaw numer, oddzwonimy” obok telefonu i e-maila działu handlowego. Prośba trafia do panelu super-admina
- * i e-mailem do GP Engineering, a do Google Analytics (jeśli się wczytała) jako zdarzenie `generate_lead`.
+ * i e-mailem do GP Engineering, a do Google (jeśli tag się wczytał) jako zdarzenie `generate_lead` w Analytics
+ * i konwersja „Kontakt” w Google Ads.
  */
 export function CallbackForm({ source }: { source: CallbackSource }) {
   const [state, formAction, pending] = useActionState(requestCallback, {});
 
   useEffect(() => {
-    if (state.done) window.gtag?.("event", "generate_lead", { lead_source: source });
+    if (!state.done) return;
+    window.gtag?.("event", "generate_lead", { lead_source: source });
+    window.gtag?.("event", "conversion", CONTACT_CONVERSION);
   }, [state.done, source]);
 
   if (state.done) {
