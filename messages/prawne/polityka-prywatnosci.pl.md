@@ -1,6 +1,6 @@
 ---
 title: Polityka prywatności NarzędziownikGP
-version: 2 października 2026
+version: 6 października 2026
 draft: tak
 ---
 
@@ -70,9 +70,12 @@ Ta polityka wyjaśnia, jakie dane osobowe przetwarzamy w programie Narzędziowni
 
 ## 10. Pliki cookies i pamięć urządzenia
 
-1. Program używa tylko plików cookies niezbędnych do działania: plików sesji logowania, dzięki którym telefon zostaje zalogowany (do 400 dni albo do wylogowania).
-2. W pamięci urządzenia program trzyma ruchy, nagrania i odbicia (ze współrzędnymi z chwili skanu) czekające na wysłanie bez zasięgu, ostatnio pobraną tablicę „Gdzie jest co” do przeglądania bez sieci, a w demo informację, czy przewodnik po tablicy był już pokazany. Te dane nie opuszczają urządzenia, dopóki program ich nie wyśle.
-3. Nie używamy plików cookies analitycznych ani reklamowych i nie śledzimy Cię na innych stronach.
+1. Bez Twojej zgody program używa tylko plików cookies niezbędnych do działania: plików sesji logowania, dzięki którym telefon zostaje zalogowany (do 400 dni albo do wylogowania).
+2. W pamięci urządzenia program trzyma ruchy, nagrania i odbicia (ze współrzędnymi z chwili skanu) czekające na wysłanie bez zasięgu, ostatnio pobraną tablicę „Gdzie jest co” do przeglądania bez sieci, Twój wybór w sprawie plików cookies, a w demo informację, czy przewodnik po tablicy był już pokazany. Te dane nie opuszczają urządzenia, dopóki program ich nie wyśle.
+3. **Google Analytics, tylko za Twoją zgodą.** Gdy klikniesz „Akceptuję” na banerze, przeglądarka wczytuje Google Analytics (Google Ireland Limited) i zapisuje jego pliki cookies (`_ga` i `_ga_…`, do 2 lat). Google dostaje wtedy adresy oglądanych stron, czas wizyty, rodzaj urządzenia i przeglądarki oraz przybliżoną lokalizację ustaloną z adresu IP. Korzystamy z tego, żeby wiedzieć, ile osób odwiedza stronę i program i które ekrany oglądają (art. 6 ust. 1 lit. a RODO). Dane mogą trafić do USA, na zasadach z punktu 9. Szczegóły są w [polityce prywatności Google](https://policies.google.com/privacy).
+4. Zgodę możesz w każdej chwili wycofać przyciskiem „Ustawienia cookies” przy odnośnikach do dokumentów prawnych; wtedy usuwamy pliki `_ga` z przeglądarki i Google Analytics przestaje się wczytywać. Wycofanie zgody nie wpływa na to, co zebraliśmy wcześniej.
+5. Dziennik demo (punkt 3) nie zależy od tej zgody i nie używa plików cookies analitycznych.
+6. Nie używamy plików cookies reklamowych i nie śledzimy Cię na innych stronach.
 
 ## 11. Twoje prawa
 
