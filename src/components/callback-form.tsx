@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useActionState, useEffect } from "react";
-import { requestCallback } from "@/app/actions";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import { CONTACT_CONVERSION } from "@/lib/google-tags";
@@ -17,6 +16,18 @@ export interface CallbackFormState {
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
+  }
+}
+
+/** Wysyła formularz na `/oddzwonimy` (zob. tam, czemu to nie akcja serwera). */
+async function requestCallback(_prev: CallbackFormState, formData: FormData): Promise<CallbackFormState> {
+  try {
+    const response = await fetch("/oddzwonimy", { method: "POST", body: formData });
+    if (!response.ok) throw new Error(`Formularz „oddzwonimy” odrzucony (${response.status})`);
+    return (await response.json()) as CallbackFormState;
+  } catch (error) {
+    console.error(error);
+    return { error: t("errors.unexpected") };
   }
 }
 
