@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NarzędziownikGP</string>
+    <string name="title_activity_main">NarzędziownikGP</string>
+    <string name="package_name">pl.narzedziownikgp.app</string>
+    <string name="custom_url_scheme">pl.narzedziownikgp.app</string>
+</resources>
