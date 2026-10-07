@@ -35,6 +35,10 @@ _Avoid_: użytkownik, członek zespołu, pracownik (to rola)
 Badanie, szkolenie albo uprawnienie osoby z datą „ważne do”: badania lekarskie okresowe, szkolenie BHP okresowe, badania do pracy na wysokości, SEP E/D, UDT (z urządzeniem), prawo jazdy (z kategorią), kurs pierwszej pomocy albo własny rodzaj firmy. Ma opcjonalny cykl w miesiącach, notatkę i dokumenty, a odnowienie przesuwa datę o cykl. Z badań lekarskich zapisujemy tylko datę, a orzeczenie widzi tylko właściciel. Wpisują je właściciel i kierownik i oni widzą wszystkie, a każdy widzi własne. Przypomina 30 dni przed końcem ważności i raz po: właścicielowi zbiorczo, osobie z kontem o własnych.
 _Avoid_: certyfikat, kwalifikacja, termin (to przy narzędziu), szkolenie (jako ogólne pojęcie)
 
+**Prośba o telefon**:
+Numer zostawiony w formularzu „Zostaw numer, oddzwonimy” na stronie o programie albo na stronie /demo, przez kogoś bez konta: numer, opcjonalnie imię albo firma i strona, z której przyszła. GP Engineering dostaje ją e-mailem na adres supportu i widzi listę z licznikami w panelu super-admina. Ten sam numer drugi raz w ciągu doby nic nie robi; po roku prośba znika.
+_Avoid_: lead, zgłoszenie (to uszkodzenie albo brak), kontakt
+
 **Firma demo**:
 Przykładowa firma (DemoBud) z pełnymi danymi, którą pokazujemy zainteresowanym klientom. Na stronie /demo wchodzi się do niej bez hasła jako dowolna rola i przełącza role paskiem u góry. Konto roli dzielą wszyscy oglądający, więc czat z supportem i powiadomienia push są w demo wyłączone. Nowe demo zastępuje poprzednie, które znika w całości; co godzinę demo, w którym ktoś był i skończył oglądać, zastępuje świeże.
 _Avoid_: konto testowe, piaskownica

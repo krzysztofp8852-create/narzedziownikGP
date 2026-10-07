@@ -49,7 +49,8 @@ export type RegistryErrorCode =
   | "demo_push"
   | "demo_delete"
   | "delete_requires_read_only"
-  | "delete_confirmation";
+  | "delete_confirmation"
+  | "callback_busy";
 
 export class RegistryError extends Error {
   constructor(

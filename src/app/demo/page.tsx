@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DemoRoleButton } from "@/components/demo-role-button";
+import { CallbackForm } from "@/components/callback-form";
 import { SalesContact } from "@/components/sales-contact";
 import { DEMO_ROLES } from "@/demo/company";
 import { t } from "@/i18n/t";
@@ -85,6 +86,7 @@ export default async function DemoPage(props: PageProps<"/demo">) {
             <p>{t("demo.contact")}</p>
             <SalesContact />
           </div>
+          <CallbackForm source="demo" />
         </section>
       </main>
       <div className="hazard" aria-hidden />

@@ -3920,6 +3920,49 @@ a.tool-row:hover .tool-row-name {
   text-underline-offset: 4px;
 }
 
+/* „Zostaw numer, oddzwonimy” pod telefonem i e-mailem działu handlowego (strona o programie i /demo). */
+.callback-form {
+  display: grid;
+  gap: 14px;
+  max-width: 640px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.callback-form > p {
+  margin: 0;
+}
+
+.callback-title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.callback-privacy {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Pułapka na boty: poza ekranem, a nie `display: none`, które część botów pomija. */
+.callback-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.callback-done {
+  max-width: 640px;
+}
+
+.callback-summary {
+  font-weight: 700;
+}
+
 .landing-footer {
   display: flex;
   flex-wrap: wrap;

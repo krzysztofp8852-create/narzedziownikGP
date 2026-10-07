@@ -66,7 +66,12 @@ i odbijanie (#87) trafią na produkcję. Kartoteka Ludzie z osobami bez konta (#
    artykułu. Wskazać właściwy przepis Prawa komunikacji elektronicznej.
 8. **Wypowiedzenie i zwrot opłat.** Regulamin (§ 16) daje wypowiedzenie na koniec opłaconego okresu, bez zwrotu
    za niewykorzystany czas. Potwierdzić.
-9. **Terminy:** reklamacja 14 dni, zmiana regulaminu z 14-dniowym uprzedzeniem, zawiadomienie o naruszeniu w 48 godzin,
+9. **Formularz „Zostaw numer, oddzwonimy”** (polityka pkt 3 ust. 3): numer, opcjonalne imię albo firma, strona
+   i czas; program usuwa prośbę po roku. Podstawa: art. 6 ust. 1 lit. b RODO (działanie na żądanie przed umową),
+   a liczenie próśb lit. f. Pod formularzem jest tylko zdanie z odnośnikiem do polityki, bez pola zgody. Czy to
+   wystarczy jako informacja z art. 13 RODO i czy telefon w odpowiedzi na prośbę nie wymaga zgody na marketing
+   telefoniczny (art. 398 Prawa komunikacji elektronicznej)? Czy rok to dobry termin?
+10. **Terminy:** reklamacja 14 dni, zmiana regulaminu z 14-dniowym uprzedzeniem, zawiadomienie o naruszeniu w 48 godzin,
    usunięcie danych osoby na polecenie w 30 dni, audyt z 14-dniowym uprzedzeniem raz w roku.
 
 ## Do sprawdzenia u dostawców (przed pierwszym klientem)
@@ -86,7 +91,7 @@ i odbijanie (#87) trafią na produkcję. Kartoteka Ludzie z osobami bez konta (#
 6. **Usługi push** (Google, Apple, Mozilla): polityka opisuje je jako odbiorców zaszyfrowanej wiadomości, a nie
    podprocesorów, bo wybiera je przeglądarka użytkownika. Potwierdzić.
 7. **Dostęp do produkcji**: kto w GP Engineering ma dostęp i czy konta mają logowanie dwuskładnikowe (załącznik 2).
-8. **Skrzynka supportu** (`SUPPORT_EMAIL`): wiadomości z czatu trafiają e-mailem do skrzynki GP Engineering. Dostawcę
+8. **Skrzynka supportu** (`SUPPORT_EMAIL`): wiadomości z czatu i prośby o telefon trafiają e-mailem do skrzynki GP Engineering. Dostawcę
    tej poczty trzeba dopisać do załącznika 3, bo umowa powierzenia obejmuje czat w zakresie danych klienta.
 9. **Google Maps Platform** (mapa budów, ADR 0026): załącznik 3 podaje Google Ireland Limited. Potwierdzić podmiot
    umowy Google Maps Platform dla EOG i czy według warunków ochrony danych Maps Platform Google jest podprocesorem,

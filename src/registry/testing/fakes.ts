@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { CallbackRequest } from "../callback-requests";
 import type { EmailedNotification } from "../notifications";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore } from "../ports";
 import type { PushMessage, PushSubscriptionData } from "../push";
@@ -99,6 +100,8 @@ export class RecordingNotifier implements Notifier {
   readonly expired = new Set<string>();
   /** E-maile do supportu GP Engineering o wiadomościach użytkowników z czatu. */
   readonly supportEmails: UserMessage[] = [];
+  /** E-maile do GP Engineering o prośbach o telefon. */
+  readonly callbackEmails: CallbackRequest[] = [];
   /** Kolejne wysyłki e-maili kończą się tym błędem, np. gdy dostawca e-maili nie działa. */
   failWith: Error | null = null;
   /** Kolejne wysyłki push kończą się tym błędem, np. gdy usługa push nie odpowiada. */
@@ -121,10 +124,16 @@ export class RecordingNotifier implements Notifier {
     this.supportEmails.push(message);
   }
 
+  async sendCallbackRequest(request: CallbackRequest) {
+    if (this.failWith) throw this.failWith;
+    this.callbackEmails.push(request);
+  }
+
   clear() {
     this.sent.length = 0;
     this.pushed.length = 0;
     this.supportEmails.length = 0;
+    this.callbackEmails.length = 0;
     this.expired.clear();
     this.failWith = null;
     this.pushFailWith = null;

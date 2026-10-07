@@ -4,7 +4,10 @@ import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 
-/** Panel GP Engineering: firmy i abonamenty, czat z supportem z licznikiem wątków z nowymi wiadomościami i dziennik demo. */
+/**
+ * Panel GP Engineering: firmy i abonamenty, czat z supportem z licznikiem wątków z nowymi wiadomościami, dziennik demo
+ * i prośby o telefon z formularza na stronie.
+ */
 export default async function SuperAdminLayout({ children }: LayoutProps<"/super-admin">) {
   const unread = await getRegistry()
     .superAdmin(await requireSuperAdmin())
@@ -36,6 +39,7 @@ export default async function SuperAdminLayout({ children }: LayoutProps<"/super
             )}
           </Link>
           <Link href="/super-admin/demo">{t("superAdmin.navDemo")}</Link>
+          <Link href="/super-admin/telefony">{t("superAdmin.navCallbacks")}</Link>
         </nav>
       </header>
       <main className="app-main">{children}</main>

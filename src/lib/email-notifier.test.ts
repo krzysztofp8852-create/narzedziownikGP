@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FridayReport, WeeklyReport } from "@/registry/registry";
-import { notificationEmail, supportEmail } from "./email-notifier";
+import { callbackEmail, notificationEmail, supportEmail } from "./email-notifier";
 
 const owner = { userId: "u1", fullName: "Anna Właścicielka", email: "anna@zawbud.test" };
 
@@ -189,5 +189,32 @@ describe("e-mail do supportu o wiadomości z czatu", () => {
     expect(email.subject).toBe("Czat: Adam Nowak (Zawbud): 📷 Zdjęcie");
     expect(email.text).toContain("Ekran: —");
     expect(email.text).not.toContain("/super-admin/czat");
+  });
+});
+
+describe("e-mail o prośbie o telefon", () => {
+  const request = { id: "r1", at: new Date("2026-04-06T08:15:00Z"), phone: "+48600123456", name: "Jan z Zawbudu", source: "o-programie" as const };
+
+  it("numer do oddzwonienia w temacie, imię, strona i link do listy próśb w panelu", () => {
+    const email = callbackEmail(request, { to: "support@gp-engineering.test", appUrl: "https://narzedziownik.example" });
+
+    expect(email).toMatchObject({ to: "support@gp-engineering.test", subject: "Oddzwoń: +48 600 123 456 (Jan z Zawbudu)" });
+    for (const line of [
+      "Telefon: +48 600 123 456",
+      "Imię albo firma: Jan z Zawbudu",
+      "Strona: strona o programie",
+      "Wysłane: 6.04.2026, 10:15",
+      "https://narzedziownik.example/super-admin/telefony",
+    ]) {
+      expect(email.text).toContain(line);
+    }
+  });
+
+  it("bez imienia i adresu aplikacji, numer spoza Polski bez zmian", () => {
+    const email = callbackEmail({ ...request, name: null, phone: "+4930123456", source: "demo" }, { to: "support@gp-engineering.test", appUrl: null });
+
+    expect(email.subject).toBe("Oddzwoń: +4930123456 (bez imienia)");
+    expect(email.text).toContain("Strona: strona demo");
+    expect(email.text).not.toContain("/super-admin");
   });
 });

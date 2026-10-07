@@ -1,4 +1,6 @@
 import * as bell from "./bell";
+import * as callbackRequests from "./callback-requests";
+import type { CallbackRequestInput, CallbackRequestList } from "./callback-requests";
 import type { Bell, BellEntry } from "./bell";
 import * as board from "./board";
 import * as catalog from "./catalog";
@@ -328,6 +330,8 @@ export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, Too
 export { canReportTools, canReviewToolReports } from "./tool-reports";
 export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
 export type { DemoAccount, DemoUse } from "./demo";
+export type { CallbackRequest, CallbackRequestInput, CallbackRequestList, CallbackSource } from "./callback-requests";
+export { formatPhone, isCallbackSource, MAX_CALLBACK_NAME_LENGTH, normalizePhone } from "./callback-requests";
 export { DEMO_EMAIL_DOMAIN, isDemoEmail, LOGGED_DEMO_COMMANDS } from "./demo";
 export type { DemoDevice, DemoEvent, DemoVisit, LoggedDemoCommand } from "./demo";
 export { canPrintStickers } from "./stickers";
@@ -425,6 +429,8 @@ export interface SuperAdminRegistry {
   supportPhoto(messageId: string): Promise<Blob | null>;
   /** Dziennik demo: wizyty z ostatnich 30 dni (wejścia do ról, ekrany i akcje), od najnowszej. */
   demoVisits(): Promise<DemoVisit[]>;
+  /** Prośby o telefon z formularza na stronie z ostatnich 90 dni, od najnowszej, z liczbą z 7, 30 i 90 dni. */
+  callbackRequests(): Promise<CallbackRequestList>;
 }
 
 export interface Registry {
@@ -516,6 +522,12 @@ export interface Registry {
     recordDemoEntry(entry: { userId: string; sessionId: string | null; previousSessionId: string | null; switched: boolean; device: DemoDevice }): Promise<void>;
     /** Ekran obecnego demo otwarty w tej sesji, do dziennika demo. Poza obecnym demo nic nie zapisuje. */
     recordDemoPage(page: { userId: string; sessionId: string | null; path: string }): Promise<void>;
+    /**
+     * Prośba o telefon z formularza „oddzwonimy” (bez konta): zapis i e-mail do GP Engineering. Numer w zapisie polskim
+     * albo międzynarodowym, inaczej `invalid_input`. Ten sam numer drugi raz w ciągu doby nic nie robi, a ponad 20 próśb
+     * na godzinę łącznie odmawia (`callback_busy`).
+     */
+    requestCallback(input: CallbackRequestInput): Promise<void>;
   };
   /**
    * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
@@ -1190,6 +1202,11 @@ export function createRegistry(deps: RegistryDeps): Registry {
       },
       recordDemoEntry: (entry) => deps.db.transaction((sql) => demo.recordDemoEntry(sql, entry, deps.clock.now())),
       recordDemoPage: (page) => deps.db.transaction((sql) => demo.recordDemoPage(sql, page, deps.clock.now())),
+      requestCallback: async (input) => {
+        const saved = await deps.db.transaction((sql) => callbackRequests.requestCallback(sql, input, deps.clock.now()));
+        // Prośba jest zapisana i widać ją w panelu, więc błąd e-maila tylko odnotowujemy.
+        if (saved) await deps.notifier.sendCallbackRequest(saved).catch((error) => console.error("Nie wysłano e-maila o prośbie o telefon", error));
+      },
     }),
     superAdmin: (userId) => {
       /** Transakcja super-admina: RLS widzi jego JWT, a Rejestr najpierw sprawdza rolę. */
@@ -1259,6 +1276,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
           return key ? deps.chatPhotos.read(key) : null;
         },
         demoVisits: () => asSuperAdmin((sql) => demo.demoVisits(sql, deps.clock.now())),
+        callbackRequests: () => asSuperAdmin((sql) => callbackRequests.callbackRequests(sql, deps.clock.now())),
       };
     },
     as: (userId) => {

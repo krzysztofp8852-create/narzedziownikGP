@@ -68,6 +68,7 @@ function scheduledRuns(from: Date, to: Date): { at: Date; daily: boolean; report
 const silentNotifier: Notifier = {
   send: async () => {},
   sendToSupport: async () => {},
+  sendCallbackRequest: async () => {},
   push: async () => "sent",
 };
 

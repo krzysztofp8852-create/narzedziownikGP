@@ -3,6 +3,8 @@ import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import type { Notifier } from "@/registry/ports";
 import {
+  type CallbackRequest,
+  formatPhone,
   type UserMessage,
   type EmailedNotification,
   isDemoEmail,
@@ -73,6 +75,31 @@ export function supportEmail(message: UserMessage, { to, appUrl }: { to: string;
     ].join("\n"),
   };
 }
+
+/** E-mail do GP Engineering (`to`) o prośbie o telefon z formularza na stronie, z linkiem do listy próśb w panelu. */
+export function callbackEmail(request: CallbackRequest, { to, appUrl }: { to: string; appUrl: string | null }): Email {
+  const phone = formatPhone(request.phone);
+  const name = request.name ?? t("callback.email.noName");
+  const url = appUrl ? new URL(CALLBACK_LIST_PATH, appUrl).toString() : null;
+  return {
+    to,
+    subject: t("callback.email.subject", { phone, name }),
+    text: [
+      t("callback.email.lead"),
+      "",
+      t("callback.email.phone", { phone }),
+      t("callback.email.name", { name }),
+      t("callback.email.source", { source: t(`superAdmin.callbacks.sources.${request.source}`) }),
+      t("callback.email.sentAt", { when: formatDateTime(request.at) }),
+      ...(url ? ["", t("callback.email.list", { url })] : []),
+      "",
+      t("notifications.signature"),
+    ].join("\n"),
+  };
+}
+
+/** Lista próśb o telefon w panelu super-admina. */
+export const CALLBACK_LIST_PATH = "/super-admin/telefony";
 
 /** Ostrzeżenie przed trybem tylko do odczytu, tydzień i dzień przed przełączeniem. */
 function readOnlySoonEmail(notification: ReadOnlySoonNotification): Email {
@@ -214,7 +241,8 @@ function idempotencyKey(notification: EmailedNotification): string {
 
 /**
  * Kanały e-mail portu powiadomień na API Resend (https://resend.com/docs/api-reference/emails/send-email):
- * powiadomienia użytkowników i wiadomości z czatu na adres supportu (`supportAddress`; bez niego tylko do logu).
+ * powiadomienia użytkowników oraz wiadomości z czatu i prośby o telefon na adres supportu (`supportAddress`; bez niego
+ * tylko do logu).
  */
 export function createResendNotifier({
   apiKey,
@@ -226,7 +254,7 @@ export function createResendNotifier({
   from: string;
   appUrl: string | null;
   supportAddress: string | null;
-}): Pick<Notifier, "send" | "sendToSupport"> {
+}): Pick<Notifier, "send" | "sendToSupport" | "sendCallbackRequest"> {
   async function deliver(email: Email, key: string) {
     // Adresów kont firmy demo nikt nie odbiera.
     if (isDemoEmail(email.to)) return;
@@ -242,11 +270,15 @@ export function createResendNotifier({
     send: (notification) => deliver(notificationEmail(notification, { appUrl }), idempotencyKey(notification)),
     sendToSupport: (message) =>
       supportAddress ? deliver(supportEmail(message, { to: supportAddress, appUrl }), `czat/${message.messageId}`) : logNotifier.sendToSupport(message),
+    sendCallbackRequest: (request) =>
+      supportAddress
+        ? deliver(callbackEmail(request, { to: supportAddress, appUrl }), `oddzwon/${request.id}`)
+        : logNotifier.sendCallbackRequest(request),
   };
 }
 
 /** Bez klucza Resend (lokalnie, w CI) albo adresu supportu e-maile trafiają tylko do logu serwera. */
-export const logNotifier: Pick<Notifier, "send" | "sendToSupport"> = {
+export const logNotifier: Pick<Notifier, "send" | "sendToSupport" | "sendCallbackRequest"> = {
   async send(notification) {
     const email = notificationEmail(notification);
     console.warn(`[powiadomienie bez wysyłki: brak RESEND_API_KEY] do ${email.to}: ${email.subject}`);
@@ -254,5 +286,9 @@ export const logNotifier: Pick<Notifier, "send" | "sendToSupport"> = {
   async sendToSupport(message) {
     const { subject } = supportEmail(message, { to: "", appUrl: null });
     console.warn(`[e-mail do supportu bez wysyłki: brak RESEND_API_KEY albo SUPPORT_EMAIL] ${subject}`);
+  },
+  async sendCallbackRequest(request) {
+    const { subject } = callbackEmail(request, { to: "", appUrl: null });
+    console.warn(`[e-mail o prośbie o telefon bez wysyłki: brak RESEND_API_KEY albo SUPPORT_EMAIL] ${subject}`);
   },
 };
