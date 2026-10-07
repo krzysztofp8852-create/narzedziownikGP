@@ -27,15 +27,17 @@ await registry.as(manager.userId).changePassword(managerPassword, signedInNow())
 
 await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12, Poznań", managerId: manager.userId });
 const grinders = await owner.addCategory({ name: "Szlifierki", prefix: "S" });
+// Identyfikatory narzędzi po kodzie: z nich test składa adresy z naklejek QR.
+const toolIds: Record<string, string> = {};
 for (const [code, name] of [
   ["S-01", "Szlifierka kątowa"],
   ["S-02", "Szlifierka mała"],
   ["S-03", "Szlifierka do betonu"],
 ]) {
-  await owner.addTool({ operationId: randomUUID(), code, name, categoryId: grinders.id });
+  toolIds[code] = (await owner.addTool({ operationId: randomUUID(), code, name, categoryId: grinders.id })).toolId;
 }
 
 console.log(
-  JSON.stringify({ companyId: company.companyId, ownerId: company.ownerUserId, companyName, email: managerEmail, password: managerPassword }),
+  JSON.stringify({ companyId: company.companyId, ownerId: company.ownerUserId, companyName, email: managerEmail, password: managerPassword, toolIds }),
 );
 process.exit(0);

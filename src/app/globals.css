@@ -1118,6 +1118,67 @@ a.tool-row:hover .tool-row-name {
   color: var(--danger);
 }
 
+/* Natywny skaner w aplikacji: obraz z aparatu jest pod stroną (WebView), więc na czas skanu strona robi się
+   przezroczysta i niewidoczna, a zostaje tylko nakładka z podpowiedzią, wynikiem skanu i przyciskami. */
+html.native-scanner-active,
+html.native-scanner-active body {
+  background: transparent;
+}
+
+html.native-scanner-active body {
+  visibility: hidden;
+}
+
+.native-scanner {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  visibility: visible;
+  color: #ffffff;
+}
+
+.native-scanner-bar {
+  display: grid;
+  gap: 10px;
+  padding: 16px var(--gutter);
+  background: rgb(20 23 28 / 0.75);
+  font-weight: 700;
+}
+
+.native-scanner-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.native-scanner-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.native-scanner-frame {
+  align-self: center;
+  justify-self: center;
+  width: min(70vw, 280px);
+  aspect-ratio: 1;
+  border: 3px solid var(--brand);
+  border-radius: 16px;
+}
+
+.native-scanner-feedback {
+  min-height: 1.5em;
+}
+
+.native-scanner-feedback-error {
+  color: #ffb4ab;
+}
+
+.native-scanner-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 8px;
+}
+
 .scan-group {
   display: grid;
   gap: 12px;

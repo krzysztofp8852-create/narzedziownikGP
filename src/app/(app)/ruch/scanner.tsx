@@ -6,7 +6,8 @@ import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
 import type { RegisteredKind } from "@/registry/registry";
 import { type ChecklistState, registerMovement } from "./actions";
-import { CameraScanner } from "./camera-scanner";
+import { type ScanFeedback } from "./native-scanner";
+import { QrScanner } from "./qr-scanner";
 import { readSticker } from "@/stickers/url";
 import { type ChecklistData, type ChecklistPlace, type ChecklistTool, DamagedWarnings, DeadlineHints, PlaceName, serviceFollowUp } from "./checklist";
 import { type DoneMovement, type FollowUpTool, MovementResult } from "./movement-result";
@@ -35,7 +36,7 @@ export function Scanner({ data }: { data: ChecklistData }) {
   const [scannedIds, setScannedIds] = useState<string[]>([]);
   const [camera, setCamera] = useState(true);
   const [typed, setTyped] = useState("");
-  const [feedback, setFeedback] = useState<{ text: string; error: boolean } | null>(null);
+  const [feedback, setFeedback] = useState<ScanFeedback>(null);
   const [choices, setChoices] = useState<Record<string, Choice>>({});
   const [done, setDone] = useState<DoneMovement | null>(null);
   // Ponowne wysłanie tego samego ruchu (np. po zerwanym połączeniu) idzie pod tym samym
@@ -124,7 +125,7 @@ export function Scanner({ data }: { data: ChecklistData }) {
   return (
     <div className="scanner">
       <div className="scanner-input">
-        {camera && <CameraScanner onScan={onScan} />}
+        {camera && <QrScanner onScan={onScan} feedback={feedback} onClose={() => setCamera(false)} />}
         <button className="button button-quiet" type="button" onClick={() => setCamera((on) => !on)}>
           {camera ? t("scanner.cameraOff") : t("scanner.cameraOn")}
         </button>

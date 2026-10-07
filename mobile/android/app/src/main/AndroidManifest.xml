@@ -38,7 +38,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Skan QR kamerą w przeglądarce programu; o zgodę pyta Capacitor przy pierwszym użyciu. -->
+    <!-- Skan QR: natywny skaner ML Kit (o zgodę pyta program przy pierwszym skanie) i kamera w stronie. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Nagrania głosowe ruchów. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />

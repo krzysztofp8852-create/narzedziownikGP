@@ -27,7 +27,8 @@ serwera Next.js.
 - Skorupa zachowuje się jak aplikacja: systemowy „wstecz” cofa w historii WebView, a na stronie startowej zamyka
   aplikację; adresy spoza narzedziownikgp.pl (Mapy Google, `tel:`, `mailto:`, inne domeny) otwierają się w systemowych
   aplikacjach; sesja zostaje w ciasteczkach WebView po zamknięciu aplikacji. Uprawnienia aparatu, mikrofonu i położenia
-  są w manifeście, a Capacitor prosi o nie przy pierwszym użyciu przez stronę.
+  są w manifeście, a Capacitor prosi o nie przy pierwszym użyciu przez stronę (natywny skaner QR prosi o aparat sam,
+  przy pierwszym skanie).
 - **iPhone i komputer zostają przy PWA.** Bez App Store.
 - Dystrybucja tylko przez Google Play (testy wewnętrzne, zamknięte, produkcja), z konta organizacji GP Engineering,
   z Play App Signing; my trzymamy tylko klucz uploadowy. AAB budujemy i podpisujemy ręcznie z terminala
