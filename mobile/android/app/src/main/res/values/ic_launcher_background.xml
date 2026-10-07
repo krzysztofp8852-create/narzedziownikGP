@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ciemne tło znaku GP, jak `dark` w scripts/generate-icons.mts; też tło ekranu startowego Androida 12+. -->
+    <color name="ic_launcher_background">#14171C</color>
+</resources>

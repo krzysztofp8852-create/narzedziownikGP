@@ -310,3 +310,13 @@ _Avoid_: warunki, RODO (jako nazwa dokumentu)
 **Umowa powierzenia**:
 Umowa, w której firma (administrator danych swoich ludzi i tego, co zapisuje w programie) powierza ich przetwarzanie GP Engineering (podmiot przetwarzający). Zawiera się ją razem z umową o usługę.
 _Avoid_: DPA, umowa RODO
+
+## Program w telefonie
+
+**PWA**:
+Program dodany z przeglądarki do ekranu głównego telefonu albo komputera; otwiera się we własnym oknie bez paska adresu i bez zasięgu pokazuje ostatnią kopię tablicy. Tak instaluje się program na iPhonie i komputerze.
+_Avoid_: aplikacja (to wersja z Google Play), skrót
+
+**Aplikacja**:
+NarzędziownikGP na Androida instalowany z Google Play: ten sam program co w przeglądarce, z tymi samymi kontami, otwarty w natywnej skorupie z dostępem do funkcji telefonu. Zmiany programu dochodzą do niej bez aktualizacji ze sklepu.
+_Avoid_: aplikacja mobilna, apka, PWA (to wersja z przeglądarki)

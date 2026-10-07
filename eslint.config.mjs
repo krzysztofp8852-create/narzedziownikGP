@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Aplikacja na Androida ma własne zależności i pliki generowane przez Capacitora.
+    "mobile/**",
   ]),
 ]);
 

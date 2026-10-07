@@ -1,0 +1,20 @@
+{
+  "name": "narzedziownik-gp-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplikacja NarzędziownikGP na Androida: skorupa Capacitor, która ładuje narzedziownikgp.pl",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

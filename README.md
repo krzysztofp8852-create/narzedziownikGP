@@ -287,3 +287,6 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   bierze adres z `APP_URL`; bez niego e-mail ma sam raport.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.
+- Aplikacja na Androida (Google Play, zob. `docs/adr/0038`) to skorupa Capacitor w `mobile/`, która ładuje
+  produkcyjny adres. Ma własne zależności i nie wchodzi do builda Vercela; build debug i podpisany AAB opisuje
+  `mobile/README.md`.

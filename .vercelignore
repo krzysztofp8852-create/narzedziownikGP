@@ -4,3 +4,5 @@ node_modules
 .next
 test-results
 playwright-report
+# Aplikacja na Androida ma własne zależności i build (mobile/README.md); Vercel jej nie potrzebuje.
+/mobile
