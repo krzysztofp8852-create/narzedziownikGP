@@ -37,6 +37,10 @@ describe("dokąd trafia wejście na adres aplikacji", () => {
     }
   });
 
+  it("formularz „oddzwonimy” wysyła się bez logowania także ze strony głównej, gdzie stoi strona o programie", () => {
+    expect(visitorRoute({ pathname: "/oddzwonimy", search: "", method: "POST" }, false)).toEqual({ kind: "page" });
+  });
+
   it("regulamin, polityka prywatności i umowa powierzenia otwierają się bez logowania", () => {
     for (const path of ["/regulamin", "/polityka-prywatnosci", "/umowa-powierzenia"]) {
       expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });
