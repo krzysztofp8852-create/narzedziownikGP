@@ -1,3 +1,4 @@
+import type { CallbackRequest } from "./callback-requests";
 import type { EmailedNotification } from "./notifications";
 import type { PushMessage, PushSubscriptionData } from "./push";
 import type { UserMessage } from "./support-chat";
@@ -27,8 +28,8 @@ export interface AuthAdmin {
 /**
  * Port powiadomień: kopia powiadomienia z dzwonka poza aplikacją, wysyłana po zapisie. Dwa kanały: e-mail
  * (tylko rodzaje z kopią e-mailową, `EmailedNotification`) i Web Push (każdy nowy wpis, na każdą przeglądarkę,
- * w której adresat włączył powiadomienia). Do tego e-mail do supportu GP Engineering o nowej wiadomości
- * użytkownika na czacie.
+ * w której adresat włączył powiadomienia). Do tego e-maile do GP Engineering: o nowej wiadomości użytkownika na czacie
+ * i o prośbie o telefon z formularza na stronie.
  */
 export interface Notifier {
   /** Kanał e-mail. */
@@ -40,6 +41,8 @@ export interface Notifier {
   push(subscription: PushSubscriptionData, message: PushMessage): Promise<"sent" | "expired">;
   /** E-mail na adres supportu GP Engineering (zna go adapter): nowa wiadomość użytkownika na czacie. */
   sendToSupport(message: UserMessage): Promise<void>;
+  /** E-mail na ten sam adres GP Engineering: ktoś zostawił numer w formularzu „oddzwonimy”. */
+  sendCallbackRequest(request: CallbackRequest): Promise<void>;
 }
 
 /**

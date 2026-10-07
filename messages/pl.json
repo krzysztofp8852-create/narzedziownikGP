@@ -427,7 +427,8 @@
     "demo_push": "W wersji demo powiadomienia push są wyłączone, bo z konta tej roli korzystają wszyscy oglądający.",
     "demo_delete": "Firmy demo nie usuwa się z panelu. Zastępuje ją nowe demo, a poprzednie znika samo.",
     "delete_requires_read_only": "Usunąć można tylko firmę w trybie tylko do odczytu. Najpierw włącz ten tryb, żeby firma mogła jeszcze wyeksportować dane.",
-    "delete_confirmation": "Wpisana nazwa nie zgadza się z nazwą firmy. Nic nie zostało usunięte."
+    "delete_confirmation": "Wpisana nazwa nie zgadza się z nazwą firmy. Nic nie zostało usunięte.",
+    "callback_busy": "Nie udało się teraz zapisać numeru. Zadzwoń do nas albo napisz."
   },
   "days": {
     "one": "{count} dzień",
@@ -1336,6 +1337,7 @@
     "navCompanies": "Firmy",
     "navSupport": "Czat z supportem",
     "navDemo": "Dziennik demo",
+    "navCallbacks": "Prośby o telefon",
     "companiesTitle": "Firmy",
     "companiesEmpty": "Nie ma jeszcze żadnej firmy.",
     "newCompany": "Nowa firma",
@@ -1408,6 +1410,17 @@
     "deleted": "Firma usunięta razem z danymi, plikami i kontami. Wpis o usunięciu został w dzienniku.",
     "deletedWithLeftovers": "Dane firmy usunięte, ale części plików albo kont logowania ({count}) nie udało się usunąć. Szczegóły są w logach serwera; usuń je ręcznie, zanim potwierdzisz klientowi usunięcie. Konto, które zostało, blokuje swój e-mail przy zakładaniu nowej firmy.",
     "navSupportUnread": "Czat z supportem, wątki z nowymi wiadomościami: {count}",
+    "callbacks": {
+      "title": "Prośby o telefon",
+      "intro": "Numery zostawione w formularzu „Zostaw numer, oddzwonimy” na stronie o programie i na stronie /demo, z ostatnich 90 dni. Każda prośba przychodzi też e-mailem na adres supportu. Po roku prośba znika.",
+      "empty": "Nikt nie zostawił numeru w ostatnich 90 dniach.",
+      "summary": "Ostatnie 7 dni: {week} · ostatnie 30 dni: {month} · ostatnie 90 dni: {all}",
+      "noName": "bez imienia",
+      "sources": {
+        "o-programie": "strona o programie",
+        "demo": "strona demo"
+      }
+    },
     "demoLog": {
       "title": "Dziennik demo",
       "intro": "Kto wchodził do demo w ostatnich 30 dniach i co tam robił. Wizyta to jedna przeglądarka: od wejścia ze strony /demo przez kolejne przełączenia roli. Nie zapisujemy adresów IP ani danych oglądających.",
@@ -1798,6 +1811,30 @@
     },
     "contactPhone": "Zadzwoń:",
     "contactEmail": "Napisz:"
+  },
+  "callback": {
+    "title": "Zostaw numer, oddzwonimy",
+    "lead": "Wolisz, żebyśmy to my zadzwonili? Oddzwonimy w ciągu dnia roboczego.",
+    "phone": "Numer telefonu",
+    "phonePlaceholder": "np. 600 123 456",
+    "name": "Imię albo firma (nieobowiązkowo)",
+    "website": "Strona internetowa",
+    "submit": "Oddzwońcie do mnie",
+    "submitting": "Wysyłanie…",
+    "done": "Dziękujemy! Zadzwonimy na numer {phone} w ciągu dnia roboczego.",
+    "invalidPhone": "Wpisz numer telefonu, np. 600 123 456.",
+    "privacy": "Zadzwonimy tylko w sprawie programu.",
+    "privacyLink": "Polityka prywatności",
+    "email": {
+      "subject": "Oddzwoń: {phone} ({name})",
+      "lead": "Ktoś zostawił numer w formularzu „Zostaw numer, oddzwonimy”.",
+      "phone": "Telefon: {phone}",
+      "name": "Imię albo firma: {name}",
+      "source": "Strona: {source}",
+      "sentAt": "Wysłane: {when}",
+      "noName": "bez imienia",
+      "list": "Wszystkie prośby: {url}"
+    }
   },
   "landing": {
     "title": "NarzędziownikGP: zarządzanie budową i ewidencja narzędzi",

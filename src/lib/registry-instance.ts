@@ -44,7 +44,7 @@ function notifier(): Notifier {
   const resend = serverEnv.resend();
   const webPush = serverEnv.webPush();
   const email = resend ? createResendNotifier({ ...resend, appUrl: serverEnv.appUrl(), supportAddress: serverEnv.supportEmail() }) : logNotifier;
-  return { send: email.send, sendToSupport: email.sendToSupport, push: webPush ? createWebPushChannel(webPush) : logPush };
+  return { send: email.send, sendToSupport: email.sendToSupport, sendCallbackRequest: email.sendCallbackRequest, push: webPush ? createWebPushChannel(webPush) : logPush };
 }
 
 /** Poza lokalnym Supabase połączenie jest szyfrowane, a certyfikat serwera sprawdzany względem CA Supabase. */

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LegalLinks } from "@/components/legal-links";
+import { CallbackForm } from "@/components/callback-form";
 import { SalesContact } from "@/components/sales-contact";
 import { formatMoney, formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -333,6 +334,7 @@ export default function LandingPage() {
           <div className="landing-sales">
             <SalesContact />
           </div>
+          <CallbackForm source="o-programie" />
           <div className="landing-actions">
             <Link href="/demo" className="button">
               {t("landing.hero.demo")}
