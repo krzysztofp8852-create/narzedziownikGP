@@ -64,6 +64,9 @@ i odbijanie (#87) trafią na produkcję. Kartoteka Ludzie z osobami bez konta (#
    (ADR 0020). Czy to w ogóle dane osobowe, a jeśli tak, jaki termin wpisać?
 7. **Pliki cookies i pamięć urządzenia.** Polityka powołuje się na niezbędność do świadczenia usługi, bez numeru
    artykułu. Wskazać właściwy przepis Prawa komunikacji elektronicznej.
+   Google Analytics wczytuje się dopiero po zgodzie na banerze (przyciski „Akceptuję” i „Tylko niezbędne” są równorzędne,
+   wycofanie w stopce). Czy treść banera i punkt 10.3 polityki wystarczą jako informacja przy zbieraniu zgody i czy
+   Google przy Analytics to dla nas podmiot przetwarzający, czy osobny administrator?
 8. **Wypowiedzenie i zwrot opłat.** Regulamin (§ 16) daje wypowiedzenie na koniec opłaconego okresu, bez zwrotu
    za niewykorzystany czas. Potwierdzić.
 9. **Formularz „Zostaw numer, oddzwonimy”** (polityka pkt 3 ust. 3): numer, opcjonalne imię albo firma, strona
