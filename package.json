@@ -15,9 +15,12 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:push": "tsx --env-file-if-exists=.env.local scripts/db-push.mts",
+    "db:push:prod": "tsx --env-file=.env.produkcja scripts/db-push.mts",
     "company:create": "tsx --env-file-if-exists=.env.local scripts/create-company.mts",
     "super-admin:create": "tsx --env-file-if-exists=.env.local scripts/create-super-admin.mts",
+    "super-admin:create:prod": "tsx --env-file=.env.produkcja scripts/create-super-admin.mts",
     "demo:create": "tsx --env-file-if-exists=.env.local scripts/create-demo.mts",
+    "demo:create:prod": "tsx --env-file=.env.produkcja scripts/create-demo.mts",
     "sites:geocode": "tsx --env-file-if-exists=.env.local scripts/geocode-sites.mts",
     "eval:interpretation": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval-interpretation.mts"
   },

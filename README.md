@@ -35,6 +35,9 @@ Wpisz do `.env.local` klucze projektu `narzedziownik-test` i wgraj migracje:
 npm run db:push
 ```
 
+Kluczy projektu produkcyjnego nigdy nie wpisuj do `.env.local`: ten plik czytają test dymny i skrypty testowe
+(zob. „Środowiska i wdrożenie”).
+
 ### Super-admin, firma i aplikacja
 
 ```bash
@@ -57,7 +60,8 @@ npm run company:create -- --name "Zawbud" --owner-email jan@zawbud.pl --owner-na
 ### Wersja demo dla klientów
 
 ```bash
-npm run demo:create
+npm run demo:create        # projekt testowy, do prób
+npm run demo:create:prod   # demo dla klientów, na produkcji (ADR 0039)
 ```
 
 Zakłada firmę demo „DemoBud” (zespół, sprzęt, budowy, busy, serwisy, kilka tygodni historii, a w dzwonkach alarmy
@@ -76,7 +80,7 @@ repozytorium `CRON_SECRET` o tej samej wartości co w Vercel. Ręcznie: Actions 
 
 ```bash
 npm test            # testy Rejestru
-npm run test:e2e    # test dymny Playwright (potrzebuje .env.local i działającego Supabase)
+npm run test:e2e    # test dymny Playwright (potrzebuje .env.local z lokalnym albo testowym Supabase)
 npm run typecheck
 npm run lint
 npm run eval:interpretation   # zestaw ewaluacyjny interpretacji na prawdziwym OpenAI, ręcznie, nie w CI
@@ -234,18 +238,29 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 
 ## Środowiska i wdrożenie
 
-- Supabase: jeden projekt w regionie `eu-west-1` dla Preview i Production (zob. `docs/adr/0001`,
-  `docs/adr/0002`). Klucze są w `.env.local`, a na Vercel w zmiennych środowiskowych projektu.
+- Supabase: dwa projekty w regionie `eu-west-1` (zob. `docs/adr/0001`, `docs/adr/0039`). Produkcyjny
+  `narzedziownik-prod` ma klucze w zmiennych Vercel Production i w lokalnym `.env.produkcja` (poza repo; Next.js go
+  nie czyta). Testowy `narzedziownik-test` ma klucze w zmiennych Vercel Preview i w `.env.local`, więc lokalny test
+  dymny i podglądy nie dotykają danych klientów. Projekt produkcyjny zakłada i podłącza kreator
+  `scripts/produkcja-supabase.sh` (założenie projektu, Auth, migracje, super-admin, demo, zmienne Vercel).
 - Vercel: funkcje w `fra1` (`vercel.json`). Branch `main` wdraża się na Production, pozostałe na Preview.
-- Migracje: `npm run db:push`.
+- Migracje: najpierw `npm run db:push` (projekt testowy, sprawdzenie na Preview), potem `npm run db:push:prod`
+  (produkcja) przed scaleniem kodu do `main`. Migracja trafia na produkcję przed kodem, więc musi działać ze starym
+  kodem.
+- Skrypty na produkcji mają końcówkę `:prod` i czytają `.env.produkcja`: `npm run db:push:prod`,
+  `npm run super-admin:create:prod -- --email …`, `npm run demo:create:prod`. Node nie nadpisuje zmiennych
+  wyeksportowanych w powłoce, więc nie eksportuj tam `DATABASE_URL` ani kluczy Supabase.
 - `DATABASE_URL` wskazuje pulę transakcyjną (port 6543). Połączenie jest szyfrowane, a certyfikat
   serwera weryfikowany głównym CA Supabase (`src/lib/supabase-root-ca.ts`).
+- Ustawienia Auth poniżej nie są w migracjach, więc ustawia się je w panelu każdego z dwóch projektów osobno.
 - W Supabase wyłącz samodzielną rejestrację (Authentication → Sign In / Providers →
   „Allow new users to sign up”). Konta zakłada wyłącznie serwer.
 - Reset hasła przez e-mail wymaga w Supabase:
   - szablonu Authentication → Emails → Reset Password z `supabase/templates/recovery.html`
     (link z `token_hash` działa także w przeglądarce otwartej z aplikacji pocztowej),
-  - adresu aplikacji w Authentication → URL Configuration (Site URL, a w Redirect URLs `<adres>/auth/confirm`),
+  - adresu aplikacji w Authentication → URL Configuration (Site URL, a w Redirect URLs `<adres>/auth/confirm`):
+    w produkcyjnym `https://narzedziownikgp.pl` i stary `https://narzedziownik-gp.vercel.app`, w testowym
+    `http://localhost:3000` i podglądy `https://narzedziownik-gp-*.vercel.app`,
   - własnego SMTP (np. Resend) w Authentication → Emails → SMTP Settings: wbudowana poczta Supabase
     wysyła tylko do członków zespołu projektu i kilka wiadomości na godzinę.
 - Powiadomienia e-mail (np. „Adam Nowak zabiera S-01 z budowy Rataje” dla kierownika, któremu przeniesienie

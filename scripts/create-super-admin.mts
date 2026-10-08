@@ -4,7 +4,8 @@
  *
  *   npm run super-admin:create -- --email krzysztof@gp-engineering.pl
  *
- * Łączy się z bazą i Supabase Auth ze zmiennych z .env.local (zob. README).
+ * Łączy się z bazą i Supabase Auth ze zmiennych z .env.local, a `npm run super-admin:create:prod` z .env.produkcja
+ * (projekt produkcyjny, zob. README i docs/adr/0039).
  */
 import { parseArgs } from "node:util";
 import { getRegistry } from "@/lib/registry-instance";
