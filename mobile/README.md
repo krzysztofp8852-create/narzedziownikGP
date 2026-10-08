@@ -15,6 +15,10 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
 - Systemowy „wstecz” cofa w historii programu, a na stronie startowej (`/`) zamyka aplikację (`MainActivity.java`).
 - Adresy spoza narzedziownikgp.pl (Mapy Google, `tel:`, `mailto:`, inne domeny) Capacitor otwiera w systemowych
   aplikacjach.
+- Wtyczki natywne (strona pyta o nie przez `src/lib/platform.ts` i bez nich używa wersji webowej):
+  - `@capacitor-mlkit/barcode-scanning` (`BarcodeScanner`): skaner QR Google ML Kit z latarką przy „Skanuj QR”
+    i „Odbij się”. Model jest w aplikacji, więc skanuje też bez zasięgu. Obraz z aparatu jest pod stroną, a strona na
+    czas skanu pokazuje tylko swoją nakładkę (`src/app/(app)/ruch/native-scanner.tsx`).
 
 ## Wymagania
 

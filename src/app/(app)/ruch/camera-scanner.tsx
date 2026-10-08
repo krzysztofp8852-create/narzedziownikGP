@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { t } from "@/i18n/t";
+import { repeatFilter } from "./scan-repeat";
 
 /** Natywny odczyt kodów (Chrome na Androidzie); Safari go nie ma. Typów nie ma jeszcze w lib.dom. */
 interface NativeBarcodeDetector {
@@ -21,8 +22,6 @@ type ReadFrame = (video: HTMLVideoElement) => Promise<string | null>;
 
 /** Co ile ms sprawdzamy klatkę. Częściej tylko grzeje telefon. */
 const FRAME_INTERVAL_MS = 150;
-/** Ta sama naklejka liczy się ponownie dopiero wtedy, gdy przez tyle ms nie było jej w kadrze. */
-const REPEAT_AFTER_MS = 2000;
 /** Dłuższy bok klatki dla biblioteki JS: mniejsza klatka to szybszy odczyt, a naklejka i tak wypełnia kadr. */
 const JS_FRAME_SIZE = 640;
 
@@ -90,15 +89,11 @@ export function CameraScanner({ onScan, hint = t("scanner.cameraHint") }: { onSc
       if (stopped) return;
       setStatus("on");
 
-      let last = { text: "", seenAt: 0 };
+      const fresh = repeatFilter();
       const tick = async () => {
         if (stopped) return;
         const text = video.readyState >= video.HAVE_CURRENT_DATA ? await readFrame(video).catch(() => null) : null;
-        if (text && !stopped) {
-          const now = Date.now();
-          if (text !== last.text || now - last.seenAt > REPEAT_AFTER_MS) onScanRef.current(text);
-          last = { text, seenAt: now };
-        }
+        if (text && !stopped && fresh(text, Date.now())) onScanRef.current(text);
         timer = window.setTimeout(tick, FRAME_INTERVAL_MS);
       };
       void tick();

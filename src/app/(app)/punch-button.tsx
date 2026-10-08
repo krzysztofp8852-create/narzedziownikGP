@@ -6,7 +6,7 @@ import { t } from "@/i18n/t";
 import { hasOfflineQueue } from "@/lib/offline/idb";
 import { readPoster } from "@/posters/url";
 import { OfflinePunch } from "./odbicie/offline-punch";
-import { CameraScanner } from "./ruch/camera-scanner";
+import { QrScanner } from "./ruch/qr-scanner";
 
 /**
  * „Odbij się” na górze tablicy: skaner w programie (ten sam co przy naklejkach, z ręcznym wpisaniem kodu z plakatu)
@@ -51,7 +51,14 @@ export function PunchButton({ userId, punchesOthers }: { userId: string; punches
       {open && offlineCode && <OfflinePunch key={offlineCode} userId={userId} code={offlineCode} punchesOthers={punchesOthers} onClose={close} />}
       {open && !offlineCode && (
         <div className="scanner-input">
-          {camera && <CameraScanner onScan={go} hint={t("punches.cameraHint")} />}
+          {camera && (
+            <QrScanner
+              onScan={go}
+              hint={t("punches.cameraHint")}
+              feedback={feedback ? { text: feedback, error: true } : null}
+              onClose={() => setCamera(false)}
+            />
+          )}
           <button className="button button-quiet" type="button" onClick={() => setCamera((on) => !on)}>
             {camera ? t("scanner.cameraOff") : t("scanner.cameraOn")}
           </button>
