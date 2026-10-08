@@ -259,6 +259,10 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   usług push, np. `mailto:powiadomienia@gp-engineering.pl`) w zmiennych Vercel. Bez kluczy włączanie powiadomień
   w dzwonku się nie pokazuje, a kopie push trafiają tylko do logu serwera. Wymiana kluczy unieważnia wszystkie
   subskrypcje. W firmie demo push jest wyłączony: włączania nie ma, a kopie na konta demo nie wychodzą.
+- Powiadomienia w aplikacji na Androida idą przez Firebase Cloud Messaging: `FIREBASE_SERVICE_ACCOUNT` w zmiennych
+  Vercel to cały plik JSON klucza konta serwisowego Firebase (Ustawienia projektu → Konta usługi → Wygeneruj nowy
+  klucz prywatny). Bez niego kopie push na aplikację trafiają tylko do logu serwera. Stronę aplikacji opisuje
+  `mobile/README.md`.
 - Wpis tekstem wymaga `OPENAI_API_KEY` (OpenAI API bez trenowania na danych i bez przechowywania odpowiedzi,
   zob. `docs/adr/0005`) w zmiennych Vercel; model domyślnie `gpt-5.4-mini`, inny w `OPENAI_MODEL`. Bez klucza przycisk „Wpisz tekstem” się nie pokazuje. Lokalnie i w teście dymnym
   `TEXT_ENTRY_INTERPRETER=slowa` włącza interpretację słowami kluczowymi bez AI.

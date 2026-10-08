@@ -226,9 +226,9 @@ describe("firma demo", () => {
     });
     await expect(registry.supportChat()).rejects.toMatchObject({ code: "demo_chat" });
     expect(await registry.unreadSupportReplyCount()).toBe(0);
-    await expect(
-      registry.subscribeToPush({ endpoint: "https://fcm.googleapis.com/fcm/send/demo", keys: { p256dh: "klucz", auth: "sekret" } }),
-    ).rejects.toMatchObject({ code: "demo_push" });
+    const browser = { kind: "przegladarka" as const, endpoint: "https://fcm.googleapis.com/fcm/send/demo", keys: { p256dh: "klucz", auth: "sekret" } };
+    await expect(registry.subscribeToPush(browser)).rejects.toMatchObject({ code: "demo_push" });
+    await expect(registry.subscribeToPush({ kind: "aplikacja", token: "telefon-demo:APA91b" })).rejects.toMatchObject({ code: "demo_push" });
     expect(bed.notifier.supportEmails).toEqual([]);
   });
 
@@ -236,8 +236,15 @@ describe("firma demo", () => {
     const { companyId } = await demo();
     const [, marek, anna] = await bed.registry.system().demoAccounts();
     await bed.db.transaction((sql) =>
-      sql("insert into app.push_subscriptions (endpoint, company_id, user_id, p256dh, auth, created_at) values ($1, $2, $3, 'klucz', 'sekret', $4)", [
-        "https://fcm.googleapis.com/fcm/send/marek",
+      sql(
+        `insert into app.push_subscriptions (kind, endpoint, company_id, user_id, p256dh, auth, created_at)
+         values ('przegladarka', $1, $2, $3, 'klucz', 'sekret', $4)`,
+        ["https://fcm.googleapis.com/fcm/send/marek", companyId, marek.userId, START],
+      ),
+    );
+    await bed.db.transaction((sql) =>
+      sql("insert into app.push_subscriptions (kind, token, company_id, user_id, created_at) values ('aplikacja', $1, $2, $3, $4)", [
+        "telefon-marka:APA91b",
         companyId,
         marek.userId,
         START,

@@ -1,11 +1,11 @@
 import webpush from "web-push";
-import type { Notifier } from "@/registry/ports";
 import type { PushMessage } from "@/registry/registry";
 import { notificationText } from "./bell-text";
 import { issueEntryLink, issueEntryText } from "./issue-text";
+import type { PushChannel } from "./push-channel";
 import { SUPPORT_CHAT_OPEN, supportReplyText } from "./support-chat-text";
 
-/** Treść powiadomienia push, którą service worker (public/sw.js) pokazuje na telefonie. */
+/** Treść powiadomienia push, którą service worker (public/sw.js) albo aplikacja na Androida (FCM) pokazuje na telefonie. */
 export interface PushNotification {
   title: string;
   body: string;
@@ -54,10 +54,10 @@ type SendNotification = typeof webpush.sendNotification;
 export function createWebPushChannel(
   vapid: { publicKey: string; privateKey: string; subject: string },
   sendNotification: SendNotification = webpush.sendNotification,
-): Notifier["push"] {
-  return async (subscription, message) => {
+): PushChannel<"przegladarka"> {
+  return async ({ endpoint, keys }, message) => {
     try {
-      await sendNotification(subscription, JSON.stringify(pushNotification(message)), {
+      await sendNotification({ endpoint, keys }, JSON.stringify(pushNotification(message)), {
         vapidDetails: vapid,
         TTL: TTL_SECONDS,
         urgency: "normal",
@@ -72,7 +72,7 @@ export function createWebPushChannel(
 }
 
 /** Bez kluczy VAPID (lokalnie, w CI) kopie push trafiają tylko do logu serwera. */
-export const logPush: Notifier["push"] = async (_subscription, message) => {
+export const logPush: PushChannel<"przegladarka"> = async (_subscription, message) => {
   console.warn(`[push bez wysyłki: brak kluczy VAPID] ${pushNotification(message).title}`);
   return "sent";
 };

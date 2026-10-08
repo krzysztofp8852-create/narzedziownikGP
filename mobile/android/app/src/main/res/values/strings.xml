@@ -4,4 +4,6 @@
     <string name="title_activity_main">NarzędziownikGP</string>
     <string name="package_name">pl.narzedziownikgp.app</string>
     <string name="custom_url_scheme">pl.narzedziownikgp.app</string>
+    <string name="notification_channel_name">Powiadomienia</string>
+    <string name="notification_channel_description">Wpisy dzwonka, zgłoszenia i odpowiedzi supportu</string>
 </resources>

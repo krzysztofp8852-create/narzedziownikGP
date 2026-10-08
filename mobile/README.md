@@ -11,7 +11,8 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
 - minSdk 24 (Android 7.0), targetSdk 36 (`android/variables.gradle`).
 - Ikony i ekran startowy rysuje `npx tsx scripts/generate-icons.mts` (z katalogu głównego) z tego samego znaku co PWA.
 - Uprawnienia (`android/app/src/main/AndroidManifest.xml`): aparat (skan QR), mikrofon (nagrania głosowe), położenie
-  dokładne i przybliżone (odbicie). O zgodę Android pyta przy pierwszym użyciu na stronie, nie przy starcie.
+  dokładne i przybliżone (odbicie), powiadomienia. O zgodę Android pyta przy pierwszym użyciu na stronie, nie przy
+  starcie; o powiadomienia przy włączeniu przełącznika w dzwonku.
 - Systemowy „wstecz” cofa w historii programu, a na stronie startowej (`/`) zamyka aplikację (`MainActivity.java`).
 - Adresy spoza narzedziownikgp.pl (Mapy Google, `tel:`, `mailto:`, inne domeny) Capacitor otwiera w systemowych
   aplikacjach.
@@ -20,6 +21,10 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
     i dokumentach terminów i uprawnień, nad zwykłym wyborem pliku (`src/components/native-photo-buttons.tsx`). Bez niej WebView daje przy polu
     pliku tylko wybór pliku, bez aparatu. O zgodę na aparat wtyczka pyta przy pierwszym zdjęciu; galeria to systemowy
     wybór zdjęć, bez zgody. Zdjęcie trafia do pola pliku i zmniejsza się jak wybrane z pliku; PDF dalej z wyboru pliku.
+  - `@capacitor/push-notifications` (`PushNotifications`): powiadomienia przez Firebase Cloud Messaging zamiast
+    Web Push, którego WebView nie ma (zob. „Powiadomienia” niżej). Strona rejestruje token w dzwonku
+    (`src/lib/push/app.ts`), a dotknięcie powiadomienia otwiera jego adres. Kanał „Powiadomienia” i ikonę na pasku
+    (`ic_notification`, biały znak GP) zakłada skorupa.
 
 ## Wymagania
 
@@ -53,6 +58,17 @@ npx cap sync android
 
 `localhost` zamiast adresu IP komputera jest celowy: dla przeglądarki to bezpieczny kontekst, więc kamera, mikrofon
 i położenie działają bez https. Z lokalnym Supabase dodaj `adb reverse tcp:54321 tcp:54321`.
+
+## Powiadomienia (Firebase)
+
+Do rejestracji w FCM aplikacja potrzebuje projektu Firebase na firmowym koncie Google z aplikacją Android
+`pl.narzedziownikgp.app`. Z konsoli Firebase pobierz `google-services.json` do `android/app/google-services.json`
+(nie jest sekretem, tylko wskazuje projekt) i zrób `npx cap sync android`. Bez tego pliku skorupa nie ładuje wtyczki
+push (inaczej zamknęłaby się przy włączaniu powiadomień), a dzwonek pokazuje, że powiadomień tu nie ma. Przed
+wydaniem do Google Play plik musi być na miejscu.
+
+Wysyła serwer: klucz konta serwisowego Firebase (Ustawienia projektu → Konta usługi → Wygeneruj nowy klucz prywatny)
+wklejony w całości do zmiennej `FIREBASE_SERVICE_ACCOUNT` na Vercelu (zob. README w katalogu głównym).
 
 ## Wersja debug
 

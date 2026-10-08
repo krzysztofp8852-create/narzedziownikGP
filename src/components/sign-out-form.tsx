@@ -3,6 +3,7 @@
 import { signOut } from "@/app/actions";
 import { t } from "@/i18n/t";
 import { forgetBoard } from "@/lib/offline/service-worker";
+import { disableAppPush } from "@/lib/push/app";
 import { unsubscribeFromPush } from "@/lib/push/client";
 
 /**
@@ -13,7 +14,7 @@ export function SignOutForm({ className = "button button-quiet", label = t("head
   return (
     <form
       action={async () => {
-        await Promise.all([forgetBoard(), unsubscribeFromPush({ server: true })]);
+        await Promise.all([forgetBoard(), unsubscribeFromPush({ server: true }), disableAppPush({ server: true })]);
         await signOut();
       }}
     >

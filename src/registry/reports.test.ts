@@ -188,7 +188,7 @@ describe("raport tygodniowy: zmiana czasu", () => {
 describe("raport: push z linkiem", () => {
   it("właściciel z włączonymi powiadomieniami dostaje push z wpisem raportu w dzwonku", async () => {
     const z = await givenZawbud();
-    const phone = { endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
+    const phone = { kind: "przegladarka" as const, endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
     await z.owner.subscribeToPush(phone);
     testbed.clock.set("2026-03-02T07:10:00+01:00");
     await sendDueReports();

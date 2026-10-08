@@ -210,9 +210,9 @@ describe("polecenia i zapytania w trybie tylko do odczytu", () => {
     const [entry] = (await nowak.bell()).entries;
     expect(await nowak.markNotificationRead(entry.id)).toMatchObject({ read: true });
     await nowak.markAllNotificationsRead();
-    const phone = { endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
+    const phone = { kind: "przegladarka" as const, endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
     await nowak.subscribeToPush(phone);
-    await nowak.unsubscribeFromPush(phone.endpoint);
+    await nowak.unsubscribeFromPush(phone);
   });
 
   it("ruch z kolejki offline czeka w telefonie (błąd do ponowienia), a nie trafia na listę „Do wyjaśnienia”; po wpłacie się zapisuje", async () => {
@@ -338,7 +338,7 @@ describe("ostrzeżenia przed trybem tylko do odczytu", () => {
 
   it("przy ręcznym trybie nie ma ostrzeżeń, a właściciel dostaje wpis w dzwonku i push, gdy super-admin go włącza", async () => {
     const z = await givenZawbud();
-    const phone = { endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
+    const phone = { kind: "przegladarka" as const, endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
     await z.owner.subscribeToPush(phone);
     testbed.clock.set("2026-04-01T10:00:00+02:00");
 

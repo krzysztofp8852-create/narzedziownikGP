@@ -51,7 +51,7 @@ export async function unsubscribeFromPush({ server }: { server: boolean }): Prom
 /** Wyłącza subskrypcję w przeglądarce, a potem na serwerze; bez sieci wystarczy to pierwsze. */
 async function forgetSubscription(subscription: PushSubscription) {
   await subscription.unsubscribe().catch(() => false);
-  await removePushSubscription(subscription.endpoint).catch((error: unknown) => console.error(error));
+  await removePushSubscription({ kind: "przegladarka", endpoint: subscription.endpoint }).catch((error: unknown) => console.error(error));
 }
 
 function isIos() {

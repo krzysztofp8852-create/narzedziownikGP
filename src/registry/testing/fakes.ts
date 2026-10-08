@@ -94,9 +94,9 @@ export class FakeAuthAdmin implements AuthAdmin {
 export class RecordingNotifier implements Notifier {
   /** Wysłane e-maile. */
   readonly sent: EmailedNotification[] = [];
-  /** Wysłane kopie push, z przeglądarką, na którą poszły. */
+  /** Wysłane kopie push, z subskrypcją urządzenia, na które poszły. */
   readonly pushed: { subscription: PushSubscriptionData; message: PushMessage }[] = [];
-  /** Adresy subskrypcji, o których usługa push mówi, że wygasły. */
+  /** Adresy subskrypcji przeglądarek i tokeny aplikacji, o których usługa push mówi, że wygasły. */
   readonly expired = new Set<string>();
   /** E-maile do supportu GP Engineering o wiadomościach użytkowników z czatu. */
   readonly supportEmails: UserMessage[] = [];
@@ -114,7 +114,7 @@ export class RecordingNotifier implements Notifier {
 
   async push(subscription: PushSubscriptionData, message: PushMessage) {
     if (this.pushFailWith) throw this.pushFailWith;
-    if (this.expired.has(subscription.endpoint)) return "expired" as const;
+    if (this.expired.has(subscription.kind === "przegladarka" ? subscription.endpoint : subscription.token)) return "expired" as const;
     this.pushed.push({ subscription, message });
     return "sent" as const;
   }

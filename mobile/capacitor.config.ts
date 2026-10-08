@@ -17,6 +17,10 @@ const config: CapacitorConfig = {
     // Zwykły http tylko dla lokalnego serwera w testach; produkcja idzie po https.
     cleartext: url.startsWith("http://"),
   },
+  plugins: {
+    // Powiadomienie przychodzi na pasek także wtedy, gdy aplikacja jest otwarta, jak Web Push w przeglądarce.
+    PushNotifications: { presentationOptions: ["alert"] },
+  },
 };
 
 export default config;

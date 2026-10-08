@@ -226,12 +226,14 @@ test("przewodnik po tablicy demo wskazuje przycisk menu", async ({ page }) => {
   }
   await expect(tour.getByRole("heading", { name: "Menu" })).toBeVisible();
 
-  const button = await menuButton(page).boundingBox();
-  const ring = await page.locator(".demo-tour-ring").boundingBox();
-  expect(button && ring).toBeTruthy();
-  const center = { x: button!.x + button!.width / 2, y: button!.y + button!.height / 2 };
-  expect(center.x).toBeGreaterThan(ring!.x);
-  expect(center.x).toBeLessThan(ring!.x + ring!.width);
-  expect(center.y).toBeGreaterThan(ring!.y);
-  expect(center.y).toBeLessThan(ring!.y + ring!.height);
+  // Przewodnik przewija do przycisku płynnie, a pierścień idzie za przewijaniem: sprawdzamy, gdy oba staną.
+  await expect
+    .poll(async () => {
+      const button = await menuButton(page).boundingBox();
+      const ring = await page.locator(".demo-tour-ring").boundingBox();
+      if (!button || !ring) return false;
+      const center = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
+      return center.x > ring.x && center.x < ring.x + ring.width && center.y > ring.y && center.y < ring.y + ring.height;
+    })
+    .toBe(true);
 });

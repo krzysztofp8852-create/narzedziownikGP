@@ -75,3 +75,11 @@ export async function emitPluginEvent(page: Page, plugin: string, eventName: str
     { key: `${plugin}.${eventName}`, data },
   );
 }
+
+/** Czy strona już słucha tego zdarzenia wtyczki atrapy (np. po hydracji). Skorupa trzyma zdarzenie do tej chwili. */
+export async function listensTo(page: Page, plugin: string, eventName: string): Promise<boolean> {
+  return page.evaluate(
+    (key) => ((window as unknown as { __appBridgeStub: StubState }).__appBridgeStub.listeners[key]?.length ?? 0) > 0,
+    `${plugin}.${eventName}`,
+  );
+}

@@ -17,7 +17,7 @@ const taken: PushMessage = {
   },
 };
 
-const subscription = { endpoint: "https://fcm.googleapis.com/fcm/send/abc", keys: { p256dh: "klucz", auth: "sekret" } };
+const subscription = { kind: "przegladarka" as const, endpoint: "https://fcm.googleapis.com/fcm/send/abc", keys: { p256dh: "klucz", auth: "sekret" } };
 const vapid = { publicKey: "publiczny", privateKey: "prywatny", subject: "mailto:powiadomienia@gp-engineering.pl" };
 
 describe("powiadomienie push z wpisu dzwonka", () => {
@@ -193,7 +193,7 @@ describe("kanał Web Push", () => {
 
     expect(await createWebPushChannel(vapid, send)(subscription, taken)).toBe("sent");
 
-    expect(send).toHaveBeenCalledWith(subscription, JSON.stringify(pushNotification(taken)), expect.objectContaining({ vapidDetails: vapid }));
+    expect(send).toHaveBeenCalledWith({ endpoint: subscription.endpoint, keys: subscription.keys }, JSON.stringify(pushNotification(taken)), expect.objectContaining({ vapidDetails: vapid }));
   });
 
   it.each([404, 410])("odpowiedź %i znaczy, że subskrypcja wygasła", async (statusCode) => {
