@@ -2,13 +2,15 @@
 
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { t } from "@/i18n/t";
+import { NativePhotoButtons } from "./native-photo-buttons";
 
 /** Formaty zdjęć, które pokazujemy w wyborze pliku; serwer sprawdza plik po treści. */
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/*";
 
 /**
  * Pole zdjęcia (`photo`) z podglądem wybranego pliku i przyciskiem „Usuń zdjęcie”, żeby przed wysłaniem było widać,
- * co pójdzie. Podgląd to adres pliku w pamięci przeglądarki, zwalniany przy zmianie i zamknięciu formularza.
+ * co pójdzie. Podgląd to adres pliku w pamięci przeglądarki, zwalniany przy zmianie i zamknięciu formularza. W aplikacji
+ * z wtyczką aparatu nad wyborem pliku są „Zrób zdjęcie” i „Z galerii”; wybór pliku zostaje, gdyby galeria nie działała.
  */
 export function PhotoField({ id, label, hint }: { id: string; label: string; hint: string }) {
   const input = useRef<HTMLInputElement>(null);
@@ -34,6 +36,7 @@ export function PhotoField({ id, label, hint }: { id: string; label: string; hin
     <div className="field">
       <label htmlFor={id}>{label}</label>
       <input ref={input} id={id} name="photo" type="file" accept={ACCEPT} aria-describedby={`${id}-hint`} onChange={change} />
+      <NativePhotoButtons inputId={id} name="zdjecie" />
       <small id={`${id}-hint`}>{hint}</small>
       {photo && (
         <div className="photo-preview" data-testid="photo-preview">

@@ -16,10 +16,15 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
 - Systemowy „wstecz” cofa w historii programu, a na stronie startowej (`/`) zamyka aplikację (`MainActivity.java`).
 - Adresy spoza narzedziownikgp.pl (Mapy Google, `tel:`, `mailto:`, inne domeny) Capacitor otwiera w systemowych
   aplikacjach.
-- Wtyczka `@capacitor/push-notifications` (`PushNotifications`): powiadomienia przez Firebase Cloud Messaging zamiast
-  Web Push, którego WebView nie ma (zob. „Powiadomienia” niżej). Strona rejestruje token w dzwonku
-  (`src/lib/push/app.ts`), a dotknięcie powiadomienia otwiera jego adres. Kanał „Powiadomienia” i ikonę na pasku
-  (`ic_notification`, biały znak GP) zakłada skorupa.
+- Wtyczki natywne (strona pyta o nie przez `src/lib/platform.ts` i bez nich używa wersji webowej):
+  - `@capacitor/camera` (`Camera`): „Zrób zdjęcie” i „Z galerii” przy zdjęciu zgłoszenia, zdjęciu w czacie
+    i dokumentach terminów i uprawnień, nad zwykłym wyborem pliku (`src/components/native-photo-buttons.tsx`). Bez niej WebView daje przy polu
+    pliku tylko wybór pliku, bez aparatu. O zgodę na aparat wtyczka pyta przy pierwszym zdjęciu; galeria to systemowy
+    wybór zdjęć, bez zgody. Zdjęcie trafia do pola pliku i zmniejsza się jak wybrane z pliku; PDF dalej z wyboru pliku.
+  - `@capacitor/push-notifications` (`PushNotifications`): powiadomienia przez Firebase Cloud Messaging zamiast
+    Web Push, którego WebView nie ma (zob. „Powiadomienia” niżej). Strona rejestruje token w dzwonku
+    (`src/lib/push/app.ts`), a dotknięcie powiadomienia otwiera jego adres. Kanał „Powiadomienia” i ikonę na pasku
+    (`ic_notification`, biały znak GP) zakłada skorupa.
 
 ## Wymagania
 

@@ -2285,6 +2285,13 @@ a.tool-row:hover .tool-row-name {
   color: var(--text-muted);
 }
 
+/* „Zrób zdjęcie” i „Z galerii” przy polu zdjęcia albo dokumentu w aplikacji. */
+.native-photo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Podgląd wybranego zdjęcia przed wysłaniem (zgłoszenie, czat). */
 .photo-preview {
   display: flex;
