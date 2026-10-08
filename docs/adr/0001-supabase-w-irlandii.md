@@ -18,4 +18,4 @@ jest spełniony. Funkcje Vercel zostają w `fra1`, zgodnie ze specyfikacją.
   strony). Strona robi kilka takich zapytań.
 - Jeśli czas odpowiedzi zacznie przeszkadzać, można przenieść funkcje Vercel do `dub1` (Dublin),
   obok bazy. Wystarczy zmienić `regions` w `vercel.json`.
-- Osobny projekt produkcyjny (zob. ADR 0002) zakładamy w tym samym regionie.
+- Osobny projekt produkcyjny (zob. ADR 0002 i 0039) zakładamy w tym samym regionie.

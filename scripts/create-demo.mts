@@ -4,7 +4,8 @@
  *
  *   npm run demo:create
  *
- * Łączy się z bazą i Supabase Auth ze zmiennych z .env.local (zob. README).
+ * Łączy się z bazą i Supabase Auth ze zmiennych z .env.local, a `npm run demo:create:prod` z .env.produkcja
+ * (projekt produkcyjny, zob. README i docs/adr/0039).
  */
 import { createDemoCompany } from "@/demo/company";
 import { registryDeps } from "@/lib/registry-instance";

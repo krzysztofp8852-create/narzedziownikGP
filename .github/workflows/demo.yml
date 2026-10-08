@@ -3,6 +3,7 @@ name: Demo
 # Co godzinę świeże demo, jeśli ktoś był w obecnym i skończył oglądać (zob. src/app/zadania/demo/route.ts).
 # Vercel Hobby puszcza cron najwyżej raz dziennie, więc godzinowy harmonogram jest tutaj. Minuta inna niż :00,
 # bo o pełnych godzinach GitHub opóźnia albo gubi uruchomienia.
+# Demo dla klientów żyje w projekcie Supabase produkcji (ADR 0039), więc zadanie woła adres produkcji.
 on:
   schedule:
     - cron: "17 * * * *"

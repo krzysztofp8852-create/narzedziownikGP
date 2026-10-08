@@ -21,7 +21,7 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-// Lokalny test dymny pisze do wspólnej bazy z produkcją (ADR 0002), a konta super-admina nie da się
+// Lokalny test dymny pisze do projektu testowego, wspólnego z podglądami (ADR 0039), a konta super-admina nie da się
 // potem usunąć z aplikacji. Dlatego ten test działa tylko w CI, na jednorazowym Supabase.
 test.skip(!process.env.CI, "tylko w CI: zakłada konto super-admina");
 

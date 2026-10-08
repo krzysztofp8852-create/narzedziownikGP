@@ -1,6 +1,6 @@
 # 0002. Na razie jeden projekt Supabase dla środowiska testowego i produkcyjnego
 
-Data: 2026-09-25 · Status: przyjęta (do rewizji przed pierwszym płacącym klientem)
+Data: 2026-09-25 · Status: zastąpiona przez ADR 0039 (osobny projekt Supabase dla produkcji)
 
 ## Kontekst
 
