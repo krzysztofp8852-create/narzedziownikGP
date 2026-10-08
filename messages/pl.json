@@ -1531,7 +1531,14 @@
   },
   "photo": {
     "preview": "Podgląd zdjęcia {name}",
-    "remove": "Usuń zdjęcie"
+    "remove": "Usuń zdjęcie",
+    "takePhoto": "Zrób zdjęcie",
+    "fromGallery": "Z galerii",
+    "problems": {
+      "cameraDenied": "Brak zgody na użycie aparatu. Włącz ją w ustawieniach telefonu: Aplikacje → NarzędziownikGP → Uprawnienia → Aparat. Możesz też wybrać zdjęcie z galerii.",
+      "galleryDenied": "Brak zgody na dostęp do zdjęć. Włącz ją w ustawieniach telefonu: Aplikacje → NarzędziownikGP → Uprawnienia. Możesz też zrobić zdjęcie aparatem.",
+      "failed": "Nie udało się dodać zdjęcia. Spróbuj jeszcze raz."
+    }
   },
   "issues": {
     "title": "Zgłoszenia",

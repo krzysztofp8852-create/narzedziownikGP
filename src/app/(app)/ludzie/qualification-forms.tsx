@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
+import { NativePhotoButtons } from "@/components/native-photo-buttons";
 import { type MessageKey, t } from "@/i18n/t";
 import { withShrunkDocument } from "@/lib/shrink-photo";
 import {
@@ -164,10 +165,12 @@ function NoteField({ id, kind, defaultValue }: { id: string; kind: Qualification
   );
 }
 
+/** Dokument uprawnienia: w aplikacji zdjęcie też z aparatu albo galerii, a PDF dalej z wyboru pliku. */
 function DocumentField({ id, required }: { id: string; required: boolean }) {
   return (
     <div className="field">
       <label htmlFor={`${id}-file`}>{required ? t("qualifications.documentFile") : t("qualifications.documentFileOptional")}</label>
+      <NativePhotoButtons inputId={`${id}-file`} name={t("qualifications.defaultFileName")} />
       <input id={`${id}-file`} name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/*" required={required} aria-describedby={`${id}-hint`} />
       <small id={`${id}-hint`}>{t("qualifications.documentHint")}</small>
     </div>

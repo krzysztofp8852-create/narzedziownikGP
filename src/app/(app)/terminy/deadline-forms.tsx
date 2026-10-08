@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, type ReactNode, startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { NativePhotoButtons } from "@/components/native-photo-buttons";
 import { type MessageKey, t } from "@/i18n/t";
 import { withShrunkDocument } from "@/lib/shrink-photo";
 import {
@@ -196,11 +197,13 @@ function NoteField({ id, defaultValue }: { id: string; defaultValue?: string | n
   );
 }
 
+/** Dokument terminu: w aplikacji zdjęcie też z aparatu albo galerii, a PDF dalej z wyboru pliku. */
 function DocumentFields({ id, documents, required }: { id: string; documents: DocumentChoice; required: boolean }) {
   return (
     <>
       <div className="field">
         <label htmlFor={`${id}-file`}>{required ? t("deadlines.documentFile") : t("deadlines.documentFileOptional")}</label>
+        <NativePhotoButtons inputId={`${id}-file`} name={t("deadlines.defaultFileName")} />
         <input id={`${id}-file`} name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/*" required={required} aria-describedby={`${id}-hint`} />
         <small id={`${id}-hint`}>{t("deadlines.documentHint")}</small>
       </div>
