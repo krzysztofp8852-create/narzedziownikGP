@@ -4,7 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { useSyncExternalStore } from "react";
 import { t } from "@/i18n/t";
-import { GOOGLE_ADS_ID, GOOGLE_ANALYTICS_ID } from "@/lib/google-tags";
+import { GOOGLE_ADS_ID, GOOGLE_ANALYTICS_ID, googleTagsAllowed } from "@/lib/google-tags";
 import { useInApp } from "@/lib/platform";
 
 // Wybór zapamiętany w tej przeglądarce. Bez wyboru Google Analytics się nie wczytuje, a baner czeka na decyzję.
@@ -69,7 +69,8 @@ function choose(choice: Choice) {
 /**
  * Baner zgody na pliki cookies na każdej stronie. Google Analytics wczytuje się dopiero po „Akceptuję” i tylko do
  * statystyk (bez reklam). Dziennik demo (`DemoPageLog`) od tej zgody nie zależy: zapisuje ekrany demo jak dotąd.
- * W aplikacji nie ma ani banera, ani Google Analytics, także przy zgodzie zapisanej wcześniej.
+ * W aplikacji nie ma ani banera, ani Google Analytics, także przy zgodzie zapisanej wcześniej. Poza domeną produkcji
+ * (localhost, testy e2e, podglądy Vercel) baner działa, ale Google Analytics nie wczytuje się mimo zgody.
  *
  * Razem z Analytics wczytuje się Google Ads, który tylko mierzy konwersje (formularz „oddzwonimy”), bez ciasteczek
  * reklamowych: przy odmowie ad_storage Google dostaje pingi bez ciasteczek i modeluje konwersje.
@@ -79,6 +80,8 @@ export function CookieConsent() {
   const inApp = useInApp();
   if (choice === undefined || inApp) return null;
   if (choice === "analityka") {
+    // `choice` jest znany dopiero w przeglądarce, więc `location` tu już jest.
+    if (!googleTagsAllowed(location.hostname)) return null;
     return (
       <>
         <Script
