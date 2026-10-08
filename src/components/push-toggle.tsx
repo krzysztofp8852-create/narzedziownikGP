@@ -11,7 +11,7 @@ type State = "checking" | "hidden" | "install-on-ios" | "unsupported" | "blocked
 /**
  * Włączanie i wyłączanie powiadomień push na tym telefonie. W aplikacji na Androida przez FCM (Android pyta o zgodę
  * dopiero przy włączeniu), w przeglądarce przez Web Push kluczem VAPID serwera; bez klucza w przeglądarce nie ma czego
- * włączać. Na iPhonie w Safari podpowiada, jak dodać aplikację do ekranu początkowego, bo tylko tam push działa.
+ * włączać. Na iPhonie w Safari podpowiada, jak dodać program do ekranu początkowego (PWA), bo tylko tam push działa.
  */
 export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string | null }) {
   const [state, setState] = useState<State>("checking");

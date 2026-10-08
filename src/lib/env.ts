@@ -101,7 +101,12 @@ export const serverEnv = {
   fcm: () => {
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!raw) return null;
-    const account = JSON.parse(raw) as { project_id?: string; client_email?: string; private_key?: string };
+    let account: { project_id?: string; client_email?: string; private_key?: string };
+    try {
+      account = JSON.parse(raw);
+    } catch {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT to nie JSON klucza konta serwisowego (zob. README)");
+    }
     return {
       projectId: required("FIREBASE_SERVICE_ACCOUNT.project_id", account.project_id),
       clientEmail: required("FIREBASE_SERVICE_ACCOUNT.client_email", account.client_email),

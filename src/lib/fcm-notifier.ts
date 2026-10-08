@@ -21,8 +21,8 @@ const TIMEOUT_MS = 10_000;
 /**
  * Kanał FCM portu powiadomień: kopia push na aplikację na Androida przez HTTP v1 API
  * (https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages/send). Treść, adres po dotknięciu i tag,
- * który zastępuje poprzednie powiadomienie, są te same co w Web Push. Token wyrejestrowany (odinstalowana aplikacja),
- * nieważny albo z innego projektu Firebase znaczy, że subskrypcji już nie ma.
+ * który zastępuje poprzednie powiadomienie, są te same co w Web Push. Token wyrejestrowany (odinstalowana aplikacja)
+ * albo nieważny znaczy, że subskrypcji już nie ma.
  */
 export function createFcmChannel(
   account: FcmServiceAccount,
@@ -66,7 +66,7 @@ export function createFcmChannel(
     });
     if (response.ok) return "sent";
     const { error } = (await response.json().catch(() => ({}))) as FcmErrorBody;
-    if (isGoneToken(response.status, error)) return "expired";
+    if (isGoneToken(error)) return "expired";
     if (response.status === 401) cached = null;
     throw new Error(`FCM ${response.status} ${error?.status ?? ""}: ${error?.message ?? ""}`);
   };
@@ -80,10 +80,14 @@ export const logFcmPush: PushChannel<"aplikacja"> = async (_subscription, messag
 
 type FcmErrorBody = { error?: { status?: string; message?: string; details?: { errorCode?: string }[] } };
 
-/** https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode */
-function isGoneToken(status: number, error: FcmErrorBody["error"]): boolean {
+/**
+ * https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode. Tylko błędy samego tokenu: 404 bez kodu (zły
+ * projekt) i SENDER_ID_MISMATCH (konto serwisowe z innego projektu) to nasza konfiguracja, przez którą nie może zniknąć
+ * żadna subskrypcja.
+ */
+function isGoneToken(error: FcmErrorBody["error"]): boolean {
   const codes = new Set([error?.status, ...(error?.details ?? []).map((detail) => detail.errorCode)]);
-  if (status === 404 || codes.has("UNREGISTERED") || codes.has("SENDER_ID_MISMATCH")) return true;
+  if (codes.has("UNREGISTERED")) return true;
   // INVALID_ARGUMENT dotyczy też treści wiadomości; token jest nieważny tylko wtedy, gdy FCM mówi o nim wprost.
   return codes.has("INVALID_ARGUMENT") && /registration token/i.test(error?.message ?? "");
 }

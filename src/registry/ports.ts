@@ -28,8 +28,8 @@ export interface AuthAdmin {
 /**
  * Port powiadomień: kopia powiadomienia z dzwonka poza aplikacją, wysyłana po zapisie. Dwa kanały: e-mail
  * (tylko rodzaje z kopią e-mailową, `EmailedNotification`) i push (każdy nowy wpis, na każde urządzenie, na którym
- * adresat włączył powiadomienia: przez Web Push do przeglądarki, przez FCM do aplikacji na Androida). Do tego e-maile do GP Engineering: o nowej wiadomości użytkownika na czacie
- * i o prośbie o telefon z formularza na stronie.
+ * adresat włączył powiadomienia: przez Web Push do przeglądarki, przez FCM do aplikacji na Androida). Do tego e-maile
+ * do GP Engineering: o nowej wiadomości użytkownika na czacie i o prośbie o telefon z formularza na stronie.
  */
 export interface Notifier {
   /** Kanał e-mail. */

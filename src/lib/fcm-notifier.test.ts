@@ -108,7 +108,6 @@ describe("kanał FCM", () => {
   it.each([
     ["wyrejestrowany (aplikacja odinstalowana)", fcmError(404, "NOT_FOUND", "Requested entity was not found.", "UNREGISTERED")],
     ["nieważny", fcmError(400, "INVALID_ARGUMENT", "The registration token is not a valid FCM registration token")],
-    ["z innego projektu Firebase", fcmError(403, "PERMISSION_DENIED", "SenderId mismatch", "SENDER_ID_MISMATCH")],
   ])("token %s znaczy, że subskrypcja wygasła", async (_case, reply) => {
     expect(await createFcmChannel(account, { fetch: fakeGoogle(reply).fetch })(phone, taken)).toBe("expired");
   });
@@ -117,6 +116,9 @@ describe("kanał FCM", () => {
     ["usługa nie działa", fcmError(503, "UNAVAILABLE", "The service is currently unavailable.")],
     ["zła treść wiadomości", fcmError(400, "INVALID_ARGUMENT", "Invalid value at 'message.android.ttl'")],
     ["zły klucz konta serwisowego", fcmError(401, "UNAUTHENTICATED", "Request had invalid authentication credentials.")],
+    // Konto serwisowe z innego projektu Firebase niż aplikacja to błąd konfiguracji, nie tokenu: subskrypcje zostają.
+    ["konto serwisowe z innego projektu", fcmError(403, "PERMISSION_DENIED", "SenderId mismatch", "SENDER_ID_MISMATCH")],
+    ["zły identyfikator projektu", () => new Response("Not Found", { status: 404 })],
   ])("inne błędy (%s) zgłasza dalej, bez usuwania subskrypcji", async (_case, reply) => {
     await expect(createFcmChannel(account, { fetch: fakeGoogle(reply).fetch })(phone, taken)).rejects.toThrow(/FCM/);
   });
