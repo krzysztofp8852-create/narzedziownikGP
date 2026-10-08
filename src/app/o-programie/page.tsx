@@ -11,7 +11,7 @@ import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
 import { type PriceText, pricing } from "@/lib/pricing-text";
 import { jsonLdScript, landingStructuredData } from "@/lib/structured-data";
-import { IMPLEMENTATION_TIERS, TIERS } from "@/registry/subscriptions";
+import { TIERS } from "@/registry/subscriptions";
 import { HERO_MAP } from "./hero-map";
 import mapa from "./mapa.jpg";
 
@@ -143,15 +143,15 @@ function BoardPreview() {
   );
 }
 
-/** Odpowiedź o cenie z najtańszego progu abonamentu i wdrożenia, tych samych co w cenniku. */
+/** Odpowiedź o cenie z najmniejszego pakietu, tego samego co w cenniku. */
 function faqAnswer(question: (typeof FAQ)[number]) {
   if (question !== "price") return t(`landing.faq.${question}.answer`);
   const [cheapest] = TIERS;
-  const [cheapestImplementation] = IMPLEMENTATION_TIERS;
   return t("landing.faq.price.answer", {
-    price: formatPrice(cheapest.yearlyPrice),
+    people: cheapest.maxPeople,
     limit: cheapest.toolLimit,
-    implementation: formatPrice(cheapestImplementation.price),
+    implementation: formatPrice(cheapest.implementationPrice),
+    price: formatPrice(cheapest.yearlyPrice),
   });
 }
 
@@ -165,7 +165,7 @@ function Price({ price, period }: PriceText) {
 
 /** Strona o programie dla właściciela firmy budowlanej: co program robi, cennik, demo i kontakt. */
 export default function LandingPage() {
-  const { plans, implementation } = pricing();
+  const plans = pricing();
   const siteUrl = serverEnv.siteUrl();
   return (
     // `data-signed-out`: service worker po tym poznaje, że pod `/` nie ma już tablicy tej sesji (ADR 0021).
@@ -283,31 +283,39 @@ export default function LandingPage() {
           <p className="landing-lead">{t("landing.pricing.lead")}</p>
           <ul className="landing-plans">
             {plans.map((plan) => (
-              <li key={plan.id} aria-labelledby={`plan-${plan.id}`}>
+              <li
+                key={plan.id}
+                className={plan.popular ? "landing-plan landing-plan-popular" : "landing-plan"}
+                aria-labelledby={`plan-${plan.id}`}
+              >
+                {plan.popular && <p className="landing-plan-badge">{t("landing.pricing.popular")}</p>}
                 <h3 id={`plan-${plan.id}`}>{plan.name}</h3>
-                <p className="landing-plan-limit">{plan.limit}</p>
-                <Price price={plan.price} period={plan.period} />
-                <p className="muted">{t("landing.pricing.accounts")}</p>
-                <p className="muted">{t("landing.pricing.modules")}</p>
+                <div className="landing-plan-implementation">
+                  <p className="landing-plan-label">{t("landing.pricing.implementationLabel")}</p>
+                  <Price {...plan.implementation} />
+                </div>
+                <div className="landing-plan-yearly">
+                  <p className="landing-plan-label">{t("landing.pricing.yearlyLabel")}</p>
+                  <Price {...plan.yearly} />
+                </div>
+                <ul className="landing-plan-features">
+                  <li>
+                    <strong>{t("landing.pricing.planPeople", { people: plan.people })}</strong>
+                    <small>{t("landing.pricing.ownerIncluded")}</small>
+                  </li>
+                  <li>
+                    <strong>{plan.tools}</strong>
+                  </li>
+                  <li>{t("landing.pricing.accounts")}</li>
+                  <li>{t("landing.pricing.modules")}</li>
+                </ul>
+                <a href="#kontakt" className={plan.popular ? "button" : "button button-quiet"}>
+                  {t("landing.pricing.ask", { name: plan.name })}
+                </a>
               </li>
             ))}
           </ul>
-          <div className="landing-implementation">
-            <div>
-              <h3>{t("landing.pricing.implementationTitle")}</h3>
-              <p>{t("landing.pricing.implementationText")}</p>
-            </div>
-            <ul className="landing-implementation-tiers">
-              {implementation.map(({ people, price, period }, index) => (
-                <li key={people} aria-labelledby={`implementation-${index}`}>
-                  <p id={`implementation-${index}`} className="landing-plan-limit">
-                    {people}
-                  </p>
-                  <Price price={price} period={period} />
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p className="landing-pricing-note">{t("landing.pricing.note")}</p>
         </section>
 
         <section className="landing-section" aria-labelledby="pytania">

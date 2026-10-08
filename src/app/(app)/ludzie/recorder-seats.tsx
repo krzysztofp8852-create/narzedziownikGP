@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { SalesContact } from "@/components/sales-contact";
 import { formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import { implementationPeople } from "@/lib/pricing-text";
+import { tierPeople } from "@/lib/pricing-text";
 import { supportChatOpenLink } from "@/lib/support-chat-text";
 import type { RecorderSeats } from "@/registry/registry";
 
@@ -14,8 +14,8 @@ import type { RecorderSeats } from "@/registry/registry";
  */
 export function RecorderSeatsNote({ recorders }: { recorders: RecorderSeats }) {
   const pathname = usePathname();
-  const { implementationTier, recorderCount, seatsLeft, upgrade } = recorders;
-  const limit = implementationTier.maxPeople;
+  const { tier, recorderCount, seatsLeft, upgrade } = recorders;
+  const limit = tier.maxPeople;
   if (limit === null || seatsLeft === null) return null;
   if (seatsLeft > 0 || !upgrade) {
     return (
@@ -28,11 +28,11 @@ export function RecorderSeatsNote({ recorders }: { recorders: RecorderSeats }) {
     <div className="form-warning" role="status" data-testid="recorder-limit">
       <p>
         {t("team.recorderLimitReached", {
-          tier: implementationTier.name,
+          tier: tier.name,
           count: recorderCount,
           limit,
-          upgrade: upgrade.implementationTier.name,
-          people: implementationPeople(upgrade.implementationTier.id),
+          upgrade: upgrade.tier.name,
+          people: tierPeople(upgrade.tier),
           surcharge: formatPrice(upgrade.surcharge),
         })}
       </p>

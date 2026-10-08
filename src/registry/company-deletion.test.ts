@@ -11,7 +11,6 @@ const zawbud: NewCompanyInput = {
   owner: { email: "jan@zawbud.pl", fullName: "Jan Kowalski" },
   invoice: { name: "Zawbud Jan Kowalski", taxId: "778-123-45-63", address: "ul. Polna 3\n60-001 Poznań" },
   tier: "sredni",
-  implementationTier: "sredni",
   paidUntil: "2026-12-31",
 };
 

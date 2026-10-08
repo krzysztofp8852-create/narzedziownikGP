@@ -3750,34 +3750,62 @@ a.tool-row:hover .tool-row-name {
   }
 }
 
-/* Cennik jak zestawienie w specyfikacji: progi w jednej tabeli, pod nią obowiązkowa pozycja wdrożenia. */
+/* Cennik: trzy pakiety jako karty obok siebie; wyróżniony ma żółtą banderolę i pas ostrzegawczy jak tablica budowy. */
 .landing-plans {
   list-style: none;
   display: grid;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.landing-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 14px;
+  padding: 24px 22px;
   overflow: hidden;
 }
 
-.landing-plans li {
-  display: grid;
-  gap: 4px;
-  align-content: start;
-  padding: 20px 22px;
-  border-top: 1px solid var(--border);
+.landing-plan-popular {
+  border: 2px solid var(--brand-ink);
+  padding-top: 32px;
+  box-shadow: 0 18px 40px -24px rgb(20 23 28 / 0.45);
 }
 
-.landing-plans li:first-child {
-  border-top: 0;
+.landing-plan-popular::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10px;
+  background: var(--hazard-stripes);
 }
 
-.landing-plans h3 {
-  font-size: 1.6rem;
+.landing-plan-badge {
+  align-self: flex-start;
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
-.landing-plan-limit {
-  font-weight: 600;
+.landing-plan h3 {
+  font-size: 2rem;
+}
+
+.landing-plan-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .landing-price {
@@ -3785,11 +3813,11 @@ a.tool-row:hover .tool-row-name {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 8px;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .landing-price strong {
-  font-size: 2.3rem;
+  font-size: 2.6rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3797,70 +3825,107 @@ a.tool-row:hover .tool-row-name {
   color: var(--text-muted);
 }
 
-@media (min-width: 720px) {
-  .landing-plans {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .landing-plans li {
-    border-top: 0;
-    border-left: 1px solid var(--border);
-    padding: 24px;
-  }
-
-  .landing-plans li:first-child {
-    border-left: 0;
-  }
+/* Opłata za rok mniejsza od wdrożenia, oddzielona kreską jak pozycja pod sumą. */
+.landing-plan-yearly {
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-strong);
 }
 
-.landing-implementation {
-  position: relative;
-  display: grid;
-  gap: 4px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
-  padding: 20px 22px 20px 36px;
-  overflow: hidden;
+.landing-plan-yearly .landing-price strong {
+  font-size: 1.7rem;
 }
 
-.landing-implementation::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 12px;
-  background: var(--hazard-stripes);
-}
-
-.landing-implementation h3 {
-  font-size: 1.6rem;
-}
-
-.landing-implementation > div > p {
-  max-width: 70ch;
-  margin-top: 4px;
-}
-
-/* Progi wdrożenia: liczba osób zapisujących ruchy i cena, na szerokim ekranie obok siebie. */
-.landing-implementation-tiers {
+.landing-plan-features {
   list-style: none;
   display: grid;
-  margin-top: 12px;
-}
-
-.landing-implementation-tiers li {
-  display: grid;
-  align-content: start;
-  padding: 12px 0;
+  gap: 10px;
+  padding-top: 16px;
   border-top: 1px solid var(--border);
 }
 
-@media (min-width: 720px) {
-  .landing-implementation-tiers {
+.landing-plan-features li {
+  position: relative;
+  padding-left: 26px;
+}
+
+.landing-plan-features li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.3em;
+  width: 12px;
+  height: 7px;
+  border-left: 3px solid var(--success);
+  border-bottom: 3px solid var(--success);
+  transform: rotate(-45deg);
+}
+
+.landing-plan-features small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Przycisk zawsze na dole karty, żeby w trzech kolumnach stały w jednej linii. */
+.landing-plan > .button {
+  margin-top: auto;
+  min-height: 48px;
+  text-align: center;
+}
+
+.landing-pricing-note {
+  max-width: 80ch;
+  color: var(--text-muted);
+}
+
+/* Obok siebie karty dzielą wiersze (subgrid), więc ceny i listy stoją na jednej wysokości także pod banderolą. */
+@media (min-width: 880px) {
+  .landing-plans {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
+    column-gap: 20px;
+    row-gap: 0;
+  }
+
+  .landing-plan,
+  .landing-plan-popular {
+    display: grid;
+    grid-row: span 6;
+    grid-template-rows: subgrid;
+    row-gap: 16px;
+    padding: 36px 26px 28px;
+  }
+
+  .landing-plan-badge {
+    grid-row: 1;
+    align-self: start;
+    justify-self: start;
+  }
+
+  .landing-plan h3 {
+    grid-row: 1 / 3;
+    align-self: end;
+  }
+
+  .landing-plan-popular h3 {
+    grid-row: 2;
+  }
+
+  .landing-plan-implementation {
+    grid-row: 3;
+  }
+
+  .landing-plan-yearly {
+    grid-row: 4;
+  }
+
+  .landing-plan-features {
+    grid-row: 5;
+    align-self: start;
+  }
+
+  .landing-plan > .button {
+    grid-row: 6;
+    align-self: end;
   }
 }
 

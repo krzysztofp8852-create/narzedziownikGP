@@ -14,15 +14,17 @@ describe("dane strukturalne strony o programie", () => {
     });
   });
 
-  it("podaje ceny netto progów z limitem i progów wdrożenia, bez planu indywidualnego", () => {
-    const offers = ofType("SoftwareApplication").offers as { name: string; price: number }[];
-    expect(offers.map(({ name, price }) => [name, price])).toEqual([
-      ["Mały", 300],
-      ["Średni", 500],
-      ["Duży", 1000],
-      ["Wdrożenie: do 2 osób", 3000],
-      ["Wdrożenie: 3–6 osób", 4000],
-      ["Wdrożenie: 7 i więcej osób", 5000],
+  it("podaje każdy pakiet z ceną brutto wdrożenia i opłatą brutto za rok", () => {
+    const offers = ofType("SoftwareApplication").offers as {
+      name: string;
+      description: string;
+      price: number;
+      priceSpecification: { price: number; unitText?: string }[];
+    }[];
+    expect(offers.map(({ name, description, price, priceSpecification: [, yearly] }) => [name, description, price, yearly])).toEqual([
+      ["Mały", "do 5 osób decyzyjnych, do 150 narzędzi", 3000, expect.objectContaining({ price: 400, unitText: "rok", valueAddedTaxIncluded: true })],
+      ["Średni", "do 30 osób decyzyjnych, do 500 narzędzi", 6000, expect.objectContaining({ price: 800, unitText: "rok" })],
+      ["Duży", "ponad 30 osób decyzyjnych, bez limitu narzędzi", 12000, expect.objectContaining({ price: 2000, unitText: "rok" })],
     ]);
   });
 

@@ -18,15 +18,27 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
 
   await page.getByRole("link", { name: "Cennik" }).first().click();
   const pricing = page.getByRole("region", { name: "Cennik" });
-  await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("do 150 narzędzi");
-  await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("300 zł netto za rok");
-  await expect(pricing.getByRole("listitem", { name: "Mały" })).toContainText("Wszystkie moduły w cenie");
-  await expect(pricing.getByRole("listitem", { name: "Duży" })).toContainText("1 000 zł netto za rok");
-  await expect(pricing.getByRole("listitem", { name: "Indywidualny" })).toContainText("ponad 1000 narzędzi");
-  // Wdrożenie według liczby osób zapisujących ruchy, właściciel też się liczy.
-  await expect(pricing.getByRole("listitem", { name: "do 2 osób" })).toContainText("3 000 zł netto, jednorazowo");
-  await expect(pricing.getByRole("listitem", { name: "3–6 osób" })).toContainText("4 000 zł netto, jednorazowo");
-  await expect(pricing.getByRole("listitem", { name: "7 i więcej osób" })).toContainText("5 000 zł netto, jednorazowo");
+  // Trzy pakiety: wdrożenie, opłata za rok, osoby decyzyjne (z właścicielem) i narzędzia; mały wyróżniony jako najpopularniejszy.
+  const small = pricing.getByRole("listitem", { name: "Mały" });
+  await expect(small).toContainText("Najpopularniejszy wśród małych firm");
+  await expect(small).toContainText("3 000 zł brutto, jednorazowo");
+  await expect(small).toContainText("400 zł brutto za rok");
+  await expect(small).toContainText("do 5 osób decyzyjnych");
+  await expect(small).toContainText("łącznie z właścicielem");
+  await expect(small).toContainText("do 150 narzędzi");
+  await expect(small).toContainText("wszystkie moduły w cenie");
+  const medium = pricing.getByRole("listitem", { name: "Średni" });
+  await expect(medium).toContainText("6 000 zł brutto, jednorazowo");
+  await expect(medium).toContainText("800 zł brutto za rok");
+  await expect(medium).toContainText("do 30 osób decyzyjnych");
+  await expect(medium).toContainText("do 500 narzędzi");
+  await expect(medium).not.toContainText("Najpopularniejszy");
+  const large = pricing.getByRole("listitem", { name: "Duży" });
+  await expect(large).toContainText("12 000 zł brutto, jednorazowo");
+  await expect(large).toContainText("2 000 zł brutto za rok");
+  await expect(large).toContainText("ponad 30 osób decyzyjnych");
+  await expect(large).toContainText("bez limitu narzędzi");
+  await expect(pricing).toContainText("Ceny są brutto: korzystamy ze zwolnienia podmiotowego z VAT (art. 113 ustawy o VAT)");
   await expect(pricing).toContainText("Konta pracowników się nie liczą");
   await expect(pricing).toContainText("na miejscu w Twojej firmie albo zdalnie");
 
@@ -34,8 +46,8 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   await page.getByRole("link", { name: "Pytania" }).click();
   const faq = page.getByRole("region", { name: "Pytania i odpowiedzi" });
   await expect(faq.getByRole("term")).toHaveCount(14);
-  await expect(faq).toContainText("do 150 narzędzi kosztuje 300 zł netto za rok, ze wszystkimi modułami");
-  await expect(faq).toContainText("wdrożenie ze szkoleniem, od 3 000 zł netto");
+  await expect(faq).toContainText("mieści do 5 osób decyzyjnych i 150 narzędzi");
+  await expect(faq).toContainText("3 000 zł brutto za wdrożenie ze szkoleniem i 400 zł brutto za rok");
 
   const contact = page.getByRole("region", { name: "Porozmawiajmy" });
   await expect(contact.getByRole("link", { name: "576 763 536" })).toHaveAttribute("href", "tel:+48576763536");

@@ -28,7 +28,7 @@ Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja �
 _Avoid_: zespół, kadry, pracownicy (pracownik to rola)
 
 **Osoba**:
-Wpis w kartotece Ludzie: imię i nazwisko, notatka, aktywna albo nieaktywna i najwyżej jedno konto (konto ma jedną osobę). Osoba bez konta, np. robotnik bez telefonu, nie loguje się i nie zajmuje miejsca w pakiecie wdrożenia; konto zakłada się jej później bez drugiego wpisu. Nieaktywna (odeszła z firmy) znika z aktywnych, a jej historia zostaje; dezaktywacja osoby z kontem blokuje też konto.
+Wpis w kartotece Ludzie: imię i nazwisko, notatka, aktywna albo nieaktywna i najwyżej jedno konto (konto ma jedną osobę). Osoba bez konta, np. robotnik bez telefonu, nie loguje się i nie zajmuje miejsca w pakiecie; konto zakłada się jej później bez drugiego wpisu. Nieaktywna (odeszła z firmy) znika z aktywnych, a jej historia zostaje; dezaktywacja osoby z kontem blokuje też konto.
 _Avoid_: użytkownik, członek zespołu, pracownik (to rola)
 
 **Uprawnienie**:
@@ -124,7 +124,7 @@ Dopisek przy narzędziu na tablicy, dopóki jest do niego otwarte zgłoszenie br
 _Avoid_: zaginione (to stan narzędzia)
 
 **Sprzęt wynajęty**:
-Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na tablicy ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi progu abonamentu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
+Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na tablicy ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi pakietu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
 _Avoid_: wypożyczone, najem, sprzęt obcy
 
 **Wypożyczalnia**:
@@ -289,19 +289,16 @@ _Avoid_: kontakt, helpdesk
 
 ## Abonament
 
-**Próg abonamentu**:
-Pakiet firmy z limitem liczby narzędzi. Konta nie wchodzą do limitu narzędzi.
+**Pakiet**:
+Mały, średni albo duży; każdy ma cenę wdrożenia, opłatę za rok (utrzymanie), limit osób zapisujących ruchy i limit narzędzi. Mały: do 5 osób i 150 narzędzi, średni: do 30 osób i 500 narzędzi, duży: bez limitów. Ponad limit osób właściciel nie doda kierownika ani magazyniera (pracownika tak), a ponad limit narzędzi program tylko ostrzega. Wyższy pakiet odblokowuje dodawanie od razu, za dopłatą w wysokości różnicy cen wdrożenia. Firmy zakładane skryptem i firma demo mają duży.
+_Avoid_: próg abonamentu, pakiet wdrożenia, plan indywidualny
 
 **Wdrożenie**:
-Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. Cena zależy od pakietu wdrożenia.
+Obowiązkowa, jednorazowa opłata na start abonamentu; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie. Cena zależy od pakietu.
 _Avoid_: opłata aktywacyjna, onboarding
 
-**Pakiet wdrożenia**:
-Mały (do 2 osób zapisujących ruchy), średni (3–6) albo duży (7 i więcej, bez limitu); wyznacza, ile osób zapisujących ruchy firma może mieć. Ponad limit właściciel nie doda kierownika ani magazyniera, a pracownika tak. Wyższy pakiet odblokowuje dodawanie od razu, za dopłatą w wysokości różnicy cen. Firmy sprzed pakietów, zakładane skryptem i firma demo mają duży.
-_Avoid_: próg wdrożenia (próg to abonament)
-
 **Osoba zapisująca ruchy**:
-Aktywne konto właściciela, kierownika albo magazyniera; zajmuje miejsce w pakiecie wdrożenia. Pracownik, osoba bez konta i dezaktywowane konto miejsca nie zajmują.
+Aktywne konto właściciela, kierownika albo magazyniera; zajmuje miejsce w pakiecie. Pracownik, osoba bez konta i dezaktywowane konto miejsca nie zajmują. W cenniku na stronie o programie: osoba decyzyjna.
 _Avoid_: użytkownik płatny, licencja
 
 **Tryb tylko do odczytu**:

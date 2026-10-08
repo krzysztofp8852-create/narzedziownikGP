@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { type NewCompanyInput, withActor } from "./registry";
 import { setupRegistryTestbed } from "./testing/harness";
+import { createPgliteDbBefore } from "./testing/pglite-db";
 
 const testbed = setupRegistryTestbed();
 
@@ -11,7 +12,6 @@ const zawbud: NewCompanyInput = {
   owner: { email: "jan@zawbud.pl", fullName: "Jan Kowalski" },
   invoice: { name: "Zawbud Jan Kowalski", taxId: "778-123-45-63", address: "ul. Polna 3\n60-001 Poznań" },
   tier: "sredni",
-  implementationTier: "maly",
   paidUntil: "2026-03-31",
 };
 
@@ -34,9 +34,8 @@ describe("zakładanie firmy w panelu super-admina", () => {
       name: "Zawbud",
       invoice: { name: "Zawbud Jan Kowalski", taxId: "7781234563", address: "ul. Polna 3\n60-001 Poznań" },
       owner: { fullName: "Jan Kowalski", email: "jan@zawbud.pl" },
-      tier: { id: "sredni", name: "Średni", toolLimit: 300, yearlyPrice: 500 },
+      tier: { id: "sredni", name: "Średni", maxPeople: 30, toolLimit: 500, implementationPrice: 6000, yearlyPrice: 800 },
       toolCount: 0,
-      implementationTier: { id: "maly", name: "Mały", maxPeople: 2, price: 3000 },
       recorderCount: 1,
       paidUntil: "2026-03-31",
       readOnlyFrom: "2026-04-15",
@@ -60,7 +59,7 @@ describe("dostęp do panelu super-admina", () => {
       await expect(actor.companies()).rejects.toMatchObject({ code: "forbidden" });
       await expect(actor.company(budrex.companyId)).rejects.toMatchObject({ code: "forbidden" });
       await expect(actor.createCompany(zawbud)).rejects.toMatchObject({ code: "forbidden" });
-      await expect(actor.changeTier(budrex.companyId, "duzy")).rejects.toMatchObject({ code: "forbidden" });
+      await expect(actor.changeTier(budrex.companyId, "maly")).rejects.toMatchObject({ code: "forbidden" });
       await expect(actor.setPaidUntil(budrex.companyId, "2030-12-31")).rejects.toMatchObject({ code: "forbidden" });
       await expect(actor.setManualReadOnly(budrex.companyId, true)).rejects.toMatchObject({ code: "forbidden" });
     }
@@ -68,7 +67,7 @@ describe("dostęp do panelu super-admina", () => {
     expect(testbed.auth.accountCount()).toBe(accounts);
     const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
     expect(await admin.isSuperAdmin()).toBe(true);
-    expect(await admin.company(budrex.companyId)).toMatchObject({ tier: { id: "maly" }, paidUntil: null, manualReadOnly: false });
+    expect(await admin.company(budrex.companyId)).toMatchObject({ tier: { id: "duzy" }, paidUntil: null, manualReadOnly: false });
     expect((await admin.companies()).map((company) => company.name)).toEqual(["Budrex"]);
   });
 
@@ -78,16 +77,16 @@ describe("dostęp do panelu super-admina", () => {
     const asOwner = <Row>(text: string, params?: unknown[]) => withActor(testbed.db, budrex.ownerId, (sql) => sql<Row>(text, params));
 
     // RLS nie pokazuje właścicielowi wiersza do zmiany, więc nic się nie zmienia.
-    expect(await asOwner("update app.subscriptions set tier = 'duzy', paid_until = '2030-12-31' returning company_id")).toEqual([]);
+    expect(await asOwner("update app.subscriptions set tier = 'maly', paid_until = '2030-12-31' returning company_id")).toEqual([]);
     await expect(asOwner("insert into app.companies (name, created_at) values ('Lewa', now())")).rejects.toThrow();
     await expect(asOwner("insert into app.subscriptions (company_id, tier) values ($1, 'duzy')", [budrex.companyId])).rejects.toThrow();
     // Abonament swojej firmy widzi, cudzych nie, a kierownik (NIP, adres, płatności) wcale.
-    expect(await asOwner("select tier from app.subscriptions")).toEqual([{ tier: "maly" }]);
+    expect(await asOwner("select tier from app.subscriptions")).toEqual([{ tier: "duzy" }]);
     const managerId = await testbed.givenMember(budrex, "kierownik");
     expect(await withActor(testbed.db, managerId, (sql) => sql("select tier from app.subscriptions"))).toEqual([]);
 
     const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
-    expect(await admin.company(budrex.companyId)).toMatchObject({ tier: { id: "maly" }, paidUntil: null });
+    expect(await admin.company(budrex.companyId)).toMatchObject({ tier: { id: "duzy" }, paidUntil: null });
     expect(await admin.companies()).toHaveLength(2);
   });
 
@@ -141,7 +140,7 @@ describe("dane przy zakładaniu firmy w panelu", () => {
 });
 
 describe("lista firm", () => {
-  it("firmy po nazwie, z progiem i liczbą narzędzi bez wycofanych", async () => {
+  it("firmy po nazwie, z pakietem i liczbą narzędzi bez wycofanych", async () => {
     const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
     const created = await admin.createCompany(zawbud);
     await testbed.registry.as(created.ownerUserId).changePassword("MojeNoweHaslo7", testbed.signedInNow());
@@ -155,7 +154,7 @@ describe("lista firm", () => {
     await owner.retireTool({ operationId: randomUUID(), toolId: toolIds[0], reason: "sprzedana" });
 
     expect((await admin.companies()).map(({ name, tier, toolCount }) => ({ name, tier: tier.id, toolCount }))).toEqual([
-      { name: "Budrex", tier: "maly", toolCount: 0 },
+      { name: "Budrex", tier: "duzy", toolCount: 0 },
       { name: "Zawbud", tier: "sredni", toolCount: 2 },
     ]);
   });
@@ -176,7 +175,7 @@ describe("abonament firmy", () => {
     expect(await statusAt("2026-04-15T00:00:00+02:00")).toBe("tylko_do_odczytu");
   });
 
-  it("wpis „opłacone do” po przelewie przywraca firmę, a próg zmienia się na inny", async () => {
+  it("wpis „opłacone do” po przelewie przywraca firmę, a pakiet zmienia się na inny", async () => {
     const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
     const { companyId } = await admin.createCompany({ ...zawbud, paidUntil: "2026-01-31" });
     expect(await admin.company(companyId)).toMatchObject({ status: "tylko_do_odczytu", readOnlyFrom: "2026-02-15" });
@@ -188,18 +187,7 @@ describe("abonament firmy", () => {
       paidUntil: "2026-04-30",
       readOnlyFrom: "2026-05-15",
       status: "aktywna",
-      tier: { id: "duzy", name: "Duży", toolLimit: 1000, yearlyPrice: 1000 },
-    });
-  });
-
-  it("ponad 1000 narzędzi firma przechodzi na plan indywidualny, bez limitu i z ceną ustalaną osobno", async () => {
-    const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
-    const { companyId } = await admin.createCompany({ ...zawbud, tier: "duzy" });
-
-    await admin.changeTier(companyId, "indywidualny");
-
-    expect(await admin.company(companyId)).toMatchObject({
-      tier: { id: "indywidualny", name: "Indywidualny", toolLimit: null, yearlyPrice: null },
+      tier: { id: "duzy", name: "Duży", maxPeople: null, toolLimit: null, implementationPrice: 12000, yearlyPrice: 2000 },
     });
   });
 
@@ -227,5 +215,43 @@ describe("abonament firmy", () => {
       expect(await admin.company(unknown)).toBeNull();
     }
     expect(await admin.company(companyId)).toMatchObject({ tier: { id: "sredni" }, paidUntil: "2026-03-31" });
+  });
+});
+
+describe("jeden pakiet zamiast progu i pakietu wdrożenia", () => {
+  it("firma dostaje wyższy z dwóch dotychczasowych progów, a plan indywidualny to duży pakiet", async () => {
+    const { db, migrate } = await createPgliteDbBefore("20261112090000_one_package.sql");
+    try {
+      const packages = [
+        ["Alfa", "maly", "maly"],
+        ["Beta", "maly", "sredni"],
+        ["Gamma", "sredni", "maly"],
+        ["Delta", "sredni", "duzy"],
+        ["Epsilon", "duzy", "maly"],
+        ["Zeta", "indywidualny", "maly"],
+      ];
+      for (const [name, tier, implementationTier] of packages) {
+        await db.transaction(async (sql) => {
+          const [company] = await sql<{ id: string }>("insert into app.companies (name, created_at) values ($1, now()) returning id", [name]);
+          await sql("insert into app.subscriptions (company_id, tier, implementation_tier) values ($1, $2, $3)", [company.id, tier, implementationTier]);
+        });
+      }
+
+      await migrate();
+
+      const rows = await db.transaction((sql) =>
+        sql<{ name: string; tier: string }>("select c.name, s.tier from app.subscriptions s join app.companies c on c.id = s.company_id order by c.created_at, c.name"),
+      );
+      expect(Object.fromEntries(rows.map((row) => [row.name, row.tier]))).toEqual({
+        Alfa: "maly",
+        Beta: "sredni",
+        Gamma: "sredni",
+        Delta: "duzy",
+        Epsilon: "duzy",
+        Zeta: "duzy",
+      });
+    } finally {
+      await db.close();
+    }
   });
 });

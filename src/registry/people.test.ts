@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { createRegistry, type ImplementationTierId, withActor } from "./registry";
+import { createRegistry, type TierId, withActor } from "./registry";
 import { FakeAuthAdmin, FakeGeocoder, FixedClock, MemoryPhotoStore, RecordingNotifier } from "./testing/fakes";
 import { setupRegistryTestbed, START } from "./testing/harness";
 import { createPgliteDbBefore } from "./testing/pglite-db";
@@ -9,20 +9,28 @@ const testbed = setupRegistryTestbed();
 
 const PEOPLE_MIGRATION = "20261103090000_people.sql";
 
-/** Firma w panelu super-admina z danym pakietem wdrożenia; właściciel ma już własne hasło. */
-async function givenCompanyWithPackage(implementationTier: ImplementationTierId) {
+/** Firma w panelu super-admina z danym pakietem; właściciel ma już własne hasło. */
+async function givenCompanyWithPackage(tier: TierId) {
   const admin = testbed.registry.superAdmin(await testbed.givenSuperAdmin());
   const created = await admin.createCompany({
     name: "Zawbud",
     baseName: "Baza",
     owner: { email: "wlasciciel@zawbud.test", fullName: "Jan Zawadzki" },
     invoice: { name: "Zawbud sp. z o.o.", taxId: "7781234563", address: "ul. Polna 3, Poznań" },
-    tier: "maly",
-    implementationTier,
+    tier,
     paidUntil: "2026-12-31",
   });
   await testbed.registry.as(created.ownerUserId).changePassword("Zawbud-haslo-1", testbed.signedInNow());
   return { companyId: created.companyId, ownerId: created.ownerUserId, owner: testbed.registry.as(created.ownerUserId) };
+}
+
+/** Mały pakiet z właścicielem i czterema kierownikami: bez wolnego miejsca na osobę zapisującą ruchy. */
+async function givenFullSmallPackage() {
+  const zawbud = await givenCompanyWithPackage("maly");
+  for (const name of ["adam", "beata", "cezary", "dorota"]) {
+    await zawbud.owner.addMember({ firstName: name, lastName: "Nowak", email: `${name}@zawbud.pl`, role: "kierownik" });
+  }
+  return zawbud;
 }
 
 describe("kartoteka Ludzie po wdrożeniu modułu", () => {
@@ -143,14 +151,13 @@ describe("osoba bez konta", () => {
     expect(await owner.people()).toHaveLength(1);
   });
 
-  it("nie zajmuje miejsca w pakiecie wdrożenia: w pełnym małym pakiecie da się dopisać całą brygadę", async () => {
-    const zawbud = await givenCompanyWithPackage("maly");
-    await zawbud.owner.addMember({ firstName: "Adam", lastName: "Nowak", email: "adam@zawbud.pl", role: "kierownik" });
+  it("nie zajmuje miejsca w pakiecie: w pełnym małym pakiecie da się dopisać całą brygadę", async () => {
+    const zawbud = await givenFullSmallPackage();
 
     for (const fullName of ["Zbigniew Kaczmarek", "Tadeusz Wróbel", "Grzegorz Pietrzak"]) await zawbud.owner.addPerson({ fullName, note: null });
 
-    expect((await zawbud.owner.subscription()).recorders).toMatchObject({ recorderCount: 2, seatsLeft: 0 });
-    expect(await zawbud.owner.people()).toHaveLength(5);
+    expect((await zawbud.owner.subscription()).recorders).toMatchObject({ recorderCount: 5, seatsLeft: 0 });
+    expect(await zawbud.owner.people()).toHaveLength(8);
   });
 });
 
@@ -178,8 +185,7 @@ describe("konto dla osoby z kartoteki", () => {
   });
 
   it("kierownik z kartoteki potrzebuje miejsca w pakiecie; bez niego osoba zostaje bez konta i nie powstaje konto logowania", async () => {
-    const zawbud = await givenCompanyWithPackage("maly");
-    await zawbud.owner.addMember({ firstName: "Adam", lastName: "Nowak", email: "adam@zawbud.pl", role: "kierownik" });
+    const zawbud = await givenFullSmallPackage();
     const { personId } = await zawbud.owner.addPerson({ fullName: "Zbigniew Kaczmarek", note: null });
     const accounts = testbed.auth.accountCount();
 

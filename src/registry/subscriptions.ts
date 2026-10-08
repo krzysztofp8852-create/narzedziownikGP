@@ -5,70 +5,48 @@ import { warsawTime } from "./validation";
 import { isCalendarDay, UUID_PATTERN } from "./validation";
 
 /**
- * Próg abonamentu: pakiet z limitem narzędzi i ceną za rok. Plan indywidualny (ponad 1000 narzędzi)
- * nie ma limitu, a cenę ustalamy z klientem osobno.
+ * Pakiet abonamentu (ADR 0040): obowiązkowe, jednorazowe wdrożenie ze szkoleniem z programu (na miejscu u klienta albo
+ * zdalnie) i opłata roczna, w zł brutto (bez doliczanego VAT). Wyznacza limit osób zapisujących ruchy (aktywni właściciele, kierownicy
+ * i magazynierzy; pracownicy się nie liczą) i limit narzędzi. Duży pakiet nie ma żadnego z limitów.
  */
 export interface SubscriptionTier {
   id: TierId;
   name: string;
-  /** Null w planie indywidualnym. */
+  /** Null w dużym pakiecie. */
+  maxPeople: number | null;
+  /** Null w dużym pakiecie. */
   toolLimit: number | null;
-  /** W zł za rok; null w planie indywidualnym. */
-  yearlyPrice: number | null;
+  implementationPrice: number;
+  yearlyPrice: number;
 }
 
 export const TIERS = [
-  { id: "maly", name: "Mały", toolLimit: 150, yearlyPrice: 300 },
-  { id: "sredni", name: "Średni", toolLimit: 300, yearlyPrice: 500 },
-  { id: "duzy", name: "Duży", toolLimit: 1000, yearlyPrice: 1000 },
-  { id: "indywidualny", name: "Indywidualny", toolLimit: null, yearlyPrice: null },
-] as const satisfies readonly { id: string; name: string; toolLimit: number | null; yearlyPrice: number | null }[];
+  { id: "maly", name: "Mały", maxPeople: 5, toolLimit: 150, implementationPrice: 3000, yearlyPrice: 400 },
+  { id: "sredni", name: "Średni", maxPeople: 30, toolLimit: 500, implementationPrice: 6000, yearlyPrice: 800 },
+  { id: "duzy", name: "Duży", maxPeople: null, toolLimit: null, implementationPrice: 12000, yearlyPrice: 2000 },
+] as const satisfies readonly (Omit<SubscriptionTier, "id"> & { id: string })[];
 
 export type TierId = (typeof TIERS)[number]["id"];
 
-/**
- * Pakiet wdrożenia: obowiązkowe, jednorazowe, w zł netto; obejmuje szkolenie z programu na miejscu u klienta albo zdalnie.
- * Wyznacza limit osób zapisujących ruchy (aktywni właściciele, kierownicy i magazynierzy); pracownicy się nie liczą.
- * Duży pakiet nie ma górnej granicy.
- */
-export interface ImplementationTier {
-  id: ImplementationTierId;
-  name: string;
-  /** Null w dużym pakiecie. */
-  maxPeople: number | null;
-  price: number;
-}
-
-export const IMPLEMENTATION_TIERS = [
-  { id: "maly", name: "Mały", maxPeople: 2, price: 3000 },
-  { id: "sredni", name: "Średni", maxPeople: 6, price: 4000 },
-  { id: "duzy", name: "Duży", maxPeople: null, price: 5000 },
-] as const satisfies readonly { id: string; name: string; maxPeople: number | null; price: number }[];
-
-export type ImplementationTierId = (typeof IMPLEMENTATION_TIERS)[number]["id"];
-
-/** Pakiet firm założonych skryptem i tych sprzed pakietów (zapłaciły dotychczasowe wdrożenie), bez limitu. */
-export const DEFAULT_IMPLEMENTATION_TIER: ImplementationTierId = "duzy";
-
-/** Role osób zapisujących ruchy, które zajmują miejsca w pakiecie wdrożenia. */
+/** Role osób zapisujących ruchy, które zajmują miejsca w pakiecie. */
 export const RECORDER_ROLES = ["wlasciciel", "kierownik", "magazynier"] as const satisfies readonly Role[];
 
 /** Warunek SQL: aktywne konto osoby zapisującej ruchy (`u` to app.users). */
 const ACTIVE_RECORDER = `u.active and u.role in (${RECORDER_ROLES.map((role) => `'${role}'`).join(", ")})`;
 
-/** Osoby zapisujące ruchy wobec limitu pakietu wdrożenia. */
+/** Osoby zapisujące ruchy wobec limitu pakietu. */
 export interface RecorderSeats {
-  implementationTier: ImplementationTier;
+  tier: SubscriptionTier;
   /** Aktywne konta właścicieli, kierowników i magazynierów. */
   recorderCount: number;
   /** Ile osób zapisujących ruchy da się jeszcze dodać; null w pakiecie bez limitu. */
   seatsLeft: number | null;
-  /** Gdy miejsc nie ma: najniższy pakiet z miejscem na jeszcze jedną osobę i dopłata do niego (różnica cen, zł netto). */
-  upgrade: { implementationTier: ImplementationTier; surcharge: number } | null;
+  /** Gdy miejsc nie ma: najniższy pakiet z miejscem na jeszcze jedną osobę i dopłata do niego (różnica cen wdrożenia, zł brutto). */
+  upgrade: { tier: SubscriptionTier; surcharge: number } | null;
 }
 
-/** Próg firm założonych bez wyboru progu (skryptem). */
-export const DEFAULT_TIER: TierId = "maly";
+/** Pakiet firm założonych skryptem, bez wyboru pakietu: bez limitów, jak firmy sprzed pakietów. */
+export const DEFAULT_TIER: TierId = "duzy";
 
 /** Po tylu dniach od „opłacone do” firma przechodzi w tryb tylko do odczytu. */
 export const GRACE_DAYS = 14;
@@ -98,7 +76,6 @@ export interface ManagedCompany {
   tier: SubscriptionTier;
   /** Narzędzia firmy poza wycofanymi. */
   toolCount: number;
-  implementationTier: ImplementationTier;
   /** Aktywne konta właścicieli, kierowników i magazynierów. */
   recorderCount: number;
   /** Ostatni opłacony dzień (RRRR-MM-DD). */
@@ -110,12 +87,12 @@ export interface ManagedCompany {
   createdAt: Date;
 }
 
-/** Firma przekroczyła limit narzędzi w progu. Polecenie się wykonało; to tylko ostrzeżenie z propozycją progu. */
+/** Firma przekroczyła limit narzędzi w pakiecie. Polecenie się wykonało; to tylko ostrzeżenie z propozycją pakietu. */
 export interface ToolLimitWarning {
   tier: SubscriptionTier;
   /** Narzędzia firmy poza wycofanymi. */
   toolCount: number;
-  /** Najniższy próg, w którym te narzędzia się mieszczą (ponad 1000 plan indywidualny). */
+  /** Najniższy pakiet, w którym te narzędzia się mieszczą. */
   suggestedTier: SubscriptionTier;
 }
 
@@ -130,14 +107,13 @@ export interface CompanySubscription {
   readOnlyFrom: string | null;
   status: SubscriptionStatus;
   limitWarning: ToolLimitWarning | null;
-  /** Pakiet wdrożenia i miejsca na osoby zapisujące ruchy. */
+  /** Miejsca na osoby zapisujące ruchy w pakiecie. */
   recorders: RecorderSeats;
 }
 
 /** Abonament nowej firmy. */
 export interface NewSubscription {
   tier: TierId;
-  implementationTier: ImplementationTierId;
   paidUntil: string | null;
   invoice: InvoiceData | null;
 }
@@ -148,7 +124,6 @@ export interface NewCompanyInput {
   owner: { email: string; fullName: string };
   invoice: InvoiceData;
   tier: TierId;
-  implementationTier: ImplementationTierId;
   /** Gdy pierwszy przelew jest już zaksięgowany. */
   paidUntil?: string | null;
 }
@@ -163,27 +138,16 @@ export function requireTier(id: string): TierId {
   return found.id;
 }
 
-export function implementationTier(id: ImplementationTierId): ImplementationTier {
-  return IMPLEMENTATION_TIERS.find((candidate) => candidate.id === id)!;
-}
-
-export function requireImplementationTier(id: string): ImplementationTierId {
-  const found = IMPLEMENTATION_TIERS.find((candidate) => candidate.id === id);
-  if (!found) throw new RegistryError("invalid_input");
-  return found.id;
-}
-
 /** Miejsca w pakiecie przy tylu osobach zapisujących ruchy (po zmianie na niższy pakiet może ich być ponad limit). */
-export function recorderSeats(id: ImplementationTierId, recorderCount: number): RecorderSeats {
-  const current = implementationTier(id);
+export function recorderSeats(id: TierId, recorderCount: number): RecorderSeats {
+  const current = tier(id);
   const seatsLeft = current.maxPeople === null ? null : Math.max(current.maxPeople - recorderCount, 0);
-  const next =
-    seatsLeft === 0 ? IMPLEMENTATION_TIERS.find((candidate) => candidate.maxPeople === null || candidate.maxPeople > recorderCount)! : null;
+  const next = seatsLeft === 0 ? TIERS.find((candidate) => candidate.maxPeople === null || candidate.maxPeople > recorderCount)! : null;
   return {
-    implementationTier: current,
+    tier: current,
     recorderCount,
     seatsLeft,
-    upgrade: next && { implementationTier: next, surcharge: next.price - current.price },
+    upgrade: next && { tier: next, surcharge: next.implementationPrice - current.implementationPrice },
   };
 }
 
@@ -192,17 +156,17 @@ export function recorderSeats(id: ImplementationTierId, recorderCount: number): 
  * jej członek, więc to zapytanie właściciela.
  */
 export async function companyRecorderSeats(sql: Sql): Promise<RecorderSeats> {
-  const [row] = await sql<{ implementation_tier: ImplementationTierId; recorders: string }>(
-    `select s.implementation_tier,
+  const [row] = await sql<{ tier: TierId; recorders: string }>(
+    `select s.tier,
             (select count(*) from app.users u where u.company_id = s.company_id and ${ACTIVE_RECORDER}) as recorders
      from app.subscriptions s where s.company_id = app.current_company_id()`,
   );
   if (!row) throw new RegistryError("no_access");
-  return recorderSeats(row.implementation_tier, Number(row.recorders));
+  return recorderSeats(row.tier, Number(row.recorders));
 }
 
 /**
- * Wolne miejsce w pakiecie wdrożenia na nową osobę tej roli; bez niego `recorder_limit` (ADR 0024). Pracownik nie
+ * Wolne miejsce w pakiecie na nową osobę tej roli; bez niego `recorder_limit` (ADR 0024). Pracownik nie
  * zapisuje ruchów, więc miejsca nie zajmuje. Blokuje wiersz firmy do końca transakcji: w transakcji, która zapisuje
  * osobę, dwa równoległe dodania nie zajmą tego samego miejsca. Blokadę (jak zmianę firmy) RLS daje tylko właścicielowi,
  * więc komuś innemu odmawia, zamiast liczyć bez niej.
@@ -274,7 +238,7 @@ export async function currentPlan(sql: Sql): Promise<CompanyPlan> {
   return { tier: row.tier, paidUntil: row.paid_until, manualReadOnly: row.manual_read_only, toolCount: Number(row.tools) };
 }
 
-/** Ostrzeżenie, gdy narzędzi jest więcej niż limit progu; plan indywidualny nie ma limitu. */
+/** Ostrzeżenie, gdy narzędzi jest więcej niż limit pakietu; duży pakiet nie ma limitu. */
 export function limitWarning(plan: Pick<CompanyPlan, "tier" | "toolCount">): ToolLimitWarning | null {
   const current = tier(plan.tier);
   if (current.toolLimit === null || plan.toolCount <= current.toolLimit) return null;
@@ -317,12 +281,11 @@ export async function requireSuperAdmin(sql: Sql) {
 
 export async function insertSubscription(sql: Sql, companyId: string, subscription: NewSubscription) {
   await sql(
-    `insert into app.subscriptions (company_id, tier, implementation_tier, paid_until, invoice_name, tax_id, invoice_address)
-     values ($1, $2, $3, $4, $5, $6, $7)`,
+    `insert into app.subscriptions (company_id, tier, paid_until, invoice_name, tax_id, invoice_address)
+     values ($1, $2, $3, $4, $5, $6)`,
     [
       companyId,
       subscription.tier,
-      subscription.implementationTier,
       subscription.paidUntil,
       subscription.invoice?.name ?? null,
       subscription.invoice?.taxId ?? null,
@@ -339,7 +302,6 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
     name: string;
     created_at: Date;
     tier: TierId;
-    implementation_tier: ImplementationTierId;
     paid_until: string | null;
     manual_read_only: boolean;
     invoice_name: string | null;
@@ -350,7 +312,7 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
     tools: string | null;
     recorders: string;
   }>(
-    `select c.id, c.name, c.created_at, s.tier, s.implementation_tier, to_char(s.paid_until, 'YYYY-MM-DD') as paid_until,
+    `select c.id, c.name, c.created_at, s.tier, to_char(s.paid_until, 'YYYY-MM-DD') as paid_until,
             s.manual_read_only, s.invoice_name, s.tax_id, s.invoice_address, o.full_name as owner_name, o.email as owner_email,
             n.tools, r.recorders
      from app.companies c
@@ -381,7 +343,6 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
       owner: row.owner_name && row.owner_email ? { fullName: row.owner_name, email: row.owner_email } : null,
       tier: tier(row.tier),
       toolCount: Number(row.tools ?? 0),
-      implementationTier: implementationTier(row.implementation_tier),
       recorderCount: Number(row.recorders),
       paidUntil,
       readOnlyFrom: paidUntil ? readOnlyFrom(paidUntil) : null,
@@ -396,17 +357,15 @@ export async function managedCompanies(sql: Sql, now: Date, companyId?: string):
 export async function updateSubscription(
   sql: Sql,
   companyId: string,
-  change: { tier: TierId } | { implementationTier: ImplementationTierId } | { paidUntil: string } | { manualReadOnly: boolean },
+  change: { tier: TierId } | { paidUntil: string } | { manualReadOnly: boolean },
 ) {
   if (!UUID_PATTERN.test(companyId)) throw new RegistryError("not_found");
   const [column, value] =
     "tier" in change
       ? ["tier", change.tier]
-      : "implementationTier" in change
-        ? ["implementation_tier", change.implementationTier]
-        : "paidUntil" in change
-          ? ["paid_until", change.paidUntil]
-          : ["manual_read_only", change.manualReadOnly];
+      : "paidUntil" in change
+        ? ["paid_until", change.paidUntil]
+        : ["manual_read_only", change.manualReadOnly];
   const updated = await sql(`update app.subscriptions set ${column} = $2 where company_id = $1 returning company_id`, [companyId, value]);
   if (updated.length === 0) throw new RegistryError("not_found");
 }

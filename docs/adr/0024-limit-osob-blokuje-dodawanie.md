@@ -1,6 +1,6 @@
 # 0024. Limit osób zapisujących ruchy blokuje dodawanie, a nie tylko ostrzega
 
-Data: 2026-09-30 · Status: przyjęta
+Data: 2026-09-30 · Status: przyjęta; pakiety i ich limity zastąpione przez ADR 0040 (jeden pakiet)
 
 ## Kontekst
 
