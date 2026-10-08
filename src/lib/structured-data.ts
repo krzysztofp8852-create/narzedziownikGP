@@ -1,7 +1,7 @@
 import { SALES_EMAIL, SALES_PHONE } from "@/components/sales-contact";
 import { t } from "@/i18n/t";
 import { TIERS } from "@/registry/subscriptions";
-import { implementationTiers } from "./pricing-text";
+import { tierPeople, tierTools } from "./pricing-text";
 
 /** Dane spółki ze stopki strony o programie, rozpisane na pola schema.org. */
 const VENDOR = {
@@ -13,18 +13,18 @@ const VENDOR = {
   krs: "0001262659",
 };
 
-/** Cena netto w złotówkach; z `unitText` za okres, np. „rok”. */
+/** Cena brutto w złotówkach (VAT nie jest doliczany); z `unitText` za okres, np. „rok”. */
 const netPrice = (price: number, unitText?: string) => ({
   "@type": "UnitPriceSpecification",
   price,
   priceCurrency: "PLN",
-  valueAddedTaxIncluded: false,
+  valueAddedTaxIncluded: true,
   ...(unitText && { unitText }),
 });
 
 /**
  * Dane strukturalne strony o programie (JSON-LD): dostawca, serwis pod nazwą programu (nazwa witryny w wynikach Google)
- * i sam program z cenami progów abonamentu. Ceny z `TIERS`, tych samych co w cenniku na stronie.
+ * i sam program z cenami pakietów: wdrożenie i opłata za rok. Ceny z `TIERS`, tych samych co w cenniku na stronie.
  */
 export function landingStructuredData(siteUrl: string) {
   const url = new URL("/", siteUrl).href;
@@ -69,30 +69,14 @@ export function landingStructuredData(siteUrl: string) {
         operatingSystem: "Android, iOS, Windows, macOS",
         inLanguage: "pl-PL",
         provider: { "@id": organization },
-        offers: [
-          ...TIERS.flatMap((tier) =>
-            tier.toolLimit === null || tier.yearlyPrice === null
-              ? []
-              : [
-                  {
-                    "@type": "Offer",
-                    name: tier.name,
-                    description: t("landing.pricing.upTo", { limit: tier.toolLimit }),
-                    price: tier.yearlyPrice,
-                    priceCurrency: "PLN",
-                    priceSpecification: netPrice(tier.yearlyPrice, "rok"),
-                  },
-                ],
-          ),
-          ...implementationTiers().map(({ people, price }) => ({
-            "@type": "Offer",
-            name: `${t("landing.pricing.implementationTitle")}: ${people}`,
-            description: t("landing.pricing.implementationText"),
-            price,
-            priceCurrency: "PLN",
-            priceSpecification: netPrice(price),
-          })),
-        ],
+        offers: TIERS.map((tier) => ({
+          "@type": "Offer",
+          name: tier.name,
+          description: `${t("landing.pricing.planPeople", { people: tierPeople(tier) })}, ${tierTools(tier)}`,
+          price: tier.implementationPrice,
+          priceCurrency: "PLN",
+          priceSpecification: [netPrice(tier.implementationPrice), netPrice(tier.yearlyPrice, "rok")],
+        })),
       },
     ],
   };

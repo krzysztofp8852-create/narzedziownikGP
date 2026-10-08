@@ -7,7 +7,7 @@ import { PaidUntil, RecorderUsage, SubscriptionStatus, ToolUsage } from "./subsc
 
 export const metadata: Metadata = { title: t("superAdmin.companiesTitle") };
 
-/** Wszystkie firmy z progiem, liczbą narzędzi, pakietem wdrożenia, liczbą osób zapisujących ruchy, „opłacone do” i stanem abonamentu. */
+/** Wszystkie firmy z pakietem, liczbą narzędzi, liczbą osób zapisujących ruchy, „opłacone do” i stanem abonamentu. */
 export default async function CompaniesPage(props: PageProps<"/super-admin">) {
   // `usunieta`: tu wraca usunięcie firmy; `pozostalo`: ile jej plików i kont logowania nie udało się usunąć.
   const { usunieta, pozostalo } = await props.searchParams;
@@ -44,7 +44,6 @@ export default async function CompaniesPage(props: PageProps<"/super-admin">) {
                 <th>{t("superAdmin.columnCompany")}</th>
                 <th>{t("superAdmin.columnTier")}</th>
                 <th className="import-number">{t("superAdmin.columnTools")}</th>
-                <th>{t("superAdmin.columnImplementation")}</th>
                 <th className="import-number">{t("superAdmin.columnRecorders")}</th>
                 <th>{t("superAdmin.columnPaidUntil")}</th>
                 <th>{t("superAdmin.columnStatus")}</th>
@@ -60,7 +59,6 @@ export default async function CompaniesPage(props: PageProps<"/super-admin">) {
                   <td className="import-number">
                     <ToolUsage company={company} />
                   </td>
-                  <td>{company.implementationTier.name}</td>
                   <td className="import-number">
                     <RecorderUsage company={company} />
                   </td>

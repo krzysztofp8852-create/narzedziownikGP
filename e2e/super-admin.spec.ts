@@ -25,7 +25,7 @@ async function signIn(page: Page, email: string, password: string) {
 // potem usunąć z aplikacji. Dlatego ten test działa tylko w CI, na jednorazowym Supabase.
 test.skip(!process.env.CI, "tylko w CI: zakłada konto super-admina");
 
-test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „opłacone do” i włącza tryb tylko do odczytu, a właściciel widzi baner i nie zapisze zmian", async ({ page }) => {
+test("super-admin zakłada firmę z właścicielem, zmienia pakiet, wpisuje „opłacone do” i włącza tryb tylko do odczytu, a właściciel widzi baner i nie zapisze zmian", async ({ page }) => {
   const admin = createSuperAdmin();
   const suffix = randomUUID().slice(0, 8);
   const companyName = `Test dymny panelu ${suffix}`;
@@ -40,7 +40,7 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await page.getByLabel("Nabywca").fill(`${companyName} sp. z o.o.`);
   await page.getByLabel("NIP").fill("778-123-45-64");
   await page.getByLabel("Adres").fill("ul. Polna 3\n60-001 Poznań");
-  await page.getByLabel("Próg abonamentu").selectOption("sredni");
+  await page.getByLabel("Pakiet").selectOption("sredni");
   await page.getByLabel("Imię i nazwisko").fill("Jan Testowy");
   await page.getByLabel("E-mail").fill(ownerEmail);
   await page.getByRole("button", { name: "Załóż firmę" }).click();
@@ -55,14 +55,14 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await page.getByRole("link", { name: "Wszystkie firmy" }).click();
   const row = page.getByTestId("company-row").filter({ hasText: companyName });
   await expect(row).toContainText("Średni");
-  await expect(row).toContainText("0 / 300");
+  await expect(row).toContainText("0 / 500");
   await expect(row).toContainText("brak wpłaty");
   await expect(row).toContainText("Czeka na wpłatę");
 
   await row.getByRole("link", { name: companyName }).click();
-  await page.getByLabel("Próg abonamentu").selectOption("duzy");
-  await page.getByRole("button", { name: "Zmień próg" }).click();
-  await expect(page.getByText("Próg zapisany.")).toBeVisible();
+  await page.getByLabel("Pakiet").selectOption("duzy");
+  await page.getByRole("button", { name: "Zmień pakiet" }).click();
+  await expect(page.getByText("Pakiet zapisany.")).toBeVisible();
 
   await page.getByLabel("Opłacone do").fill("2099-12-31");
   await page.getByRole("button", { name: "Zapisz datę" }).click();
@@ -100,7 +100,7 @@ test("super-admin zakłada firmę z właścicielem, zmienia próg, wpisuje „op
   await page.goto("/ustawienia");
   await expect(page.getByTestId("read-only-banner")).toBeVisible();
   await expect(page.getByTestId("subscription")).toContainText("Duży");
-  await expect(page.getByTestId("subscription-tools")).toHaveText("0 z 1000");
+  await expect(page.getByTestId("subscription-tools")).toHaveText("0 (pakiet bez limitu)");
   await page.getByLabel("Po ilu dniach").fill("21");
   await page.getByRole("region", { name: "Alarm na budowie" }).getByRole("button", { name: "Zapisz", exact: true }).click();
   // Next.js ma też własny, pusty `role="alert"` (ogłaszanie zmiany strony), więc szukamy komunikatu po treści.

@@ -1,32 +1,46 @@
 import { describe, expect, it } from "vitest";
-import { implementationPeople, pricing } from "./pricing-text";
+import { tier } from "@/registry/subscriptions";
+import { pricing, tierPeople } from "./pricing-text";
 
 // Ceny w złotówkach mają twardą spację między tysiącami, jak w cenniku: „1 000 zł”.
 const zl = (text: string) => text.replace(/ /g, " ");
 
 describe("cennik na stronie o programie", () => {
-  it("pokazuje każdy próg abonamentu z limitem narzędzi i ceną netto za rok, a plan indywidualny ponad 1000 narzędzi", () => {
-    expect(pricing().plans).toEqual([
-      { id: "maly", name: "Mały", limit: "do 150 narzędzi", price: zl("300 zł"), period: "netto za rok" },
-      { id: "sredni", name: "Średni", limit: "do 300 narzędzi", price: zl("500 zł"), period: "netto za rok" },
-      { id: "duzy", name: "Duży", limit: "do 1000 narzędzi", price: zl("1 000 zł"), period: "netto za rok" },
-      { id: "indywidualny", name: "Indywidualny", limit: "ponad 1000 narzędzi", price: "Wycena", period: "ustalana z Tobą" },
+  it("pokazuje trzy pakiety z limitem osób i narzędzi, ceną wdrożenia i opłatą za rok, a mały jako najpopularniejszy", () => {
+    const once = "brutto, jednorazowo";
+    const yearly = "brutto za rok";
+    expect(pricing()).toEqual([
+      {
+        id: "maly",
+        name: "Mały",
+        people: "do 5 osób",
+        tools: "do 150 narzędzi",
+        implementation: { price: zl("3 000 zł"), period: once },
+        yearly: { price: zl("400 zł"), period: yearly },
+        popular: true,
+      },
+      {
+        id: "sredni",
+        name: "Średni",
+        people: "do 30 osób",
+        tools: "do 500 narzędzi",
+        implementation: { price: zl("6 000 zł"), period: once },
+        yearly: { price: zl("800 zł"), period: yearly },
+        popular: false,
+      },
+      {
+        id: "duzy",
+        name: "Duży",
+        people: "ponad 30 osób",
+        tools: "bez limitu narzędzi",
+        implementation: { price: zl("12 000 zł"), period: once },
+        yearly: { price: zl("2 000 zł"), period: yearly },
+        popular: false,
+      },
     ]);
   });
 
-  it("pokazuje obowiązkowe, jednorazowe wdrożenie ze szkoleniem według liczby osób zapisujących ruchy", () => {
-    expect(pricing().implementation).toEqual([
-      { people: "do 2 osób", price: zl("3 000 zł"), period: "netto, jednorazowo" },
-      { people: "3–6 osób", price: zl("4 000 zł"), period: "netto, jednorazowo" },
-      { people: "7 i więcej osób", price: zl("5 000 zł"), period: "netto, jednorazowo" },
-    ]);
-  });
-
-  it("opisuje liczbę osób każdego pakietu wdrożenia tak jak cennik, do panelu i ustawień", () => {
-    expect((["maly", "sredni", "duzy"] as const).map(implementationPeople)).toEqual([
-      "do 2 osób",
-      "3–6 osób",
-      "7 i więcej osób",
-    ]);
+  it("opisuje liczbę osób każdego pakietu tak jak cennik, do panelu i ustawień", () => {
+    expect((["maly", "sredni", "duzy"] as const).map((id) => tierPeople(tier(id)))).toEqual(["do 5 osób", "do 30 osób", "ponad 30 osób"]);
   });
 });

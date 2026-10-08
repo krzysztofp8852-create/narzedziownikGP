@@ -13,6 +13,7 @@ async function givenZawbud({ paidUntil = "2026-03-31" }: { paidUntil?: string } 
   const zawbud = await testbed.givenActiveCompany("Zawbud");
   const adminId = await testbed.givenSuperAdmin();
   const admin = testbed.registry.superAdmin(adminId);
+  await admin.changeTier(zawbud.companyId, "maly");
   await admin.setPaidUntil(zawbud.companyId, paidUntil);
   const nowakId = await testbed.givenMember(zawbud, "kierownik", "Adam Nowak");
   const storekeeperId = await testbed.givenMember(zawbud, "magazynier", "Ewa Wiśniewska");
@@ -380,8 +381,10 @@ describe("wyłączenie trybu ręcznego po terminie płatności", () => {
   });
 });
 
-describe("limit narzędzi w progu", () => {
-  /** Zawbud na progu Mały (150 narzędzi) z 150 narzędziami z importu. */
+const SMALL = { id: "maly", name: "Mały", maxPeople: 5, toolLimit: 150, implementationPrice: 3000, yearlyPrice: 400 };
+
+describe("limit narzędzi w pakiecie", () => {
+  /** Zawbud w pakiecie Mały (150 narzędzi) z 150 narzędziami z importu. */
   async function givenFullZawbud() {
     const z = await givenZawbud();
     const rows = Array.from({ length: 148 }, () => ({ name: "Młot", category: "S" }));
@@ -391,12 +394,12 @@ describe("limit narzędzi w progu", () => {
   }
 
   const overLimit = (toolCount: number, suggested = "sredni") => ({
-    tier: { id: "maly", name: "Mały", toolLimit: 150, yearlyPrice: 300 },
+    tier: SMALL,
     toolCount,
     suggestedTier: expect.objectContaining({ id: suggested }),
   });
 
-  it("do limitu bez ostrzeżenia, a ponad limit polecenie się wykonuje i wynik ma ostrzeżenie z wyższym progiem", async () => {
+  it("do limitu bez ostrzeżenia, a ponad limit polecenie się wykonuje i wynik ma ostrzeżenie z wyższym pakietem", async () => {
     const z = await givenFullZawbud();
 
     const added = await z.owner.addTool({ operationId: randomUUID(), name: "Szlifierka", categoryId: z.grinders.id });
@@ -416,46 +419,41 @@ describe("limit narzędzi w progu", () => {
     });
   });
 
-  it("wycofane narzędzia nie liczą się do limitu, a ponad 1000 proponujemy plan indywidualny", async () => {
+  it("wycofane narzędzia nie liczą się do limitu, a ponad 500 proponujemy duży pakiet", async () => {
     const z = await givenFullZawbud();
     await z.owner.retireTool({ operationId: randomUUID(), toolId: z.s01 });
     expect(await z.owner.addTool({ operationId: randomUUID(), name: "Szlifierka", categoryId: z.grinders.id })).toMatchObject({ limitWarning: null });
 
-    const rows = Array.from({ length: 900 }, () => ({ name: "Młot", category: "S" }));
-    expect(await z.owner.importTools({ operationId: randomUUID(), rows })).toMatchObject({ limitWarning: overLimit(1050, "indywidualny") });
+    const rows = Array.from({ length: 400 }, () => ({ name: "Młot", category: "S" }));
+    expect(await z.owner.importTools({ operationId: randomUUID(), rows })).toMatchObject({ limitWarning: overLimit(550, "duzy") });
   });
 
-  it("plan indywidualny nie ma limitu", async () => {
+  it("duży pakiet nie ma limitu narzędzi", async () => {
     const z = await givenFullZawbud();
-    await z.admin.changeTier(z.zawbud.companyId, "indywidualny");
+    await z.admin.changeTier(z.zawbud.companyId, "duzy");
 
     expect(await z.owner.addTool({ operationId: randomUUID(), name: "Szlifierka", categoryId: z.grinders.id })).toMatchObject({ limitWarning: null });
   });
 });
 
 describe("abonament w ustawieniach właściciela", () => {
-  it("właściciel widzi próg, limit, liczbę narzędzi i „opłacone do”; kierownik i magazynier nie", async () => {
+  it("właściciel widzi pakiet, limity, liczbę narzędzi i osób oraz „opłacone do”; kierownik i magazynier nie", async () => {
     const z = await givenZawbud();
 
     expect(await z.owner.subscription()).toEqual({
-      tier: { id: "maly", name: "Mały", toolLimit: 150, yearlyPrice: 300 },
+      tier: SMALL,
       toolCount: 2,
       paidUntil: "2026-03-31",
       readOnlyFrom: "2026-04-15",
       status: "aktywna",
       limitWarning: null,
-      recorders: {
-        implementationTier: { id: "duzy", name: "Duży", maxPeople: null, price: 5000 },
-        recorderCount: 3,
-        seatsLeft: null,
-        upgrade: null,
-      },
+      recorders: { tier: SMALL, recorderCount: 3, seatsLeft: 2, upgrade: null },
     });
     await expect(testbed.registry.as(z.nowakId).subscription()).rejects.toMatchObject({ code: "forbidden" });
     await expect(testbed.registry.as(z.storekeeperId).subscription()).rejects.toMatchObject({ code: "forbidden" });
   });
 
-  it("po przekroczeniu limitu ustawienia pokazują ostrzeżenie z wyższym progiem", async () => {
+  it("po przekroczeniu limitu ustawienia pokazują ostrzeżenie z wyższym pakietem", async () => {
     const z = await givenZawbud();
     await z.owner.importTools({ operationId: randomUUID(), rows: Array.from({ length: 149 }, () => ({ name: "Młot", category: "S" })) });
     testbed.clock.set("2026-04-20T10:00:00+02:00");

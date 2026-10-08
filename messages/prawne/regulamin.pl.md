@@ -76,7 +76,7 @@ Ten regulamin opisuje, na jakich zasadach GP Engineering udostępnia program Nar
 
 ## § 9. Opłaty
 
-1. Za Usługę Klient płaci Abonament z góry za rok oraz jednorazową opłatę za Wdrożenie. Próg Abonamentu zależy od liczby narzędzi w ewidencji. Aktualny cennik jest na [stronie o programie](/). Ceny są cenami netto, do których dolicza się VAT.
+1. Za Usługę Klient płaci Abonament z góry za rok oraz jednorazową opłatę za Wdrożenie. Próg Abonamentu zależy od liczby narzędzi w ewidencji. Aktualny cennik jest na [stronie o programie](/). Ceny są cenami brutto. Usługodawca korzysta ze zwolnienia podmiotowego z podatku od towarów i usług na podstawie art. 113 ustawy z dnia 11 marca 2004 r. o podatku od towarów i usług, więc nie dolicza do nich VAT.
 2. Usługodawca wystawia fakturę, a Klient płaci przelewem w terminie na niej wskazanym. Po zaksięgowaniu wpłaty Usługodawca wpisuje w Programie datę, do której Usługa jest opłacona.
 3. Liczbę kont Użytkowników Abonament nie ogranicza.
 4. Gdy liczba narzędzi przekroczy limit progu, Program tylko ostrzega i proponuje wyższy próg. Nie blokuje dodawania sprzętu. Zmianę progu Strony uzgadniają, a różnicę w cenie Usługodawca rozlicza od najbliższego okresu, chyba że Strony ustalą inaczej.

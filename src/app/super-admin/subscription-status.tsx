@@ -24,7 +24,7 @@ export function PaidUntil({ company }: { company: ManagedCompany }) {
   return company.paidUntil ? formatCalendarDay(company.paidUntil) : <span className="muted">{t("superAdmin.notPaid")}</span>;
 }
 
-/** Liczba narzędzi wobec limitu progu, z ostrzeżeniem po przekroczeniu; plan indywidualny nie ma limitu. */
+/** Liczba narzędzi wobec limitu pakietu, z ostrzeżeniem po przekroczeniu; duży pakiet nie ma limitu. */
 export function ToolUsage({ company }: { company: ManagedCompany }) {
   const limit = company.tier.toolLimit;
   if (limit === null) return company.toolCount;
@@ -36,9 +36,9 @@ export function ToolUsage({ company }: { company: ManagedCompany }) {
   );
 }
 
-/** Osoby zapisujące ruchy wobec limitu pakietu wdrożenia, z ostrzeżeniem ponad limitem (po zmianie na niższy pakiet). */
+/** Osoby zapisujące ruchy wobec limitu pakietu, z ostrzeżeniem ponad limitem (po zmianie na niższy pakiet). */
 export function RecorderUsage({ company }: { company: ManagedCompany }) {
-  const limit = company.implementationTier.maxPeople;
+  const limit = company.tier.maxPeople;
   if (limit === null) return company.recorderCount;
   return (
     <>
