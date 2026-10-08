@@ -5,16 +5,13 @@ import { t } from "@/i18n/t";
 import { CAMERA, nativePhoto, type NativePhotoProblem, type PhotoSource } from "@/lib/native-photo";
 import { useHasPlugin } from "@/lib/platform";
 
-/** Czy pole zdjęcia ma przyciski natywnego aparatu (aplikacja z wtyczką aparatu); na serwerze i przy hydracji nie. */
-export const useNativeCamera = () => useHasPlugin(CAMERA);
-
 /**
  * „Zrób zdjęcie” i „Z galerii” w aplikacji z wtyczką aparatu: WebView sam daje przy polu pliku tylko wybór pliku, bez
  * aparatu. Zdjęcie trafia do pola pliku `inputId`, jakby wybrano je z pliku, więc formularz zmniejsza je i wysyła jak
  * dotąd. W przeglądarce i w aplikacji bez wtyczki nic nie pokazuje, a zostaje samo pole pliku.
  */
 export function NativePhotoButtons({ inputId, name }: { inputId: string; name: string }) {
-  const available = useNativeCamera();
+  const available = useHasPlugin(CAMERA);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<NativePhotoProblem | null>(null);
   if (!available) return null;

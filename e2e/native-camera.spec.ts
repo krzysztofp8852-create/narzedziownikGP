@@ -58,8 +58,8 @@ test("w aplikacji zdjęcie uszkodzenia przychodzi z aparatu, zmniejsza się do J
 
   await page.goto(`/zgloszenia/nowe?narzedzie=${company.toolId}&rodzaj=uszkodzenie`);
   await page.getByLabel("Opis").fill("Pęknięta obudowa");
-  // W aplikacji zamiast wyboru pliku są dwa przyciski aparatu.
-  await expect(page.getByLabel("Zdjęcie (opcjonalnie)")).toBeHidden();
+  // W aplikacji nad wyborem pliku są dwa przyciski aparatu; wybór pliku zostaje.
+  await expect(page.getByLabel("Zdjęcie (opcjonalnie)")).toBeVisible();
   await page.getByRole("button", { name: "Zrób zdjęcie" }).click();
   await expect(page.getByTestId("photo-preview").getByRole("img")).toBeVisible();
   expect(await cameraMethods(page)).toEqual(["takePhoto"]);
