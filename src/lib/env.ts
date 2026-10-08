@@ -93,6 +93,21 @@ export const serverEnv = {
           subject: required("VAPID_SUBJECT", process.env.VAPID_SUBJECT),
         }
       : null,
+  /**
+   * Powiadomienia w aplikacji na Androida (Firebase Cloud Messaging): plik JSON klucza konta serwisowego Firebase
+   * z prawem wysyłki FCM, wklejony w całości do `FIREBASE_SERVICE_ACCOUNT` (Firebase → Ustawienia projektu → Konta
+   * usługi → Wygeneruj nowy klucz prywatny). Bez niego kopie push na aplikację trafiają tylko do logu.
+   */
+  fcm: () => {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!raw) return null;
+    const account = JSON.parse(raw) as { project_id?: string; client_email?: string; private_key?: string };
+    return {
+      projectId: required("FIREBASE_SERVICE_ACCOUNT.project_id", account.project_id),
+      clientEmail: required("FIREBASE_SERVICE_ACCOUNT.client_email", account.client_email),
+      privateKey: required("FIREBASE_SERVICE_ACCOUNT.private_key", account.private_key),
+    };
+  },
   /** Adres supportu GP Engineering, na który idą wiadomości użytkowników z czatu; bez niego trafiają tylko do logu. */
   supportEmail: () => process.env.SUPPORT_EMAIL || null,
   /** Telefon do supportu w stopce okna czatu, np. „+48 600 000 000”; bez niego stopki nie ma. */

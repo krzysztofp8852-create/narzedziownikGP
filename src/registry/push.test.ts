@@ -27,13 +27,27 @@ function move(actorId: string, kind: RegisteredKind, from: string, to: string, t
 }
 
 /** Subskrypcja przeglądarki, tak jak ją zwraca `PushSubscription.toJSON()`. */
-function browser(name: string, host = "fcm.googleapis.com"): PushSubscriptionData {
-  return { endpoint: `https://${host}/fcm/send/${name}-${randomUUID()}`, keys: { p256dh: `klucz-${name}`, auth: `sekret-${name}` } };
+function browser(name: string, host = "fcm.googleapis.com"): Extract<PushSubscriptionData, { kind: "przegladarka" }> {
+  return {
+    kind: "przegladarka",
+    endpoint: `https://${host}/fcm/send/${name}-${randomUUID()}`,
+    keys: { p256dh: `klucz-${name}`, auth: `sekret-${name}` },
+  };
 }
 
-/** Na które przeglądarki poszły kopie i których wpisów dzwonka. */
+/** Subskrypcja aplikacji na Androida: token rejestracji FCM tej instalacji. */
+function app(name: string): Extract<PushSubscriptionData, { kind: "aplikacja" }> {
+  return { kind: "aplikacja", token: `${name}-${randomUUID()}:APA91bH_${randomUUID().replaceAll("-", "")}` };
+}
+
+/** Urządzenie subskrypcji: adres przeglądarki albo token aplikacji. */
+function deviceOf(subscription: PushSubscriptionData) {
+  return subscription.kind === "przegladarka" ? subscription.endpoint : subscription.token;
+}
+
+/** Na które urządzenia poszły kopie i których wpisów. */
 function pushedTo() {
-  return testbed.notifier.pushed.map(({ subscription, message }) => ({ endpoint: subscription.endpoint, message }));
+  return testbed.notifier.pushed.map(({ subscription, message }) => ({ device: deviceOf(subscription), message }));
 }
 
 async function bellIds(userId: string) {
@@ -53,7 +67,7 @@ describe("push: kopia wpisu z dzwonka", () => {
     const [entryId] = await bellIds(z.kowalskiId);
     expect(pushedTo()).toEqual([
       {
-        endpoint: phone.endpoint,
+        device: phone.endpoint,
         message: {
           window: "dzwonek",
           notificationId: entryId,
@@ -61,7 +75,7 @@ describe("push: kopia wpisu z dzwonka", () => {
         },
       },
     ]);
-    expect(testbed.notifier.pushed[0].subscription.keys).toEqual(phone.keys);
+    expect(testbed.notifier.pushed[0].subscription).toEqual(phone);
     expect(testbed.notifier.sent).toHaveLength(1);
   });
 
@@ -75,7 +89,7 @@ describe("push: kopia wpisu z dzwonka", () => {
 
     await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
 
-    expect(pushedTo().map((push) => push.endpoint).sort()).toEqual([phone.endpoint, tablet.endpoint].sort());
+    expect(pushedTo().map((push) => push.device).sort()).toEqual([phone.endpoint, tablet.endpoint].sort());
   });
 
   it("ponowne wysłanie tej samej operacji nie wysyła pusha drugi raz", async () => {
@@ -120,11 +134,11 @@ describe("push: kopia wpisu z dzwonka", () => {
     expect(pushedTo()).toEqual(
       expect.arrayContaining([
         {
-          endpoint: kowalskiPhone.endpoint,
+          device: kowalskiPhone.endpoint,
           message: { window: "dzwonek", notificationId: kowalskiEntry, notification: expect.objectContaining({ kind: "prog_przekroczony" }) },
         },
         {
-          endpoint: ownerPhone.endpoint,
+          device: ownerPhone.endpoint,
           message: { window: "dzwonek", notificationId: ownerEntry, notification: expect.objectContaining({ kind: "progi_przekroczone" }) },
         },
       ]),
@@ -157,7 +171,7 @@ describe("push: kopia wpisu z dzwonka", () => {
     const [entryId] = await bellIds(z.nowakId);
     expect(pushedTo()).toEqual([
       {
-        endpoint: phone.endpoint,
+        device: phone.endpoint,
         message: { window: "dzwonek", notificationId: entryId, notification: expect.objectContaining({ kind: "ruch_odrzucony" }) },
       },
     ]);
@@ -178,7 +192,7 @@ describe("push: subskrypcje", () => {
 
     await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s02]);
 
-    expect(pushedTo().map((push) => push.endpoint)).toEqual([newPhone.endpoint]);
+    expect(pushedTo().map((push) => push.device)).toEqual([newPhone.endpoint]);
   });
 
   it("po wyłączeniu powiadomień w przeglądarce kopie tam nie idą", async () => {
@@ -187,7 +201,7 @@ describe("push: subskrypcje", () => {
     await testbed.registry.as(z.kowalskiId).subscribeToPush(phone);
     await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
 
-    await testbed.registry.as(z.kowalskiId).unsubscribeFromPush(phone.endpoint);
+    await testbed.registry.as(z.kowalskiId).unsubscribeFromPush(phone);
     await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
 
     expect(testbed.notifier.pushed).toEqual([]);
@@ -200,10 +214,10 @@ describe("push: subskrypcje", () => {
     await testbed.registry.as(z.kowalskiId).subscribeToPush(phone);
     await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
 
-    await testbed.registry.as(z.nowakId).unsubscribeFromPush(phone.endpoint);
+    await testbed.registry.as(z.nowakId).unsubscribeFromPush(phone);
     await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
 
-    expect(pushedTo().map((push) => push.endpoint)).toEqual([phone.endpoint]);
+    expect(pushedTo().map((push) => push.device)).toEqual([phone.endpoint]);
   });
 
   it("ta sama przeglądarka po zmianie osoby dostaje kopie tylko nowej osoby", async () => {
@@ -220,7 +234,9 @@ describe("push: subskrypcje", () => {
 
     await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s02]);
     expect(testbed.notifier.pushed).toEqual([
-      expect.objectContaining({ subscription: { endpoint: sharedPhone.endpoint, keys: { p256dh: "nowy-klucz", auth: "nowy-sekret" } } }),
+      expect.objectContaining({
+        subscription: { kind: "przegladarka", endpoint: sharedPhone.endpoint, keys: { p256dh: "nowy-klucz", auth: "nowy-sekret" } },
+      }),
     ]);
   });
 
@@ -244,7 +260,7 @@ describe("push: subskrypcje", () => {
       browser("wewnetrzny", "localhost"),
       browser("podszyty", "fcm.googleapis.com.zly.test"),
       { ...browser("bez-kluczy"), keys: { p256dh: "", auth: "sekret" } },
-      { endpoint: "nie adres", keys: { p256dh: "k", auth: "s" } },
+      { kind: "przegladarka", endpoint: "nie adres", keys: { p256dh: "k", auth: "s" } },
     ];
 
     for (const subscription of invalid) {
@@ -271,7 +287,7 @@ describe("push: kopia wpisu z okna 📋 zgłoszeń", () => {
 
     expect(pushedTo()).toEqual([
       {
-        endpoint: ownerPhone.endpoint,
+        device: ownerPhone.endpoint,
         message: {
           window: "zgloszenia",
           entryId: expect.any(String),
@@ -301,7 +317,7 @@ describe("push: kopia wpisu z okna 📋 zgłoszeń", () => {
     await z.owner.commentOnIssue({ operationId, issueId, text: "Zamówione" });
     await z.owner.closeIssue({ operationId: randomUUID(), issueId, comment: "Są w kontenerze" });
 
-    expect(pushedTo().map(({ endpoint, message }) => [endpoint, message.window === "zgloszenia" && message.entry.kind])).toEqual([
+    expect(pushedTo().map(({ device, message }) => [device, message.window === "zgloszenia" && message.entry.kind])).toEqual([
       [phone.endpoint, "komentarz"],
       [phone.endpoint, "zamkniecie"],
     ]);
@@ -319,7 +335,7 @@ describe("push: kopia wpisu z okna 📋 zgłoszeń", () => {
 
     expect(pushedTo()).toEqual([
       {
-        endpoint: ownerPhone.endpoint,
+        device: ownerPhone.endpoint,
         message: {
           window: "zgloszenia",
           entryId: expect.any(String),
@@ -345,6 +361,128 @@ describe("push: odpowiedź supportu w oknie 💬 czatu", () => {
     await testbed.registry.superAdmin(adminId).replyToSupportThread({ operationId, threadId: z.nowakId, text: "Już dodana" });
 
     const reply = (await testbed.registry.as(z.nowakId).supportChat()).messages.at(-1)!;
-    expect(pushedTo()).toEqual([{ endpoint: phone.endpoint, message: { window: "czat", messageId: reply.id, reply: { text: "Już dodana", photo: false } } }]);
+    expect(pushedTo()).toEqual([{ device: phone.endpoint, message: { window: "czat", messageId: reply.id, reply: { text: "Już dodana", photo: false } } }]);
+  });
+});
+
+describe("push: aplikacja na Androida (FCM)", () => {
+  it("kopia wpisu dzwonka idzie i na telefon z aplikacją, i na przeglądarkę na laptopie", async () => {
+    const z = await givenZawbud();
+    const phone = app("telefon-kowalskiego");
+    const laptop = browser("laptop-kowalskiego");
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(phone);
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(laptop);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
+
+    const [entryId] = await bellIds(z.kowalskiId);
+    const message = { window: "dzwonek", notificationId: entryId, notification: expect.objectContaining({ kind: "narzedzia_zabrane" }) };
+    expect(pushedTo()).toEqual(
+      expect.arrayContaining([
+        { device: phone.token, message },
+        { device: laptop.endpoint, message },
+      ]),
+    );
+    expect(testbed.notifier.pushed).toHaveLength(2);
+    expect(testbed.notifier.pushed.find((push) => push.subscription.kind === "aplikacja")?.subscription).toEqual(phone);
+  });
+
+  it("nowe zgłoszenie idzie na aplikację właściciela, a odpowiedź supportu na aplikację autora", async () => {
+    const z = await givenZawbud();
+    const adminId = await testbed.givenSuperAdmin();
+    const ownerPhone = app("wlasciciel");
+    const nowakPhone = app("nowak");
+    await z.owner.subscribeToPush(ownerPhone);
+    await testbed.registry.as(z.nowakId).subscribeToPush(nowakPhone);
+
+    const { issueId } = await testbed.registry
+      .as(z.nowakId)
+      .fileIssue({ operationId: randomUUID(), kind: "inne", locationId: z.ratajeId, description: "Brakuje kasków" });
+    await testbed.registry.as(z.nowakId).sendSupportMessage({ operationId: randomUUID(), text: "Nie widzę budowy" });
+    await testbed.registry.superAdmin(adminId).replyToSupportThread({ operationId: randomUUID(), threadId: z.nowakId, text: "Już dodana" });
+
+    expect(pushedTo()).toEqual([
+      { device: ownerPhone.token, message: expect.objectContaining({ window: "zgloszenia", entry: expect.objectContaining({ kind: "zgloszenie", issueId }) }) },
+      { device: nowakPhone.token, message: expect.objectContaining({ window: "czat", reply: { text: "Już dodana", photo: false } }) },
+    ]);
+  });
+
+  it("token, który FCM uznał za nieważny albo wyrejestrowany, znika po pierwszej nieudanej wysyłce", async () => {
+    const z = await givenZawbud();
+    const uninstalled = app("odinstalowana");
+    const current = app("obecna");
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(uninstalled);
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(current);
+    testbed.notifier.expired.add(uninstalled.token);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01, z.s02]);
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
+    testbed.notifier.clear();
+
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s02]);
+
+    expect(pushedTo().map((push) => push.device)).toEqual([current.token]);
+  });
+
+  it("po wyłączeniu przełącznikiem kopie na ten telefon nie idą; cudzego tokenu nikt nie wyłączy", async () => {
+    const z = await givenZawbud();
+    const kowalskiPhone = app("kowalski");
+    const nowakPhone = app("nowak");
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(kowalskiPhone);
+    await testbed.registry.as(z.nowakId).subscribeToPush(nowakPhone);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+    await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.s02]);
+
+    await testbed.registry.as(z.kowalskiId).unsubscribeFromPush({ kind: "aplikacja", token: kowalskiPhone.token });
+    await testbed.registry.as(z.kowalskiId).unsubscribeFromPush({ kind: "aplikacja", token: nowakPhone.token });
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
+    await move(z.kowalskiId, "przeniesienie", z.ratajeId, z.winogradyId, [z.s02]);
+
+    expect(pushedTo().map((push) => push.device)).toEqual([nowakPhone.token]);
+  });
+
+  it("telefon po pracowniku, który odszedł: nowa osoba dostaje tylko swoje kopie, a ponowne włączenie ich nie dubluje", async () => {
+    const z = await givenZawbud();
+    const phone = app("sluzbowy");
+    await testbed.registry.as(z.nowakId).subscribeToPush(phone);
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(phone);
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(phone);
+    await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.s01]);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s02]);
+
+    await move(z.kowalskiId, "przeniesienie", z.ratajeId, z.winogradyId, [z.s01]);
+    expect(testbed.notifier.pushed).toEqual([]);
+
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s02]);
+    expect(pushedTo()).toEqual([{ device: phone.token, message: expect.objectContaining({ window: "dzwonek" }) }]);
+  });
+
+  it("wyłączenie w przeglądarce nie rusza aplikacji tej osoby, nawet gdy podany adres to token aplikacji", async () => {
+    const z = await givenZawbud();
+    const phone = app("telefon");
+    const laptop = browser("laptop");
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(phone);
+    await testbed.registry.as(z.kowalskiId).subscribeToPush(laptop);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+
+    await testbed.registry.as(z.kowalskiId).unsubscribeFromPush({ kind: "przegladarka", endpoint: phone.token });
+    await testbed.registry.as(z.kowalskiId).unsubscribeFromPush(laptop);
+    await move(z.nowakId, "przeniesienie", z.winogradyId, z.ratajeId, [z.s01]);
+
+    expect(pushedTo().map((push) => push.device)).toEqual([phone.token]);
+  });
+
+  it("przyjmuje tylko token FCM: niepusty, bez spacji i znaków spoza tokenu, nie za długi", async () => {
+    const z = await givenZawbud();
+    const kowalski = testbed.registry.as(z.kowalskiId);
+    const invalid = ["", "   ", "token ze spacją", "token/../ukośnik", `x${"a".repeat(4096)}`];
+
+    for (const token of invalid) {
+      await expect(kowalski.subscribeToPush({ kind: "aplikacja", token })).rejects.toMatchObject({ code: "invalid_input" });
+    }
+    await expect(kowalski.subscribeToPush({ kind: "nieznany", token: "abc" } as unknown as PushSubscriptionData)).rejects.toMatchObject({
+      code: "invalid_input",
+    });
+    await expect(kowalski.subscribeToPush(app("dobry"))).resolves.toBeUndefined();
   });
 });

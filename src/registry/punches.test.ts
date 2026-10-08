@@ -896,7 +896,7 @@ describe("zapomniane wyjście", () => {
 
   it("o 18:00 osoba nadal odbita dostaje przypomnienie w dzwonku i push, każde odbicie raz; kto wyszedł, nic", async () => {
     const z = await givenZawbud();
-    const phone = { endpoint: `https://fcm.googleapis.com/fcm/send/jan-${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
+    const phone = { kind: "przegladarka" as const, endpoint: `https://fcm.googleapis.com/fcm/send/jan-${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
     await testbed.registry.as(z.janId).subscribeToPush(phone);
     await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
     await punch(z.ewaId, z.tokens.base, north(FRANOWO, 10));

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { AppMenu } from "@/components/app-menu";
+import { AppPush } from "@/components/app-push";
 import { DemoBar } from "@/components/demo-bar";
 import { DemoPageLog } from "@/components/demo-page-log";
 import { DemoTour } from "@/components/demo-tour";
@@ -89,6 +90,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
           <div className="app-header-actions">
             <OfflineSync userId={session.userId} />
+            <AppPush />
             <Link
               href="/szukaj"
               className="button button-quiet icon-button"

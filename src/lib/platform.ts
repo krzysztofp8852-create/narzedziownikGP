@@ -11,7 +11,7 @@ import { useSyncExternalStore } from "react";
  */
 
 /** Część mostka Capacitora, o którą pyta strona (`native-bridge.js` w `@capacitor/android`). */
-type Bridge = { isNativePlatform?: () => boolean; isPluginAvailable?: (name: string) => boolean };
+type Bridge = { isNativePlatform?: () => boolean; isPluginAvailable?: (name: string) => boolean; Plugins?: Record<string, unknown> };
 
 /** Czy strona jest otwarta w aplikacji (mostek Capacitora na platformie natywnej). */
 export function isInApp(): boolean {
@@ -25,6 +25,15 @@ export function hasPlugin(name: string): boolean {
   return bridge?.isNativePlatform?.() === true && bridge.isPluginAvailable?.(name) === true;
 }
 
+/**
+ * Wtyczka natywna z mostka, gdy zainstalowana wersja aplikacji ją ma (`hasPlugin`). Metody zwracają obietnice,
+ * a `addListener(zdarzenie, funkcja)` daje uchwyt z `remove()`. Typ `T` opisuje wołający: to, czego używa z wtyczki.
+ */
+export function nativePlugin<T>(name: string): T | undefined {
+  const bridge = (globalThis as { Capacitor?: Bridge }).Capacitor;
+  return bridge?.isNativePlatform?.() === true && bridge.isPluginAvailable?.(name) === true ? (bridge.Plugins?.[name] as T) : undefined;
+}
+
 const noSubscription = () => () => {};
 
 /**
@@ -33,4 +42,9 @@ const noSubscription = () => () => {};
  */
 export function useInApp(): boolean {
   return useSyncExternalStore(noSubscription, isInApp, () => false);
+}
+
+/** `hasPlugin` dla komponentów; na serwerze i przy hydracji `false`, jak w `useInApp`. */
+export function useHasPlugin(name: string): boolean {
+  return useSyncExternalStore(noSubscription, () => hasPlugin(name), () => false);
 }

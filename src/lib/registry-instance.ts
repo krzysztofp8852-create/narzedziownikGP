@@ -4,8 +4,10 @@ import { createRegistry, type Registry, type RegistryDeps } from "@/registry/reg
 import { createSupabaseAuthAdmin } from "@/registry/supabase-auth-admin";
 import { CHAT_PHOTOS_BUCKET, createSupabasePhotoStore, DEADLINE_DOCUMENTS_BUCKET, ISSUE_PHOTOS_BUCKET } from "@/registry/supabase-photo-store";
 import { createResendNotifier, logNotifier } from "./email-notifier";
+import { createFcmChannel, logFcmPush } from "./fcm-notifier";
 import { createGoogleGeocoder, fixedGeocoder } from "./google-geocoder";
 import { publicEnv, serverEnv } from "./env";
+import { pushByKind } from "./push-channel";
 import { createWebPushChannel, logPush } from "./web-push-notifier";
 import { SUPABASE_ROOT_CA } from "./supabase-root-ca";
 
@@ -13,7 +15,8 @@ let registry: Registry | undefined;
 
 /**
  * Rejestr na prawdziwej bazie, Supabase Auth i Storage (zdjęcia zgłoszeń i czatu, dokumenty terminów), powiadomieniach
- * e-mail i push i geokodowaniu adresów budów. Wspólny dla aplikacji i skryptów.
+ * e-mail i push (Web Push do przeglądarek, FCM do aplikacji na Androida) i geokodowaniu adresów budów. Wspólny dla
+ * aplikacji i skryptów.
  */
 export function getRegistry(): Registry {
   registry ??= createRegistry(registryDeps());
@@ -43,8 +46,10 @@ function geocoder(): Geocoder {
 function notifier(): Notifier {
   const resend = serverEnv.resend();
   const webPush = serverEnv.webPush();
+  const fcm = serverEnv.fcm();
   const email = resend ? createResendNotifier({ ...resend, appUrl: serverEnv.appUrl(), supportAddress: serverEnv.supportEmail() }) : logNotifier;
-  return { send: email.send, sendToSupport: email.sendToSupport, sendCallbackRequest: email.sendCallbackRequest, push: webPush ? createWebPushChannel(webPush) : logPush };
+  const push = pushByKind({ przegladarka: webPush ? createWebPushChannel(webPush) : logPush, aplikacja: fcm ? createFcmChannel(fcm) : logFcmPush });
+  return { send: email.send, sendToSupport: email.sendToSupport, sendCallbackRequest: email.sendCallbackRequest, push };
 }
 
 /** Poza lokalnym Supabase połączenie jest szyfrowane, a certyfikat serwera sprawdzany względem CA Supabase. */

@@ -27,16 +27,16 @@ export interface AuthAdmin {
 
 /**
  * Port powiadomień: kopia powiadomienia z dzwonka poza aplikacją, wysyłana po zapisie. Dwa kanały: e-mail
- * (tylko rodzaje z kopią e-mailową, `EmailedNotification`) i Web Push (każdy nowy wpis, na każdą przeglądarkę,
- * w której adresat włączył powiadomienia). Do tego e-maile do GP Engineering: o nowej wiadomości użytkownika na czacie
+ * (tylko rodzaje z kopią e-mailową, `EmailedNotification`) i push (każdy nowy wpis, na każde urządzenie, na którym
+ * adresat włączył powiadomienia: przez Web Push do przeglądarki, przez FCM do aplikacji na Androida). Do tego e-maile do GP Engineering: o nowej wiadomości użytkownika na czacie
  * i o prośbie o telefon z formularza na stronie.
  */
 export interface Notifier {
   /** Kanał e-mail. */
   send(notification: EmailedNotification): Promise<void>;
   /**
-   * Kanał Web Push: kopia na jedną przeglądarkę. `expired`, gdy usługa push odpowie, że subskrypcja
-   * wygasła albo jej nie ma; Rejestr ją wtedy usuwa.
+   * Kanał push: kopia na jedno urządzenie, wysłana według rodzaju subskrypcji. `expired`, gdy usługa push odpowie,
+   * że subskrypcja wygasła albo jej nie ma (token aplikacji nieważny albo wyrejestrowany); Rejestr ją wtedy usuwa.
    */
   push(subscription: PushSubscriptionData, message: PushMessage): Promise<"sent" | "expired">;
   /** E-mail na adres supportu GP Engineering (zna go adapter): nowa wiadomość użytkownika na czacie. */

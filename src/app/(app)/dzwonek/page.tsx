@@ -15,9 +15,9 @@ export const metadata: Metadata = { title: t("bell.title") };
 export default async function BellPage() {
   const session = await requireSession();
   const { unread, entries } = await getRegistry().as(session.userId).bell();
-  // Bez kluczy VAPID serwer nie wyśle pusha, więc nie ma czego włączać. W demo konto roli dzielą wszyscy oglądający,
-  // więc telefon jednego dostawałby wpisy dzwonka innych.
-  const vapidPublicKey = session.company.demo ? null : (serverEnv.webPush()?.publicKey ?? null);
+  // W demo konto roli dzielą wszyscy oglądający, więc telefon jednego dostawałby wpisy dzwonka innych. Bez kluczy VAPID
+  // przeglądarka nie ma czego subskrybować; aplikacja na Androida ich nie potrzebuje (FCM).
+  const vapidPublicKey = serverEnv.webPush()?.publicKey ?? null;
 
   return (
     <>
@@ -36,7 +36,7 @@ export default async function BellPage() {
           </form>
         )}
       </div>
-      {vapidPublicKey && <PushToggle vapidPublicKey={vapidPublicKey} />}
+      {!session.company.demo && <PushToggle vapidPublicKey={vapidPublicKey} />}
       {entries.length === 0 ? (
         <p className="empty">{t("bell.empty")}</p>
       ) : (

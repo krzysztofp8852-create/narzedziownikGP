@@ -30,7 +30,7 @@ import * as notifications from "./notifications";
 import type { EmailedNotification, ToolsTakenNotification } from "./notifications";
 import * as photos from "./photos";
 import * as push from "./push";
-import type { PushCopy, PushSubscriptionData } from "./push";
+import type { PushCopy, PushDevice, PushSubscriptionData } from "./push";
 import * as queuedMovements from "./queued-movements";
 import * as readOnly from "./read-only";
 import * as rentals from "./rentals";
@@ -306,7 +306,7 @@ export type {
 } from "./issues";
 export { ISSUE_KINDS, MAX_ISSUE_TEXT_LENGTH } from "./issues";
 export { MAX_PHOTO_BYTES } from "./photos";
-export type { PushMessage, PushSubscriptionData } from "./push";
+export type { PushDevice, PushMessage, PushSubscriptionData } from "./push";
 export type {
   UserMessage,
   SupportChat,
@@ -947,13 +947,14 @@ export interface Registry {
     markNotificationRead(notificationId: string): Promise<BellEntry | null>;
     markAllNotificationsRead(): Promise<void>;
     /**
-     * Włącza powiadomienia push w przeglądarce aktora: każdy nowy wpis w jego dzwonku przyjdzie tam jako kopia.
-     * Tylko adresy znanych usług push. Przeglądarka, która należała do kogoś innego, przechodzi na aktora. W firmie
-     * demo odmawia (`demo_push`), a kopie na konta firm demo nie wychodzą.
+     * Włącza powiadomienia push na urządzeniu aktora, w przeglądarce (Web Push) albo w aplikacji na Androida (FCM):
+     * każdy nowy wpis w jego dzwonku przyjdzie tam jako kopia. Przeglądarka tylko z adresem znanej usługi push, aplikacja
+     * z tokenem FCM. Urządzenie, które należało do kogoś innego, przechodzi na aktora. W firmie demo odmawia
+     * (`demo_push`), a kopie na konta firm demo nie wychodzą.
      */
     subscribeToPush(subscription: PushSubscriptionData): Promise<void>;
-    /** Wyłącza powiadomienia push w tej przeglądarce aktora (np. przy wylogowaniu). Cudzej nie rusza. */
-    unsubscribeFromPush(endpoint: string): Promise<void>;
+    /** Wyłącza powiadomienia push na tym urządzeniu aktora (np. przy wylogowaniu). Cudzego nie rusza. */
+    unsubscribeFromPush(device: PushDevice): Promise<void>;
     /**
      * Wiadomość na czacie z supportem, z tekstem i (albo) zdjęciem, i kontekstem (ekran, wersja aplikacji). Tylko
      * właściciel, kierownik i magazynier, także w trybie tylko do odczytu. Po pierwszej wiadomości (i po każdej,
@@ -1880,7 +1881,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
             demo.refusePushInDemo(session);
             return push.subscribe(sql, subscription, deps.clock.now());
           }),
-        unsubscribeFromPush: (endpoint) => asPersonal((sql, session) => push.unsubscribe(sql, session, endpoint)),
+        unsubscribeFromPush: (device) => asPersonal((sql, session) => push.unsubscribe(sql, session, device)),
         sendSupportMessage: async (input) => {
           const sent = await savingPhoto(deps.chatPhotos, (save) =>
             retryOnReplay(() =>
@@ -2149,27 +2150,28 @@ async function sendNotifications(notifier: Notifier, list: EmailedNotification[]
 }
 
 /**
- * Wysyła kopie push już zapisanych wpisów na przeglądarki adresatów i usuwa subskrypcje, które wygasły.
+ * Wysyła kopie push już zapisanych wpisów na urządzenia adresatów (przeglądarki i aplikacje) i usuwa subskrypcje,
+ * które wygasły.
  * Subskrypcje innych osób czyta transakcja systemowa. Wpis w dzwonku zostaje, więc błąd tylko odnotowujemy.
  */
 async function sendPushCopies(deps: RegistryDeps, copies: PushCopy[]) {
   if (copies.length === 0) return;
   try {
     const subscriptions = await deps.db.transaction((sql) => push.subscriptionsOf(sql, [...new Set(copies.map((copy) => copy.recipientId))]));
-    const expired: string[] = [];
+    const expired: PushSubscriptionData[] = [];
     await Promise.all(
       copies.flatMap((copy) =>
         subscriptions
-          .filter((subscription) => subscription.userId === copy.recipientId)
-          .map(({ endpoint, keys }) =>
+          .filter(({ userId }) => userId === copy.recipientId)
+          .map(({ subscription }) =>
             deps.notifier
-              .push({ endpoint, keys }, copy.message)
-              .then((outcome) => void (outcome === "expired" && expired.push(endpoint)))
+              .push(subscription, copy.message)
+              .then((outcome) => void (outcome === "expired" && expired.push(subscription)))
               .catch((error) => console.error("Nie wysłano powiadomienia push", copy.message.window, error)),
           ),
       ),
     );
-    if (expired.length > 0) await deps.db.transaction((sql) => push.forgetExpired(sql, [...new Set(expired)]));
+    if (expired.length > 0) await deps.db.transaction((sql) => push.forgetExpired(sql, expired));
   } catch (error) {
     console.error("Nie wysłano powiadomień push", error);
   }

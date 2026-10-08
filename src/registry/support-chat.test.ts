@@ -156,7 +156,7 @@ describe("czat z supportem: odpowiadamy z panelu super-admina", () => {
   it("odpowiedź supportu trafia do okna 💬 użytkownika z licznikiem i kopią push, a automatu wtedy nie ma", async () => {
     const z = await givenZawbud();
     const adminId = await testbed.givenSuperAdmin();
-    const phone = { endpoint: `https://fcm.googleapis.com/fcm/send/nowak-${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
+    const phone = { kind: "przegladarka" as const, endpoint: `https://fcm.googleapis.com/fcm/send/nowak-${randomUUID()}`, keys: { p256dh: "klucz", auth: "sekret" } };
     await testbed.registry.as(z.nowakId).subscribeToPush(phone);
     await write(z.nowakId, "Nie widzę budowy");
     expect(testbed.notifier.pushed).toEqual([]);
@@ -331,7 +331,7 @@ describe("czat z supportem: zdjęcia", () => {
   it("zdjęcie w odpowiedzi supportu idzie w kopii push jako zdjęcie", async () => {
     const z = await givenZawbud();
     const adminId = await testbed.givenSuperAdmin();
-    await testbed.registry.as(z.nowakId).subscribeToPush({ endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "k", auth: "s" } });
+    await testbed.registry.as(z.nowakId).subscribeToPush({ kind: "przegladarka", endpoint: `https://fcm.googleapis.com/fcm/send/${randomUUID()}`, keys: { p256dh: "k", auth: "s" } });
     await write(z.nowakId, "Gdzie jest import?");
 
     await testbed.registry.superAdmin(adminId).replyToSupportThread({ operationId: randomUUID(), threadId: z.nowakId, text: "", photo: PNG });

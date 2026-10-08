@@ -51,3 +51,10 @@ oprócz e-maila. Push ma być kopią wpisów z 🔔 dzwonka (a później także 
   worker. Identyfikator wpisu jest losowy i zna go tylko adresat, a obrazki i zapytania z cudzych stron idą bez ciasteczek sesji.
 - 📋 Zgłoszenia (#37) i 💬 czat (#39) dopiszą swoje okna do `PushMessage` i wyślą kopie tą samą drogą.
 - Rejestracja ruchu czeka na wysyłkę pushy (limit 10 s na przeglądarkę), równolegle z e-mailem.
+- Aplikacja na Androida (ADR 0038, #122) nie ma Web Push w WebView, więc subskrypcja dostała rodzaj: przeglądarka
+  (adres i klucze) albo aplikacja (token FCM, `app.save_app_push_subscription`). Kanał push portu powiadomień wybiera
+  wysyłkę według rodzaju: Web Push albo FCM HTTP v1 (`src/lib/fcm-notifier.ts`, konto serwisowe Firebase
+  w `FIREBASE_SERVICE_ACCOUNT`) z tą samą treścią, adresem, tagiem i TTL. Token wyrejestrowany, nieważny albo z innego
+  projektu Firebase usuwamy jak subskrypcję po 404/410. Reguły (jedno urządzenie u jednej osoby, wylogowanie
+  i strona logowania wyłączają push, demo bez push) są te same. W aplikacji token zapisuje się ponownie przy każdym
+  starcie, bo FCM czasem go wymienia, a dotknięcie powiadomienia otwiera w aplikacji jego adres.

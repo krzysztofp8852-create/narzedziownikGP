@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react";
 import { savePushSubscription } from "@/app/(app)/dzwonek/actions";
 import { t } from "@/i18n/t";
+import { appPushState, disableAppPush, enableAppPush, hasAppPush } from "@/lib/push/app";
 import { currentSubscription, pushSupport, subscribeToPush, unsubscribeFromPush } from "@/lib/push/client";
-import type { PushSubscriptionData } from "@/registry/registry";
 
-type State = "checking" | "install-on-ios" | "unsupported" | "blocked" | "off" | "on";
+type State = "checking" | "hidden" | "install-on-ios" | "unsupported" | "blocked" | "off" | "on";
 
 /**
- * Włączanie i wyłączanie powiadomień push w tej przeglądarce. Na iPhonie w Safari podpowiada, jak dodać
- * aplikację do ekranu początkowego, bo tylko tam push działa.
+ * Włączanie i wyłączanie powiadomień push na tym telefonie. W aplikacji na Androida przez FCM (Android pyta o zgodę
+ * dopiero przy włączeniu), w przeglądarce przez Web Push kluczem VAPID serwera; bez klucza w przeglądarce nie ma czego
+ * włączać. Na iPhonie w Safari podpowiada, jak dodać aplikację do ekranu początkowego, bo tylko tam push działa.
  */
-export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
+export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string | null }) {
   const [state, setState] = useState<State>("checking");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -20,6 +21,8 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   useEffect(() => {
     let active = true;
     (async (): Promise<State> => {
+      if (hasAppPush()) return appPushState();
+      if (!vapidPublicKey) return "hidden";
       const support = pushSupport();
       if (support !== "supported") return support;
       if (Notification.permission === "denied") return "blocked";
@@ -28,7 +31,7 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
       // i po wymianie kluczy VAPID zastępuje subskrypcję nową (zgoda już jest, więc bez pytania).
       const subscription = await subscribeToPush(vapidPublicKey);
       if (!subscription) return "off";
-      await savePushSubscription(subscription as PushSubscriptionData);
+      await savePushSubscription(browserSubscription(subscription));
       return "on";
     })()
       .catch((error: unknown) => {
@@ -45,10 +48,16 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
     setBusy(true);
     setFailed(false);
     try {
-      if (enable) {
+      if (hasAppPush()) {
+        if (enable) setState(await enableAppPush());
+        else {
+          await disableAppPush({ server: true });
+          setState("off");
+        }
+      } else if (enable && vapidPublicKey) {
         const subscription = await subscribeToPush(vapidPublicKey);
         if (!subscription) return setState(Notification.permission === "denied" ? "blocked" : "off");
-        await savePushSubscription(subscription as PushSubscriptionData);
+        await savePushSubscription(browserSubscription(subscription));
         setState("on");
       } else {
         await unsubscribeFromPush({ server: true });
@@ -62,7 +71,7 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
     }
   }
 
-  if (state === "checking") return null;
+  if (state === "checking" || state === "hidden") return null;
   return (
     <section className="company-card push-settings" aria-labelledby="push-title">
       <h2 id="push-title" className="display section-title">
@@ -102,4 +111,9 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
       )}
     </section>
   );
+}
+
+/** Subskrypcja przeglądarki do zapisania na serwerze. */
+function browserSubscription(subscription: PushSubscriptionJSON) {
+  return { kind: "przegladarka" as const, ...(subscription as { endpoint: string; keys: { p256dh: string; auth: string } }) };
 }
