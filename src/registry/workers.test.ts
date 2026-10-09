@@ -51,6 +51,7 @@ describe("dodawanie pracownika", () => {
       fullName: "Jan Kowalski",
       role: "pracownik",
       mustChangePassword: true,
+      idleLogoutMinutes: null,
       company: { id: zawbud.companyId, name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
     await expect(testbed.registry.as(userId).whereIsWhat()).rejects.toMatchObject({ code: "password_change_required" });

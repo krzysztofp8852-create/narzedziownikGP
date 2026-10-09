@@ -7,14 +7,15 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canManageSettings, canPrintStickers } from "@/registry/registry";
 import { BaseAddressForm } from "../lokalizacje/location-forms";
 import { ServicesSection } from "../lokalizacje/services-section";
-import { CostSettingsSection, DailyRatesSection, IssueSettingsSection, LegalSection, SettingsSection } from "./settings-section";
+import { CostSettingsSection, DailyRatesSection, IdleLogoutSection, IssueSettingsSection, LegalSection, SettingsSection } from "./settings-section";
 import { SubscriptionSection } from "./subscription-section";
 
 export const metadata: Metadata = { title: t("settingsPage.title") };
 
 /**
  * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, serwisy, próg alarmu, kto widzi zgłoszenia,
- * stawki dzienne kosztu sprzętu i kto widzi koszty, adres bazy na mapie, naklejki QR, dziennik zmian, dokumenty prawne.
+ * stawki dzienne kosztu sprzętu i kto widzi koszty, wylogowanie właściciela po bezczynności, adres bazy na mapie,
+ * naklejki QR, dziennik zmian, dokumenty prawne.
  */
 export default async function SettingsPage() {
   const session = await requireSession();
@@ -43,6 +44,8 @@ export default async function SettingsPage() {
         <IssueSettingsSection settings={settings} />
         <DailyRatesSection rates={dailyRates} categories={categories} />
         <CostSettingsSection settings={settings} />
+        {/* W demo konto właściciela dzielą wszyscy oglądający, więc wylogowanie po bezczynności tam nie działa. */}
+        {!session.company.demo && <IdleLogoutSection settings={settings} />}
         <section className="company-card" aria-labelledby="base-address-title">
           <h2 id="base-address-title" className="display section-title">
             {t("settings.baseAddressTitle")}

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
-import { rememberBoard, servedFromCache } from "@/lib/offline/service-worker";
+import { forgetBoard, rememberBoard, servedFromCache } from "@/lib/offline/service-worker";
 import { preloadQrDecoder } from "./ruch/camera-scanner";
 
 function subscribeOnline(onChange: () => void) {
@@ -19,8 +19,9 @@ function subscribeOnline(onChange: () => void) {
 /**
  * Tablica w telefonie bez sieci: zapamiętuje każdy świeży stan tablicy w service workerze, a gdy sieci nie ma
  * albo tablica przyszła z kopii, mówi, z której godziny są dane. Po powrocie sieci kopię zastępują świeże dane.
+ * Bez `keepCopy` (właściciel z wylogowaniem po bezczynności, ADR 0044) kopia znika z telefonu.
  */
-export function BoardSnapshot({ fetchedAt }: { fetchedAt: string }) {
+export function BoardSnapshot({ fetchedAt, keepCopy }: { fetchedAt: string; keepCopy: boolean }) {
   const router = useRouter();
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   // Czas pobrania kopii, z której przyszła ta strona; znika z ekranu, gdy dojdą nowsze dane.
@@ -43,10 +44,10 @@ export function BoardSnapshot({ fetchedAt }: { fetchedAt: string }) {
 
   useEffect(() => {
     // Czytnik QR bez natywnego BarcodeDetectora (Safari) doładowuje bibliotekę; niech też będzie w telefonie.
-    rememberBoard(fetchedAt)
+    (keepCopy ? rememberBoard(fetchedAt) : forgetBoard())
       .then(preloadQrDecoder)
       .catch((error: unknown) => console.error(error));
-  }, [fetchedAt]);
+  }, [fetchedAt, keepCopy]);
 
   if (online && !fromCopy) return null;
   return (

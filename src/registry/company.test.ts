@@ -17,6 +17,7 @@ describe("zakładanie firmy", () => {
       fullName: "Jan Kowalski",
       role: "wlasciciel",
       mustChangePassword: true,
+      idleLogoutMinutes: null,
       company: { id: created.companyId, name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
   });

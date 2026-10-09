@@ -287,6 +287,9 @@ export default async function BoardPage(props: PageProps<"/">) {
   ]);
   // Chwila pobrania stanu: tablica z kopii w telefonie pokazuje ją bez sieci (service worker czyta ją z atrybutu).
   const fetchedAt = new Date().toISOString();
+  // Tablicy właściciela z wylogowaniem po bezczynności nie zostawiamy w telefonie (ADR 0044): po wylogowaniu jej wartości
+  // w zł byłyby dostępne bez sesji.
+  const keepCopy = session.idleLogoutMinutes === null;
   const { base, sites, vehicles } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
   const onVehicles = vehicles.reduce((sum, vehicle) => sum + vehicle.tools.length, 0);
@@ -299,7 +302,7 @@ export default async function BoardPage(props: PageProps<"/">) {
       )}
       {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy, a bez sieci do kolejki. */}
       {!session.company.readOnly && <PunchButton userId={session.userId} punchesOthers={canPunchOthers(session)} />}
-      <div className="board" data-fetched-at={fetchedAt}>
+      <div className="board" data-fetched-at={fetchedAt} data-no-copy={keepCopy ? undefined : ""}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
           <OperationsPanel
             checklist={checklistData(session, board)}
@@ -339,7 +342,7 @@ export default async function BoardPage(props: PageProps<"/">) {
 
         <div className="board-main">
           <section className="where" aria-labelledby="board-title">
-            <BoardSnapshot fetchedAt={fetchedAt} />
+            <BoardSnapshot fetchedAt={fetchedAt} keepCopy={keepCopy} />
             <div className="page-head">
               <h1 id="board-title" className="display page-title">
                 {t("board.title")}

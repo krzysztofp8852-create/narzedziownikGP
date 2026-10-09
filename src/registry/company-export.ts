@@ -61,6 +61,8 @@ export const EXPORT_TABLES: ExportTable[] = [
       issues_storekeepers_close: "Czy magazynierzy mogą zamykać zgłoszenia.",
       demo_since: "Od kiedy firma jest firmą demo; puste u każdej innej.",
       site_managers_see_costs: "Czy kierownicy widzą koszt sprzętu swoich budów i pojazdów.",
+      owner_idle_logout_minutes: "Po ilu minutach bezczynności przeglądarka właściciela się wylogowuje; puste: nigdy.",
+      owner_idle_logout_since: "Kiedy ostatnio zmieniono wylogowanie po bezczynności; od tej chwili najwcześniej liczy się bezczynność.",
     },
   },
   {
@@ -127,8 +129,8 @@ export const EXPORT_TABLES: ExportTable[] = [
       role: "Rola zakładanego konta.",
       login: "E-mail albo nazwa użytkownika zakładanego konta.",
       setting:
-        "Zmienione ustawienie: prog_dni, zgloszenia_kierownik, zgloszenia_magazynier, zgloszenia_magazynier_zamyka albo koszty_kierownik.",
-      old_value: "Wartość ustawienia przed zmianą (liczba dni albo true / false).",
+        "Zmienione ustawienie: prog_dni, zgloszenia_kierownik, zgloszenia_magazynier, zgloszenia_magazynier_zamyka, koszty_kierownik albo wylogowanie_wlasciciela.",
+      old_value: "Wartość ustawienia przed zmianą (liczba dni albo minut, true / false albo wylaczone).",
       new_value: "Wartość ustawienia po zmianie.",
     },
   },

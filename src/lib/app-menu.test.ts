@@ -7,6 +7,7 @@ const session = (role: Role, { demo = false, siteManagersSeeCosts = false } = {}
   fullName: "Jan Testowy",
   role,
   mustChangePassword: false,
+  idleLogoutMinutes: null,
   company: { id: "9a4d3f2b-8c1e-4e7b-8c2f-5d6e7f809102", name: "Zawbud", readOnly: false, demo, siteManagersSeeCosts },
 });
 
