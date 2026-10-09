@@ -105,8 +105,30 @@ razem z maszyną.
 budowlaną polszczyznę (slang, liczebniki, przeniesienia, serwis). Uruchamiaj go przy zmianie modelu albo promptu;
 opis i dokładanie przypadków z nagraniami: `src/interpretation/eval/README.md`.
 
-CI (`.github/workflows/ci.yml`) uruchamia lint, typecheck, testy Rejestru na PGlite i na lokalnym
+CI (`.github/workflows/ci.yml`) uruchamia audyt zależności, lint, typecheck, testy Rejestru na PGlite i na lokalnym
 Supabase oraz test dymny na zbudowanej aplikacji.
+
+## Aktualizacje zależności
+
+Dependabot (`.github/dependabot.yml`) w każdy poniedziałek rano sprawdza zależności npm aplikacji, zależności npm
+`mobile/` i akcje GitHub. Drobne aktualizacje (minor i patch) przychodzą jednym PR-em na każde z tych trzech miejsc,
+każda wersja główna osobnym. CI zatrzymuje się na `npm audit --omit=dev --audit-level=high`, gdy biblioteka aplikacji
+webowej trafiająca na produkcję ma znaną podatność wysoką albo krytyczną; podatności w narzędziach deweloperskich go
+nie zatrzymują, a `mobile/` audytu w CI nie ma. Audyt pyta bieżącą bazę podatności, więc nowe ogłoszenie może
+zaczerwienić CI na PR-ze, który zależności nie rusza. Alerty i poprawki bezpieczeństwa Dependabota (PR-y poza
+tygodniowym harmonogramem) włącza się osobno w ustawieniach repozytorium: Settings → Code security.
+
+- **PR drobnych aktualizacji**: scal, gdy CI jest zielone i podgląd Vercel działa (logowanie, tablica, wpis).
+  Nie odkładaj ich: im dłużej czekają, tym więcej zmian naraz trzeba sprawdzić.
+- **PR wersji głównej**: przeczytaj w opisie PR-a notatki wydania i przewodnik migracji, popraw kod na tej samej
+  gałęzi i scal dopiero z zielonym CI. Next.js ma przewodniki w `node_modules/next/dist/docs/` (zob. `AGENTS.md`).
+  Wersję, której nie chcemy teraz, zamyka się komentarzem `@dependabot ignore this major version`.
+- **PR `mobile/`**: scal jak pozostałe, ale scalenie niczego nie wydaje. Nowy Capacitor trafia do użytkowników
+  dopiero z nowym AAB w Google Play (`mobile/README.md`), więc sprawdź aplikację na telefonie przy tym wydaniu.
+- **Czerwony audyt**: podnieś wersję dotkniętej biblioteki (zwykle `npm audit fix`, a przy bibliotece przypiętej
+  w `package.json`, jak `next`, najbliższa poprawka w tej samej linii) i sprawdź, że
+  `npm audit --omit=dev --audit-level=high` przechodzi lokalnie. Zależność pośrednią, której rodzic nie wydał
+  jeszcze poprawki, podnosi `overrides` w `package.json`. Audytu się nie wyłącza.
 
 ## Architektura w skrócie
 

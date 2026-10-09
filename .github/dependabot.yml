@@ -1,0 +1,38 @@
+# Aktualizacje zależności raz w tygodniu (zob. README, „Aktualizacje zależności”). Drobne (minor i patch) przychodzą
+# jednym PR-em na ekosystem, a każda wersja główna osobnym, bo zwykle wymaga zmian w kodzie.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    groups:
+      drobne:
+        update-types: [minor, patch]
+
+  # Aplikacja na Androida ma własne zależności (Capacitor) i nie wchodzi do builda Vercela.
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    groups:
+      drobne:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    groups:
+      drobne:
+        update-types: [minor, patch]
