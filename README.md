@@ -252,7 +252,7 @@ npm run company:export:prod -- --company <id firmy> --out ~/eksporty
    `pliki/` ze zdjęciami zgłoszeń i czatu oraz dokumentami terminów i uprawnień, nazwanymi identyfikatorem wiersza.
    Haseł, sesji ani kluczy push w nim nie ma.
 3. Działa też w trybie tylko do odczytu i po końcu umowy (dopóki firmy nie usunięto), niczego w firmie nie zmienia.
-   Jeśli skrypt wypisze pliki, których brak w magazynie, są też wymienione w README eksportu.
+   Jeśli skrypt wypisze pliki, których brak w kubełkach Storage, są też wymienione w README eksportu.
 4. ZIP zawiera dane osobowe: przekaż go właścicielowi firmy bezpiecznym kanałem (np. link z wygaśnięciem albo
    archiwum z hasłem podanym inną drogą), a potem usuń lokalną kopię.
 

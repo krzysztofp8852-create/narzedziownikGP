@@ -36,7 +36,7 @@ try {
   console.log(`Eksport firmy „${summary.companyName}”: ${path}`);
   console.log(`Tabele: ${summary.tables}, pliki ze zdjęciami i dokumentami: ${summary.files}.`);
   if (summary.missingFiles.length > 0) {
-    console.warn(`Brak w magazynie ${summary.missingFiles.length} plików (wypisane też w README.md eksportu):`);
+    console.warn(`Brak w kubełkach ${summary.missingFiles.length} plików (wypisane też w README.md eksportu):`);
     for (const missing of summary.missingFiles) console.warn(`  ${missing}`);
   }
 } catch (error) {

@@ -63,7 +63,7 @@ async function rowCount(db: Db, table: string, companyId: string) {
 const text = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 
 describe("pełny eksport danych firmy", () => {
-  it("CSV każdej tabeli firmy ze wszystkimi jej wierszami, pliki z magazynów nazwane po wierszu i README z opisem", async () => {
+  it("CSV każdej tabeli firmy ze wszystkimi jej wierszami, pliki z kubełków nazwane po wierszu i README z opisem", async () => {
     const company = await givenCompanyWithHistory(testbed, await testbed.givenSuperAdmin());
 
     const { files, summary, csv, header } = await exportOf(company.companyId);
@@ -157,7 +157,7 @@ describe("pełny eksport danych firmy", () => {
     expect(await Promise.all(tables.map((table) => rowCount(testbed.db, table, company.companyId)))).toEqual(before);
   });
 
-  it("plik, którego nie ma w magazynie, nie zatrzymuje eksportu: trafia do podsumowania i README", async () => {
+  it("plik, którego nie ma w kubełku, nie zatrzymuje eksportu: trafia do podsumowania i README", async () => {
     const company = await givenCompanyWithHistory(testbed, await testbed.givenSuperAdmin());
     testbed.photos.clear();
 

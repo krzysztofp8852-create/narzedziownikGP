@@ -5,7 +5,7 @@ import { UUID_PATTERN } from "./validation";
 
 /**
  * Pełny eksport danych firmy na jej żądanie (umowa § 6 ust. 2, zmiana dostawcy): każda tabela `app` z danymi firmy
- * jako CSV (`dane/<tabela>.csv`), pliki z magazynów w oryginalnym formacie (`pliki/<folder>/<id wiersza>.<rozszerzenie>`)
+ * jako CSV (`dane/<tabela>.csv`), pliki z kubełków w oryginalnym formacie (`pliki/<folder>/<id wiersza>.<rozszerzenie>`)
  * i `README.md` z opisem struktury. Pliki trafiają po kolei do `add` (skrypt pakuje je do ZIP-u).
  */
 export type ExportSink = (path: string, content: Uint8Array) => Promise<void>;
@@ -14,9 +14,9 @@ export interface CompanyExportSummary {
   companyName: string;
   /** Ile plików CSV (tabel). */
   tables: number;
-  /** Ile plików z magazynów trafiło do eksportu. */
+  /** Ile plików z kubełków trafiło do eksportu. */
   files: number;
-  /** Ścieżki plików, które wskazuje wiersz, a których nie było w magazynie. */
+  /** Ścieżki plików, które wskazuje wiersz, a których nie było w kubełku. */
   missingFiles: string[];
 }
 
@@ -332,7 +332,7 @@ export const EXPORT_TABLES: ExportTable[] = [
       description: "Opis.",
       tool_id: "Narzędzie, którego dotyczy.",
       location_id: "Lokalizacja, której dotyczy.",
-      photo_path: "Klucz zdjęcia w magazynie plików; puste, gdy zgłoszenie nie ma zdjęcia.",
+      photo_path: "Klucz zdjęcia w przechowalni plików; puste, gdy zgłoszenie nie ma zdjęcia.",
       author_id: "Kto zgłosił.",
       status: "Status: otwarte albo zamkniete.",
       created_at: "Kiedy zgłoszono.",
@@ -404,7 +404,7 @@ export const EXPORT_TABLES: ExportTable[] = [
       company_id: COMPANY_ID,
       deadline_id: "Termin.",
       kind: "Rodzaj: swiadectwo, protokol, karta_gwarancyjna, faktura, polisa, dowod_rejestracyjny albo inne.",
-      file_path: "Klucz pliku w magazynie plików.",
+      file_path: "Klucz pliku w przechowalni plików.",
       file_name: "Oryginalna nazwa pliku.",
       content_type: CONTENT_TYPE,
       uploaded_by: "Kto dodał.",
@@ -459,7 +459,7 @@ export const EXPORT_TABLES: ExportTable[] = [
       id: "Identyfikator dokumentu.",
       company_id: COMPANY_ID,
       qualification_id: "Uprawnienie.",
-      file_path: "Klucz pliku w magazynie plików.",
+      file_path: "Klucz pliku w przechowalni plików.",
       file_name: "Oryginalna nazwa pliku.",
       content_type: CONTENT_TYPE,
       uploaded_by: "Kto dodał.",
@@ -587,9 +587,9 @@ export const EXPORT_TABLES: ExportTable[] = [
       id: "Identyfikator wiadomości.",
       thread_id: "Wątek (konto użytkownika).",
       sender: "Nadawca: uzytkownik, support (GP Engineering) albo auto (wiadomość automatyczna).",
-      author_id: "Konto autora (użytkownik albo pracownik GP Engineering); puste przy wiadomości automatycznej.",
+      author_id: "Konto autora (użytkownik firmy albo GP Engineering); puste przy wiadomości automatycznej.",
       body: "Treść.",
-      photo_path: "Klucz zdjęcia w magazynie plików; puste, gdy wiadomość nie ma zdjęcia.",
+      photo_path: "Klucz zdjęcia w przechowalni plików; puste, gdy wiadomość nie ma zdjęcia.",
       role: "Rola użytkownika w chwili pisania.",
       screen: "Ekran, z którego pisał użytkownik.",
       app_version: "Wersja programu w chwili pisania.",
@@ -600,7 +600,7 @@ export const EXPORT_TABLES: ExportTable[] = [
   },
 ];
 
-/** Pliki z magazynów: folder w eksporcie, wiersz, który na plik wskazuje, i kubełek. */
+/** Pliki z kubełków: folder w eksporcie, wiersz, który na plik wskazuje, i kubełek. */
 const FILE_FOLDERS = [
   { folder: "zdjecia-zgloszen", title: "Zdjęcia zgłoszeń", table: "issues", column: "photo_path", store: "photos" },
   { folder: "zdjecia-czatu", title: "Zdjęcia z czatu z supportem", table: "support_messages", column: "photo_path", store: "chatPhotos" },
@@ -610,6 +610,8 @@ const FILE_FOLDERS = [
 
 interface ExportedColumn {
   name: string;
+  /** Typ w Postgresie (`udt_name`), np. `timestamptz`. */
+  udt: string;
   type: string;
   description: string;
   /** Kolumna innej tabeli, na którą wskazuje (np. `tools.id`). */
@@ -645,7 +647,7 @@ export async function readCompany(sql: Sql, companyId: string): Promise<CompanyD
   const catalog = await sql<{ table_name: string; column_name: string; udt_name: string; enum_values: string | null }>(
     `select c.table_name, c.column_name, c.udt_name,
        (select string_agg(e.enumlabel, ', ' order by e.enumsortorder) from pg_enum e join pg_type t on t.oid = e.enumtypid
-        where t.typname = c.udt_name) as enum_values
+        where t.typname = c.udt_name and t.typnamespace = c.udt_schema::regnamespace) as enum_values
      from information_schema.columns c
      where c.table_schema = 'app' and c.table_name = any($1)`,
     [names],
@@ -681,17 +683,17 @@ export async function readCompany(sql: Sql, companyId: string): Promise<CompanyD
       if (!column || !IDENTIFIER.test(name)) throw new Error(`Eksport: nie ma kolumny ${spec.table}.${name}`);
       return {
         name,
+        udt: column.udt_name,
         type: typeLabel(column.udt_name, column.enum_values),
         description,
         references: references.filter((row) => row.table_name === spec.table && row.column_name === name).map((row) => row.target),
       };
     });
-    const udt = (name: string) => catalog.find((row) => row.table_name === spec.table && row.column_name === name)!.udt_name;
     const order = columns.some((column) => column.name === "sequence_number")
       ? ["sequence_number"]
       : keys.filter((key) => key.table_name === spec.table).map((key) => key.column_name);
     const rows = await sql<{ values: (string | null)[] }>(
-      `select array[${columns.map((column) => asText(`t.${column.name}`, udt(column.name))).join(", ")}] as values
+      `select array[${columns.map((column) => asText(`t.${column.name}`, column.udt)).join(", ")}] as values
        from app.${spec.table} t
        where ${companyRows(spec.table)}
        order by ${order.map((name) => `t.${name}`).join(", ")}`,
@@ -709,9 +711,10 @@ function companyRows(table: string) {
   return "t.company_id = $1";
 }
 
-/** Wartość jako tekst do CSV: chwile w ISO 8601 w UTC, listy i JSON jako JSON, reszta w zapisie Postgresa. */
+/** Wartość jako tekst do CSV: chwile w ISO 8601 w UTC, dni RRRR-MM-DD, listy i JSON jako JSON, reszta w zapisie Postgresa. */
 function asText(column: string, udt: string) {
   if (udt === "timestamptz") return `to_char(${column} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+  if (udt === "date") return `to_char(${column}, 'YYYY-MM-DD')`;
   if (udt.startsWith("_")) return `to_jsonb(${column})::text`;
   return `${column}::text`;
 }
@@ -737,18 +740,12 @@ function typeLabel(udt: string, enumValues: string | null) {
 }
 
 /**
- * Zapisuje eksport do `add`: CSV każdej tabeli, pliki z magazynów i na końcu README. Plik, którego wiersz wskazuje,
- * a w magazynie go nie ma, nie zatrzymuje eksportu: trafia do podsumowania i README.
+ * Zapisuje eksport do `add`: CSV każdej tabeli, pliki z kubełków i na końcu README. Plik, którego wiersz wskazuje,
+ * a w kubełku go nie ma, nie zatrzymuje eksportu: trafia do podsumowania i README.
  */
 export async function writeExport(data: CompanyData, stores: ExportStores, add: ExportSink, now: Date): Promise<CompanyExportSummary> {
   for (const table of data.tables) {
-    await add(
-      `dane/${table.spec.table}.csv`,
-      csv(
-        table.columns.map((column) => column.name),
-        table.rows,
-      ),
-    );
+    await add(`dane/${table.spec.table}.csv`, csv(table.columns.map((column) => column.name), table.rows));
   }
   let files = 0;
   const missingFiles: string[] = [];
@@ -773,7 +770,7 @@ export async function writeExport(data: CompanyData, stores: ExportStores, add: 
   return { companyName: data.company.name, tables: data.tables.length, files, missingFiles };
 }
 
-/** Rozszerzenie z klucza w magazynie (z kropką), np. `.jpg`; puste, gdy klucz go nie ma. */
+/** Rozszerzenie z klucza w kubełku (z kropką), np. `.jpg`; puste, gdy klucz go nie ma. */
 function extension(storageKey: string) {
   return storageKey.match(/\.[a-z0-9]{1,5}$/i)?.[0].toLowerCase() ?? "";
 }
@@ -818,7 +815,7 @@ function readme(data: CompanyData, missingFiles: string[], now: Date) {
     "",
     ...(missingFiles.length > 0
       ? [
-          "Tych plików wskazanych w danych nie było w magazynie plików w chwili eksportu:",
+          "Tych plików wskazanych w danych nie było w przechowalni plików w chwili eksportu:",
           "",
           ...missingFiles.map((path) => `- \`${path}\``),
           "",
