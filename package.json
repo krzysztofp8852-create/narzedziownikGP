@@ -33,12 +33,12 @@
     "fflate": "^0.8.3",
     "jsqr": "^1.4.0",
     "next": "16.3.8",
-    "openai": "^7.23.0",
+    "openai": "^7.28.0",
     "pdf-lib": "^1.17.1",
-    "pg": "^8.23.0",
+    "pg": "^8.23.1",
     "qrcode": "^1.5.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "read-excel-file": "^9.3.10",
     "server-only": "^0.0.1",
     "web-push": "^3.6.7",
@@ -47,7 +47,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.63.0",
-    "@types/google.maps": "^3.66.4",
+    "@types/google.maps": "^3.66.5",
     "@types/node": "^24.13.6",
     "@types/pg": "^8.23.1",
     "@types/qrcode": "^1.5.6",
@@ -56,10 +56,10 @@
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
-    "supabase": "^2.118.0",
+    "supabase": "^2.119.0",
     "tsx": "^4.23.15",
     "typescript": "^5",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": ">=24"
