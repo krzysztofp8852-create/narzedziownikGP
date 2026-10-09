@@ -17,6 +17,7 @@ export interface PurgedCompany {
  * `EXPORT_TABLES` w `company-export.ts`, czego pilnują testy eksportu).
  */
 const COMPANY_TABLES = [
+  "change_log",
   "daily_rates",
   "deadline_alerts",
   "tool_deadline_documents",

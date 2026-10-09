@@ -205,6 +205,39 @@
     "title": "Ustawienia",
     "back": "← Wróć do tablicy"
   },
+  "changeLog": {
+    "title": "Dziennik zmian",
+    "back": "← Wróć do ustawień",
+    "backToCompany": "← Wróć do firmy {name}",
+    "intro": "Kto i kiedy założył konto, dezaktywował osobę albo konto, nadał hasło tymczasowe albo zmienił ustawienia firmy. Wpisów nie da się zmienić ani usunąć.",
+    "limit": "Pokazujemy {count} najnowszych wpisów. Wszystkie są w pełnym eksporcie danych firmy.",
+    "empty": "Nie ma jeszcze wpisów.",
+    "settingsHint": "Kto i kiedy założył konto, dezaktywował osobę, nadał hasło tymczasowe albo zmienił ustawienia firmy.",
+    "settingsLink": "Otwórz dziennik zmian",
+    "actors": {
+      "super_admin": "GP Engineering (super-admin)",
+      "system": "Program"
+    },
+    "kinds": {
+      "firma_zalozona": "Założenie firmy z właścicielem {person} (login {login})",
+      "konto_zalozone": "Nowe konto: {person}, {role}, login {login}",
+      "konto_dezaktywowane": "Dezaktywacja konta: {person}",
+      "osoba_dezaktywowana": "Dezaktywacja osoby bez konta: {person}",
+      "haslo_zresetowane": "Nowe hasło tymczasowe dla: {person}",
+      "ustawienie_zmienione": "{setting}: {from} → {to}"
+    },
+    "settings": {
+      "prog_dni": "Próg dni alarmu",
+      "zgloszenia_kierownik": "Kierownik widzi zgłoszenia swoich lokalizacji",
+      "zgloszenia_magazynier": "Magazynier widzi zgłoszenia",
+      "zgloszenia_magazynier_zamyka": "Magazynier zamyka zgłoszenia",
+      "koszty_kierownik": "Kierownik widzi koszty swoich lokalizacji"
+    },
+    "values": {
+      "true": "tak",
+      "false": "nie"
+    }
+  },
   "team": {
     "addTitle": "Dodaj osobę",
     "firstName": "Imię",
@@ -1394,6 +1427,8 @@
     "enableReadOnly": "Włącz tryb tylko do odczytu",
     "disableReadOnly": "Wyłącz tryb tylko do odczytu",
     "switching": "Przełączanie…",
+    "changeLogTitle": "Dziennik zmian",
+    "changeLogLink": "Konta i ustawienia firmy: kto i kiedy zmieniał",
     "deleteTitle": "Usunięcie firmy",
     "deleteIntro": "Usunięcie jest nieodwracalne. Znikną narzędzia ({tools}), cała historia ruchów, zgłoszenia, terminy z dokumentami, czat z supportem i konta wszystkich osób z firmy. Usuwaj tylko na polecenie firmy przekazane e-mailem (umowa powierzenia, § 9).",
     "deleteNeedsReadOnly": "Najpierw włącz tryb tylko do odczytu. Firma może wtedy jeszcze wyeksportować dane, a dopiero potem da się ją usunąć.",

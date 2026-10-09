@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import * as changeLog from "./change-log";
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
 import type { Role, Session } from "./registry";
@@ -154,6 +155,12 @@ export async function insertMember(
   }
   if (personId) await people.linkAccount(sql, personId, userId);
   else await people.insertPerson(sql, session.company.id, { fullName: member.fullName, note: null }, now, userId);
+  await changeLog.recordChange(
+    sql,
+    session.company.id,
+    { kind: "konto_zalozone", personName: member.fullName, role: member.role, login: (member.username ?? member.email)! },
+    now,
+  );
 }
 
 /** Zespół firmy: najpierw aktywni, potem według roli i imienia i nazwiska. */
@@ -175,15 +182,17 @@ export async function requireManagedMember(sql: Sql, memberId: string) {
 }
 
 /** Nowe hasło tymczasowe: osoba znowu musi ustawić własne, i to w sesji zalogowanej od teraz. */
-export async function markPasswordTemporary(sql: Sql, memberId: string, now: Date) {
-  await sql("update app.users set must_change_password = true, temporary_password_issued_at = $2 where user_id = $1", [
-    memberId,
-    now,
-  ]);
+export async function markPasswordTemporary(sql: Sql, session: Session, memberId: string, now: Date) {
+  const [member] = await sql<{ full_name: string }>(
+    "update app.users set must_change_password = true, temporary_password_issued_at = $2 where user_id = $1 returning full_name",
+    [memberId, now],
+  );
+  await changeLog.recordChange(sql, session.company.id, { kind: "haslo_zresetowane", personName: member.full_name }, now);
 }
 
 /** Konto i jego osoba w kartotece przestają być aktywne. */
-export async function deactivate(sql: Sql, memberId: string) {
-  await sql("update app.users set active = false where user_id = $1", [memberId]);
+export async function deactivate(sql: Sql, session: Session, memberId: string, now: Date) {
+  const [member] = await sql<{ full_name: string }>("update app.users set active = false where user_id = $1 returning full_name", [memberId]);
   await people.deactivatePersonOfAccount(sql, memberId);
+  await changeLog.recordChange(sql, session.company.id, { kind: "konto_dezaktywowane", personName: member.full_name }, now);
 }

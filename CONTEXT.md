@@ -67,6 +67,10 @@ _Avoid_: archiwizacja, dezaktywacja (to osoba albo jej konto)
 Wszystkie dane firmy w jednym ZIP-ie na jej żądanie: każda tabela jako CSV z opisem kolumn i powiązań oraz zdjęcia i dokumenty w oryginalnym formacie, bez haseł i kluczy push. Przygotowuje go GP Engineering skryptem w 14 dni, także w trybie tylko do odczytu i po końcu umowy, dopóki firmy nie usunięto. To nie eksport do Excela z programu (stan, historia, koszty, czas na budowie).
 _Avoid_: kopia zapasowa, backup, zrzut bazy
 
+**Dziennik zmian**:
+Lista zmian kont i ustawień firmy: kto i kiedy założył firmę albo konto (z rolą i loginem), dezaktywował konto albo osobę, nadał innej osobie hasło tymczasowe albo zmienił ustawienie firmy (z wartością przed i po). Autorem jest osoba z firmy, super-admin albo program. Widzi go właściciel w ustawieniach i super-admin; wpisy tylko się dopisują i znikają tylko z usunięciem firmy.
+_Avoid_: audyt, log, historia (to ruchy)
+
 **Dziennik usuniętych firm**:
 Lista usunięć dla super-admina: która firma (nazwa), kiedy i kto ją usunął. Zostaje po usunięciu, żeby potwierdzić firmie wykonanie polecenia.
 _Avoid_: archiwum, kosz

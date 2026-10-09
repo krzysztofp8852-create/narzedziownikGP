@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: t("settingsPage.title") };
 
 /**
  * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, serwisy, próg alarmu, kto widzi zgłoszenia,
- * stawki dzienne kosztu sprzętu i kto widzi koszty, adres bazy na mapie, naklejki QR, dokumenty prawne.
+ * stawki dzienne kosztu sprzętu i kto widzi koszty, adres bazy na mapie, naklejki QR, dziennik zmian, dokumenty prawne.
  */
 export default async function SettingsPage() {
   const session = await requireSession();
@@ -65,6 +65,17 @@ export default async function SettingsPage() {
           </section>
         )}
         <ServicesSection services={locations.services} />
+        <section className="company-card" aria-labelledby="change-log">
+          <h2 id="change-log" className="display section-title">
+            {t("changeLog.title")}
+          </h2>
+          <p className="muted">{t("changeLog.settingsHint")}</p>
+          <p>
+            <Link className="button button-quiet" href="/ustawienia/dziennik">
+              {t("changeLog.settingsLink")}
+            </Link>
+          </p>
+        </section>
         <LegalSection />
       </div>
     </>

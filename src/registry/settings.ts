@@ -1,3 +1,4 @@
+import * as changeLog from "./change-log";
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
@@ -53,8 +54,9 @@ export async function companySettings(sql: Sql, session: Session): Promise<Compa
   };
 }
 
-/** Zmienia podane ustawienia; pominięte zostają bez zmian. */
-export async function updateSettings(sql: Sql, session: Session, input: Partial<CompanySettings>): Promise<void> {
+/** Zmienia podane ustawienia; pominięte zostają bez zmian. Każde zmienione trafia do dziennika zmian. */
+export async function updateSettings(sql: Sql, session: Session, input: Partial<CompanySettings>, now: Date): Promise<void> {
+  const before = await companySettings(sql, session);
   const days = input.alarmThresholdDays;
   if (days !== undefined) {
     if (!Number.isInteger(days) || days < 1 || days > MAX_ALARM_THRESHOLD_DAYS) throw new RegistryError("invalid_input");
@@ -75,5 +77,8 @@ export async function updateSettings(sql: Sql, session: Session, input: Partial<
   if (seeCosts !== undefined) {
     if (typeof seeCosts !== "boolean") throw new RegistryError("invalid_input");
     await sql("update app.companies set site_managers_see_costs = $2 where id = $1", [session.company.id, seeCosts]);
+  }
+  for (const change of changeLog.settingChanges(before, await companySettings(sql, session))) {
+    await changeLog.recordChange(sql, session.company.id, change, now);
   }
 }
