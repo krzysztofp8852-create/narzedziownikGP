@@ -96,6 +96,11 @@ Harness jest w `src/registry/testing/harness.ts`.
   wszystkie tabele** przed każdym testem, więc wskazuj tu tylko lokalne Supabase
   (`postgresql://postgres:postgres@127.0.0.1:54322/postgres`), nigdy projekt w chmurze.
 
+**Test dymny** zakłada własne firmy („Test dymny …”, „Test e2e …”, „Test usuwania …”) w bazie z `.env.local`. Po w pełni
+udanym przebiegu raport `e2e/support/test-company-cleanup.ts` usuwa w całości (dane, pliki, konta) firmy założone
+w tym przebiegu; po porażce zostają do analizy, a `E2E_KEEP_COMPANIES=1` zostawia je zawsze. W CI baza i tak znika
+razem z maszyną.
+
 **Zestaw ewaluacyjny interpretacji** (`src/interpretation/eval/`) sprawdza, jak prawdziwy model rozumie
 budowlaną polszczyznę (slang, liczebniki, przeniesienia, serwis). Uruchamiaj go przy zmianie modelu albo promptu;
 opis i dokładanie przypadków z nagraniami: `src/interpretation/eval/README.md`.
