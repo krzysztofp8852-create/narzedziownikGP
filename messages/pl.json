@@ -231,11 +231,14 @@
       "zgloszenia_kierownik": "Kierownik widzi zgłoszenia swoich lokalizacji",
       "zgloszenia_magazynier": "Magazynier widzi zgłoszenia",
       "zgloszenia_magazynier_zamyka": "Magazynier zamyka zgłoszenia",
-      "koszty_kierownik": "Kierownik widzi koszty swoich lokalizacji"
+      "koszty_kierownik": "Kierownik widzi koszty swoich lokalizacji",
+      "wylogowanie_wlasciciela": "Wylogowanie właściciela po bezczynności"
     },
     "values": {
       "true": "tak",
-      "false": "nie"
+      "false": "nie",
+      "wylaczone": "wyłączone",
+      "duration": "po {duration}"
     }
   },
   "team": {
@@ -2382,6 +2385,20 @@
       "firma": "{percent}% wartości, stawka firmy",
       "wypozyczalnia": "stawka wypożyczalni"
     }
+  },
+  "idleLogout": {
+    "title": "Wylogowanie po bezczynności",
+    "intro": "Na komputerze w biurze ktoś może usiąść przy otwartym programie. Wybierz, po jakim czasie bez ruchu myszą, klawiatury i dotyku przeglądarka właściciela się wyloguje.",
+    "label": "Wyloguj właściciela",
+    "off": "Nigdy",
+    "option": "Po {duration} bez ruchu",
+    "durationMinutes": "{minutes} min",
+    "durationHours": "{hours} godz.",
+    "hint": "Dotyczy tylko kont właściciela. Kierownicy, magazynierzy i pracownicy zostają zalogowani w telefonie, także bez zasięgu. Z wylogowaniem tablica właściciela nie zostaje w telefonie do oglądania bez sieci.",
+    "submit": "Zapisz",
+    "submitting": "Zapisywanie…",
+    "saved": "Zapisano.",
+    "signedOut": "Wylogowaliśmy Cię po bezczynności, tak jak ustawiono w firmie. Zaloguj się ponownie."
   },
   "costSettings": {
     "title": "Kto widzi koszty",

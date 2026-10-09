@@ -22,6 +22,8 @@ import type { AddDocumentInput, CompleteDeadlineInput, Deadline, DeadlineChanges
 import * as demo from "./demo";
 import type { DemoAccount, DemoDevice, DemoUse, DemoVisit } from "./demo";
 import * as history from "./history";
+import * as idleLogout from "./idle-logout";
+import type { BrowserSession, IdleStatus } from "./idle-logout";
 import * as issues from "./issues";
 import type { CloseIssueInput, CommentOnIssueInput, FileIssueInput, Issue, IssueSummary } from "./issues";
 import type { HistoryFilterOptions, HistoryFilters, MovementHistory } from "./history";
@@ -174,7 +176,9 @@ export type {
 export { TIERS } from "./subscriptions";
 export { confirmsCompanyName } from "./company-deletion";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
-export { CHANGE_KINDS, CHANGE_LOG_LIMIT, canReadChangeLog, LOGGED_SETTINGS } from "./change-log";
+export { CHANGE_KINDS, CHANGE_LOG_LIMIT, canReadChangeLog, IDLE_LOGOUT_OFF, LOGGED_SETTINGS } from "./change-log";
+export { IDLE_LOGOUT_MINUTES } from "./idle-logout";
+export type { BrowserSession, IdleStatus } from "./idle-logout";
 export type { ChangeKind, ChangeLogEntry, LoggedSetting } from "./change-log";
 export { isCalendarDay, isMonth, shiftMonth, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
@@ -347,6 +351,8 @@ export interface Session {
   fullName: string;
   role: Role;
   mustChangePassword: boolean;
+  /** Po tylu minutach bezczynności przeglądarka tej osoby się wyloguje; null: sesja bez limitu (każdy poza właścicielem). */
+  idleLogoutMinutes: number | null;
   /**
    * `readOnly`: firma jest w trybie tylko do odczytu (ręcznie albo po 14 dniach od „opłacone do”). `demo`: firma
    * demo, do której wchodzi się bez hasła ze strony /demo. `siteManagersSeeCosts`: właściciel pozwolił kierownikom
@@ -564,6 +570,13 @@ export interface Registry {
     changePassword(newPassword: string, signIn: { signedInAt: Date }): Promise<void>;
     /** Nowe hasło w sesji z linku resetu hasła, otwartego (`recoveredAt`, z JWT) najwyżej godzinę temu. */
     setPasswordFromRecoveryLink(newPassword: string, recovery: { recoveredAt: Date | null }): Promise<void>;
+    /**
+     * Czy przeglądarka ma się wylogować po bezczynności (tylko właściciel, gdy firma to włączyła). Samo sprawdzenie
+     * nie jest aktywnością. Działa też z hasłem tymczasowym i w trybie tylko do odczytu.
+     */
+    idleStatus(browser: BrowserSession): Promise<IdleStatus>;
+    /** Osoba coś zrobiła w przeglądarce: odsuwa jej wylogowanie po bezczynności, chyba że sesja już wygasła. */
+    recordActivity(browser: BrowserSession): Promise<IdleStatus>;
     /**
      * Tablica „Gdzie jest co”: baza, aktywne budowy i pojazdy, serwisy i zaginione, z alarmami. Wartości
      * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
@@ -1467,6 +1480,13 @@ export function createRegistry(deps: RegistryDeps): Registry {
 
       return loggingDemoCommands(deps, userId, actor, {
         session: () => withActor(deps.db, userId, (sql) => loadSession(sql, userId, deps.clock.now())),
+        idleStatus: (browser) =>
+          asMember((sql, session) => idleLogout.idleStatus(sql, session, browser, deps.clock.now()), { allowPendingPasswordChange: true }),
+        recordActivity: (browser) =>
+          asMember((sql, session) => idleLogout.recordActivity(sql, session, browser, deps.clock.now()), {
+            allowPendingPasswordChange: true,
+            access: "personal",
+          }),
         /** Zamienia hasło tymczasowe na własne. Poza tym stanem odmawia, bo nie zna obecnego hasła. */
         changePassword: async (newPassword, { signedInAt }) => {
           if (newPassword.length < MIN_PASSWORD_LENGTH) throw new RegistryError("password_too_short");
@@ -2297,11 +2317,12 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     company_name: string;
     company_demo: boolean;
     site_managers_see_costs: boolean;
+    owner_idle_logout_minutes: number | null;
     paid_until: string | null;
     manual_read_only: boolean | null;
   }>(
     `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name, c.demo_since is not null as company_demo,
-            c.site_managers_see_costs, to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
+            c.site_managers_see_costs, c.owner_idle_logout_minutes, to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
      from app.users u join app.companies c on c.id = u.company_id
      left join app.current_company_plan() p on true
      where u.user_id = $1 and u.active`,
@@ -2313,6 +2334,7 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     fullName: row.full_name,
     role: row.role,
     mustChangePassword: row.must_change_password,
+    idleLogoutMinutes: idleLogout.idleLogoutMinutes(row.role, row.company_demo, row.owner_idle_logout_minutes),
     company: {
       id: row.company_id,
       name: row.company_name,

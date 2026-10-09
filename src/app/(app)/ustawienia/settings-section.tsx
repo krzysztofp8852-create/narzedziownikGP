@@ -3,6 +3,7 @@ import { t } from "@/i18n/t";
 import { type Category, type CompanySettings, type DailyRates, MAX_ALARM_THRESHOLD_DAYS } from "@/registry/registry";
 import { CostVisibilityForm } from "./cost-visibility-form";
 import { DailyRatesForm } from "./daily-rates-form";
+import { IdleLogoutForm } from "./idle-logout-form";
 import { IssueVisibilityForm } from "./issue-visibility-form";
 import { SettingsForm } from "./settings-form";
 
@@ -51,6 +52,18 @@ export function CostSettingsSection({ settings }: { settings: CompanySettings })
         {t("costSettings.title")}
       </h2>
       <CostVisibilityForm siteManagersSeeCosts={settings.siteManagersSeeCosts} />
+    </section>
+  );
+}
+
+/** Po ilu minutach bezczynności przeglądarka właściciela się wyloguje (ADR 0044). */
+export function IdleLogoutSection({ settings }: { settings: CompanySettings }) {
+  return (
+    <section className="company-card" aria-labelledby="idle-logout">
+      <h2 id="idle-logout" className="display section-title">
+        {t("idleLogout.title")}
+      </h2>
+      <IdleLogoutForm minutes={settings.ownerIdleLogoutMinutes} />
     </section>
   );
 }

@@ -63,6 +63,21 @@ export async function updateCostVisibility(_prev: SettingsFormState, formData: F
   return { saved: true };
 }
 
+/** Po ilu minutach bezczynności przeglądarka właściciela się wyloguje (pusta wartość: nigdy); liczy się od zapisu. */
+export async function updateIdleLogout(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
+  const session = await requireSession();
+  const raw = formText(formData, "ownerIdleLogoutMinutes");
+  // Spoza listy (15, 30, 60, 240) odrzuci Rejestr.
+  const minutes = raw === "" ? null : Number(raw);
+  try {
+    await getRegistry().as(session.userId).updateSettings({ ownerIdleLogoutMinutes: minutes });
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/", "layout");
+  return { saved: true };
+}
+
 /** Stawka dzienna firmy i stawki kategorii (puste pole: kategoria liczy się stawką firmy), razem albo wcale. */
 export async function updateDailyRates(_prev: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
   const session = await requireSession();

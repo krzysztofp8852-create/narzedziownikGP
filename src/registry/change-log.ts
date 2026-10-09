@@ -15,16 +15,26 @@ export const CHANGE_KINDS = [
 export type ChangeKind = (typeof CHANGE_KINDS)[number];
 
 /** Ustawienia firmy w dzienniku zmian. */
-export const LOGGED_SETTINGS = ["prog_dni", "zgloszenia_kierownik", "zgloszenia_magazynier", "zgloszenia_magazynier_zamyka", "koszty_kierownik"] as const;
+export const LOGGED_SETTINGS = [
+  "prog_dni",
+  "zgloszenia_kierownik",
+  "zgloszenia_magazynier",
+  "zgloszenia_magazynier_zamyka",
+  "koszty_kierownik",
+  "wylogowanie_wlasciciela",
+] as const;
 export type LoggedSetting = (typeof LOGGED_SETTINGS)[number];
+
+/** Wartość `wylogowanie_wlasciciela`, gdy właściciela bezczynność nie wylogowuje; inaczej liczba minut. */
+export const IDLE_LOGOUT_OFF = "wylaczone";
 
 /** Tyle najnowszych wpisów pokazuje dziennik; całość jest w pełnym eksporcie danych firmy. */
 export const CHANGE_LOG_LIMIT = 200;
 
 /**
  * Wpis dziennika zmian. Autor: osoba z firmy (z imieniem i nazwiskiem z chwili zmiany), super-admin albo program.
- * `personName`, `role` i `login` dotyczą konta albo osoby; `setting` z `oldValue` i `newValue` (liczba dni albo
- * `true`/`false`) tylko zmiany ustawienia.
+ * `personName`, `role` i `login` dotyczą konta albo osoby; `setting` z `oldValue` i `newValue` (liczba dni albo minut,
+ * `true`/`false` albo `wylaczone`) tylko zmiany ustawienia.
  */
 export interface ChangeLogEntry {
   id: string;
@@ -84,6 +94,7 @@ export function settingChanges(before: CompanySettings, after: CompanySettings):
     zgloszenia_magazynier: String(settings.issueVisibility.storekeepers),
     zgloszenia_magazynier_zamyka: String(settings.issueVisibility.storekeepersClose),
     koszty_kierownik: String(settings.siteManagersSeeCosts),
+    wylogowanie_wlasciciela: settings.ownerIdleLogoutMinutes === null ? IDLE_LOGOUT_OFF : String(settings.ownerIdleLogoutMinutes),
   });
   const [old, next] = [values(before), values(after)];
   return LOGGED_SETTINGS.filter((setting) => old[setting] !== next[setting]).map((setting) => ({

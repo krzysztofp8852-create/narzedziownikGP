@@ -324,6 +324,7 @@ describe("raporty otrzymane i rodzaje na teraz", () => {
       fullName: "Jan Testowy",
       role,
       mustChangePassword: false,
+      idleLogoutMinutes: null,
       company: { id: randomUUID(), name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
     expect(reportKindsOf(as("wlasciciel"))).toEqual(["tygodniowy", "piatkowy"]);

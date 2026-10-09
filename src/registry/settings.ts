@@ -1,5 +1,6 @@
 import * as changeLog from "./change-log";
 import { RegistryError } from "./errors";
+import { IDLE_LOGOUT_MINUTES } from "./idle-logout";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
 
@@ -10,6 +11,8 @@ export interface CompanySettings {
   issueVisibility: IssueVisibility;
   /** Kierownik widzi koszty sprzętu lokalizacji, których jest kierownikiem; domyślnie nie. */
   siteManagersSeeCosts: boolean;
+  /** Po tylu minutach bezczynności przeglądarka właściciela się wyloguje (15, 30, 60 albo 240); null: nigdy. */
+  ownerIdleLogoutMinutes: number | null;
 }
 
 export interface IssueVisibility {
@@ -38,8 +41,10 @@ export async function companySettings(sql: Sql, session: Session): Promise<Compa
     issues_storekeepers: boolean;
     issues_storekeepers_close: boolean;
     site_managers_see_costs: boolean;
+    owner_idle_logout_minutes: number | null;
   }>(
-    `select alarm_threshold_days, issues_site_managers, issues_storekeepers, issues_storekeepers_close, site_managers_see_costs
+    `select alarm_threshold_days, issues_site_managers, issues_storekeepers, issues_storekeepers_close, site_managers_see_costs,
+            owner_idle_logout_minutes
      from app.companies where id = $1`,
     [session.company.id],
   );
@@ -51,6 +56,7 @@ export async function companySettings(sql: Sql, session: Session): Promise<Compa
       storekeepersClose: row.issues_storekeepers_close,
     },
     siteManagersSeeCosts: row.site_managers_see_costs,
+    ownerIdleLogoutMinutes: row.owner_idle_logout_minutes,
   };
 }
 
@@ -77,6 +83,16 @@ export async function updateSettings(sql: Sql, session: Session, input: Partial<
   if (seeCosts !== undefined) {
     if (typeof seeCosts !== "boolean") throw new RegistryError("invalid_input");
     await sql("update app.companies set site_managers_see_costs = $2 where id = $1", [session.company.id, seeCosts]);
+  }
+  const idleMinutes = input.ownerIdleLogoutMinutes;
+  if (idleMinutes !== undefined) {
+    if (idleMinutes !== null && !(IDLE_LOGOUT_MINUTES as readonly number[]).includes(idleMinutes)) throw new RegistryError("invalid_input");
+    // Bezczynność liczy się najwcześniej od zmiany, więc zapis nikogo od razu nie wyloguje (ADR 0044).
+    await sql(
+      `update app.companies set owner_idle_logout_minutes = $2, owner_idle_logout_since = $3
+       where id = $1 and owner_idle_logout_minutes is distinct from $2`,
+      [session.company.id, idleMinutes, now],
+    );
   }
   for (const change of changeLog.settingChanges(before, await companySettings(sql, session))) {
     await changeLog.recordChange(sql, session.company.id, change, now);

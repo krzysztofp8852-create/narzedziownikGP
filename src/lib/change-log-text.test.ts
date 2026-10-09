@@ -28,6 +28,12 @@ describe("teksty dziennika zmian", () => {
     expect(changeText({ ...setting, setting: "koszty_kierownik", oldValue: "false", newValue: "true" })).toBe(
       "Kierownik widzi koszty swoich lokalizacji: nie → tak",
     );
+    expect(changeText({ ...setting, setting: "wylogowanie_wlasciciela", oldValue: "wylaczone", newValue: "30" })).toBe(
+      "Wylogowanie właściciela po bezczynności: wyłączone → po 30 min",
+    );
+    expect(changeText({ ...setting, setting: "wylogowanie_wlasciciela", oldValue: "240", newValue: "wylaczone" })).toBe(
+      "Wylogowanie właściciela po bezczynności: po 4 godz. → wyłączone",
+    );
   });
 
   it("ma tekst każdej zmiany i każdego ustawienia", () => {

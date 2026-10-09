@@ -71,6 +71,10 @@ _Avoid_: kopia zapasowa, backup, zrzut bazy
 Lista zmian kont i ustawień firmy: kto i kiedy założył firmę albo konto (z rolą i loginem), dezaktywował konto albo osobę, nadał innej osobie hasło tymczasowe albo zmienił ustawienie firmy (z wartością przed i po). Autorem jest osoba z firmy, super-admin albo program. Widzi go właściciel w ustawieniach i super-admin; wpisy tylko się dopisują i znikają tylko z usunięciem firmy.
 _Avoid_: audyt, log, historia (to ruchy)
 
+**Wylogowanie po bezczynności**:
+Ustawienie firmy dla kont właściciela: po 15, 30 albo 60 minutach lub 4 godzinach bez ruchu myszą, klawiatury, dotyku i przewijania przeglądarka właściciela się wylogowuje, każda osobno (sesja wygasa). Domyślnie wyłączone, a w firmie demo go nie ma; kierownik, magazynier i pracownik mają zawsze długą sesję, także w telefonie bez zasięgu. Z włączonym tablica właściciela nie zostaje w telefonie do oglądania bez sieci.
+_Avoid_: timeout, automatyczne wylogowanie
+
 **Dziennik usuniętych firm**:
 Lista usunięć dla super-admina: która firma (nazwa), kiedy i kto ją usunął. Zostaje po usunięciu, żeby potwierdzić firmie wykonanie polecenia.
 _Avoid_: archiwum, kosz

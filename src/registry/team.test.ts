@@ -21,6 +21,7 @@ describe("dodawanie osoby do zespołu", () => {
       fullName: "Adam Nowak",
       role: "kierownik",
       mustChangePassword: true,
+      idleLogoutMinutes: null,
       company: { id: zawbud.companyId, name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
   });

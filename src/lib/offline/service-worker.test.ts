@@ -254,6 +254,35 @@ describe("tablica bez sieci", () => {
     expect(await (await worker.request("/", { mode: "navigate" }))!.text()).toContain("Brak sieci");
   });
 
+  it("zapomina tablicę i nie zapisuje nowej, gdy tablica nie może zostać w telefonie (wylogowanie po bezczynności)", async () => {
+    const worker = startWorker({
+      network: async (url) => (url.endsWith("/offline") ? html("Brak sieci") : boardPage("2026-09-27T12:00:00.000Z")),
+    });
+    await worker.install();
+    await worker.request("/", { mode: "navigate" });
+
+    const noCopy = html('<div class="board" data-fetched-at="2026-09-27T12:30:00.000Z" data-no-copy="">Gdzie jest co</div>');
+    worker.setNetwork(async () => noCopy.clone());
+    await worker.request("/", { mode: "navigate" });
+    expect(await worker.cached(BOARD_CACHE, "/")).toBeUndefined();
+    await worker.message({ type: "board", fetchedAt: "2026-09-27T12:30:00.000Z" });
+    expect(await worker.cached(BOARD_CACHE, "/")).toBeUndefined();
+
+    worker.setNetwork(offline);
+    expect(await (await worker.request("/", { mode: "navigate" }))!.text()).toContain("Brak sieci");
+  });
+
+  it("zapisuje tablicę, w której znak „bez kopii” jest tylko w danych React bez wartości", async () => {
+    const payload = '<script>self.__next_f.push([1,"{\\"data-no-copy\\":\\"$undefined\\"}"])</script>';
+    const worker = startWorker({
+      network: async () => html(`<div class="board" data-fetched-at="2026-09-27T12:00:00.000Z">Gdzie jest co</div>${payload}`),
+    });
+
+    await worker.request("/", { mode: "navigate" });
+
+    expect(await (await worker.cached(BOARD_CACHE, "/"))!.text()).toContain("Gdzie jest co");
+  });
+
   it("nie zastępuje kopii stroną bez tablicy, np. gdy renderowanie przerwał błąd", async () => {
     const worker = startWorker({ network: async () => boardPage("2026-09-27T12:00:00.000Z") });
     await worker.request("/", { mode: "navigate" });

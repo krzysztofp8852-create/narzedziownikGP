@@ -5,11 +5,12 @@ import { AppPush } from "@/components/app-push";
 import { DemoBar } from "@/components/demo-bar";
 import { DemoPageLog } from "@/components/demo-page-log";
 import { DemoTour } from "@/components/demo-tour";
+import { IdleLogout } from "@/components/idle-logout";
 import { OfflineSync } from "@/components/offline-sync";
 import { SupportChatLink } from "@/components/support-chat-link";
 import { t } from "@/i18n/t";
 import { appMenu } from "@/lib/app-menu";
-import { requireSession } from "@/lib/auth";
+import { currentIdleStatus, requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { canUseSupportChat } from "@/registry/registry";
 
@@ -67,10 +68,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
   const chat = canUseSupportChat(session);
-  const [unread, unreadIssues, unreadChat] = await Promise.all([
+  const [unread, unreadIssues, unreadChat, idle] = await Promise.all([
     registry.unreadNotificationCount(),
     registry.unreadIssueEntryCount(),
     chat ? registry.unreadSupportReplyCount() : 0,
+    currentIdleStatus(),
   ]);
   const bellLabel = unread > 0 ? t("header.bellUnread", { count: unread }) : t("header.bell");
   const issuesLabel = unreadIssues > 0 ? t("header.issuesUnread", { count: unreadIssues }) : t("header.issues");
@@ -141,6 +143,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </Suspense>
       )}
       {session.company.demo && <DemoPageLog key={session.userId} />}
+      {session.idleLogoutMinutes !== null && idle.kind === "active" && (
+        <IdleLogout minutes={session.idleLogoutMinutes} remainingMs={idle.remainingMs} />
+      )}
     </>
   );
 }

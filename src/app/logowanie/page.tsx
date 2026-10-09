@@ -10,11 +10,16 @@ import { LoginForm } from "./login-form";
 export const metadata: Metadata = { title: t("login.title") };
 
 export default async function LoginPage(props: PageProps<"/logowanie">) {
-  const { next } = await props.searchParams;
+  const { next, powod } = await props.searchParams;
   const nextPath = safeNextPath(typeof next === "string" ? next : null);
   if (await currentUserId()) redirect(nextPath);
   return (
     <AuthShell title={t("login.title")}>
+      {powod === "bezczynnosc" && (
+        <p role="status" data-testid="idle-signed-out">
+          {t("idleLogout.signedOut")}
+        </p>
+      )}
       <LoginForm nextPath={nextPath} />
       <ForgetBoard />
     </AuthShell>
