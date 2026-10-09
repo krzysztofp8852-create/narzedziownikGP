@@ -41,6 +41,10 @@ describe("dokąd trafia wejście na adres aplikacji", () => {
     expect(visitorRoute({ pathname: "/oddzwonimy", search: "", method: "POST" }, false)).toEqual({ kind: "page" });
   });
 
+  it("raport naruszenia CSP przychodzi bez sesji i nie trafia do logowania", () => {
+    expect(visitorRoute({ pathname: "/csp-raport", search: "", method: "POST" }, false)).toEqual({ kind: "page" });
+  });
+
   it("regulamin, polityka prywatności i umowa powierzenia otwierają się bez logowania", () => {
     for (const path of ["/regulamin", "/polityka-prywatnosci", "/umowa-powierzenia"]) {
       expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });

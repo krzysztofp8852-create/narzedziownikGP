@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { publicEnv } from "@/lib/env";
+import { publicEnv, serverEnv } from "@/lib/env";
+import { contentSecurityPolicy, cspHeaderName, newNonce, REPORTING_ENDPOINTS } from "@/lib/security-headers";
 import { LANDING_PATH, visitorRoute } from "@/lib/visitor-route";
 
 /**
@@ -8,8 +9,18 @@ import { LANDING_PATH, visitorRoute } from "@/lib/visitor-route";
  * im stronę o programie (pod tym samym adresem, żeby link do wysłania i wyszukiwarka widziały „/”).
  * Sesja jest długa: token odświeżania nie wygasa, a ciasteczka żyją 400 dni (domyślnie w @supabase/ssr),
  * więc telefon zostaje zalogowany, dopóki ktoś się nie wyloguje albo konto nie zostanie zablokowane.
+ *
+ * Każda strona dostaje też politykę treści (CSP) z nowym nonce (ADR 0041). Next.js czyta go z tego samego nagłówka
+ * w żądaniu i dokłada do swoich skryptów, dlatego strony renderują się na żądanie (`connection()` w głównym layoucie).
  */
 export async function proxy(request: NextRequest) {
+  const csp = { name: cspHeaderName(serverEnv.cspEnforced()), value: contentSecurityPolicy(newNonce()) };
+  request.headers.set(csp.name, csp.value);
+  const withPolicy = (response: NextResponse) => {
+    response.headers.set(csp.name, csp.value);
+    response.headers.set("Reporting-Endpoints", REPORTING_ENDPOINTS);
+    return response;
+  };
   let response = NextResponse.next({ request });
   /** Nagłówki, które Supabase dokłada do nowych ciasteczek (zakaz zapisu w pamięci podręcznej). */
   let cookieHeaders: Record<string, string> = {};
@@ -34,9 +45,9 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = LANDING_PATH;
     // Nowa odpowiedź, więc ciasteczka od Supabase (np. skasowana nieważna sesja) i ich nagłówki przenosimy z `response`.
-    const rewrite = NextResponse.rewrite(url, { headers: cookieHeaders });
+    const rewrite = NextResponse.rewrite(url, { request, headers: cookieHeaders });
     for (const cookie of response.cookies.getAll()) rewrite.cookies.set(cookie);
-    return rewrite;
+    return withPolicy(rewrite);
   }
   if (route.kind === "login") {
     const url = request.nextUrl.clone();
@@ -45,7 +56,7 @@ export async function proxy(request: NextRequest) {
     if (route.next) url.searchParams.set("next", route.next);
     return NextResponse.redirect(url);
   }
-  return response;
+  return withPolicy(response);
 }
 
 // Manifest i service worker muszą być dostępne bez sesji: przeglądarka pobiera manifest bez ciasteczek,

@@ -63,6 +63,8 @@ jobs:
           # Nagranie bez dostawcy transkrypcji: każde „mówi” ten sam tekst.
           TRANSCRIPTION_PROVIDER: staly
           TRANSCRIPTION_FIXED_TEXT: biorę dwie szlifierki na Rataje
+          # Polityka treści blokuje, a nie tylko raportuje: każdy test sprawdza, że niczego nie psuje (ADR 0041).
+          CSP_ENFORCE: "1"
 
       - uses: actions/upload-artifact@v7
         if: failure()

@@ -13,12 +13,6 @@ export interface CallbackFormState {
   done?: string;
 }
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
 /** Wysyła formularz na `/oddzwonimy` (zob. tam, czemu to nie akcja serwera). */
 async function requestCallback(_prev: CallbackFormState, formData: FormData): Promise<CallbackFormState> {
   try {

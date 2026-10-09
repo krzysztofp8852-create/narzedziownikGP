@@ -12,3 +12,29 @@ export const CONTACT_CONVERSION = { send_to: `${GOOGLE_ADS_ID}/H9cBCNfFwewcEMzFo
 export function googleTagsAllowed(hostname: string): boolean {
   return hostname === "narzedziownikgp.pl";
 }
+
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+/**
+ * Kolejka poleceń Google tag: `gtag.js` (wczytany obok, src/components/cookie-consent.tsx) wykona je po wczytaniu.
+ * Tu, a nie we wstawionym skrypcie, bo polityka treści (ADR 0041) blokuje skrypty bez nonce. Analytics tylko do
+ * statystyk; Ads bez ciasteczek reklamowych, tylko konwersje.
+ */
+export function startGoogleTags() {
+  if (window.gtag) return;
+  const dataLayer = (window.dataLayer ??= []);
+  // gtag.js rozpoznaje polecenia po obiekcie `arguments`, a nie po tablicy.
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    dataLayer.push(arguments);
+  };
+  window.gtag("consent", "default", { analytics_storage: "granted", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
+  window.gtag("js", new Date());
+  window.gtag("config", GOOGLE_ANALYTICS_ID);
+  window.gtag("config", GOOGLE_ADS_ID);
+}
