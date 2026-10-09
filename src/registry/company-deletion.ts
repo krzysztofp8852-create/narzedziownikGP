@@ -13,7 +13,8 @@ export interface PurgedCompany {
 
 /**
  * Tabele firmy w kolejności usuwania: wiersz znika, zanim zniknie to, na co wskazuje. Testy usuwania sprawdzają, że
- * po nim w żadnej tabeli `app` nie zostaje nic z firmy, więc nowa tabela z `company_id` musi tu trafić.
+ * po nim w żadnej tabeli `app` nie zostaje nic z firmy, więc nowa tabela z `company_id` musi tu trafić (i do
+ * `EXPORT_TABLES` w `company-export.ts`, czego pilnują testy eksportu).
  */
 const COMPANY_TABLES = [
   "daily_rates",

@@ -236,6 +236,29 @@ Supabase oraz test dymny na zbudowanej aplikacji.
 - Sesja jest długa: token odświeżania nie wygasa, a proxy (`src/proxy.ts`) odświeża go przy każdym
   żądaniu.
 
+## Eksport danych firmy na żądanie
+
+Umowa o usługę (§ 6 ust. 2) obiecuje firmie na jej żądanie, w ciągu 14 dni, wszystkie jej dane w formacie do odczytu
+maszynowego z opisem struktury, a zdjęcia i dokumenty w oryginalnych formatach (także przy zmianie dostawcy). Eksport
+do Excela w programie tego nie pokrywa, więc pełny eksport przygotowuje GP Engineering skryptem:
+
+```bash
+npm run company:export:prod -- --company <id firmy> --out ~/eksporty
+```
+
+1. Id firmy jest w adresie jej strony w panelu super-admina: `/super-admin/firmy/<id firmy>`.
+2. Skrypt zapisuje w katalogu `--out` plik `eksport-<id firmy>-<data i godzina UTC>.zip`: `README.md` z opisem
+   każdej tabeli, kolumny i powiązań, `dane/<tabela>.csv` (UTF-8, z nagłówkiem, tylko wiersze tej firmy) i
+   `pliki/` ze zdjęciami zgłoszeń i czatu oraz dokumentami terminów i uprawnień, nazwanymi identyfikatorem wiersza.
+   Haseł, sesji ani kluczy push w nim nie ma.
+3. Działa też w trybie tylko do odczytu i po końcu umowy (dopóki firmy nie usunięto), niczego w firmie nie zmienia.
+   Jeśli skrypt wypisze pliki, których brak w kubełkach Storage, są też wymienione w README eksportu.
+4. ZIP zawiera dane osobowe: przekaż go właścicielowi firmy bezpiecznym kanałem (np. link z wygaśnięciem albo
+   archiwum z hasłem podanym inną drogą), a potem usuń lokalną kopię.
+
+Nowa tabela z `company_id` albo nowa kolumna musi trafić do `EXPORT_TABLES` w `src/registry/company-export.ts`
+(z opisem do README eksportu albo jako pominięta z powodem); pilnują tego testy eksportu. Zob. `docs/adr/0042`.
+
 ## Środowiska i wdrożenie
 
 - Supabase: dwa projekty w regionie `eu-west-1` (zob. `docs/adr/0001`, `docs/adr/0039`). Produkcyjny

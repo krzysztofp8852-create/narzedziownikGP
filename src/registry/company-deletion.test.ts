@@ -1,58 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { type NewCompanyInput, withActor } from "./registry";
+import { withActor } from "./registry";
+import { givenCompanyWithHistory as givenHistory, zawbud } from "./testing/company-with-history";
 import { rowsOfCompany, setupRegistryTestbed } from "./testing/harness";
 
 const testbed = setupRegistryTestbed();
-
-const zawbud: NewCompanyInput = {
-  name: "Zawbud",
-  baseName: "Baza",
-  owner: { email: "jan@zawbud.pl", fullName: "Jan Kowalski" },
-  invoice: { name: "Zawbud Jan Kowalski", taxId: "778-123-45-63", address: "ul. Polna 3\n60-001 Poznań" },
-  tier: "sredni",
-  paidUntil: "2026-12-31",
-};
-
-function jpeg() {
-  return new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...new Array(500).fill(1)])], { type: "image/jpeg" });
-}
-
-/** Firma z panelu z właścicielem po zmianie hasła, kierownikiem, budową, narzędziem ze stawką, ruchem, zgłoszeniem, terminem, uprawnieniem i czatem. */
-async function givenCompanyWithHistory(adminId: string) {
-  const created = await testbed.registry.superAdmin(adminId).createCompany(zawbud);
-  const owner = testbed.registry.as(created.ownerUserId);
-  await owner.changePassword("Zawbud-haslo-1", testbed.signedInNow());
-  const company = { companyId: created.companyId, ownerId: created.ownerUserId, temporaryPassword: "" };
-  const managerId = await testbed.givenMember(company, "kierownik", "Adam Nowak");
-  const { locationId: siteId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12", managerId });
-  const category = await owner.addCategory({ name: "Szlifierki", prefix: "S" });
-  const { toolId } = await owner.addTool({ operationId: randomUUID(), code: "S-01", name: "Szlifierka", categoryId: category.id, value: 300 });
-  await owner.setDailyRate({ kind: "firma" }, 1);
-  await owner.setDailyRate({ kind: "narzedzie", toolId }, 5);
-  const { base } = await owner.whereIsWhat();
-  await owner.registerMovement({ operationId: randomUUID(), kind: "wydanie", fromLocationId: base.id, toLocationId: siteId, toolIds: [toolId], source: "checklista" });
-  const { issueId } = await testbed.registry.as(managerId).fileIssue({ operationId: randomUUID(), kind: "inne", description: "Brakuje tarczy", photo: jpeg() });
-  await owner.commentOnIssue({ operationId: randomUUID(), issueId, text: "Dokupimy" });
-  const { deadlineId } = await owner.addDeadline({ toolId, kind: "przeglad", dueOn: "2026-06-01", cycleMonths: 12 });
-  await owner.addDeadlineDocument({ operationId: randomUUID(), deadlineId, kind: "protokol", file: jpeg(), fileName: "protokol.jpg" });
-  const { personId } = await owner.addPerson({ fullName: "Zbigniew Kaczmarek", note: null });
-  const { kindId } = await owner.addQualificationKind({ name: "Operator koparki" });
-  const { qualificationId } = await owner.addQualification({ personId, kind: "wlasny", customKindId: kindId, dueOn: "2026-03-20" });
-  await owner.addQualificationDocument({ operationId: randomUUID(), qualificationId, file: jpeg(), fileName: "zaswiadczenie.jpg" });
-  await testbed.registry.system().notifyCompanyDueQualifications(company.companyId);
-  const { code: posterToken } = await owner.poster(siteId);
-  const manager = testbed.registry.as(managerId);
-  await manager.punch({ operationId: randomUUID(), posterToken, position: null });
-  const [managerPunch] = await owner.punchesToClarify();
-  await owner.explainPunch({ punchId: managerPunch.id, note: "Piwnica bez GPS" });
-  await owner.correctPunch({ punchId: managerPunch.id, enteredAt: new Date(managerPunch.enteredAt.getTime() - 60_000), reason: "Był wcześniej" });
-  // Skan z kolejki offline sprzed odbicia kierownika: konflikt do wyjaśnienia.
-  await manager.registerQueuedPunch({ operationId: randomUUID(), posterToken, position: null, scannedAt: new Date(0) });
-  await owner.explainPunchConflict({ conflictId: (await owner.punchConflictsToClarify())[0].id, note: null });
-  await owner.sendSupportMessage({ operationId: randomUUID(), text: "Zrzut ekranu", photo: jpeg() });
-  return { ...company, managerId };
-}
+const givenCompanyWithHistory = (adminId: string) => givenHistory(testbed, adminId);
 
 describe("usunięcie firmy przez super-admina", () => {
   it("firma w trybie tylko do odczytu znika w całości: dane, historia, pliki i konta, a w dzienniku zostaje wpis", async () => {

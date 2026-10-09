@@ -9,6 +9,8 @@ import type { WhereIsWhat } from "./board";
 import { RegistryError, ReplayedOperationError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore, type Sql } from "./ports";
 import * as companyDeletion from "./company-deletion";
+import * as companyExport from "./company-export";
+import type { CompanyExportSummary, ExportSink } from "./company-export";
 import * as corrections from "./corrections";
 import * as costs from "./costs";
 import type { CostPeriod, CostSummary, DailyRates, LocationCosts, RateChange, RateTarget } from "./costs";
@@ -109,6 +111,7 @@ export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
 export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { CatalogTool } from "./catalog";
+export type { CompanyExportSummary, ExportSink } from "./company-export";
 export type { ListedTool } from "./tool-list";
 export type {
   AddDocumentInput,
@@ -523,6 +526,12 @@ export interface Registry {
      * na godzinę łącznie odmawia (`callback_busy`).
      */
     requestCallback(input: CallbackRequestInput): Promise<void>;
+    /**
+     * Pełny eksport danych firmy na jej żądanie (`npm run company:export`): CSV każdej tabeli z jej wierszami, zdjęcia
+     * i dokumenty z magazynów i README z opisem struktury, po kolei do `add`. Dane z jednej migawki, w transakcji tylko
+     * do odczytu, więc działa też w trybie tylko do odczytu i po końcu umowy. Nieznana firma: `not_found`.
+     */
+    exportCompany(companyId: string, add: ExportSink): Promise<CompanyExportSummary>;
   };
   /**
    * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
@@ -1201,6 +1210,10 @@ export function createRegistry(deps: RegistryDeps): Registry {
         const saved = await deps.db.transaction((sql) => callbackRequests.requestCallback(sql, input, deps.clock.now()));
         // Prośba jest zapisana i widać ją w panelu, więc błąd e-maila tylko odnotowujemy.
         if (saved) await deps.notifier.sendCallbackRequest(saved).catch((error) => console.error("Nie wysłano e-maila o prośbie o telefon", error));
+      },
+      exportCompany: async (companyId, add) => {
+        const data = await deps.db.transaction((sql) => companyExport.readCompany(sql, companyId));
+        return companyExport.writeExport(data, deps, add, deps.clock.now());
       },
     }),
     superAdmin: (userId) => {
