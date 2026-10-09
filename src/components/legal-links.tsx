@@ -5,7 +5,7 @@ import { CookieSettingsButton } from "./cookie-consent";
 
 /**
  * Odnośniki do regulaminu, polityki prywatności i umowy powierzenia (logowanie, ustawienia, strona o programie) oraz
- * zmiana zgody na pliki cookies.
+ * zmiana zgody na pliki cookies tam, gdzie jest baner (strony dla odwiedzających).
  * `className` zastępuje domyślny wygląd, np. na stronie o programie odnośniki wyglądają jak reszta stopki.
  */
 export function LegalLinks({ className = "legal-links" }: { className?: string }) {

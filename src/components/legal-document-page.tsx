@@ -5,6 +5,7 @@ import type { LegalDocumentId } from "@/legal/documents";
 import type { Inline, LegalBlock } from "@/legal/parse";
 import { readLegalDocument } from "@/legal/read";
 import { LegalLinks } from "./legal-links";
+import { VisitorCookieConsent } from "./visitor-cookie-consent";
 
 export function legalDocumentMetadata(id: LegalDocumentId): Metadata {
   return { title: t(`legal.documents.${id}`) };
@@ -58,43 +59,46 @@ function Block({ block }: { block: LegalBlock }) {
 
 /**
  * Regulamin, polityka prywatności albo umowa powierzenia. Otwiera się bez logowania, a „Wróć” prowadzi na `/`:
- * niezalogowany trafia na stronę o programie, zalogowany na tablicę.
+ * niezalogowany trafia na stronę o programie, zalogowany na tablicę. Niezalogowany widzi też baner zgody na cookies.
  */
 export async function LegalDocumentPage({ id }: { id: LegalDocumentId }) {
   const document = await readLegalDocument(id);
   return (
-    <div className="auth-page">
-      <div className="hazard" aria-hidden />
-      <main className="legal-main">
-        <header className="legal-head">
-          <div className="brand">
-            <p className="display brand-name">
-              {t("app.nameLead")}
-              <span>{t("app.nameMark")}</span>
-            </p>
-            <p className="muted">{t("app.vendor")}</p>
-          </div>
-          <Link href="/" className="muted">
-            {t("legal.back")}
-          </Link>
-        </header>
-        <LegalLinks />
-        <article className="legal-document" aria-labelledby="legal-title">
-          <h1 id="legal-title" className="display page-title">
-            {document.title}
-          </h1>
-          <p className="muted">{t("legal.version", { date: document.version })}</p>
-          {document.draft && (
-            <p className="legal-draft" role="note">
-              {t("legal.draft")}
-            </p>
-          )}
-          {document.blocks.map((block, index) => (
-            <Block key={index} block={block} />
-          ))}
-        </article>
-      </main>
-      <div className="hazard" aria-hidden />
-    </div>
+    <>
+      <div className="auth-page">
+        <div className="hazard" aria-hidden />
+        <main className="legal-main">
+          <header className="legal-head">
+            <div className="brand">
+              <p className="display brand-name">
+                {t("app.nameLead")}
+                <span>{t("app.nameMark")}</span>
+              </p>
+              <p className="muted">{t("app.vendor")}</p>
+            </div>
+            <Link href="/" className="muted">
+              {t("legal.back")}
+            </Link>
+          </header>
+          <LegalLinks />
+          <article className="legal-document" aria-labelledby="legal-title">
+            <h1 id="legal-title" className="display page-title">
+              {document.title}
+            </h1>
+            <p className="muted">{t("legal.version", { date: document.version })}</p>
+            {document.draft && (
+              <p className="legal-draft" role="note">
+                {t("legal.draft")}
+              </p>
+            )}
+            {document.blocks.map((block, index) => (
+              <Block key={index} block={block} />
+            ))}
+          </article>
+        </main>
+        <div className="hazard" aria-hidden />
+      </div>
+      <VisitorCookieConsent />
+    </>
   );
 }
