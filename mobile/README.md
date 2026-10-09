@@ -22,6 +22,16 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
   łapie tylko błędy sieci głównej ramki (brak zasięgu, serwer nieosiągalny); strony 404 i „brak dostępu” programu
   zostają w programie. Po pierwszym udanym starcie offline obsługuje service worker jak w PWA (ADR 0010): tablica
   z kopii, inne strony „Brak sieci”.
+- Pobieranie plików (`DownloadsPlugin.java`, wtyczka skorupy `Downloads`): WebView sam nic nie pobiera, a zewnętrzny
+  Chrome nie ma sesji użytkownika. Plik spod adresu programu (eksporty Excela, plakat budowy, dokumenty terminów
+  i uprawnień, zdjęcia) skorupa oddaje systemowemu menedżerowi pobierania z ciasteczkami sesji WebView, więc serwer
+  sprawdza dostęp jak przy każdym zapytaniu. PDF z naklejkami powstaje przy druku w pamięci strony (`blob:`), którego
+  menedżer nie pobierze: skorupa czyta go ze strony i zapisuje sama (nazwę bierze z linku `download`, który strona
+  zostawia do tego na minutę, `sticker-forms.tsx`). Plik trafia do „Pobranych” z powiadomieniem, a PDF i obrazki
+  otwierają się od razu w systemowej aplikacji. Dokumenty i zdjęcia, które w przeglądarce otwierają się w nowej karcie,
+  w aplikacji się pobierają (`src/components/file-link.tsx`), bo kart tu nie ma. Na Androidzie 7–9 zapis do
+  „Pobranych” wymaga zgody, o którą skorupa pyta przy pierwszym pobraniu. Powiadomienie o PDF z naklejkami (Android
+  10+) daje skorupa, więc bez zgody na powiadomienia (Android 13+) go nie ma; plik i tak jest w „Pobranych”.
 - Wtyczki natywne (strona pyta o nie przez `src/lib/platform.ts` i bez nich używa wersji webowej):
   - `@capacitor/camera` (`Camera`): „Zrób zdjęcie” i „Z galerii” przy zdjęciu zgłoszenia, zdjęciu w czacie
     i dokumentach terminów i uprawnień, nad zwykłym wyborem pliku (`src/components/native-photo-buttons.tsx`). Bez niej WebView daje przy polu
@@ -133,3 +143,21 @@ sprawdzają testy automatyczne.
   nie ekran skorupy.
 - [ ] 404 programu: nieistniejący adres (np. `/narzedzia/00000000-0000-0000-0000-000000000000`) pokazuje stronę
   „nie znaleziono” programu, nie „Brak połączenia”.
+- [ ] Pobieranie (właściciel): eksport Excela z historii, kosztów (całej firmy, budowy i pojazdu), czasu na budowie
+  i wzór importu narzędzi trafia do
+  „Pobranych” z nazwą z programu (np. `narzedziownik-2026-10-09.xlsx`) i powiadomieniem; dotknięcie powiadomienia
+  otwiera plik w aplikacji do arkuszy.
+- [ ] Pobieranie: PDF z naklejkami (wszystkie nieoklejone i dodruk z karty narzędzia) zapisuje się jako
+  `naklejki-RRRR-MM-DD.pdf` i od razu otwiera w przeglądarce PDF; naklejki są potem oklejone, a ponowne pobranie nie
+  nadpisuje pierwszego pliku.
+- [ ] Pobieranie: plakat budowy (właściciel i kierownik budowy) pobiera się i otwiera jako PDF.
+- [ ] Pobieranie: dokument terminu narzędzia i pojazdu (PDF i zdjęcie, także z polskimi znakami w nazwie, np.
+  „Polisa OC żółta.pdf”) i dokument uprawnienia pobierają się z nazwą pliku i otwierają w systemowej aplikacji;
+  po powrocie aplikacja jest na tej samej stronie.
+- [ ] Pobieranie: zdjęcie zgłoszenia i zdjęcie z czatu pobierają się i otwierają w galerii.
+- [ ] Pobieranie bez dostępu: dokument usunięty na komputerze, a dotknięty na telefonie na nieodświeżonej karcie
+  narzędzia, nie zapisuje niczego w „Pobranych” (serwer odpowiada 404).
+- [ ] Pobieranie na Androidzie 7–9 (jeśli jest taki telefon): pierwsze pobranie pyta o zgodę na pliki; po odmowie
+  komunikat, po zgodzie plik w „Pobranych”.
+- [ ] Pobieranie bez ponownego logowania: po zamknięciu aplikacji z listy ostatnich i ponownym otwarciu eksport
+  i dokument pobierają się od razu, bez ekranu logowania i bez pliku z ekranem logowania w środku.

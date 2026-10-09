@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { FileLink } from "@/components/file-link";
 import { MissingIcon } from "@/components/missing-icon";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
@@ -71,11 +72,11 @@ export default async function IssuePage(props: PageProps<"/zgloszenia/[id]">) {
           </dl>
         )}
         {issue.photo && (
-          <a href={`/zgloszenia/${issue.id}/zdjecie`} target="_blank" rel="noopener">
+          <FileLink href={`/zgloszenia/${issue.id}/zdjecie`}>
             {/* Zdjęcie z własnej trasy z sesją; optymalizacja obrazów Next nie przeniesie ciasteczek. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="issue-photo" src={`/zgloszenia/${issue.id}/zdjecie`} alt={t("issues.details.photo")} />
-          </a>
+          </FileLink>
         )}
         {issue.status === "zamkniete" && issue.closedAt && (
           <p role="status">

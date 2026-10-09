@@ -59,6 +59,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Powiadomienia push (Android 13+); strona prosi o zgodę przy włączeniu przełącznika w dzwonku, nie przy starcie. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Pobieranie plików do „Pobranych” na Androidzie 7–9; od Androida 10 bez zgody. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <!-- Bez aparatu i mikrofonu da się wpisać kod ręcznie i zapisać ruch tekstem, więc Play nie ukrywa aplikacji. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />

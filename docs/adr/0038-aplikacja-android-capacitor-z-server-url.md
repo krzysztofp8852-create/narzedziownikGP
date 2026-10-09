@@ -54,6 +54,9 @@ serwera Next.js.
   - większe ryzyko odrzucenia przez Google jako „opakowana strona”: łagodzą je natywny skaner, aparat, FCM, pobieranie
     plików i ekran offline (#120–#124);
   - wtyczki działają tylko na stronach z domeny `server.url`; inne domeny i tak otwierają się poza aplikacją.
+  - WebView sam nie pobiera plików, a zewnętrzny Chrome nie ma sesji: skorupa oddaje pobieranie systemowemu
+    menedżerowi pobierania z ciasteczkami sesji WebView, a pliki z pamięci strony (PDF z naklejkami) zapisuje sama
+    (#124). Strona, która w przeglądarce otwiera plik w nowej karcie, w aplikacji go pobiera.
 - Adres programu siedzi w pakiecie (po `npx cap sync`), więc wydanie z adresem testowym trzeba złapać przed uploadem.
   Zmiana domeny programu wymaga nowego wydania w sklepie.
 - Aplikacja ma osobną pamięć od Chrome: po instalacji trzeba się zalogować jeszcze raz.

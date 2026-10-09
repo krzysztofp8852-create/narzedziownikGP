@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FileLink } from "@/components/file-link";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import type { SupportChatMessage, SupportSender } from "@/registry/registry";
@@ -32,11 +33,11 @@ export function ChatThread<M extends SupportChatMessage>({
           <p className="chat-sender">{senderName(message)}</p>
           {message.text && <p className="chat-text">{message.text}</p>}
           {message.photo && (
-            <a href={photoUrl(message)} target="_blank" rel="noopener">
+            <FileLink href={photoUrl(message)}>
               {/* Zdjęcie z własnej trasy z sesją; optymalizacja obrazów Next nie przeniesie ciasteczek. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="chat-photo" src={photoUrl(message)} alt={t("supportChat.photo")} />
-            </a>
+            </FileLink>
           )}
           <p className="chat-meta">
             <time dateTime={message.createdAt.toISOString()}>{formatDateTime(message.createdAt)}</time>
