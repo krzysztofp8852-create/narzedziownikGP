@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
-import { CookieConsent } from "@/components/cookie-consent";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
@@ -41,7 +40,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         {children}
         <ServiceWorkerRegistration />
-        <CookieConsent />
       </body>
     </html>
   );

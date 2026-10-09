@@ -20,13 +20,18 @@ declare global {
   }
 }
 
+/** Czy w tym oknie ruszyły tagi Google (`startGoogleTags`). */
+export function googleTagsStarted(): boolean {
+  return typeof window.gtag === "function";
+}
+
 /**
  * Kolejka poleceń Google tag: `gtag.js` (wczytany obok, src/components/cookie-consent.tsx) wykona je po wczytaniu.
  * Tu, a nie we wstawionym skrypcie, bo polityka treści (ADR 0041) blokuje skrypty bez nonce. Analytics tylko do
  * statystyk; Ads bez ciasteczek reklamowych, tylko konwersje.
  */
 export function startGoogleTags() {
-  if (window.gtag) return;
+  if (googleTagsStarted()) return;
   const dataLayer = (window.dataLayer ??= []);
   // gtag.js rozpoznaje polecenia po obiekcie `arguments`, a nie po tablicy.
   window.gtag = function gtag() {

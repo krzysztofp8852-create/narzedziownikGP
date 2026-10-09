@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LegalLinks } from "@/components/legal-links";
+import { VisitorCookieConsent } from "@/components/visitor-cookie-consent";
 import { CallbackForm } from "@/components/callback-form";
 import { SalesContact } from "@/components/sales-contact";
 import { formatMoney, formatPrice } from "@/i18n/money";
@@ -168,204 +169,207 @@ export default function LandingPage() {
   const plans = pricing();
   const siteUrl = serverEnv.siteUrl();
   return (
-    // `data-signed-out`: service worker po tym poznaje, że pod `/` nie ma już tablicy tej sesji (ADR 0021).
-    <div className={`landing ${display.variable}`} data-signed-out>
-      {siteUrl && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(landingStructuredData(siteUrl)) }} />}
-      <div className="landing-hazard" aria-hidden />
-      <div className="landing-top">
-        <header className="landing-header">
-          <div className="brand">
-            <p className="display brand-name">
-              {t("app.nameLead")}
-              <span>{t("app.nameMark")}</span>
-            </p>
-            <p className="muted">{t("app.vendor")}</p>
-          </div>
-          <nav className="landing-nav">
-            <a href="#cennik">{t("landing.hero.pricing")}</a>
-            <a href="#pytania">{t("landing.nav.faq")}</a>
-            <a href="#kontakt">{t("landing.nav.contact")}</a>
-            <Link href="/logowanie">{t("landing.signIn")}</Link>
-          </nav>
-        </header>
+    <>
+      {/* `data-signed-out`: service worker po tym poznaje, że pod `/` nie ma już tablicy tej sesji (ADR 0021). */}
+      <div className={`landing ${display.variable}`} data-signed-out>
+        {siteUrl && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(landingStructuredData(siteUrl)) }} />}
+        <div className="landing-hazard" aria-hidden />
+        <div className="landing-top">
+          <header className="landing-header">
+            <div className="brand">
+              <p className="display brand-name">
+                {t("app.nameLead")}
+                <span>{t("app.nameMark")}</span>
+              </p>
+              <p className="muted">{t("app.vendor")}</p>
+            </div>
+            <nav className="landing-nav">
+              <a href="#cennik">{t("landing.hero.pricing")}</a>
+              <a href="#pytania">{t("landing.nav.faq")}</a>
+              <a href="#kontakt">{t("landing.nav.contact")}</a>
+              <Link href="/logowanie">{t("landing.signIn")}</Link>
+            </nav>
+          </header>
 
-        <section className="landing-hero" aria-labelledby="landing-title">
-          <div className="landing-hero-text">
-            <h1 id="landing-title" className="landing-heading">
-              {t("landing.hero.headingLead")} <span>{t("landing.hero.headingRest")}</span>
-            </h1>
-            <p className="landing-lead">{t("landing.hero.lead")}</p>
-            <ul className="landing-modules" aria-label={t("landing.hero.modules")}>
-              {FEATURE_GROUPS.map((group) => (
-                <li key={group.id}>
-                  <a href={`#modul-${group.id}`}>{t(`landing.features.groups.${group.id}.title`)}</a>
+          <section className="landing-hero" aria-labelledby="landing-title">
+            <div className="landing-hero-text">
+              <h1 id="landing-title" className="landing-heading">
+                {t("landing.hero.headingLead")} <span>{t("landing.hero.headingRest")}</span>
+              </h1>
+              <p className="landing-lead">{t("landing.hero.lead")}</p>
+              <ul className="landing-modules" aria-label={t("landing.hero.modules")}>
+                {FEATURE_GROUPS.map((group) => (
+                  <li key={group.id}>
+                    <a href={`#modul-${group.id}`}>{t(`landing.features.groups.${group.id}.title`)}</a>
+                  </li>
+                ))}
+              </ul>
+              <div className="landing-actions">
+                <Link href="/demo" className="button">
+                  {t("landing.hero.demo")}
+                </Link>
+                <a href="#cennik" className="button button-quiet">
+                  {t("landing.hero.pricing")}
+                </a>
+              </div>
+            </div>
+            <HeroMap />
+            <BoardPreview />
+          </section>
+        </div>
+
+        <main className="landing-main">
+          <section className="landing-section" aria-labelledby="funkcje">
+            <h2 id="funkcje" className="landing-section-title">
+              {t("landing.features.title")}
+            </h2>
+            <p className="landing-lead">{t("landing.features.lead")}</p>
+            {FEATURE_GROUPS.map((group) => (
+              <div key={group.id} id={`modul-${group.id}`} className="landing-feature-group">
+                <div className="landing-feature-head">
+                  <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
+                  <p>{t(`landing.features.groups.${group.id}.text`)}</p>
+                </div>
+                <ul>
+                  {group.features.map((feature, index) => (
+                    <li key={feature}>
+                      <span className="plate">{`${t(`landing.features.groups.${group.id}.code`)}-${String(index + 1).padStart(2, "0")}`}</span>
+                      <h4>{t(`landing.features.${feature}.title`)}</h4>
+                      <p>{t(`landing.features.${feature}.text`)}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+
+          <section className="landing-section landing-support" aria-labelledby="pomoc">
+            <div className="landing-support-text">
+              <h2 id="pomoc" className="landing-section-title">
+                {t("landing.support.title")}
+              </h2>
+              <p>{t("landing.support.text")}</p>
+              <p className="landing-support-point">{t("landing.support.point")}</p>
+            </div>
+            <figure className="landing-chat" aria-hidden>
+              <figcaption>{t("landing.support.chatTitle")}</figcaption>
+              <p className="landing-chat-message landing-chat-mine">
+                <small>{t("landing.support.chatYou")}</small>
+                {t("landing.support.chatQuestion")}
+              </p>
+              <p className="landing-chat-message">
+                <small>{t("landing.support.chatFrom")}</small>
+                {t("landing.support.chatAnswer")}
+              </p>
+            </figure>
+          </section>
+
+          <section className="landing-section" aria-labelledby="jak-to-dziala">
+            <h2 id="jak-to-dziala" className="landing-section-title">
+              {t("landing.steps.title")}
+            </h2>
+            <ol className="landing-steps">
+              {STEPS.map((step) => (
+                <li key={step}>
+                  <h3>{t(`landing.steps.${step}.title`)}</h3>
+                  <p>{t(`landing.steps.${step}.text`)}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="landing-section" aria-labelledby="cennik">
+            <h2 id="cennik" className="landing-section-title">
+              {t("landing.pricing.title")}
+            </h2>
+            <p className="landing-lead">{t("landing.pricing.lead")}</p>
+            <ul className="landing-plans">
+              {plans.map((plan) => (
+                <li
+                  key={plan.id}
+                  className={plan.popular ? "landing-plan landing-plan-popular" : "landing-plan"}
+                  aria-labelledby={`plan-${plan.id}`}
+                >
+                  {plan.popular && <p className="landing-plan-badge">{t("landing.pricing.popular")}</p>}
+                  <h3 id={`plan-${plan.id}`}>{plan.name}</h3>
+                  <div className="landing-plan-implementation">
+                    <p className="landing-plan-label">{t("landing.pricing.implementationLabel")}</p>
+                    <Price {...plan.implementation} />
+                  </div>
+                  <div className="landing-plan-yearly">
+                    <p className="landing-plan-label">{t("landing.pricing.yearlyLabel")}</p>
+                    <Price {...plan.yearly} />
+                  </div>
+                  <ul className="landing-plan-features">
+                    <li>
+                      <strong>{t("landing.pricing.planPeople", { people: plan.people })}</strong>
+                      <small>{t("landing.pricing.ownerIncluded")}</small>
+                    </li>
+                    <li>
+                      <strong>{plan.tools}</strong>
+                    </li>
+                    <li>{t("landing.pricing.accounts")}</li>
+                    <li>{t("landing.pricing.modules")}</li>
+                  </ul>
+                  <a href="#kontakt" className={plan.popular ? "button" : "button button-quiet"}>
+                    {t("landing.pricing.ask", { name: plan.name })}
+                  </a>
                 </li>
               ))}
             </ul>
+            <p className="landing-pricing-note">{t("landing.pricing.note")}</p>
+          </section>
+
+          <section className="landing-section" aria-labelledby="pytania">
+            <h2 id="pytania" className="landing-section-title">
+              {t("landing.faq.title")}
+            </h2>
+            <dl className="landing-faq">
+              {FAQ.map((question) => (
+                <div key={question}>
+                  <dt>{t(`landing.faq.${question}.question`)}</dt>
+                  <dd>{faqAnswer(question)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </main>
+
+        <section className="landing-contact" aria-labelledby="kontakt">
+          <div className="landing-contact-inner">
+            <h2 id="kontakt" className="landing-section-title">
+              {t("landing.contact.title")}
+            </h2>
+            <p>{t("landing.contact.text")}</p>
+            <div className="landing-sales">
+              <SalesContact />
+            </div>
+            <CallbackForm source="o-programie" />
             <div className="landing-actions">
               <Link href="/demo" className="button">
                 {t("landing.hero.demo")}
               </Link>
-              <a href="#cennik" className="button button-quiet">
-                {t("landing.hero.pricing")}
-              </a>
             </div>
           </div>
-          <HeroMap />
-          <BoardPreview />
         </section>
+
+        <footer className="landing-footer">
+          <div className="landing-company">
+            <p>{t("landing.footer.product")}</p>
+            {/* Dane, które spółka z o.o. podaje na swoich stronach (art. 206 KSH). */}
+            <address>
+              <strong>{t("landing.footer.companyName")}</strong>, {t("landing.footer.companyAddress")}
+            </address>
+            <p>{t("landing.footer.companyRegistry")}</p>
+          </div>
+          <nav className="landing-nav">
+            <Link href="/demo">{t("landing.hero.demo")}</Link>
+            <Link href="/logowanie">{t("landing.signIn")}</Link>
+          </nav>
+          <LegalLinks className="landing-nav" />
+        </footer>
       </div>
-
-      <main className="landing-main">
-        <section className="landing-section" aria-labelledby="funkcje">
-          <h2 id="funkcje" className="landing-section-title">
-            {t("landing.features.title")}
-          </h2>
-          <p className="landing-lead">{t("landing.features.lead")}</p>
-          {FEATURE_GROUPS.map((group) => (
-            <div key={group.id} id={`modul-${group.id}`} className="landing-feature-group">
-              <div className="landing-feature-head">
-                <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
-                <p>{t(`landing.features.groups.${group.id}.text`)}</p>
-              </div>
-              <ul>
-                {group.features.map((feature, index) => (
-                  <li key={feature}>
-                    <span className="plate">{`${t(`landing.features.groups.${group.id}.code`)}-${String(index + 1).padStart(2, "0")}`}</span>
-                    <h4>{t(`landing.features.${feature}.title`)}</h4>
-                    <p>{t(`landing.features.${feature}.text`)}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-
-        <section className="landing-section landing-support" aria-labelledby="pomoc">
-          <div className="landing-support-text">
-            <h2 id="pomoc" className="landing-section-title">
-              {t("landing.support.title")}
-            </h2>
-            <p>{t("landing.support.text")}</p>
-            <p className="landing-support-point">{t("landing.support.point")}</p>
-          </div>
-          <figure className="landing-chat" aria-hidden>
-            <figcaption>{t("landing.support.chatTitle")}</figcaption>
-            <p className="landing-chat-message landing-chat-mine">
-              <small>{t("landing.support.chatYou")}</small>
-              {t("landing.support.chatQuestion")}
-            </p>
-            <p className="landing-chat-message">
-              <small>{t("landing.support.chatFrom")}</small>
-              {t("landing.support.chatAnswer")}
-            </p>
-          </figure>
-        </section>
-
-        <section className="landing-section" aria-labelledby="jak-to-dziala">
-          <h2 id="jak-to-dziala" className="landing-section-title">
-            {t("landing.steps.title")}
-          </h2>
-          <ol className="landing-steps">
-            {STEPS.map((step) => (
-              <li key={step}>
-                <h3>{t(`landing.steps.${step}.title`)}</h3>
-                <p>{t(`landing.steps.${step}.text`)}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="landing-section" aria-labelledby="cennik">
-          <h2 id="cennik" className="landing-section-title">
-            {t("landing.pricing.title")}
-          </h2>
-          <p className="landing-lead">{t("landing.pricing.lead")}</p>
-          <ul className="landing-plans">
-            {plans.map((plan) => (
-              <li
-                key={plan.id}
-                className={plan.popular ? "landing-plan landing-plan-popular" : "landing-plan"}
-                aria-labelledby={`plan-${plan.id}`}
-              >
-                {plan.popular && <p className="landing-plan-badge">{t("landing.pricing.popular")}</p>}
-                <h3 id={`plan-${plan.id}`}>{plan.name}</h3>
-                <div className="landing-plan-implementation">
-                  <p className="landing-plan-label">{t("landing.pricing.implementationLabel")}</p>
-                  <Price {...plan.implementation} />
-                </div>
-                <div className="landing-plan-yearly">
-                  <p className="landing-plan-label">{t("landing.pricing.yearlyLabel")}</p>
-                  <Price {...plan.yearly} />
-                </div>
-                <ul className="landing-plan-features">
-                  <li>
-                    <strong>{t("landing.pricing.planPeople", { people: plan.people })}</strong>
-                    <small>{t("landing.pricing.ownerIncluded")}</small>
-                  </li>
-                  <li>
-                    <strong>{plan.tools}</strong>
-                  </li>
-                  <li>{t("landing.pricing.accounts")}</li>
-                  <li>{t("landing.pricing.modules")}</li>
-                </ul>
-                <a href="#kontakt" className={plan.popular ? "button" : "button button-quiet"}>
-                  {t("landing.pricing.ask", { name: plan.name })}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <p className="landing-pricing-note">{t("landing.pricing.note")}</p>
-        </section>
-
-        <section className="landing-section" aria-labelledby="pytania">
-          <h2 id="pytania" className="landing-section-title">
-            {t("landing.faq.title")}
-          </h2>
-          <dl className="landing-faq">
-            {FAQ.map((question) => (
-              <div key={question}>
-                <dt>{t(`landing.faq.${question}.question`)}</dt>
-                <dd>{faqAnswer(question)}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </main>
-
-      <section className="landing-contact" aria-labelledby="kontakt">
-        <div className="landing-contact-inner">
-          <h2 id="kontakt" className="landing-section-title">
-            {t("landing.contact.title")}
-          </h2>
-          <p>{t("landing.contact.text")}</p>
-          <div className="landing-sales">
-            <SalesContact />
-          </div>
-          <CallbackForm source="o-programie" />
-          <div className="landing-actions">
-            <Link href="/demo" className="button">
-              {t("landing.hero.demo")}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <footer className="landing-footer">
-        <div className="landing-company">
-          <p>{t("landing.footer.product")}</p>
-          {/* Dane, które spółka z o.o. podaje na swoich stronach (art. 206 KSH). */}
-          <address>
-            <strong>{t("landing.footer.companyName")}</strong>, {t("landing.footer.companyAddress")}
-          </address>
-          <p>{t("landing.footer.companyRegistry")}</p>
-        </div>
-        <nav className="landing-nav">
-          <Link href="/demo">{t("landing.hero.demo")}</Link>
-          <Link href="/logowanie">{t("landing.signIn")}</Link>
-        </nav>
-        <LegalLinks className="landing-nav" />
-      </footer>
-    </div>
+      <VisitorCookieConsent />
+    </>
   );
 }
