@@ -6,4 +6,10 @@
     <string name="custom_url_scheme">pl.narzedziownikgp.app</string>
     <string name="notification_channel_name">Powiadomienia</string>
     <string name="notification_channel_description">Wpisy dzwonka, zgłoszenia i odpowiedzi supportu</string>
+    <string name="download_started">Pobieranie: %1$s</string>
+    <string name="download_saved">Zapisano w Pobranych: %1$s</string>
+    <string name="download_failed">Nie udało się pobrać pliku %1$s</string>
+    <string name="download_needs_storage">Bez zgody na zapis plików aplikacja nie zapisze pliku w Pobranych.</string>
+    <string name="download_complete">Pobrano. Dotknij, żeby otworzyć.</string>
+    <string name="downloads_channel_name">Pobrane pliki</string>
 </resources>

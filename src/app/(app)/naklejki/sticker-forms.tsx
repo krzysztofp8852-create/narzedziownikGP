@@ -97,11 +97,15 @@ function saveFile(blob: Blob, fileName: string) {
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
+  link.hidden = true;
   document.body.append(link);
   link.click();
-  link.remove();
-  // Przeglądarka zaczyna pobieranie po kliknięciu; adres zwalniamy chwilę później.
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  // Przeglądarka zaczyna pobieranie po kliknięciu; adres zwalniamy chwilę później. Link zostaje do tej chwili, bo
+  // skorupa aplikacji na Androida czyta z niego nazwę pliku: WebView jej nie podaje przy pobraniu z pamięci (#124).
+  setTimeout(() => {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, 60_000);
 }
 
 function DownloadStatus({ state }: { state: DownloadState }) {

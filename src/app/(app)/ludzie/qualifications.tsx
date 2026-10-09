@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { FileLink } from "@/components/file-link";
 import { formatCalendarDay, formatDateTime, formatDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { daysLeftText } from "@/lib/deadline-text";
@@ -113,9 +114,9 @@ function QualificationItem({
         <ul className="deadline-documents" aria-label={t("qualifications.documents")}>
           {qualification.documents.map((document) => (
             <li key={document.id}>
-              <a href={`/dokumenty/uprawnienia/${document.id}`} target="_blank" rel="noopener">
+              <FileLink href={`/dokumenty/uprawnienia/${document.id}`}>
                 {document.fileName}
-              </a>
+              </FileLink>
               {isMedicalKind(qualification.kind) && <span className="tag">{t("qualifications.onlyOwner")}</span>}
               <span className="muted"> {t("qualifications.documentBy", { name: document.uploadedBy, when: formatDateTime(document.uploadedAt) })}</span>
               {owner && <DeleteQualificationDocumentForm personId={personId} document={document} />}

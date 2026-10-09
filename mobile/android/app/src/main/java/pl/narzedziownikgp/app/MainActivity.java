@@ -53,6 +53,9 @@ public class MainActivity extends BridgeActivity {
     /**
      * Bez projektu Firebase w buildzie (brak google-services.json) wtyczka push zamknęłaby aplikację przy włączaniu
      * powiadomień. Wtedy jej nie ładujemy, a strona widzi, że jej nie ma, i zostaje przy wersji webowej.
+     *
+     * Pobieranie plików to wtyczka skorupy, a nie z npm, więc nie ma jej w spisie z `npx cap sync`. Dopisujemy ją po
+     * spisie, bo `setPlugins` go zastępuje.
      */
     @Override
     protected void load() {
@@ -65,6 +68,7 @@ public class MainActivity extends BridgeActivity {
                 Logger.error("Error loading plugins.", ex);
             }
         }
+        registerPlugin(DownloadsPlugin.class);
         super.load();
     }
 

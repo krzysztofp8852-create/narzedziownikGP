@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { FileLink } from "@/components/file-link";
 import { formatCalendarDay, formatDateTime, formatDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { daysLeftText, deadlineName } from "@/lib/deadline-text";
@@ -99,9 +100,9 @@ export function DeadlineItem({
         <ul className="deadline-documents" aria-label={t("deadlines.documents")}>
           {deadline.documents.map((document) => (
             <li key={document.id}>
-              <a href={`/dokumenty/${document.id}`} target="_blank" rel="noopener">
+              <FileLink href={`/dokumenty/${document.id}`}>
                 {t(`deadlines.documentKinds.${document.kind}`)}: {document.fileName}
-              </a>
+              </FileLink>
               {document.kind === "faktura" && (
                 <span className="tag" title={t("deadlines.invoiceHint")}>
                   {t("deadlines.onlyYou")}
