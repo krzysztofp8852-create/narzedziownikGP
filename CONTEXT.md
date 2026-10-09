@@ -63,6 +63,10 @@ _Avoid_: support (jako nazwa roli), administrator
 Nieodwracalne usunięcie firmy w całości, z historią, plikami i kontami, przez super-admina na polecenie firmy po końcu umowy. Tylko w trybie tylko do odczytu i po wpisaniu nazwy firmy; zostaje wpis w dzienniku usuniętych firm.
 _Avoid_: archiwizacja, dezaktywacja (to osoba albo jej konto)
 
+**Pełny eksport danych**:
+Wszystkie dane firmy w jednym ZIP-ie na jej żądanie: każda tabela jako CSV z opisem kolumn i powiązań oraz zdjęcia i dokumenty w oryginalnym formacie, bez haseł i kluczy push. Przygotowuje go GP Engineering skryptem w 14 dni, także w trybie tylko do odczytu i po końcu umowy, dopóki firmy nie usunięto. To nie eksport do Excela z programu (stan, historia, koszty, czas na budowie).
+_Avoid_: kopia zapasowa, backup, zrzut bazy
+
 **Dziennik usuniętych firm**:
 Lista usunięć dla super-admina: która firma (nazwa), kiedy i kto ją usunął. Zostaje po usunięciu, żeby potwierdzić firmie wykonanie polecenia.
 _Avoid_: archiwum, kosz

@@ -114,3 +114,5 @@ zbudować):
 4. Usunięcie albo anonimizacja danych osoby, których nie da się usunąć w programie, w 30 dni (umowa powierzenia § 4 ust. 2).
 5. Wzór informacji o odbijaniu w programie (umowa powierzenia § 4 ust. 4): do czasu odbijania (#87) program go nie
    pokazuje, więc na prośbę firmy wysyłamy go e-mailem.
+6. Pełny eksport danych firmy na jej żądanie w 14 dni (umowa o usługę § 6 ust. 2): ZIP z CSV i plikami przygotowuje
+   skrypt `npm run company:export:prod`, a przekazuje go GP Engineering (README, „Eksport danych firmy na żądanie”).
