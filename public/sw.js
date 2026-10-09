@@ -9,8 +9,11 @@ const BOARD = "/";
 const OFFLINE_PAGE = "/offline";
 /** Znak strony o programie, którą bez sesji dostaje się pod adresem tablicy (src/app/o-programie/page.tsx). */
 const SIGNED_OUT_MARK = "data-signed-out";
-/** Znak tablicy, która nie może zostać w telefonie: właściciel z wylogowaniem po bezczynności (ADR 0044). */
-const NO_COPY_MARK = "data-no-copy";
+/**
+ * Znak tablicy, która nie może zostać w telefonie: właściciel z wylogowaniem po bezczynności (ADR 0044). Cały atrybut
+ * z wartością, bo sama nazwa trafia też do danych React w HTML (`"data-no-copy":"$undefined"`) każdej tablicy.
+ */
+const NO_COPY_MARK = 'data-no-copy=""';
 const STATIC_PREFIX = "/_next/static/";
 const BELL = "/dzwonek";
 const APP_NAME = "NarzędziownikGP";

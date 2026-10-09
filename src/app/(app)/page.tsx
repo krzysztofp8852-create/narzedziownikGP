@@ -302,7 +302,8 @@ export default async function BoardPage(props: PageProps<"/">) {
       )}
       {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy, a bez sieci do kolejki. */}
       {!session.company.readOnly && <PunchButton userId={session.userId} punchesOthers={canPunchOthers(session)} />}
-      <div className="board" data-fetched-at={fetchedAt} data-no-copy={keepCopy ? undefined : ""}>
+      {/* Znak „bez kopii” tylko na tablicy bez kopii: inaczej nazwa atrybutu i tak trafiłaby do danych React w HTML. */}
+      <div className="board" data-fetched-at={fetchedAt} {...(keepCopy ? {} : { "data-no-copy": "" })}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
           <OperationsPanel
             checklist={checklistData(session, board)}
