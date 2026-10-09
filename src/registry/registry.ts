@@ -8,6 +8,8 @@ import type { CatalogTool } from "./catalog";
 import type { WhereIsWhat } from "./board";
 import { RegistryError, ReplayedOperationError } from "./errors";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore, type Sql } from "./ports";
+import * as changeLog from "./change-log";
+import type { ChangeLogEntry } from "./change-log";
 import * as companyDeletion from "./company-deletion";
 import * as companyExport from "./company-export";
 import type { CompanyExportSummary, ExportSink } from "./company-export";
@@ -172,6 +174,8 @@ export type {
 export { TIERS } from "./subscriptions";
 export { confirmsCompanyName } from "./company-deletion";
 export { canManageSettings, MAX_ALARM_THRESHOLD_DAYS } from "./settings";
+export { CHANGE_KINDS, CHANGE_LOG_LIMIT, canReadChangeLog, LOGGED_SETTINGS } from "./change-log";
+export type { ChangeKind, ChangeLogEntry, LoggedSetting } from "./change-log";
 export { isCalendarDay, isMonth, shiftMonth, UUID_PATTERN } from "./validation";
 export type { CorrectToolInput, MarkToolLostInput, RetireToolInput } from "./corrections";
 export { canCorrectTools, TOOL_STATES } from "./corrections";
@@ -406,6 +410,8 @@ export interface SuperAdminRegistry {
   setPaidUntil(companyId: string, day: string): Promise<void>;
   /** Ręczny tryb tylko do odczytu, niezależny od płatności. Włączenie trafia do dzwonków właścicieli firmy. */
   setManualReadOnly(companyId: string, on: boolean): Promise<void>;
+  /** Dziennik zmian kont i ustawień firmy: najnowsze wpisy, od najnowszego. */
+  changeLog(companyId: string): Promise<ChangeLogEntry[]>;
   /**
    * Usunięcie firmy w całości, na polecenie klienta: wszystkie jej dane z historią, pliki i konta logowania. Tylko
    * firma w trybie tylko do odczytu i tylko z jej nazwą wpisaną w `confirmation`; firmy demo nie usuwa. Zostaje wpis
@@ -1000,6 +1006,11 @@ export interface Registry {
      * Tylko właściciel.
      */
     updateSettings(input: Partial<CompanySettings>): Promise<void>;
+    /**
+     * Dziennik zmian: kto i kiedy założył firmę albo konto, dezaktywował konto albo osobę, nadał hasło tymczasowe albo
+     * zmienił ustawienie firmy. Najnowsze wpisy, od najnowszego. Tylko właściciel, także w trybie tylko do odczytu.
+     */
+    changeLog(): Promise<ChangeLogEntry[]>;
     /** Stawki dzienne obowiązujące dziś (firma i kategorie) z dniem startu kosztów. Tylko właściciel, także przy zgodzie dla kierownika. */
     dailyRates(): Promise<DailyRates>;
     /**
@@ -1260,6 +1271,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
           const copies = await asSuperAdmin((sql) => readOnly.setManualReadOnly(sql, companyId, on === true, deps.clock.now()));
           await sendPushCopies(deps, copies);
         },
+        changeLog: (companyId) => asSuperAdmin((sql) => changeLog.changeLog(sql, companyId)),
         // Usuwa aktor systemowy, bo RLS nikomu nie daje usuwać firm; rolę super-admina sprawdza ta sama transakcja.
         deleteCompany: async (companyId, confirmation) => {
           const purged = await deps.db.transaction((sql) =>
@@ -1375,7 +1387,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
       const deactivateAccount = async (sql: Sql, session: Session, memberId: string) => {
         demo.refuseInDemo(session);
         await team.requireManagedMember(sql, memberId);
-        await team.deactivate(sql, memberId);
+        await team.deactivate(sql, session, memberId, deps.clock.now());
         // Blokada przed zatwierdzeniem: gdy Auth odmówi, osoba zostaje aktywna i można ponowić.
         await deps.authAdmin.blockSignIn(memberId);
       };
@@ -1655,7 +1667,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
             team.requireTeamManager(session);
             const person = await people.requirePerson(sql, personId);
             if (!person.active) throw new RegistryError("forbidden");
-            if (person.userId === null) return people.deactivatePerson(sql, personId);
+            if (person.userId === null) return people.deactivatePerson(sql, session, personId, deps.clock.now());
             await deactivateAccount(sql, session, person.userId);
           }),
         addPersonAccount: (input) =>
@@ -1753,7 +1765,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
             team.requireTeamManager(session);
             demo.refuseInDemo(session);
             await team.requireManagedMember(sql, memberId);
-            await team.markPasswordTemporary(sql, memberId, deps.clock.now());
+            await team.markPasswordTemporary(sql, session, memberId, deps.clock.now());
             const temporaryPassword = generateTemporaryPassword();
             // Hasło zmieniamy przed zatwierdzeniem transakcji: gdy Auth odmówi, flaga się nie zmieni.
             await deps.authAdmin.setPassword(memberId, temporaryPassword);
@@ -1948,7 +1960,12 @@ export function createRegistry(deps: RegistryDeps): Registry {
         updateSettings: (input) =>
           asWriter((sql, session) => {
             settings.requireSettingsManager(session);
-            return settings.updateSettings(sql, session, input);
+            return settings.updateSettings(sql, session, input, deps.clock.now());
+          }),
+        changeLog: () =>
+          asMember((sql, session) => {
+            changeLog.requireChangeLogReader(session);
+            return changeLog.changeLog(sql, session.company.id);
           }),
         dailyRates: () =>
           asMember((sql, session) => {
@@ -2247,6 +2264,12 @@ async function createCompany(
       );
       await people.insertPerson(sql, company.id, { fullName: input.owner.fullName, note: null }, now, userId);
       await subscriptions.insertSubscription(sql, company.id, subscription);
+      await changeLog.recordChange(
+        sql,
+        company.id,
+        { kind: "firma_zalozona", personName: input.owner.fullName, role: "wlasciciel", login: input.owner.email },
+        now,
+      );
       return company.id;
     });
     return { companyId, ownerUserId: userId, temporaryPassword };

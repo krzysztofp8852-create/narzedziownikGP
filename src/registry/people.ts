@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import * as changeLog from "./change-log";
 import { RegistryError } from "./errors";
 import type { Sql } from "./ports";
-import type { Role } from "./registry";
+import type { Role, Session } from "./registry";
 import { UUID_PATTERN } from "./validation";
 
 export const MAX_PERSON_NAME_LENGTH = 100;
@@ -103,8 +104,10 @@ export async function linkAccount(sql: Sql, personId: string, userId: string) {
   if (linked.length === 0) throw new RegistryError("forbidden");
 }
 
-export async function deactivatePerson(sql: Sql, personId: string) {
-  await sql("update app.people set active = false where id = $1", [personId]);
+/** Osoba bez konta odchodzi z firmy; trafia to do dziennika zmian. */
+export async function deactivatePerson(sql: Sql, session: Session, personId: string, now: Date) {
+  const [person] = await sql<{ full_name: string }>("update app.people set active = false where id = $1 returning full_name", [personId]);
+  await changeLog.recordChange(sql, session.company.id, { kind: "osoba_dezaktywowana", personName: person.full_name }, now);
 }
 
 /** Osoba konta przestaje być aktywna razem z nim. */

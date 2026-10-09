@@ -111,6 +111,28 @@ export const EXPORT_TABLES: ExportTable[] = [
     },
   },
   {
+    table: "change_log",
+    title: "Dziennik zmian",
+    description:
+      "Kto i kiedy założył firmę albo konto, dezaktywował konto albo osobę, nadał hasło tymczasowe albo zmienił ustawienie firmy. Wpisy tylko się dopisują.",
+    columns: {
+      id: SEQUENCE,
+      company_id: COMPANY_ID,
+      at: "Kiedy zmieniono.",
+      actor_kind: "Kto zmienił: osoba (z firmy), super_admin (GP Engineering) albo system (program).",
+      actor_id: "Konto osoby z firmy, która zmieniła; puste u super-admina i programu.",
+      actor_name: "Imię i nazwisko osoby, która zmieniła, z chwili zmiany.",
+      kind: "Zmiana: firma_zalozona, konto_zalozone, konto_dezaktywowane, osoba_dezaktywowana, haslo_zresetowane albo ustawienie_zmienione.",
+      person_name: "Imię i nazwisko osoby, której dotyczy zmiana konta albo osoby, z chwili zmiany.",
+      role: "Rola zakładanego konta.",
+      login: "E-mail albo nazwa użytkownika zakładanego konta.",
+      setting:
+        "Zmienione ustawienie: prog_dni, zgloszenia_kierownik, zgloszenia_magazynier, zgloszenia_magazynier_zamyka albo koszty_kierownik.",
+      old_value: "Wartość ustawienia przed zmianą (liczba dni albo true / false).",
+      new_value: "Wartość ustawienia po zmianie.",
+    },
+  },
+  {
     table: "locations",
     title: "Lokalizacje",
     description: "Baza, budowy, serwisy i pojazdy.",
