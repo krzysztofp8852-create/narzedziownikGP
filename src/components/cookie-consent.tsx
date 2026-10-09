@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Script from "next/script";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { t } from "@/i18n/t";
-import { GOOGLE_ADS_ID, GOOGLE_ANALYTICS_ID, googleTagsAllowed } from "@/lib/google-tags";
+import { GOOGLE_ANALYTICS_ID, googleTagsAllowed, startGoogleTags } from "@/lib/google-tags";
 import { useInApp } from "@/lib/platform";
 
 // Wybór zapamiętany w tej przeglądarce. Bez wyboru Google Analytics się nie wczytuje, a baner czeka na decyzję.
@@ -78,31 +78,25 @@ function choose(choice: Choice) {
 export function CookieConsent() {
   const choice = useChoice();
   const inApp = useInApp();
+  // `choice` jest znany dopiero w przeglądarce, więc `location` przy zgodzie już jest.
+  const analytics = choice === "analityka" && !inApp && googleTagsAllowed(location.hostname);
+  useEffect(() => {
+    if (analytics) startGoogleTags();
+  }, [analytics]);
   if (choice === undefined || inApp) return null;
-  if (choice === "analityka") {
-    // `choice` jest znany dopiero w przeglądarce, więc `location` tu już jest.
-    if (!googleTagsAllowed(location.hostname)) return null;
+  if (analytics) {
     return (
-      <>
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
-          strategy="afterInteractive"
-          onLoad={() => {
-            analyticsLoaded = true;
-          }}
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('consent', 'default', { analytics_storage: 'granted', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
-gtag('js', new Date());
-gtag('config', '${GOOGLE_ANALYTICS_ID}');
-gtag('config', '${GOOGLE_ADS_ID}');`}
-        </Script>
-      </>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          analyticsLoaded = true;
+        }}
+      />
     );
   }
-  if (choice === "niezbedne") return null;
+  // Wybór zapisany, także zgoda poza domeną produkcji: bez banera i bez Google Analytics.
+  if (choice !== null) return null;
   return (
     <section className="cookie-consent" role="region" aria-label={t("cookies.title")} data-testid="cookie-consent">
       <p>

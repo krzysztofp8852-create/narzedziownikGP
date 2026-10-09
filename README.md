@@ -304,6 +304,12 @@ Supabase oraz test dymny na zbudowanej aplikacji.
   cron najwyżej raz dziennie) z tym samym sekretem w sekretach repozytorium. Lokalnie można je wywołać
   `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/zadania/progi`. Link do raportu w e-mailu
   bierze adres z `APP_URL`; bez niego e-mail ma sam raport.
+- Nagłówki bezpieczeństwa (zob. `docs/adr/0041`): stałe w `next.config.ts`, polityka treści (CSP) z nonce
+  w `src/proxy.ts`. CSP najpierw tylko raportuje: naruszenia trafiają do logu Vercel jako „Naruszenie CSP”
+  (`/csp-raport`). Gdy log jest czysty po pełnym tygodniu używania (mapa, analityka po zgodzie, skaner, nagranie,
+  push, aplikacja), `CSP_ENFORCE=1` w zmiennych Vercel Production włącza blokowanie bez zmian w kodzie (zmienna
+  działa od następnego wdrożenia, więc po niej Redeploy). Nową domenę zewnętrzną dopisuje się
+  w `src/lib/security-headers.ts` i w ADR.
 - Sesje nie mogą wygasać: w Authentication → Sessions zostaw wyłączone „Time-box user sessions”
   i „Inactivity timeout”.
 - Aplikacja na Androida (Google Play, zob. `docs/adr/0038`) to skorupa Capacitor w `mobile/`, która ładuje

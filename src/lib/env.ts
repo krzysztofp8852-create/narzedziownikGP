@@ -78,6 +78,11 @@ export const serverEnv = {
     process.env.GOOGLE_MAPS_BROWSER_KEY
       ? { apiKey: process.env.GOOGLE_MAPS_BROWSER_KEY, mapId: process.env.GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID" }
       : null,
+  /**
+   * Polityka treści (CSP, ADR 0041) blokuje, a nie tylko raportuje naruszenia: `CSP_ENFORCE=1`. Na produkcji dopiero
+   * wtedy, gdy log raportów `/csp-raport` jest czysty; test dymny w CI ma ją wymuszoną.
+   */
+  cspEnforced: () => process.env.CSP_ENFORCE === "1",
   /** Sekret zadań harmonogramu (Vercel Cron wysyła go w nagłówku `Authorization`); bez niego zadania są wyłączone. */
   cronSecret: () => process.env.CRON_SECRET || null,
   /**

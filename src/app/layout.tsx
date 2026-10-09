@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, JetBrains_Mono } from "next/font/google";
+import { connection } from "next/server";
 import { CookieConsent } from "@/components/cookie-consent";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { t } from "@/i18n/t";
@@ -31,7 +32,10 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Każda strona na żądanie: skrypty Next.js dostają nonce z polityki treści tej odpowiedzi (ADR 0041), a strona
+  // zbudowana z góry miałaby skrypty bez nonce, które polityka zablokuje.
+  await connection();
   return (
     <html lang="pl" className={`${body.variable} ${plate.variable}`}>
       <body>
