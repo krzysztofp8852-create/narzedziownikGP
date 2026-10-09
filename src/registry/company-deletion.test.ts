@@ -116,3 +116,33 @@ describe("usunięcie firmy przez super-admina", () => {
     );
   });
 });
+
+describe("sprzątanie firm z testów dymnych i e2e", () => {
+  const testCompany = (name: string, email: string) => ({ ...zawbud, name, owner: { email, fullName: "Jan Testowy" } });
+
+  it("usuwa w całości firmy testowe założone od podanej chwili, a starsze, demo i inne firmy zostają", async () => {
+    const adminId = await testbed.givenSuperAdmin();
+    const admin = testbed.registry.superAdmin(adminId);
+    testbed.clock.set("2026-03-01T10:00:00Z");
+    const { companyId: olderId } = await admin.createCompany(testCompany("Test dymny tablicy 2026-03-01T10:00", "stary@narzedziownik.test"));
+    const runStart = new Date("2026-03-02T06:00:00Z");
+    testbed.clock.set(runStart);
+    const e2e = await givenHistory(testbed, adminId, testCompany("Test e2e sprzęt 1a2b3c4d", "e2e-owner@narzedziownik.test"));
+    const { companyId: smokeId } = await admin.createCompany(testCompany("Test dymny", "smoke-owner@narzedziownik.test"));
+    const { companyId: panelDeletionId } = await admin.createCompany(testCompany("Test usuwania 5e6f", "usuwanie@narzedziownik.test"));
+    const { companyId: clientId } = await admin.createCompany(testCompany("Testbud", "biuro@testbud.pl"));
+    const { companyId: demoId } = await admin.createCompany(testCompany("Test dymny demo", "demo@narzedziownik.test"));
+    await testbed.db.transaction((sql) => sql("update app.companies set demo_since = now() where id = $1", [demoId]));
+
+    const result = await testbed.registry.system().deleteTestCompanies(runStart);
+
+    expect(result.deleted.sort()).toEqual(["Test dymny", "Test e2e sprzęt 1a2b3c4d", "Test usuwania 5e6f"]);
+    expect(result.leftovers).toBe(0);
+    for (const companyId of [e2e.companyId, smokeId, panelDeletionId]) expect(await rowsOfCompany(testbed.db, companyId)).toEqual([]);
+    for (const companyId of [olderId, clientId, demoId]) expect(await rowsOfCompany(testbed.db, companyId)).toContain("users");
+    expect(testbed.photos.photos.size + testbed.chatPhotos.photos.size + testbed.documents.photos.size).toBe(0);
+    expect(await testbed.db.transaction((sql) => sql("select id from auth.users where id = any($1)", [[e2e.ownerId, e2e.managerId]]))).toEqual([]);
+    // Firmy testowe to nie klienci: dziennik usuniętych firm zostaje pusty.
+    expect(await testbed.db.transaction((sql) => sql("select * from app.company_deletions"))).toEqual([]);
+  });
+});

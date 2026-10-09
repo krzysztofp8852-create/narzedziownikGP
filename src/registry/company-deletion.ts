@@ -137,3 +137,43 @@ export async function deleteCompany(
   ]);
   return purgeCompany(sql, input.companyId);
 }
+
+/** Nazwy firm, które zakładają testy dymne i e2e (`e2e/`), w tym firma usuwana w teście panelu super-admina. */
+const TEST_COMPANY_NAME = "^Test (dymny|e2e|usuwania)( |$)";
+
+/** Firma z testu, usunięta razem z pozostałymi: jej nazwa i pliki oraz konta do usunięcia po transakcji. */
+export interface PurgedTestCompany {
+  companyId: string;
+  name: string;
+  purged: PurgedCompany;
+}
+
+/**
+ * Usuwa w całości firmy z testów dymnych i e2e założone od `createdSince` (poza demo), po udanym przebiegu testów.
+ * Wpis w dzienniku usuniętych firm odblokowuje usunięcie historii, a potem znika w tej samej transakcji: firmy testowe
+ * to nie klienci, więc dziennik zostaje dla prawdziwych usunięć (ADR 0025). Transakcja systemowa.
+ */
+export async function purgeTestCompanies(sql: Sql, createdSince: Date, now: Date): Promise<PurgedTestCompany[]> {
+  const companies = await sql<{ id: string; name: string }>(
+    `select id, name from app.companies
+     where demo_since is null and created_at >= $1 and name ~ $2
+     order by created_at
+     for update`,
+    [createdSince, TEST_COMPANY_NAME],
+  );
+  const purged: PurgedTestCompany[] = [];
+  for (const company of companies) {
+    await sql("insert into app.company_deletions (company_id, name, deleted_at, deleted_by) values ($1, $2, $3, $4)", [
+      company.id,
+      company.name,
+      now,
+      SYSTEM_ACTOR,
+    ]);
+    purged.push({ companyId: company.id, name: company.name, purged: await purgeCompany(sql, company.id) });
+    await sql("delete from app.company_deletions where company_id = $1", [company.id]);
+  }
+  return purged;
+}
+
+/** Autor wpisu, który nie jest super-adminem (sprzątanie po testach); wpis i tak znika w tej samej transakcji. */
+const SYSTEM_ACTOR = "00000000-0000-0000-0000-000000000000";

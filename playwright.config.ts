@@ -8,7 +8,8 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  // Po w pełni udanym przebiegu raport sprzątający usuwa firmy założone przez testy (e2e/support/test-company-cleanup.ts).
+  reporter: [["list"], ...(process.env.CI ? [["html", { open: "never" }] as const] : []), ["./e2e/support/test-company-cleanup.ts"]],
   use: {
     baseURL,
     trace: "retain-on-failure",

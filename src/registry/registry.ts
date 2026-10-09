@@ -532,6 +532,12 @@ export interface Registry {
      * do odczytu, więc działa też w trybie tylko do odczytu i po końcu umowy. Nieznana firma: `not_found`.
      */
     exportCompany(companyId: string, add: ExportSink): Promise<CompanyExportSummary>;
+    /**
+     * Po udanym przebiegu testów dymnych i e2e: usuwa w całości (dane, pliki, konta) firmy „Test dymny …”, „Test e2e …”
+     * i „Test usuwania …” założone od `createdSince`, bez wpisu w dzienniku usuniętych firm. Zwraca nazwy usuniętych
+     * i ile plików lub kont nie dało się usunąć.
+     */
+    deleteTestCompanies(createdSince: Date): Promise<{ deleted: string[]; leftovers: number }>;
   };
   /**
    * Zalogowany super-admin (GP Engineering), poza firmami. Każde polecenie sprawdza tę rolę w bazie
@@ -1214,6 +1220,12 @@ export function createRegistry(deps: RegistryDeps): Registry {
       exportCompany: async (companyId, add) => {
         const data = await deps.db.transaction((sql) => companyExport.readCompany(sql, companyId));
         return companyExport.writeExport(data, deps, add, deps.clock.now());
+      },
+      deleteTestCompanies: async (createdSince) => {
+        const companies = await deps.db.transaction((sql) => companyDeletion.purgeTestCompanies(sql, createdSince, deps.clock.now()));
+        let leftovers = 0;
+        for (const company of companies) leftovers += await removePurgedLeftovers(deps, company.companyId, company.purged);
+        return { deleted: companies.map((company) => company.name), leftovers };
       },
     }),
     superAdmin: (userId) => {
