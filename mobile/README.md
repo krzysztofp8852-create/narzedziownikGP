@@ -16,6 +16,12 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
 - Systemowy „wstecz” cofa w historii programu, a na stronie startowej (`/`) zamyka aplikację (`MainActivity.java`).
 - Adresy spoza narzedziownikgp.pl (Mapy Google, `tel:`, `mailto:`, inne domeny) Capacitor otwiera w systemowych
   aplikacjach.
+- Bez sieci przy pierwszym uruchomieniu (service worker nie ma jeszcze nic w pamięci) skorupa pokazuje własny ekran
+  „Brak połączenia” (`android/app/src/main/assets/brak-polaczenia.html`, `OfflineWebViewClient.java`) zamiast błędu
+  WebView. „Spróbuj ponownie” otwiera adres, który się nie wczytał, a „wstecz” na tym ekranie zamyka aplikację. Ekran
+  łapie tylko błędy sieci głównej ramki (brak zasięgu, serwer nieosiągalny); strony 404 i „brak dostępu” programu
+  zostają w programie. Po pierwszym udanym starcie offline obsługuje service worker jak w PWA (ADR 0010): tablica
+  z kopii, inne strony „Brak sieci”.
 - Wtyczki natywne (strona pyta o nie przez `src/lib/platform.ts` i bez nich używa wersji webowej):
   - `@capacitor/camera` (`Camera`): „Zrób zdjęcie” i „Z galerii” przy zdjęciu zgłoszenia, zdjęciu w czacie
     i dokumentach terminów i uprawnień, nad zwykłym wyborem pliku (`src/components/native-photo-buttons.tsx`). Bez niej WebView daje przy polu
@@ -113,3 +119,17 @@ cd android
 Wynik: `android/app/build/outputs/bundle/release/app-release.aab`, do ręcznego wgrania w Play Console. Bez
 `keystore.properties` Gradle zbuduje AAB bez podpisu, którego Play Console nie przyjmie. Upewnij się, że ostatni `sync`
 był bez `CAP_SERVER_URL`: adres programu siedzi w pakiecie.
+
+## Lista kontrolna testów wewnętrznych
+
+Pozycje skorupy do ręcznej listy kontrolnej z #129, na prawdziwym telefonie z wersją z Google Play; tych rzeczy nie
+sprawdzają testy automatyczne.
+
+- [ ] Pierwsze uruchomienie offline: świeża instalacja w trybie samolotowym pokazuje „Brak połączenia”;
+  „Spróbuj ponownie” bez sieci zostawia ten ekran, po włączeniu sieci otwiera program; „wstecz” na tym ekranie
+  zamyka aplikację.
+- [ ] Offline po udanym starcie: po zalogowaniu (kierownik) i otwarciu tablicy tryb samolotowy, zamknięcie aplikacji
+  z listy ostatnich i ponowne otwarcie daje tablicę z kopii z godziną pobrania, a inna strona „Brak sieci” programu,
+  nie ekran skorupy.
+- [ ] 404 programu: nieistniejący adres (np. `/narzedzia/00000000-0000-0000-0000-000000000000`) pokazuje stronę
+  „nie znaleziono” programu, nie „Brak połączenia”.

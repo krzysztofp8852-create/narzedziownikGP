@@ -46,8 +46,9 @@ serwera Next.js.
 ## Konsekwencje
 
 - Dokumentacja Capacitora opisuje `server.url` jako tryb do live reload, „nie do produkcji”. Ryzyka i odpowiedzi:
-  - bez sieci przy pierwszym otwarciu WebView pokazuje techniczny błąd: dojdzie własny ekran „Brak połączenia”
-    w skorupie (#123); po pierwszym udanym starcie offline obsługuje istniejący service worker (ADR 0010);
+  - bez sieci przy pierwszym otwarciu WebView pokazałby techniczny błąd: skorupa pokazuje zamiast niego własny ekran
+    „Brak połączenia” (#123), tylko przy błędzie sieci głównej ramki, bez `errorPath` Capacitora, który podmienia też
+    strony 404 i 403 programu; po pierwszym udanym starcie offline obsługuje istniejący service worker (ADR 0010);
   - wtyczki natywne w zainstalowanej aplikacji i strona wydają się niezależnie, więc strona przed użyciem wtyczki
     sprawdza, czy jest dostępna, i inaczej używa wersji webowej (#119);
   - większe ryzyko odrzucenia przez Google jako „opakowana strona”: łagodzą je natywny skaner, aparat, FCM, pobieranie

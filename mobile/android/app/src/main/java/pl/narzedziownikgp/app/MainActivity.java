@@ -24,8 +24,12 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Przed pierwszym zdarzeniem strony startowej: Capacitor zaczął ją wczytywać w super.onCreate na tym samym wątku.
+        OfflineWebViewClient webViewClient = new OfflineWebViewClient(bridge);
+        bridge.setWebViewClient(webViewClient);
         createNotificationChannel();
-        // Systemowy „wstecz” cofa w historii programu, a na stronie startowej zamyka aplikację jak każdą inną.
+        // Systemowy „wstecz” cofa w historii programu, a na stronie startowej i na ekranie „Brak połączenia” zamyka
+        // aplikację jak każdą inną.
         getOnBackPressedDispatcher()
             .addCallback(
                 this,
@@ -33,7 +37,8 @@ public class MainActivity extends BridgeActivity {
                     @Override
                     public void handleOnBackPressed() {
                         WebView webView = bridge == null ? null : bridge.getWebView();
-                        if (webView != null && webView.canGoBack() && !isStartPage(webView.getUrl())) {
+                        boolean leave = webView == null || webViewClient.isOfflinePageShown() || isStartPage(webView.getUrl());
+                        if (!leave && webView.canGoBack()) {
                             webView.goBack();
                             return;
                         }

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Brak połączenia</title>
+    <!--
+      Ekran skorupy, gdy program nie wczytał się z sieci, a service worker nie ma jeszcze nic w pamięci (ADR 0038).
+      Pokazuje go OfflineWebViewClient bez sieci, więc wszystko jest tutaj: bez czcionek, plików i skryptów z serwera.
+      Kolory i oprawa jak w AuthShell i src/app/globals.css. Adres do ponowienia wstawia skorupa w skrypcie na dole.
+    -->
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef0f3;
+        --surface: #ffffff;
+        --border: #d5d9df;
+        --text: #14171c;
+        --text-muted: #525966;
+        --accent: #1a56db;
+        --accent-hover: #1646b3;
+        --accent-ink: #ffffff;
+        --brand: #ffc800;
+        --brand-ink: #14171c;
+        --radius: 8px;
+        --gutter: 16px;
+        --shadow: 0 1px 2px rgb(20 23 28 / 0.06);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .hazard {
+        height: 5px;
+        background: var(--brand);
+      }
+
+      main {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        padding: 32px var(--gutter);
+      }
+
+      .card {
+        width: 100%;
+        max-width: 400px;
+        display: grid;
+        gap: 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 24px 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .display {
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .brand-name {
+        font-size: 1.6rem;
+      }
+
+      .brand-name span {
+        margin-left: 2px;
+        padding: 0 5px;
+        border-radius: 4px;
+        background: var(--brand);
+        color: var(--brand-ink);
+      }
+
+      .muted {
+        color: var(--text-muted);
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      .button {
+        font: inherit;
+        font-weight: 700;
+        width: 100%;
+        min-height: 48px;
+        padding: 11px 18px;
+        border-radius: var(--radius);
+        border: 2px solid var(--accent);
+        background: var(--accent);
+        color: var(--accent-ink);
+        cursor: pointer;
+        line-height: 1.2;
+      }
+
+      .button:active:not(:disabled) {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+
+      .button:disabled {
+        opacity: 0.5;
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hazard" aria-hidden="true"></div>
+    <main>
+      <section class="card" aria-labelledby="title">
+        <div class="brand">
+          <p class="display brand-name">Narzędziownik<span>GP</span></p>
+          <p class="muted">GP Engineering</p>
+        </div>
+        <h1 id="title" class="display">Brak połączenia</h1>
+        <p>Nie udało się połączyć z programem. Sprawdź zasięg albo Wi-Fi i spróbuj ponownie.</p>
+        <p class="muted">
+          Gdy aplikacja wczyta się choć raz, tablica „Gdzie jest co” otworzy się z ostatnio pobranym stanem także bez
+          zasięgu.
+        </p>
+        <button id="retry" class="button" type="button">Spróbuj ponownie</button>
+      </section>
+    </main>
+    <div class="hazard" aria-hidden="true"></div>
+    <script>
+      const address = __ADRES__;
+      const retry = document.getElementById("retry");
+      retry.addEventListener("click", () => {
+        retry.disabled = true;
+        retry.textContent = "Łączenie…";
+        // Ten sam adres, który się nie wczytał, a nie strona startowa; replace, żeby ekran nie został w historii.
+        location.replace(address);
+      });
+    </script>
+  </body>
+</html>
