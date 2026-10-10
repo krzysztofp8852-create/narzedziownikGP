@@ -47,6 +47,8 @@ const FEATURE_GROUPS = [
   { id: "company", features: ["reports", "map", "issues", "chat"] },
 ] as const;
 const STEPS = ["import", "stickers", "movements", "alarms"] as const;
+/** Nadajniki na sprzęt, które zamawiamy i montujemy osobno od abonamentu. */
+const TRACKERS = ["beacon", "gps"] as const;
 /** Pytania, które właściciel firmy wpisuje w wyszukiwarkę, zanim kupi program. */
 const FAQ = [
   "what",
@@ -318,6 +320,27 @@ export default function LandingPage() {
               ))}
             </ul>
             <p className="landing-pricing-note">{t("landing.pricing.note")}</p>
+
+            <section className="landing-trackers" aria-labelledby="lokalizatory">
+              <p className="landing-trackers-badge">{t("landing.trackers.badge")}</p>
+              <h3 id="lokalizatory">{t("landing.trackers.title")}</h3>
+              <p className="landing-lead">{t("landing.trackers.lead")}</p>
+              <ul>
+                {TRACKERS.map((tracker) => (
+                  <li key={tracker}>
+                    <span className="plate">{t(`landing.trackers.${tracker}.code`)}</span>
+                    <h4>{t(`landing.trackers.${tracker}.title`)}</h4>
+                    <p>{t(`landing.trackers.${tracker}.text`)}</p>
+                    <p className="landing-tracker-fit">
+                      <strong>{t("landing.trackers.fitLabel")}:</strong> {t(`landing.trackers.${tracker}.fit`)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <a href="#kontakt" className="button landing-trackers-ask">
+                {t("landing.trackers.ask")}
+              </a>
+            </section>
           </section>
 
           <section className="landing-section" aria-labelledby="pytania">

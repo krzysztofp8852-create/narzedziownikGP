@@ -2084,6 +2084,25 @@
       "ask": "Zapytaj o pakiet {name}",
       "note": "Ceny są brutto: korzystamy ze zwolnienia podmiotowego z VAT (art. 113 ustawy o VAT), więc nic do nich nie doliczamy. Osoby decyzyjne to Ty, kierownicy i magazynierzy, czyli konta, które wydają i przyjmują narzędzia. Konta pracowników się nie liczą. Wdrożenie obejmuje szkolenie z programu dla Ciebie i zespołu, na miejscu w Twojej firmie albo zdalnie, do wyboru."
     },
+    "trackers": {
+      "badge": "Usługa dodatkowa: sprzęt i montaż",
+      "title": "Nadajniki na sprzęt: zamówimy i zamontujemy",
+      "lead": "Na Twoje elektronarzędzia, maszyny i inny sprzęt możemy zamówić i zamontować dwa rodzaje nadajników: Bluetooth EYE Beacon i lokalizatory GPS. Dobierzemy je do sprzętu i do tego, co chcesz wiedzieć. Nadajniki i montaż wyceniamy osobno, bo koszt zależy od liczby i rodzaju sprzętu.",
+      "fitLabel": "Do czego",
+      "ask": "Zapytaj o nadajniki",
+      "beacon": {
+        "code": "BT",
+        "title": "Nadajniki Bluetooth EYE Beacon",
+        "text": "Nadajnik wielkości pudełka zapałek przykręcamy albo mocujemy opaską do narzędzia. Co kilka sekund nadaje swój numer przez Bluetooth, a odbiornik w busie, w kontenerze na budowie albo w bazie słyszy go z kilkunastu metrów. Dzięki temu wiadomo, przy którym odbiorniku narzędzie było ostatnio. Obudowa jest szczelna i odporna na uderzenia, a bateria wystarcza na kilka lat.",
+        "fit": "Cały park elektronarzędzi. Nadajnik jest mały i tani, więc opłaca się na wielu narzędziach naraz. Sygnał może nie przejść przez zamkniętą stalową skrzynię."
+      },
+      "gps": {
+        "code": "GPS",
+        "title": "Lokalizatory GPS",
+        "text": "Lokalizator ma własny odbiornik GPS i kartę SIM. Kilka razy dziennie sprawdza swoje położenie i wysyła je przez sieć komórkową, więc nie potrzebuje odbiornika na budowie. W budynku, gdzie GPS nie sięga, położenie ustala w przybliżeniu z sieci komórkowej. Działa na bateriach przez kilka lat.",
+        "fit": "Najcenniejszy sprzęt: agregaty, zagęszczarki, niwelatory, piły do betonu. Widzisz, gdzie jest, także gdy zniknie z budowy."
+      }
+    },
     "faq": {
       "title": "Pytania i odpowiedzi",
       "what": {

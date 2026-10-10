@@ -3878,6 +3878,107 @@ a.tool-row:hover .tool-row-name {
   color: var(--text-muted);
 }
 
+/* Nadajniki na sprzęt: usługa obok abonamentu, więc ciemny panel z banderolą, żeby nie zlał się z cennikiem. */
+.landing-trackers {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  margin-top: 24px;
+  padding: 40px 22px 28px;
+  background: var(--brand-ink);
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -28px rgb(20 23 28 / 0.6);
+}
+
+.landing-trackers::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10px;
+  background: var(--hazard-stripes);
+}
+
+.landing-trackers-badge {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.landing-trackers h3 {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  text-wrap: balance;
+}
+
+.landing-trackers > .landing-lead {
+  color: rgb(255 255 255 / 0.78);
+}
+
+.landing-trackers ul {
+  list-style: none;
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+.landing-trackers li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 14px;
+  align-content: start;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.landing-trackers li .plate {
+  align-self: center;
+  background: var(--brand);
+  border-color: var(--brand-ink);
+  color: var(--brand-ink);
+}
+
+.landing-trackers h4 {
+  font-size: 1.3rem;
+}
+
+.landing-trackers li p {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+}
+
+.landing-trackers .landing-tracker-fit {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+.landing-trackers .landing-trackers-ask {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+
+.landing-trackers .landing-trackers-ask:hover {
+  background: #ffd633;
+  border-color: #ffd633;
+}
+
+@media (min-width: 900px) {
+  .landing-trackers {
+    padding: 48px 36px 36px;
+  }
+}
+
 /* Obok siebie karty dzielą wiersze (subgrid), więc ceny i listy stoją na jednej wysokości także pod banderolą. */
 @media (min-width: 880px) {
   .landing-plans {
