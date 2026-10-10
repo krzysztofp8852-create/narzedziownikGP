@@ -3416,6 +3416,17 @@ a.tool-row:hover .tool-row-name {
   border-color: var(--brand-ink);
 }
 
+/* Nadajniki to usługa obok modułów, więc w kolorze ich panelu pod cennikiem. */
+.landing-modules .landing-modules-trackers {
+  background: var(--brand-ink);
+  border-color: var(--brand-ink);
+  color: #ffffff;
+}
+
+.landing-modules .landing-modules-trackers:hover {
+  background: #2a2f37;
+}
+
 /* Karta tablicy wchodzi na mapę jak dymek do pinezki. */
 .landing-preview {
   position: relative;

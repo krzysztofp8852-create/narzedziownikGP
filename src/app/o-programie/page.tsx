@@ -205,6 +205,11 @@ export default function LandingPage() {
                     <a href={`#modul-${group.id}`}>{t(`landing.features.groups.${group.id}.title`)}</a>
                   </li>
                 ))}
+                <li>
+                  <a href="#lokalizatory" className="landing-modules-trackers">
+                    {t("landing.hero.trackers")}
+                  </a>
+                </li>
               </ul>
               <div className="landing-actions">
                 <Link href="/demo" className="button">
