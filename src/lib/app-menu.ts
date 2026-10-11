@@ -1,4 +1,5 @@
 import { t } from "@/i18n/t";
+import { LEGAL_DOCUMENTS } from "@/legal/documents";
 import {
   canClarifyPunches,
   canManageQualifications,
@@ -61,6 +62,8 @@ export function appMenu(session: Session): MenuGroup[] {
         ...link("/ustawienia#legal", t("menu.documents"), canManageSettings(session)),
         ...link("/ustawienia", t("menu.settings"), canManageSettings(session)),
         ...link("/samouczek", t("menu.tutorial"), hasTutorial(session)),
+        // Publiczna strona, jak poprosić o usunięcie konta i danych; Google Play wymaga drogi do niej z aplikacji.
+        ...link(LEGAL_DOCUMENTS["usun-konto"].path, t("menu.deleteAccount")),
         { kind: "signOut", label: t("menu.logout") },
       ],
     },

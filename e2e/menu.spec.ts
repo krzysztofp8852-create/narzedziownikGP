@@ -69,6 +69,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Dokumenty",
     "Ustawienia",
     "Samouczek",
+    "Usuń konto",
   ]);
   await expect(menu(page).getByRole("button", { name: "Wyloguj" })).toBeVisible();
   await expect(menu(page).getByRole("link", { name: "Tablica" })).toBeFocused();
@@ -169,6 +170,7 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
     "Odbicia do wyjaśnienia",
     "Raporty",
     "Samouczek",
+    "Usuń konto",
   ]);
   // Kierownik ma na teraz tylko raport piątkowy ze swoimi lokalizacjami; tygodniowy jest właściciela.
   await menu(page).getByRole("link", { name: "Raporty" }).click();
@@ -194,7 +196,14 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
     "Pojazdy",
     "Moje uprawnienia",
     "Mój czas na budowie",
+    "Usuń konto",
   ]);
+  // Z menu aplikacji pracownik dojdzie do strony, jak poprosić o usunięcie konta (wymóg Google Play).
+  await menu(page).getByRole("link", { name: "Usuń konto" }).click();
+  await expect(page).toHaveURL(/\/usun-konto$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Usuń konto i dane");
+  await page.goto("/");
+  await menuButton(page).click();
   // Pracownik widzi pustą flotę bez dodawania pojazdu.
   await menu(page).getByRole("link", { name: "Pojazdy" }).click();
   await expect(page).toHaveURL(/\/pojazdy$/);

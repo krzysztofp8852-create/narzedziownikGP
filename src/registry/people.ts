@@ -26,6 +26,8 @@ export interface Person {
   fullName: string;
   note: string | null;
   active: boolean;
+  /** Osoba zanonimizowana na swoją prośbę: ma nazwę zastępczą i jest nieaktywna na zawsze. */
+  anonymized: boolean;
   /** Null, gdy osoba nie ma konta. */
   account: PersonAccount | null;
 }
@@ -48,7 +50,7 @@ export function normalizePerson(raw: NewPersonInput): NewPersonInput {
 /** Kartoteka firmy: najpierw aktywni, potem według imienia i nazwiska. */
 export async function listPeople(sql: Sql): Promise<Person[]> {
   return sql<Person>(
-    `select p.id as "personId", p.full_name as "fullName", p.note, p.active,
+    `select p.id as "personId", p.full_name as "fullName", p.note, p.active, p.anonymized_at is not null as anonymized,
             case when u.user_id is null then null else json_build_object(
               'userId', u.user_id, 'email', u.email, 'username', u.username, 'role', u.role, 'active', u.active,
               'mustChangePassword', u.must_change_password
@@ -107,10 +109,17 @@ export async function linkAccount(sql: Sql, personId: string, userId: string) {
 /** Osoba bez konta odchodzi z firmy; trafia to do dziennika zmian. */
 export async function deactivatePerson(sql: Sql, session: Session, personId: string, now: Date) {
   const [person] = await sql<{ full_name: string }>("update app.people set active = false where id = $1 returning full_name", [personId]);
-  await changeLog.recordChange(sql, session.company.id, { kind: "osoba_dezaktywowana", personName: person.full_name }, now);
+  await changeLog.recordChange(sql, session.company.id, { kind: "osoba_dezaktywowana", personId, personName: person.full_name }, now);
 }
 
-/** Osoba konta przestaje być aktywna razem z nim. */
-export async function deactivatePersonOfAccount(sql: Sql, userId: string) {
-  await sql("update app.people set active = false where user_id = $1", [userId]);
+/** Osoba konta przestaje być aktywna razem z nim. Zwraca jej identyfikator. */
+export async function deactivatePersonOfAccount(sql: Sql, userId: string): Promise<string> {
+  const [person] = await sql<{ id: string }>("update app.people set active = false where user_id = $1 returning id", [userId]);
+  return person.id;
+}
+
+/** Osoba z kartoteki, do której należy konto. */
+export async function personOfAccount(sql: Sql, userId: string): Promise<string> {
+  const [person] = await sql<{ id: string }>("select id from app.people where user_id = $1", [userId]);
+  return person.id;
 }

@@ -65,6 +65,8 @@ import * as toolImport from "./tool-import";
 import type { ImportToolsInput, ToolImportPreview, ToolImportRow } from "./tool-import";
 import * as people from "./people";
 import type { NewPersonInput, Person } from "./people";
+import * as personAnonymization from "./person-anonymization";
+import type { CompanyPerson } from "./person-anonymization";
 import * as punchReminders from "./punch-reminders";
 import * as punches from "./punches";
 import type {
@@ -332,6 +334,7 @@ export { canUseSupportChat, MAX_SUPPORT_MESSAGE_LENGTH } from "./support-chat";
 export type { RejectedMovement } from "./queued-movements";
 export type { AddedMember, MemberRole, NewAccountInput, NewMemberInput, PersonAccountInput, TeamMember } from "./team";
 export type { NewPersonInput, Person, PersonAccount } from "./people";
+export type { CompanyPerson } from "./person-anonymization";
 export { MAX_PERSON_NAME_LENGTH, MAX_PERSON_NOTE_LENGTH } from "./people";
 export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
@@ -397,6 +400,12 @@ export interface RegisteredMovement extends Movement {
   notifications: ToolsTakenNotification[];
 }
 
+/** Zanonimizowana osoba: jej nazwa zastępcza i liczba plików oraz kont, których nie udało się usunąć. */
+export interface AnonymizedPersonResult {
+  fullName: string;
+  leftovers: number;
+}
+
 /** Polecenia i zapytania super-admina; każde najpierw sprawdza tę rolę w bazie. */
 export interface SuperAdminRegistry {
   /** Czy ten użytkownik jest super-adminem; nigdy nie odmawia. */
@@ -425,6 +434,14 @@ export interface SuperAdminRegistry {
    * usunąć po usunięciu danych (szczegóły w logach serwera).
    */
   deleteCompany(companyId: string, confirmation: string): Promise<{ leftovers: number }>;
+  /** Osoby firmy, także nieaktywne i zanonimizowane, według imienia i nazwiska; nieznana firma to pusta lista. */
+  people(companyId: string): Promise<CompanyPerson[]>;
+  /**
+   * Anonimizacja osoby z firmy `companyId` na jej prośbę, która przyszła do GP Engineering; jak `anonymizePerson`
+   * właściciela, ale w każdej firmie (poza demo), także w trybie tylko do odczytu. Wpis w dzienniku zmian jest od
+   * GP Engineering.
+   */
+  anonymizePerson(companyId: string, personId: string): Promise<AnonymizedPersonResult>;
   /** Wątki czatu z supportem ze wszystkich firm: z nieprzeczytanymi na górze, potem od najnowszej wiadomości. */
   supportThreads(): Promise<SupportThreadSummary[]>;
   /** Wątek (identyfikator to jego użytkownik) z wiadomościami i kontekstem albo null, gdy go nie ma. */
@@ -729,6 +746,14 @@ export interface Registry {
      * właściciela nie, w firmie demo żadnego). Tylko właściciel.
      */
     deactivatePerson(personId: string): Promise<void>;
+    /**
+     * Anonimizacja osoby na jej prośbę (ADR 0045), nieodwracalna: osoba dostaje nazwę zastępczą („Osoba
+     * zanonimizowana 3”) i staje się nieaktywna, jej notatka, uprawnienia z dokumentami, e-mail i login, subskrypcje
+     * push, dzwonek, czat z supportem i konto logowania znikają. Ruchy, zgłoszenia, odbicia, czas na budowie i dziennik
+     * zmian zostają z nazwą zastępczą. Konta właściciela i osoby już zanonimizowanej nie (`forbidden`), w firmie demo
+     * też nie. `leftovers`: ile plików i kont nie udało się usunąć po zapisie. Tylko właściciel.
+     */
+    anonymizePerson(personId: string): Promise<AnonymizedPersonResult>;
     /**
      * Konto dla aktywnej osoby z kartoteki, która go nie ma, bez drugiego wpisu w kartotece; jak `addMember`, ale imię
      * i nazwisko konta to imię i nazwisko osoby. Tylko właściciel.
@@ -1248,7 +1273,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
       deleteTestCompanies: async (createdSince) => {
         const companies = await deps.db.transaction((sql) => companyDeletion.purgeTestCompanies(sql, createdSince, deps.clock.now()));
         let leftovers = 0;
-        for (const company of companies) leftovers += await removePurgedLeftovers(deps, company.companyId, company.purged);
+        for (const company of companies) leftovers += await removePurgedLeftovers(deps, `usunięciu firmy ${company.companyId}`, company.purged);
         return { deleted: companies.map((company) => company.name), leftovers };
       },
     }),
@@ -1290,8 +1315,11 @@ export function createRegistry(deps: RegistryDeps): Registry {
           const purged = await deps.db.transaction((sql) =>
             companyDeletion.deleteCompany(sql, { companyId, confirmation: String(confirmation ?? ""), deletedBy: userId }, deps.clock.now()),
           );
-          return { leftovers: await removePurgedLeftovers(deps, companyId, purged) };
+          return { leftovers: await removePurgedLeftovers(deps, `usunięciu firmy ${companyId}`, purged) };
         },
+        people: (companyId) => asSuperAdmin((sql) => personAnonymization.companyPeople(sql, String(companyId))),
+        anonymizePerson: (companyId, personId) =>
+          anonymizePerson(deps, { companyId: String(companyId), personId: String(personId), actor: { kind: "super_admin", userId } }),
         supportThreads: () => asSuperAdmin((sql) => supportChat.threads(sql)),
         supportThread: (threadId) => asSuperAdmin((sql) => supportChat.thread(sql, threadId)),
         unreadSupportThreadCount: () => asSuperAdmin((sql) => supportChat.unreadThreadCount(sql)),
@@ -1690,6 +1718,17 @@ export function createRegistry(deps: RegistryDeps): Registry {
             if (person.userId === null) return people.deactivatePerson(sql, session, personId, deps.clock.now());
             await deactivateAccount(sql, session, person.userId);
           }),
+        anonymizePerson: async (personId) => {
+          // Uprawnienia, tryb tylko do odczytu i to, że aktor widzi tę osobę, sprawdza transakcja aktora; transakcja
+          // systemowa anonimizacji sprawdza rolę właściciela jeszcze raz.
+          const companyId = await asWriter(async (sql, session) => {
+            team.requireTeamManager(session);
+            demo.refuseInDemo(session);
+            await people.requirePerson(sql, String(personId));
+            return session.company.id;
+          });
+          return anonymizePerson(deps, { companyId, personId: String(personId), actor: { kind: "wlasciciel", userId } });
+        },
         addPersonAccount: (input) =>
           addAccount(async (sql) => {
             const person = await people.requireAccountlessPerson(sql, String(input.personId));
@@ -2071,14 +2110,15 @@ function loggingDemoCommands(deps: RegistryDeps, userId: string, actor: { demo: 
 /** Usuwa zastąpioną firmę demo w jednej transakcji, a po niej jej pliki i konta logowania. */
 async function purgeDemoCompany(deps: RegistryDeps, companyId: string) {
   const purged = await deps.db.transaction((sql) => demo.purgeDemoCompany(sql, companyId));
-  await removePurgedLeftovers(deps, companyId, purged);
+  await removePurgedLeftovers(deps, `usunięciu firmy ${companyId}`, purged);
 }
 
 /**
- * Pliki i konta logowania usuniętej firmy, po zatwierdzeniu jej transakcji. Plik albo konto, którego nie udało się
- * usunąć, zostaje osierocone, ale nikogo nie wpuszcza: danych firmy już nie ma. Zwraca, ilu nie usunięto.
+ * Pliki i konta logowania usuniętej firmy albo zanonimizowanej osoby (`after` mówi, po czym), po zatwierdzeniu jej
+ * transakcji. Plik albo konto, którego nie udało się usunąć, zostaje osierocone, ale nikogo nie wpuszcza: danych firmy
+ * albo konta w firmie już nie ma. Zwraca, ilu nie usunięto.
  */
-async function removePurgedLeftovers(deps: RegistryDeps, companyId: string, purged: companyDeletion.PurgedCompany): Promise<number> {
+async function removePurgedLeftovers(deps: RegistryDeps, after: string, purged: companyDeletion.PurgedCompany): Promise<number> {
   const cleanups = [
     ...purged.photoKeys.map((key) => () => deps.photos.remove(key)),
     ...purged.chatPhotoKeys.map((key) => () => deps.chatPhotos.remove(key)),
@@ -2089,10 +2129,25 @@ async function removePurgedLeftovers(deps: RegistryDeps, companyId: string, purg
   for (const cleanup of cleanups) {
     await cleanup().catch((error) => {
       failed += 1;
-      console.error(`Po usunięciu firmy ${companyId}`, error);
+      console.error(`Po ${after}`, error);
     });
   }
   return failed;
+}
+
+/** Anonimizacja osoby w transakcji systemowej, a po niej usunięcie jej konta logowania i plików. */
+async function anonymizePerson(
+  deps: RegistryDeps,
+  input: Parameters<typeof personAnonymization.anonymizePerson>[1],
+): Promise<AnonymizedPersonResult> {
+  const anonymized = await deps.db.transaction((sql) => personAnonymization.anonymizePerson(sql, input, deps.clock.now()));
+  const leftovers = await removePurgedLeftovers(deps, `anonimizacji osoby ${input.personId}`, {
+    userIds: anonymized.userId === null ? [] : [anonymized.userId],
+    photoKeys: [],
+    chatPhotoKeys: anonymized.chatPhotoKeys,
+    documentKeys: anonymized.documentKeys,
+  });
+  return { fullName: anonymized.fullName, leftovers };
 }
 
 /** Progi dni jednej firmy w jednej transakcji systemowej; kopie push po zatwierdzeniu. Zwraca liczbę nowych przekroczeń. */
@@ -2282,12 +2337,12 @@ async function createCompany(
          values ($1, $2, 'wlasciciel', $3, $4, true, $5, $5)`,
         [userId, company.id, input.owner.fullName, input.owner.email, now],
       );
-      await people.insertPerson(sql, company.id, { fullName: input.owner.fullName, note: null }, now, userId);
+      const personId = await people.insertPerson(sql, company.id, { fullName: input.owner.fullName, note: null }, now, userId);
       await subscriptions.insertSubscription(sql, company.id, subscription);
       await changeLog.recordChange(
         sql,
         company.id,
-        { kind: "firma_zalozona", personName: input.owner.fullName, role: "wlasciciel", login: input.owner.email },
+        { kind: "firma_zalozona", personId, personName: input.owner.fullName, role: "wlasciciel", login: input.owner.email },
         now,
       );
       return company.id;

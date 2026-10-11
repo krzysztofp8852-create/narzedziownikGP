@@ -11,6 +11,7 @@ export const CHANGE_KINDS = [
   "osoba_dezaktywowana",
   "haslo_zresetowane",
   "ustawienie_zmienione",
+  "osoba_zanonimizowana",
 ] as const;
 export type ChangeKind = (typeof CHANGE_KINDS)[number];
 
@@ -50,10 +51,13 @@ export interface ChangeLogEntry {
   newValue: string | null;
 }
 
-/** Zmiana do zapisu; autora dopisuje baza z JWT transakcji. */
+/**
+ * Zmiana do zapisu; autora dopisuje baza z JWT transakcji. Zmiana konta albo osoby wskazuje osobę z kartoteki
+ * (`personId`), żeby anonimizacja znalazła jej wpisy także po zmianie imienia i nazwiska.
+ */
 export type NewChange =
-  | { kind: "firma_zalozona" | "konto_zalozone"; personName: string; role: Role; login: string }
-  | { kind: "konto_dezaktywowane" | "osoba_dezaktywowana" | "haslo_zresetowane"; personName: string }
+  | { kind: "firma_zalozona" | "konto_zalozone"; personId: string; personName: string; role: Role; login: string }
+  | { kind: "konto_dezaktywowane" | "osoba_dezaktywowana" | "haslo_zresetowane" | "osoba_zanonimizowana"; personId: string; personName: string }
   | { kind: "ustawienie_zmienione"; setting: LoggedSetting; oldValue: string; newValue: string };
 
 export function canReadChangeLog(session: Session) {
@@ -70,12 +74,13 @@ export async function recordChange(sql: Sql, companyId: string, change: NewChang
   const account = "role" in change ? change : null;
   const setting = change.kind === "ustawienie_zmienione" ? change : null;
   await sql(
-    `insert into app.change_log (company_id, at, actor_kind, kind, person_name, role, login, setting, old_value, new_value)
-     values ($1, $2, 'system', $3, $4, $5, $6, $7, $8, $9)`,
+    `insert into app.change_log (company_id, at, actor_kind, kind, person_id, person_name, role, login, setting, old_value, new_value)
+     values ($1, $2, 'system', $3, $4, $5, $6, $7, $8, $9, $10)`,
     [
       companyId,
       now,
       change.kind,
+      person?.personId ?? null,
       person?.personName ?? null,
       account?.role ?? null,
       account?.login ?? null,

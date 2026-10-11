@@ -88,6 +88,7 @@
     "documents": "Dokumenty",
     "settings": "Ustawienia",
     "tutorial": "Samouczek",
+    "deleteAccount": "Usuń konto",
     "logout": "Wyloguj"
   },
   "board": {
@@ -209,7 +210,7 @@
     "title": "Dziennik zmian",
     "back": "← Wróć do ustawień",
     "backToCompany": "← Wróć do firmy {name}",
-    "intro": "Kto i kiedy założył konto, dezaktywował osobę albo konto, nadał hasło tymczasowe albo zmienił ustawienia firmy. Wpisów nie da się zmienić ani usunąć.",
+    "intro": "Kto i kiedy założył konto, dezaktywował osobę albo konto, nadał hasło tymczasowe, zanonimizował osobę albo zmienił ustawienia firmy. Wpisów nie da się zmienić ani usunąć; po anonimizacji osoby zamiast jej imienia i nazwiska jest nazwa zastępcza.",
     "limit": "Pokazujemy {count} najnowszych wpisów. Wszystkie są w pełnym eksporcie danych firmy.",
     "empty": "Nie ma jeszcze wpisów.",
     "settingsHint": "Kto i kiedy założył konto, dezaktywował osobę, nadał hasło tymczasowe albo zmienił ustawienia firmy.",
@@ -224,8 +225,10 @@
       "konto_dezaktywowane": "Dezaktywacja konta: {person}",
       "osoba_dezaktywowana": "Dezaktywacja osoby bez konta: {person}",
       "haslo_zresetowane": "Nowe hasło tymczasowe dla: {person}",
-      "ustawienie_zmienione": "{setting}: {from} → {to}"
+      "ustawienie_zmienione": "{setting}: {from} → {to}",
+      "osoba_zanonimizowana": "Anonimizacja osoby na jej prośbę: {person}"
     },
+    "accountWithoutLogin": "Nowe konto: {person}, {role}",
     "settings": {
       "prog_dni": "Próg dni alarmu",
       "zgloszenia_kierownik": "Kierownik widzi zgłoszenia swoich lokalizacji",
@@ -280,6 +283,13 @@
     "recorderLimitChat": "napisz na czacie z supportem",
     "recorderLimitSales": "albo skontaktuj się z działem handlowym."
   },
+  "anonymize": {
+    "button": "Anonimizuj osobę",
+    "confirm": "Zanonimizować: {name}? Tego nie da się cofnąć. Imię i nazwisko zastąpi nazwa zastępcza, a notatka, uprawnienia z dokumentami, e-mail, login, konto, powiadomienia i czat z supportem znikną. Ruchy, zgłoszenia i odbicia zostaną z nazwą zastępczą. Rób to tylko na prośbę tej osoby.",
+    "yes": "Tak, anonimizuj nieodwracalnie",
+    "running": "Anonimizowanie…",
+    "status": "Zanonimizowana"
+  },
   "people": {
     "title": "Ludzie",
     "back": "← Tablica",
@@ -305,7 +315,9 @@
     "saved": "Zapisano.",
     "giveAccount": "Załóż konto tej osobie",
     "deactivateConfirm": "Dezaktywować: {name}? Osoba zniknie z aktywnych, ale zostanie w kartotece z całą historią.",
-    "qualificationsLink": "Uprawnienia →"
+    "qualificationsLink": "Uprawnienia →",
+    "deleteData": "Usuń dane osoby",
+    "deleteDataHint": "Na prośbę tej osoby (strona „Usuń konto”) usuniesz jej dane osobowe w ciągu 30 dni od prośby. Historia zostanie z nazwą zastępczą."
   },
   "qualifications": {
     "kinds": {
@@ -1430,6 +1442,12 @@
     "enableReadOnly": "Włącz tryb tylko do odczytu",
     "disableReadOnly": "Wyłącz tryb tylko do odczytu",
     "switching": "Przełączanie…",
+    "peopleTitle": "Osoby",
+    "peopleLink": "Osoby firmy i anonimizacja na prośbę osoby",
+    "peopleIntro": "Wszystkie osoby firmy z kartoteki Ludzie. Gdy prośba o usunięcie danych (strona „Usuń konto”) przyszła do nas, a nie do właściciela, uzgodnij ją z właścicielem firmy i zanonimizuj osobę w ciągu 30 dni. Konto właściciela usuwa się tylko z całą firmą.",
+    "peopleEmpty": "Firma nie ma jeszcze osób.",
+    "peopleNoAccount": "bez konta",
+    "anonymizedWithLeftovers": "Osoba zanonimizowana, ale części plików albo konta logowania ({count}) nie udało się usunąć. Szczegóły są w logach serwera; usuń je ręcznie, zanim potwierdzisz wykonanie prośby. Konto, które zostało, blokuje swój e-mail.",
     "changeLogTitle": "Dziennik zmian",
     "changeLogLink": "Konta i ustawienia firmy: kto i kiedy zmieniał",
     "deleteTitle": "Usunięcie firmy",
@@ -2274,13 +2292,14 @@
     "documents": {
       "regulamin": "Regulamin",
       "polityka-prywatnosci": "Polityka prywatności",
-      "umowa-powierzenia": "Umowa powierzenia"
+      "umowa-powierzenia": "Umowa powierzenia",
+      "usun-konto": "Usuń konto"
     },
     "version": "Wersja z {date}",
     "draft": "Projekt dokumentu. Treść czeka na przegląd prawnika i może się zmienić przed zawarciem umowy.",
     "back": "← Wróć",
     "settingsTitle": "Dokumenty prawne",
-    "settingsHint": "Regulamin usługi, polityka prywatności i umowa powierzenia przetwarzania danych osobowych Twoich ludzi. Przydadzą się, gdy informujesz pracowników o przetwarzaniu ich danych."
+    "settingsHint": "Regulamin usługi, polityka prywatności i umowa powierzenia przetwarzania danych osobowych Twoich ludzi oraz strona, jak poprosić o usunięcie konta. Przydadzą się, gdy informujesz pracowników o przetwarzaniu ich danych."
   },
   "cookies": {
     "title": "Pliki cookies.",

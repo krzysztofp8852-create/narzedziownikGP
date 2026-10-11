@@ -154,11 +154,11 @@ export async function insertMember(
     throw isUniqueViolation(error, "users_username_per_company") ? new RegistryError("username_taken") : error;
   }
   if (personId) await people.linkAccount(sql, personId, userId);
-  else await people.insertPerson(sql, session.company.id, { fullName: member.fullName, note: null }, now, userId);
+  const linkedPersonId = personId ?? (await people.insertPerson(sql, session.company.id, { fullName: member.fullName, note: null }, now, userId));
   await changeLog.recordChange(
     sql,
     session.company.id,
-    { kind: "konto_zalozone", personName: member.fullName, role: member.role, login: (member.username ?? member.email)! },
+    { kind: "konto_zalozone", personId: linkedPersonId, personName: member.fullName, role: member.role, login: (member.username ?? member.email)! },
     now,
   );
 }
@@ -187,12 +187,13 @@ export async function markPasswordTemporary(sql: Sql, session: Session, memberId
     "update app.users set must_change_password = true, temporary_password_issued_at = $2 where user_id = $1 returning full_name",
     [memberId, now],
   );
-  await changeLog.recordChange(sql, session.company.id, { kind: "haslo_zresetowane", personName: member.full_name }, now);
+  const personId = await people.personOfAccount(sql, memberId);
+  await changeLog.recordChange(sql, session.company.id, { kind: "haslo_zresetowane", personId, personName: member.full_name }, now);
 }
 
 /** Konto i jego osoba w kartotece przestają być aktywne. */
 export async function deactivate(sql: Sql, session: Session, memberId: string, now: Date) {
   const [member] = await sql<{ full_name: string }>("update app.users set active = false where user_id = $1 returning full_name", [memberId]);
-  await people.deactivatePersonOfAccount(sql, memberId);
-  await changeLog.recordChange(sql, session.company.id, { kind: "konto_dezaktywowane", personName: member.full_name }, now);
+  const personId = await people.deactivatePersonOfAccount(sql, memberId);
+  await changeLog.recordChange(sql, session.company.id, { kind: "konto_dezaktywowane", personId, personName: member.full_name }, now);
 }

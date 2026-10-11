@@ -105,6 +105,7 @@ describe("osoba z kontem", () => {
         fullName: "Adam Nowak",
         note: null,
         active: true,
+        anonymized: false,
         account: { userId: added.userId, email: "adam@zawbud.pl", username: null, role: "kierownik", active: true, mustChangePassword: true },
       },
       {
@@ -112,6 +113,7 @@ describe("osoba z kontem", () => {
         fullName: "Piotr Mazur",
         note: null,
         active: true,
+        anonymized: false,
         account: { userId: worker.userId, email: null, username: "pmazur", role: "pracownik", active: true, mustChangePassword: true },
       },
       expect.objectContaining({ fullName: "Właściciel Zawbud", account: expect.objectContaining({ userId: zawbud.ownerId, role: "wlasciciel" }) }),
@@ -136,7 +138,7 @@ describe("osoba bez konta", () => {
     await owner.addPerson({ fullName: "Tadeusz Wróbel", note: "  " });
 
     const people = await owner.people();
-    expect(people).toContainEqual({ personId, fullName: "Zbigniew Kaczmarek", note: "Pomocnik w brygadzie Marka", active: true, account: null });
+    expect(people).toContainEqual({ personId, fullName: "Zbigniew Kaczmarek", note: "Pomocnik w brygadzie Marka", active: true, anonymized: false, account: null });
     expect(people).toContainEqual(expect.objectContaining({ fullName: "Tadeusz Wróbel", note: null, account: null }));
     expect(people).toHaveLength(3);
   });
@@ -178,6 +180,7 @@ describe("konto dla osoby z kartoteki", () => {
       fullName: "Zbigniew Kaczmarek",
       note: "Pomocnik",
       active: true,
+      anonymized: false,
       account: { userId: added.userId, email: null, username: "zkaczmarek", role: "pracownik", active: true, mustChangePassword: true },
     });
     expect(await testbed.registry.as(added.userId).session()).toMatchObject({ fullName: "Zbigniew Kaczmarek", role: "pracownik" });

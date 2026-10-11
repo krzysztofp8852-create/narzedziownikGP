@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { RedirectType, redirect } from "next/navigation";
+import type { AnonymizeState } from "@/components/anonymize-person-button";
 import type { ChatFormState } from "@/components/chat-message-form";
 import { requireSuperAdmin } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
@@ -98,6 +99,23 @@ export async function deleteCompany(companyId: string, _prev: DeleteCompanyState
   }
   revalidatePath("/super-admin", "layout");
   redirect(leftovers > 0 ? `/super-admin?usunieta=1&pozostalo=${leftovers}` : "/super-admin?usunieta=1", RedirectType.replace);
+}
+
+/**
+ * Anonimizacja osoby firmy na jej prośbę, która przyszła do GP Engineering; nieodwracalna. Gdy jakieś pliki albo konto
+ * logowania zostały, lista osób mówi, ile, jak przy usunięciu firmy.
+ */
+export async function anonymizePerson(companyId: string, personId: string): Promise<AnonymizeState> {
+  const userId = await requireSuperAdmin();
+  let leftovers: number;
+  try {
+    ({ leftovers } = await getRegistry().superAdmin(userId).anonymizePerson(companyId, personId));
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+  revalidatePath("/super-admin", "layout");
+  if (leftovers > 0) redirect(`/super-admin/firmy/${companyId}/osoby?pozostalo=${leftovers}`, RedirectType.replace);
+  return {};
 }
 
 /** Odpowiedź GP Engineering w wątku czatu z supportem. */

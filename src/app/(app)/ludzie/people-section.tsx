@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { t } from "@/i18n/t";
 import { isDemoEmail, MEMBER_ROLES, type Person, type PersonAccount, type RecorderSeats, type Session } from "@/registry/registry";
+import { AnonymizePersonButton } from "@/components/anonymize-person-button";
+import { anonymizePerson } from "./actions";
 import { AddMemberForm } from "./add-member-form";
 import { MemberActions } from "./member-actions";
 import { AddPersonForm, DeactivatePersonButton, EditPersonForm } from "./person-forms";
@@ -76,6 +78,13 @@ export function PeopleSection({
                 <MemberActions memberId={person.account.userId} fullName={person.fullName} />
               </details>
             )}
+            {!person.anonymized && person.account?.role !== "wlasciciel" && (
+              <details className="member-more">
+                <summary>{t("people.deleteData")}</summary>
+                <p className="muted">{t("people.deleteDataHint")}</p>
+                <AnonymizePersonButton fullName={person.fullName} anonymize={anonymizePerson.bind(null, person.personId)} />
+              </details>
+            )}
           </li>
         ))}
       </ul>
@@ -95,12 +104,14 @@ function Login({ account }: { account: PersonAccount }) {
 
 function Status({ person }: { person: Person }) {
   const { account } = person;
-  const [status, label] = !person.active
-    ? ["inactive", account ? t("team.statusInactive") : t("people.statusInactive")]
-    : !account
-      ? ["none", t("people.statusNoAccount")]
-      : account.mustChangePassword
-        ? ["pending", t("team.statusPending")]
-        : ["active", t("team.statusActive")];
+  const [status, label] = person.anonymized
+    ? ["inactive", t("anonymize.status")]
+    : !person.active
+      ? ["inactive", account ? t("team.statusInactive") : t("people.statusInactive")]
+      : !account
+        ? ["none", t("people.statusNoAccount")]
+        : account.mustChangePassword
+          ? ["pending", t("team.statusPending")]
+          : ["active", t("team.statusActive")];
   return <p className={`member-status member-status-${status}`}>{label}</p>;
 }
