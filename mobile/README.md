@@ -130,6 +130,10 @@ Wynik: `android/app/build/outputs/bundle/release/app-release.aab`, do ręcznego 
 `keystore.properties` Gradle zbuduje AAB bez podpisu, którego Play Console nie przyjmie. Upewnij się, że ostatni `sync`
 był bez `CAP_SERVER_URL`: adres programu siedzi w pakiecie.
 
+Po pierwszym wydaniu na ścieżce produkcyjnej (aplikacja widoczna w sklepie) włącz `GOOGLE_PLAY=1` w zmiennych Vercel
+Production i zrób Redeploy: Android dostaje aplikację ze sklepu zamiast instalacji strony, a strona o programie
+plakietkę Google Play (README, „Środowiska i wdrożenie”).
+
 ## Lista kontrolna testów wewnętrznych
 
 Pozycje skorupy do ręcznej listy kontrolnej z #129, na prawdziwym telefonie z wersją z Google Play; tych rzeczy nie

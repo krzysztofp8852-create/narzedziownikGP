@@ -364,4 +364,8 @@ Nowa tabela z `company_id` albo nowa kolumna musi trafić do `EXPORT_TABLES` w `
   i „Inactivity timeout”.
 - Aplikacja na Androida (Google Play, zob. `docs/adr/0038`) to skorupa Capacitor w `mobile/`, która ładuje
   produkcyjny adres. Ma własne zależności i nie wchodzi do builda Vercela; build debug i podpisany AAB opisuje
-  `mobile/README.md`.
+  `mobile/README.md`. W dniu publikacji w produkcji `GOOGLE_PLAY=1` w zmiennych Vercel Production (potem Redeploy)
+  kieruje Androida do sklepu: manifest PWA wskazuje aplikację (Chrome proponuje ją zamiast instalacji strony), strona
+  o programie ma plakietkę Google Play, a po zalogowaniu baner „Zainstaluj aplikację” prowadzi Androida do sklepu,
+  a iPhone'a do instrukcji dodania do ekranu głównego. Test dymny w CI sprawdza oba stany na dwóch serwerach z tego
+  samego builda; lokalnie stan włączony sprawdza się po `npm run build` przez `CI=1 npx playwright test google-play`.

@@ -1276,6 +1276,16 @@
     "iosStep2": "Wybierz „Do ekranu początkowego” i dotknij „Dodaj”.",
     "iosStep3": "Otwórz NarzędziownikGP z ekranu początkowego, zaloguj się i włącz powiadomienia tutaj, w dzwonku."
   },
+  "installApp": {
+    "title": "Zainstaluj aplikację",
+    "iosTitle": "Dodaj do ekranu głównego",
+    "googlePlay": "NarzędziownikGP jest w Google Play. W aplikacji skaner QR działa szybciej i ma latarkę, a powiadomienia przychodzą na telefon.",
+    "openGooglePlay": "Pobierz z Google Play",
+    "iosIntro": "Otworzysz NarzędziownikGP z ekranu głównego we własnym oknie, bez paska przeglądarki:",
+    "iosStep1": "Dotknij „Udostępnij” (kwadrat ze strzałką w górę: w Safari na dolnym pasku, w Chrome obok adresu).",
+    "iosStep2": "Wybierz „Do ekranu początkowego” i dotknij „Dodaj”.",
+    "close": "Zamknij"
+  },
   "offline": {
     "pageTitle": "Brak sieci",
     "pageText": "Ta strona nie działa bez zasięgu. Tablica „Gdzie jest co” otworzy się z ostatnio pobranym stanem, jeśli była już otwierana na tym telefonie, a ruchy zapisane bez sieci wyślą się same, gdy wróci zasięg.",
@@ -1904,6 +1914,11 @@
       "demo": "Zobacz demo",
       "pricing": "Cennik",
       "trackers": "Nadajniki GPS i Bluetooth",
+      "googlePlay": {
+        "label": "Pobierz NarzędziownikGP z Google Play",
+        "top": "Pobierz z",
+        "name": "Google Play"
+      },
       "pins": {
         "rataje": "Budowa Rataje · 23 dni",
         "tarasy": "Tarasy · 7 osób na budowie",
@@ -2130,7 +2145,8 @@
       },
       "install": {
         "question": "Czy trzeba instalować aplikację?",
-        "answer": "Nie. Program działa w przeglądarce na telefonie, tablecie i komputerze. Na telefonie dodajesz go do ekranu głównego i otwierasz jak zwykłą aplikację."
+        "answer": "Nie. Program działa w przeglądarce na telefonie, tablecie i komputerze. Na telefonie dodajesz go do ekranu głównego i otwierasz jak zwykłą aplikację.",
+        "answerGooglePlay": "Nie trzeba. Program działa w przeglądarce na telefonie, tablecie i komputerze. Na Androidzie zainstalujesz aplikację NarzędziownikGP z Google Play, a na iPhonie dodajesz program do ekranu głównego i otwierasz jak zwykłą aplikację."
       },
       "hours": {
         "question": "Czy program liczy, ile godzin ludzie byli na budowie?",

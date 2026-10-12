@@ -3,6 +3,14 @@ import { defineConfig, devices } from "@playwright/test";
 const port = Number(process.env.PORT ?? 3000);
 const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${port}`;
 
+// Kierowanie Androida do Google Play (GOOGLE_PLAY=1) e2e/google-play.spec.ts sprawdza też na drugim serwerze
+// z włączonym przełącznikiem: w CI ten sam build na następnym porcie. Lokalnie drugi `next dev` w tym katalogu się nie
+// uruchomi, więc te testy biorą adres z E2E_GOOGLE_PLAY_BASE_URL (np. po `npm run build`:
+// `GOOGLE_PLAY=1 npm run start -- -p 3001`) albo się pomijają.
+const googlePlayPort = port + 1;
+const googlePlayServer = !!process.env.CI && !process.env.E2E_BASE_URL;
+if (googlePlayServer) process.env.E2E_GOOGLE_PLAY_BASE_URL ??= `http://localhost:${googlePlayPort}`;
+
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
@@ -32,10 +40,22 @@ export default defineConfig({
   // Bez E2E_BASE_URL uruchamiamy aplikację sami: w CI zbudowaną, lokalnie w trybie dev.
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : {
-        command: process.env.CI ? `npm run start -- -p ${port}` : `npm run dev -- -p ${port}`,
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
-      },
+    : [
+        {
+          command: process.env.CI ? `npm run start -- -p ${port}` : `npm run dev -- -p ${port}`,
+          url: baseURL,
+          reuseExistingServer: !process.env.CI,
+          timeout: 120_000,
+        },
+        ...(googlePlayServer
+          ? [
+              {
+                command: `npm run start -- -p ${googlePlayPort}`,
+                url: `http://localhost:${googlePlayPort}`,
+                env: { GOOGLE_PLAY: "1" },
+                timeout: 120_000,
+              },
+            ]
+          : []),
+      ],
 });

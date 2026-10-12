@@ -1,6 +1,7 @@
 // Powiadomienia push w przeglądarce: subskrypcja w service workerze z public/sw.js (ADR 0011). Tylko w przeglądarce.
 
 import { removePushSubscription } from "@/app/(app)/dzwonek/actions";
+import { isIos, isStandalone } from "@/lib/platform";
 
 /**
  * Czy ta przeglądarka przyjmie powiadomienia push. Na iPhonie i iPadzie Web Push działa tylko w aplikacji
@@ -52,14 +53,6 @@ export async function unsubscribeFromPush({ server }: { server: boolean }): Prom
 async function forgetSubscription(subscription: PushSubscription) {
   await subscription.unsubscribe().catch(() => false);
   await removePushSubscription({ kind: "przegladarka", endpoint: subscription.endpoint }).catch((error: unknown) => console.error(error));
-}
-
-function isIos() {
-  return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1);
-}
-
-function isStandalone() {
-  return (navigator as Navigator & { standalone?: boolean }).standalone === true || matchMedia("(display-mode: standalone)").matches;
 }
 
 function sameKey(current: ArrayBuffer | null, expected: Uint8Array) {

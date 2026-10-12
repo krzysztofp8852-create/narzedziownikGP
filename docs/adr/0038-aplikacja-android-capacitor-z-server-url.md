@@ -62,4 +62,7 @@ serwera Next.js.
 - Aplikacja ma osobną pamięć od Chrome: po instalacji trzeba się zalogować jeszcze raz.
 - Polityka prywatności, umowa SaaS i formularz Data Safety muszą opisać aplikację (#127), a Google Play wymaga ścieżki
   usuwania konta (#125).
+- Od publikacji w sklepie (`GOOGLE_PLAY=1`, #126) manifest PWA ma `prefer_related_applications`: Chrome na Androidzie
+  proponuje aplikację z Google Play zamiast instalacji strony (ADR 0010 zostaje dla iPhone'a i komputera), strona
+  o programie ma plakietkę Google Play, a baner po zalogowaniu kieruje Androida do sklepu.
 - BLE dojdzie jako aktualizacja tej samej aplikacji, z osobnym ADR, gdy będzie pilot.

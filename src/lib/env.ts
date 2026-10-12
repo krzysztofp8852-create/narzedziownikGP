@@ -118,6 +118,12 @@ export const serverEnv = {
       privateKey: required("FIREBASE_SERVICE_ACCOUNT.private_key", account.private_key),
     };
   },
+  /**
+   * Kierowanie Androida do Google Play (`GOOGLE_PLAY=1`): manifest PWA wskazuje aplikację ze sklepu, strona o programie
+   * ma plakietkę Google Play, a po zalogowaniu baner „Zainstaluj aplikację” prowadzi Androida do sklepu, a iPhone'a do
+   * instrukcji dodania do ekranu głównego. Włączany w produkcji w dniu publikacji aplikacji; bez niego nic z tego nie ma.
+   */
+  googlePlay: () => process.env.GOOGLE_PLAY === "1",
   /** Adres supportu GP Engineering, na który idą wiadomości użytkowników z czatu; bez niego trafiają tylko do logu. */
   supportEmail: () => process.env.SUPPORT_EMAIL || null,
   /** Telefon do supportu w stopce okna czatu, np. „+48 600 000 000”; bez niego stopki nie ma. */

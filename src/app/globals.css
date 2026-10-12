@@ -393,6 +393,40 @@ a.button {
   overflow-wrap: anywhere;
 }
 
+/* Baner „Zainstaluj aplikację” pod nagłówkiem: tekst, a obok (na telefonie pod nim) sklep i zamknięcie. */
+.install-banner {
+  padding: 12px var(--gutter);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
+}
+
+.install-banner-inner {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.install-banner-text {
+  flex: 1 1 320px;
+  display: grid;
+  gap: 4px;
+}
+
+.install-banner-text p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.install-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .app-main {
   padding: 20px var(--gutter) 40px;
   max-width: var(--page-width);
@@ -3208,6 +3242,35 @@ a.tool-row:hover .tool-row-name {
 .landing-actions .button-quiet {
   border-width: 2px;
   border-color: var(--brand-ink);
+}
+
+/* Plakietka Google Play pod przyciskami hero: czarna, jak plakietki sklepów. */
+.google-play-badge {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px 18px 8px 14px;
+  border-radius: var(--radius);
+  background: #000000;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.google-play-badge small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.google-play-badge:hover {
+  background: #2a2d33;
 }
 
 /* Nagłówek strony i hero: na komputerze makieta pod całością, na telefonie pas mapy między tekstem a kartą. */
