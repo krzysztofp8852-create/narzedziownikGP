@@ -6,11 +6,13 @@ import { DemoBar } from "@/components/demo-bar";
 import { DemoPageLog } from "@/components/demo-page-log";
 import { DemoTour } from "@/components/demo-tour";
 import { IdleLogout } from "@/components/idle-logout";
+import { InstallBanner } from "@/components/install-banner";
 import { OfflineSync } from "@/components/offline-sync";
 import { SupportChatLink } from "@/components/support-chat-link";
 import { t } from "@/i18n/t";
 import { appMenu } from "@/lib/app-menu";
 import { currentIdleStatus, requireSession } from "@/lib/auth";
+import { serverEnv } from "@/lib/env";
 import { getRegistry } from "@/lib/registry-instance";
 import { canUseSupportChat } from "@/registry/registry";
 
@@ -135,6 +137,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </p>
         </div>
       )}
+      {serverEnv.googlePlay() && <InstallBanner />}
       <main className="app-main">{children}</main>
       {session.company.demo && (
         // Nowy przewodnik po przełączeniu roli; parametr adresu czyta dopiero przeglądarka.

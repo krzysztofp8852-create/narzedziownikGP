@@ -10,6 +10,7 @@ import { SalesContact } from "@/components/sales-contact";
 import { formatMoney, formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
+import { GOOGLE_PLAY_URL } from "@/lib/google-play";
 import { type PriceText, pricing } from "@/lib/pricing-text";
 import { jsonLdScript, landingStructuredData } from "@/lib/structured-data";
 import { TIERS } from "@/registry/subscriptions";
@@ -146,8 +147,27 @@ function BoardPreview() {
   );
 }
 
-/** Odpowiedź o cenie z najmniejszego pakietu, tego samego co w cenniku. */
-function faqAnswer(question: (typeof FAQ)[number]) {
+/**
+ * Plakietka Google Play, gdy aplikacja jest w sklepie (`GOOGLE_PLAY=1`). Na Androidzie link otwiera sklep, gdzie
+ * indziej stronę aplikacji w Google Play.
+ */
+function GooglePlayBadge() {
+  return (
+    <a href={GOOGLE_PLAY_URL} className="google-play-badge" aria-label={t("landing.hero.googlePlay.label")}>
+      <svg width="26" height="28" viewBox="0 0 26 28" aria-hidden>
+        <path d="M2 1.5 L24 14 L2 26.5 Z" fill="currentColor" />
+      </svg>
+      <span>
+        <small>{t("landing.hero.googlePlay.top")}</small>
+        {t("landing.hero.googlePlay.name")}
+      </span>
+    </a>
+  );
+}
+
+/** Odpowiedź o cenie z najmniejszego pakietu, tego samego co w cenniku; o instalacji z Google Play, gdy tam jest. */
+function faqAnswer(question: (typeof FAQ)[number], googlePlay: boolean) {
+  if (question === "install" && googlePlay) return t("landing.faq.install.answerGooglePlay");
   if (question !== "price") return t(`landing.faq.${question}.answer`);
   const [cheapest] = TIERS;
   return t("landing.faq.price.answer", {
@@ -170,6 +190,7 @@ function Price({ price, period }: PriceText) {
 export default function LandingPage() {
   const plans = pricing();
   const siteUrl = serverEnv.siteUrl();
+  const googlePlay = serverEnv.googlePlay();
   return (
     <>
       {/* `data-signed-out`: service worker po tym poznaje, że pod `/` nie ma już tablicy tej sesji (ADR 0021). */}
@@ -219,6 +240,7 @@ export default function LandingPage() {
                   {t("landing.hero.pricing")}
                 </a>
               </div>
+              {googlePlay && <GooglePlayBadge />}
             </div>
             <HeroMap />
             <BoardPreview />
@@ -356,7 +378,7 @@ export default function LandingPage() {
               {FAQ.map((question) => (
                 <div key={question}>
                   <dt>{t(`landing.faq.${question}.question`)}</dt>
-                  <dd>{faqAnswer(question)}</dd>
+                  <dd>{faqAnswer(question, googlePlay)}</dd>
                 </div>
               ))}
             </dl>
