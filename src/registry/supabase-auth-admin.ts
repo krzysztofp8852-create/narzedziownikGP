@@ -24,7 +24,8 @@ export function createSupabaseAuthAdmin(url: string, serviceRoleKey: string): Au
     },
     async deleteUser(userId) {
       const { error } = await auth.admin.deleteUser(userId);
-      if (error) throw error;
+      // Konto mogła już usunąć anonimizacja osoby; usunięcie firmy z taką osobą nie zgłasza go jako pozostałości.
+      if (error && error.code !== "user_not_found") throw error;
     },
   };
 }

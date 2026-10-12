@@ -22,6 +22,13 @@ describe("teksty dziennika zmian", () => {
     expect(changeText({ ...entry, kind: "konto_dezaktywowane", role: null, login: null })).toBe("Dezaktywacja konta: Adam Nowak");
   });
 
+  it("po anonimizacji osoby pokazuje nazwę zastępczą bez loginu, a sama anonimizacja ma swój wpis", () => {
+    expect(changeText({ ...entry, personName: "Osoba zanonimizowana 1", login: null })).toBe("Nowe konto: Osoba zanonimizowana 1, Kierownik");
+    expect(changeText({ ...entry, kind: "osoba_zanonimizowana", personName: "Osoba zanonimizowana 1", role: null, login: null })).toBe(
+      "Anonimizacja osoby na jej prośbę: Osoba zanonimizowana 1",
+    );
+  });
+
   it("opisuje zmianę ustawienia z wartością przed i po", () => {
     const setting = { ...entry, kind: "ustawienie_zmienione", personName: null, role: null, login: null } as const;
     expect(changeText({ ...setting, setting: "prog_dni", oldValue: "30", newValue: "45" })).toBe("Próg dni alarmu: 30 → 45");

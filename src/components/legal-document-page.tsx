@@ -58,7 +58,7 @@ function Block({ block }: { block: LegalBlock }) {
 }
 
 /**
- * Regulamin, polityka prywatności albo umowa powierzenia. Otwiera się bez logowania, a „Wróć” prowadzi na `/`:
+ * Regulamin, polityka prywatności, umowa powierzenia albo strona „Usuń konto”. Otwiera się bez logowania, a „Wróć” prowadzi na `/`:
  * niezalogowany trafia na stronę o programie, zalogowany na tablicę. Niezalogowany widzi też baner zgody na cookies.
  */
 export async function LegalDocumentPage({ id }: { id: LegalDocumentId }) {

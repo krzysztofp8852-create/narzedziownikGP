@@ -63,12 +63,16 @@ _Avoid_: support (jako nazwa roli), administrator
 Nieodwracalne usunięcie firmy w całości, z historią, plikami i kontami, przez super-admina na polecenie firmy po końcu umowy. Tylko w trybie tylko do odczytu i po wpisaniu nazwy firmy; zostaje wpis w dzienniku usuniętych firm.
 _Avoid_: archiwizacja, dezaktywacja (to osoba albo jej konto)
 
+**Anonimizacja osoby**:
+Nieodwracalne usunięcie danych osobowych jednej osoby na jej prośbę (strona „Usuń konto”), przez właściciela jej firmy albo super-admina. Osoba dostaje nazwę zastępczą („Osoba zanonimizowana 3”) i staje się nieaktywna; jej notatka, uprawnienia z dokumentami, e-mail i login, konto logowania, powiadomienia i czat z supportem znikają. Ruchy, zgłoszenia, odbicia, czas na budowie i dziennik zmian zostają i pokazują nazwę zastępczą. Konta właściciela się nie anonimizuje; znika z całą firmą.
+_Avoid_: usunięcie osoby, usunięcie konta (to strona, z której przychodzi prośba), dezaktywacja (osoba zostaje z imieniem)
+
 **Pełny eksport danych**:
 Wszystkie dane firmy w jednym ZIP-ie na jej żądanie: każda tabela jako CSV z opisem kolumn i powiązań oraz zdjęcia i dokumenty w oryginalnym formacie, bez haseł i kluczy push. Przygotowuje go GP Engineering skryptem w 14 dni, także w trybie tylko do odczytu i po końcu umowy, dopóki firmy nie usunięto. To nie eksport do Excela z programu (stan, historia, koszty, czas na budowie).
 _Avoid_: kopia zapasowa, backup, zrzut bazy
 
 **Dziennik zmian**:
-Lista zmian kont i ustawień firmy: kto i kiedy założył firmę albo konto (z rolą i loginem), dezaktywował konto albo osobę, nadał innej osobie hasło tymczasowe albo zmienił ustawienie firmy (z wartością przed i po). Autorem jest osoba z firmy, super-admin albo program. Widzi go właściciel w ustawieniach i super-admin; wpisy tylko się dopisują i znikają tylko z usunięciem firmy.
+Lista zmian kont i ustawień firmy: kto i kiedy założył firmę albo konto (z rolą i loginem), dezaktywował konto albo osobę, nadał innej osobie hasło tymczasowe, zanonimizował osobę albo zmienił ustawienie firmy (z wartością przed i po). Autorem jest osoba z firmy, super-admin albo program. Widzi go właściciel w ustawieniach i super-admin; wpisy tylko się dopisują i znikają tylko z usunięciem firmy, a anonimizacja osoby zamienia w nich jej imię i nazwisko na nazwę zastępczą.
 _Avoid_: audyt, log, historia (to ruchy)
 
 **Wylogowanie po bezczynności**:

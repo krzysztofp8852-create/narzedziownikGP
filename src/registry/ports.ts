@@ -22,6 +22,7 @@ export interface AuthAdmin {
   setPassword(userId: string, password: string): Promise<void>;
   /** Blokuje logowanie i odświeżanie sesji tego konta (dezaktywacja). */
   blockSignIn(userId: string): Promise<void>;
+  /** Usuwa konto logowania; konta, którego już nie ma (np. po anonimizacji osoby), nie uważa za błąd. */
   deleteUser(userId: string): Promise<void>;
 }
 

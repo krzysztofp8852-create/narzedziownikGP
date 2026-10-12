@@ -11,7 +11,9 @@ export function changeText(entry: ChangeLogEntry): string {
       to: settingValue(entry.setting, entry.newValue),
     });
   }
-  return t(`changeLog.kinds.${entry.kind}`, {
+  // Login zanonimizowanej osoby znika z wpisu o założeniu jej konta.
+  const key = entry.kind === "konto_zalozone" && entry.login === null ? "changeLog.accountWithoutLogin" : (`changeLog.kinds.${entry.kind}` as const);
+  return t(key, {
     person: entry.personName ?? "",
     role: entry.role ? t(`roles.${entry.role}`) : "",
     login: entry.login ?? "",

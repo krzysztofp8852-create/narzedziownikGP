@@ -26,15 +26,15 @@ describe("menu pod trzema kreskami", () => {
       ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
       [
         "Firma",
-        ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Wyloguj"],
+        ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Usuń konto /usun-konto", "Wyloguj"],
       ],
     ]);
   });
 
   it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też czas na budowie, odbicia do wyjaśnienia i raporty, a magazynier własny czas", () => {
     for (const [role, people, company] of [
-      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"], ["Raporty /raporty", "Samouczek /samouczek", "Wyloguj"]],
-      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"], ["Samouczek /samouczek", "Wyloguj"]],
+      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"], ["Raporty /raporty", "Samouczek /samouczek", "Usuń konto /usun-konto", "Wyloguj"]],
+      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"], ["Samouczek /samouczek", "Usuń konto /usun-konto", "Wyloguj"]],
     ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
@@ -60,14 +60,20 @@ describe("menu pod trzema kreskami", () => {
       ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /pojazdy"]],
       ["Ludzie", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
-      ["Firma", ["Wyloguj"]],
+      ["Firma", ["Usuń konto /usun-konto", "Wyloguj"]],
     ]);
+  });
+
+  it("każda rola dojdzie z menu do publicznej strony „Usuń konto”, tuż nad wylogowaniem", () => {
+    for (const role of ["wlasciciel", "kierownik", "magazynier", "pracownik"] as const) {
+      expect(shown(role).at(-1)?.[1].slice(-2)).toEqual(["Usuń konto /usun-konto", "Wyloguj"]);
+    }
   });
 
   it("w firmie demo nie ma samouczka, bo demo ma własny przewodnik", () => {
     expect(shown("wlasciciel", { demo: true }).at(-1)).toEqual([
       "Firma",
-      ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Wyloguj"],
+      ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Usuń konto /usun-konto", "Wyloguj"],
     ]);
   });
 });

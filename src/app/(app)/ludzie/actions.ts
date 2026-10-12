@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
+import type { AnonymizeState } from "@/components/anonymize-person-button";
 import type { AddedMember, MemberRole } from "@/registry/registry";
 
 export interface AddMemberState {
@@ -84,6 +85,18 @@ export async function deactivatePerson(personId: string): Promise<MemberActionSt
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).deactivatePerson(personId);
+    revalidatePeople();
+    return {};
+  } catch (error) {
+    return { error: errorMessage(error) };
+  }
+}
+
+/** Anonimizacja osoby na jej prośbę; nieodwracalna. */
+export async function anonymizePerson(personId: string): Promise<AnonymizeState> {
+  const session = await requireSession();
+  try {
+    await getRegistry().as(session.userId).anonymizePerson(personId);
     revalidatePeople();
     return {};
   } catch (error) {

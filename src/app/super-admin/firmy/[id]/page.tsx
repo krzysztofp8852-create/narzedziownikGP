@@ -24,7 +24,10 @@ export async function generateMetadata(props: PageProps<"/super-admin/firmy/[id]
   return { title: company?.name };
 }
 
-/** Firma z abonamentem: dane do faktury, pakiet, „opłacone do”, ręczny tryb tylko do odczytu, dziennik zmian i usunięcie. */
+/**
+ * Firma z abonamentem: dane do faktury, pakiet, „opłacone do”, ręczny tryb tylko do odczytu, dziennik zmian, osoby
+ * (do anonimizacji) i usunięcie.
+ */
 export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[id]">) {
   const company = await loadCompany((await props.params).id);
   if (!company) notFound();
@@ -103,6 +106,16 @@ export default async function CompanyPage(props: PageProps<"/super-admin/firmy/[
           <p>
             <Link className="button button-quiet" href={`/super-admin/firmy/${company.id}/dziennik`}>
               {t("superAdmin.changeLogLink")}
+            </Link>
+          </p>
+        </section>
+        <section className="company-card" aria-labelledby="company-people">
+          <h2 id="company-people" className="display section-title">
+            {t("superAdmin.peopleTitle")}
+          </h2>
+          <p>
+            <Link className="button button-quiet" href={`/super-admin/firmy/${company.id}/osoby`}>
+              {t("superAdmin.peopleLink")}
             </Link>
           </p>
         </section>
