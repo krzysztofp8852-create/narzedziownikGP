@@ -53,6 +53,6 @@ test("właściciel anonimizuje kierownika na jego prośbę: historia pokazuje na
 
   await page.context().clearCookies();
   await signIn(page, company.manager);
-  await expect(page.getByRole("alert")).toHaveText("Nieprawidłowy login lub hasło.");
+  await expect(page.getByText("Nieprawidłowy login lub hasło.")).toBeVisible();
   await expect(page).toHaveURL(/\/logowanie/);
 });

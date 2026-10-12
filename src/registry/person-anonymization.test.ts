@@ -165,6 +165,17 @@ describe("anonimizacja osoby", () => {
     expect(await everything(testbed.db)).not.toContain("Adam Nowak");
   });
 
+  it("usunięcie firmy po anonimizacji jej osoby usuwa wszystko bez pozostałości", async () => {
+    const company = await givenCompanyWithManagerTraces();
+    await company.owner.anonymizePerson(company.managerPersonId);
+    const admin = testbed.registry.superAdmin(company.adminId);
+    await admin.setManualReadOnly(company.companyId, true);
+
+    expect(await admin.deleteCompany(company.companyId, "Zawbud")).toEqual({ leftovers: 0 });
+
+    expect(await testbed.db.transaction((sql) => sql("select 1 from app.people where company_id = $1", [company.companyId]))).toEqual([]);
+  });
+
   it("nie mogą jej wykonać kierownik, magazynier, pracownik, właściciel innej firmy ani nikt spoza panelu super-admina, a nic się nie zmienia", async () => {
     const company = await givenCompanyWithManagerTraces();
     const storekeeperId = await testbed.givenMember(company, "magazynier");
