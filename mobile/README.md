@@ -42,10 +42,20 @@ Ten katalog ma własne zależności i nie wchodzi do builda Next.js ani na Verce
     (`src/lib/push/app.ts`), a dotknięcie powiadomienia otwiera jego adres. Kanał „Powiadomienia” i ikonę na pasku
     (`ic_notification`, biały znak GP) zakłada skorupa.
 
+## Konta i klucze
+
+Wszystko poza kodem (D-U-N-S i konto organizacji w Play Console, domena w Search Console, projekt Firebase
+z `google-services.json`, `FIREBASE_SERVICE_ACCOUNT` na Vercelu, klucz uploadowy, JDK i Android SDK, aplikacja
+w Play Console z Play App Signing) zakłada kreator `scripts/android-konta.sh` (#117). Weryfikacja organizacji w Google
+trwa dni, więc kreator uruchamia się wiele razy: zrobione etapy pomija, a jawne wartości (numer D-U-N-S, projekt
+Firebase, ścieżka klucza) pamięta w `.env.android`. Firebase i klucz uploadowy opisują też ręcznie sekcje niżej.
+
 ## Wymagania
 
 - Node.js 24
-- JDK 21 (Gradle 8.14 nie uruchomi się na JDK 26; najprościej JDK dołączony do Android Studio)
+- JDK 21 (Gradle 8.14 nie uruchomi się na JDK 26; najprościej JDK dołączony do Android Studio). Jeśli domyślna
+  `java` jest nowsza, Gradle uruchamiaj z `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew …` (z JDK Android
+  Studio: `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`).
 - Android SDK z platformą 36 i build-tools: Android Studio albo same narzędzia wiersza poleceń. Ścieżkę podaje
   `ANDROID_HOME` albo plik `android/local.properties` (`sdk.dir=/Users/…/Library/Android/sdk`).
 
