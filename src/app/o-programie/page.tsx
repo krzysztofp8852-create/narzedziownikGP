@@ -15,6 +15,7 @@ import { type PriceText, pricing } from "@/lib/pricing-text";
 import { jsonLdScript, landingStructuredData } from "@/lib/structured-data";
 import { TIERS } from "@/registry/subscriptions";
 import { HERO_MAP } from "./hero-map";
+import { LossStats } from "./loss-stats";
 import mapa from "./mapa.jpg";
 
 // Pod „/” niezalogowany widzi tę stronę (src/proxy.ts), więc wyszukiwarka zna ją pod adresem głównym.
@@ -248,28 +249,20 @@ export default function LandingPage() {
         </div>
 
         <main className="landing-main">
-          <section className="landing-section" aria-labelledby="funkcje">
-            <h2 id="funkcje" className="landing-section-title">
-              {t("landing.features.title")}
+          <LossStats />
+
+          <section className="landing-section" aria-labelledby="jak-to-dziala">
+            <h2 id="jak-to-dziala" className="landing-section-title">
+              {t("landing.steps.title")}
             </h2>
-            <p className="landing-lead">{t("landing.features.lead")}</p>
-            {FEATURE_GROUPS.map((group) => (
-              <div key={group.id} id={`modul-${group.id}`} className="landing-feature-group">
-                <div className="landing-feature-head">
-                  <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
-                  <p>{t(`landing.features.groups.${group.id}.text`)}</p>
-                </div>
-                <ul>
-                  {group.features.map((feature, index) => (
-                    <li key={feature}>
-                      <span className="plate">{`${t(`landing.features.groups.${group.id}.code`)}-${String(index + 1).padStart(2, "0")}`}</span>
-                      <h4>{t(`landing.features.${feature}.title`)}</h4>
-                      <p>{t(`landing.features.${feature}.text`)}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <ol className="landing-steps">
+              {STEPS.map((step) => (
+                <li key={step}>
+                  <h3>{t(`landing.steps.${step}.title`)}</h3>
+                  <p>{t(`landing.steps.${step}.text`)}</p>
+                </li>
+              ))}
+            </ol>
           </section>
 
           <section className="landing-section landing-support" aria-labelledby="pomoc">
@@ -293,18 +286,28 @@ export default function LandingPage() {
             </figure>
           </section>
 
-          <section className="landing-section" aria-labelledby="jak-to-dziala">
-            <h2 id="jak-to-dziala" className="landing-section-title">
-              {t("landing.steps.title")}
+          <section className="landing-section" aria-labelledby="funkcje">
+            <h2 id="funkcje" className="landing-section-title">
+              {t("landing.features.title")}
             </h2>
-            <ol className="landing-steps">
-              {STEPS.map((step) => (
-                <li key={step}>
-                  <h3>{t(`landing.steps.${step}.title`)}</h3>
-                  <p>{t(`landing.steps.${step}.text`)}</p>
-                </li>
-              ))}
-            </ol>
+            <p className="landing-lead">{t("landing.features.lead")}</p>
+            {FEATURE_GROUPS.map((group) => (
+              <div key={group.id} id={`modul-${group.id}`} className="landing-feature-group">
+                <div className="landing-feature-head">
+                  <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
+                  <p>{t(`landing.features.groups.${group.id}.text`)}</p>
+                </div>
+                <ul>
+                  {group.features.map((feature, index) => (
+                    <li key={feature}>
+                      <span className="plate">{`${t(`landing.features.groups.${group.id}.code`)}-${String(index + 1).padStart(2, "0")}`}</span>
+                      <h4>{t(`landing.features.${feature}.title`)}</h4>
+                      <p>{t(`landing.features.${feature}.text`)}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </section>
 
           <section className="landing-section" aria-labelledby="cennik">

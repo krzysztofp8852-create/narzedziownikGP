@@ -2088,7 +2088,7 @@
       },
       "stickers": {
         "title": "Naklejki i plakaty",
-        "text": "Naklejki QR idą na sprzęt, a plakat budowy na kontener przy wejściu."
+        "text": "Na sprzęt idą naklejki QR albo sam kod sprzętu, a plakat budowy na kontener przy wejściu."
       },
       "movements": {
         "title": "Telefon na budowie",
@@ -2098,6 +2098,63 @@
         "title": "Program pilnuje",
         "text": "Alarmy, przypomnienia o terminach i uprawnieniach, koszty sprzętu i godziny na budowach liczą się same."
       }
+    },
+    "roi": {
+      "title": "Ile tracisz bez porządku w narzędziach",
+      "lead": "Co mówią badania o kradzieżach i szukaniu narzędzi na budowach i ile to kosztuje firmę w złotówkach.",
+      "stats": {
+        "thefts": {
+          "value": "73,6%",
+          "text": "firm budowlanych w Polsce zgłasza kradzieże na budowach",
+          "source": "BauWatch Crime Report 2026, Polska"
+        },
+        "insiders": {
+          "value": "25%",
+          "text": "firm wskazuje, że najczęściej kradną osoby z dostępem do budowy",
+          "source": "BauWatch Crime Report 2026, Polska"
+        },
+        "search": {
+          "value": "ok. 50 min",
+          "text": "tygodniowo pracownik szuka narzędzi",
+          "source": "ankiety Bunker 2025 i FMB 2018, Wielka Brytania"
+        },
+        "hour": {
+          "value": "{hourly}",
+          "text": "kosztuje firmę godzina pracownika budowlanego",
+          "source": "GUS 2026, ze składkami pracodawcy"
+        }
+      },
+      "stolen": {
+        "title": "Co najczęściej ginie z polskich budów",
+        "source": "% wskazań, BauWatch Crime Report 2026, Polska",
+        "items": {
+          "tools": "Drobne narzędzia i elektronarzędzia",
+          "copper": "Miedź i kable",
+          "fuel": "Paliwo",
+          "steel": "Stal"
+        }
+      },
+      "split": {
+        "title": "Na czym firma traci: {total} rocznie na pracownika",
+        "time": "Szukanie narzędzi i powroty do bazy",
+        "tools": "Zgubione i skradzione narzędzia",
+        "caption": "Stracony czas kosztuje ok. {ratio} razy więcej niż same narzędzia."
+      },
+      "payback": {
+        "title": "Koszt programu na tle rocznych strat",
+        "workers": "{workers} pracowników",
+        "share": "rocznych strat: tyle kosztuje pierwszy rok programu",
+        "loss": "Straty rocznie",
+        "program": "Program w 1. roku",
+        "programLegend": "Program z wdrożeniem",
+        "next": "W kolejnych latach samo utrzymanie: {amount}, czyli {percent} strat."
+      },
+      "sizes": {
+        "small": "Mała firma",
+        "medium": "Średnia firma",
+        "large": "Duża firma"
+      },
+      "belowOnePercent": "poniżej 1%"
     },
     "pricing": {
       "title": "Cennik",
