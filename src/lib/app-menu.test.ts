@@ -8,6 +8,7 @@ const session = (role: Role, { demo = false, siteManagersSeeCosts = false } = {}
   role,
   mustChangePassword: false,
   idleLogoutMinutes: null,
+  locale: "pl",
   company: { id: "9a4d3f2b-8c1e-4e7b-8c2f-5d6e7f809102", name: "Zawbud", readOnly: false, demo, siteManagersSeeCosts },
 });
 
@@ -26,15 +27,15 @@ describe("menu pod trzema kreskami", () => {
       ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"]],
       [
         "Firma",
-        ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Usuń konto /usun-konto", "Wyloguj"],
+        ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Samouczek /samouczek", "Język / Language /jezyk", "Usuń konto /usun-konto", "Wyloguj"],
       ],
     ]);
   });
 
   it("kierownik i magazynier nie widzą naklejek, dokumentów ani ustawień, ale mają samouczek i stronę Ludzie; kierownik też czas na budowie, odbicia do wyjaśnienia i raporty, a magazynier własny czas", () => {
     for (const [role, people, company] of [
-      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"], ["Raporty /raporty", "Samouczek /samouczek", "Usuń konto /usun-konto", "Wyloguj"]],
-      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"], ["Samouczek /samouczek", "Usuń konto /usun-konto", "Wyloguj"]],
+      ["kierownik", ["Ludzie /ludzie", "Czas na budowie /czas", "Odbicia do wyjaśnienia /odbicia"], ["Raporty /raporty", "Samouczek /samouczek", "Język / Language /jezyk", "Usuń konto /usun-konto", "Wyloguj"]],
+      ["magazynier", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"], ["Samouczek /samouczek", "Język / Language /jezyk", "Usuń konto /usun-konto", "Wyloguj"]],
     ] as const) {
       expect(shown(role)).toEqual([
         ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
@@ -60,7 +61,7 @@ describe("menu pod trzema kreskami", () => {
       ["Sprzęt", ["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Historia /historia"]],
       ["Budowy i pojazdy", ["Budowy /#budowy", "Pojazdy /pojazdy"]],
       ["Ludzie", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
-      ["Firma", ["Usuń konto /usun-konto", "Wyloguj"]],
+      ["Firma", ["Język / Language /jezyk", "Usuń konto /usun-konto", "Wyloguj"]],
     ]);
   });
 
@@ -70,10 +71,16 @@ describe("menu pod trzema kreskami", () => {
     }
   });
 
+  it("każda rola wybiera z menu swój język", () => {
+    for (const role of ["wlasciciel", "kierownik", "magazynier", "pracownik"] as const) {
+      expect(shown(role).at(-1)?.[1]).toContain("Język / Language /jezyk");
+    }
+  });
+
   it("w firmie demo nie ma samouczka, bo demo ma własny przewodnik", () => {
     expect(shown("wlasciciel", { demo: true }).at(-1)).toEqual([
       "Firma",
-      ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Usuń konto /usun-konto", "Wyloguj"],
+      ["Raporty /raporty", "Dokumenty /ustawienia#legal", "Ustawienia /ustawienia", "Język / Language /jezyk", "Usuń konto /usun-konto", "Wyloguj"],
     ]);
   });
 });

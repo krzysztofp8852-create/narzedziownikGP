@@ -9,7 +9,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { MAX_SUPPORT_MESSAGE_LENGTH, type SupportThreadMessage } from "@/registry/registry";
 import { replyToSupportThread } from "../../actions";
 
-export const metadata: Metadata = { title: t("supportChat.admin.title") };
+export const generateMetadata = (): Metadata => ({ title: t("supportChat.admin.title") });
 
 /** Wątek użytkownika z kontekstem każdej jego wiadomości (rola, ekran, wersja aplikacji) i odpowiedzią GP Engineering. */
 export default async function SupportThreadPage(props: PageProps<"/super-admin/czat/[id]">) {

@@ -7,7 +7,7 @@ import { MIN_PASSWORD_LENGTH } from "@/registry/registry";
 import { ChangePasswordForm } from "../zmien-haslo/change-password-form";
 import { setNewPassword } from "./actions";
 
-export const metadata: Metadata = { title: t("newPassword.title") };
+export const generateMetadata = (): Metadata => ({ title: t("newPassword.title") });
 
 export default async function NewPasswordPage() {
   await requireMember();

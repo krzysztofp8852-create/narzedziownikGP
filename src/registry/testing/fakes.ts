@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { Locale } from "@/i18n/locales";
 import type { CallbackRequest } from "../callback-requests";
 import type { EmailedNotification } from "../notifications";
 import { type AuthAdmin, type Clock, type Db, EmailTakenError, type Geocoder, type MapPosition, type Notifier, type PhotoStore } from "../ports";
@@ -96,6 +97,9 @@ export class RecordingNotifier implements Notifier {
   readonly sent: EmailedNotification[] = [];
   /** Wysłane kopie push, z subskrypcją urządzenia, na które poszły. */
   readonly pushed: { subscription: PushSubscriptionData; message: PushMessage }[] = [];
+  /** Język adresata każdego wysłanego e-maila i każdej kopii push, w kolejności wysyłki (ADR 0047). */
+  readonly emailLocales: (Locale | undefined)[] = [];
+  readonly pushLocales: (Locale | undefined)[] = [];
   /** Adresy subskrypcji przeglądarek i tokeny aplikacji, o których usługa push mówi, że wygasły. */
   readonly expired = new Set<string>();
   /** E-maile do supportu GP Engineering o wiadomościach użytkowników z czatu. */
@@ -107,15 +111,17 @@ export class RecordingNotifier implements Notifier {
   /** Kolejne wysyłki push kończą się tym błędem, np. gdy usługa push nie odpowiada. */
   pushFailWith: Error | null = null;
 
-  async send(notification: EmailedNotification) {
+  async send(notification: EmailedNotification, locale?: Locale) {
     if (this.failWith) throw this.failWith;
     this.sent.push(notification);
+    this.emailLocales.push(locale);
   }
 
-  async push(subscription: PushSubscriptionData, message: PushMessage) {
+  async push(subscription: PushSubscriptionData, message: PushMessage, locale?: Locale) {
     if (this.pushFailWith) throw this.pushFailWith;
     if (this.expired.has(subscription.kind === "przegladarka" ? subscription.endpoint : subscription.token)) return "expired" as const;
     this.pushed.push({ subscription, message });
+    this.pushLocales.push(locale);
     return "sent" as const;
   }
 
@@ -132,6 +138,8 @@ export class RecordingNotifier implements Notifier {
   clear() {
     this.sent.length = 0;
     this.pushed.length = 0;
+    this.emailLocales.length = 0;
+    this.pushLocales.length = 0;
     this.supportEmails.length = 0;
     this.callbackEmails.length = 0;
     this.expired.clear();

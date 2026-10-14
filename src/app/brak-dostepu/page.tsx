@@ -3,7 +3,7 @@ import { AuthShell } from "@/components/auth-shell";
 import { t } from "@/i18n/t";
 import { signOut } from "../actions";
 
-export const metadata: Metadata = { title: t("noAccess.title") };
+export const generateMetadata = (): Metadata => ({ title: t("noAccess.title") });
 
 export default function NoAccessPage() {
   return (

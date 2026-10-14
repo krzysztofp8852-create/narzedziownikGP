@@ -112,6 +112,7 @@ import type { AddToolInput, Category, EditToolInput, ToolCard } from "./tools";
 import * as tutorial from "./tutorial";
 import type { Tutorial, TutorialOutcome } from "./tutorial";
 import { EMAIL_PATTERN, UUID_PATTERN } from "./validation";
+import { isLocale, type Locale } from "@/i18n/locales";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
@@ -356,6 +357,8 @@ export interface Session {
   mustChangePassword: boolean;
   /** Po tylu minutach bezczynności przeglądarka tej osoby się wyloguje; null: sesja bez limitu (każdy poza właścicielem). */
   idleLogoutMinutes: number | null;
+  /** Język interfejsu wybrany przez tę osobę (ADR 0047); w demo zawsze polski, bo konta demo są wspólne. */
+  locale: Locale;
   /**
    * `readOnly`: firma jest w trybie tylko do odczytu (ręcznie albo po 14 dniach od „opłacone do”). `demo`: firma
    * demo, do której wchodzi się bez hasła ze strony /demo. `siteManagersSeeCosts`: właściciel pozwolił kierownikom
@@ -1085,6 +1088,11 @@ export interface Registry {
      * Nic poza tym nie zapisuje; działa także w trybie tylko do odczytu. Pracownikowi i w demo odmawia (`forbidden`).
      */
     closeTutorial(outcome: TutorialOutcome): Promise<void>;
+    /**
+     * Język interfejsu aktora (ADR 0047): tylko jego konto. Działa także w trybie tylko do odczytu. W demo odmawia
+     * (`forbidden`), bo z kont demo korzysta wiele osób naraz; tam język trzyma tylko przeglądarka.
+     */
+    setLocale(locale: Locale): Promise<void>;
   };
 }
 
@@ -1233,7 +1241,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
             const { notice, copies, emails } = await deps.db.transaction((sql) => readOnly.notifyDeadline(sql, subscription, now));
             if (notice === "tylko_do_odczytu_wkrotce") result.warned += 1;
             if (notice === "tylko_do_odczytu") result.switched += 1;
-            await Promise.all([sendNotifications(deps.notifier, emails), sendPushCopies(deps, copies)]);
+            await Promise.all([sendNotifications(deps, emails), sendPushCopies(deps, copies)]);
           } catch (error) {
             console.error(`Nie sprawdzono terminu płatności firmy ${subscription.companyId}`, error);
           }
@@ -1502,7 +1510,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
           copies = await bell.deliver(sql, list, deps.clock.now());
           return { ...movement, notifications: list };
         })(input);
-        await Promise.all([replayed ? null : sendNotifications(deps.notifier, result.notifications), sendPushCopies(deps, copies)]);
+        await Promise.all([replayed ? null : sendNotifications(deps, result.notifications), sendPushCopies(deps, copies)]);
         return result;
       };
 
@@ -2059,6 +2067,12 @@ export function createRegistry(deps: RegistryDeps): Registry {
           }),
         tutorial: () => asMember((sql, session) => tutorial.tutorial(sql, session)),
         closeTutorial: (outcome) => asPersonal((sql, session) => tutorial.closeTutorial(sql, session, outcome)),
+        setLocale: (locale) =>
+          asPersonal(async (sql, session) => {
+            if (!isLocale(locale)) throw new RegistryError("invalid_input");
+            if (session.company.demo) throw new RegistryError("forbidden");
+            await sql("update app.users set locale = $2 where user_id = $1", [session.userId, locale]);
+          }),
       });
     },
   };
@@ -2205,7 +2219,7 @@ async function sendReport(deps: RegistryDeps, companyId: string, kind: ReportKin
     return kind === "tygodniowy" ? reports.weeklyReport(sql, session, now) : reports.fridayReport(sql, session, now);
   });
   const result = await deps.db.transaction((sql) => reports.deliverReport(sql, companyId, report, now));
-  await Promise.all([sendNotifications(deps.notifier, result.emails), sendPushCopies(deps, result.copies)]);
+  await Promise.all([sendNotifications(deps, result.emails), sendPushCopies(deps, result.copies)]);
   return result.delivered;
 }
 
@@ -2245,12 +2259,29 @@ async function retryOnReplay<T>(attempt: () => Promise<T>): Promise<T> {
  * Wysyła e-maile z powiadomieniami już zapisanego zdarzenia (ruchu, raportu). Zdarzenie się nie cofnie, więc błąd
  * wysyłki tylko odnotowujemy.
  */
-async function sendNotifications(notifier: Notifier, list: EmailedNotification[]) {
+async function sendNotifications(deps: RegistryDeps, list: EmailedNotification[]) {
+  if (list.length === 0) return;
+  const locales = await recipientLocales(deps, list.map((notification) => notification.recipient.userId));
   await Promise.all(
     list.map((notification) =>
-      notifier.send(notification).catch((error) => console.error("Nie wysłano powiadomienia", notification.kind, error)),
+      deps.notifier
+        .send(notification, locales.get(notification.recipient.userId) ?? "pl")
+        .catch((error) => console.error("Nie wysłano powiadomienia", notification.kind, error)),
     ),
   );
+}
+
+/** Język każdego adresata (ADR 0047); czyta transakcja systemowa, bo to wiersze innych osób. Gdy się nie uda: polski. */
+async function recipientLocales(deps: RegistryDeps, userIds: string[]): Promise<Map<string, Locale>> {
+  try {
+    const rows = await deps.db.transaction((sql) =>
+      sql<{ user_id: string; locale: string }>("select user_id, locale from app.users where user_id = any($1::uuid[])", [[...new Set(userIds)]]),
+    );
+    return new Map(rows.flatMap((row) => (isLocale(row.locale) ? [[row.user_id, row.locale] as const] : [])));
+  } catch (error) {
+    console.error("Nie odczytano języka adresatów", error);
+    return new Map();
+  }
 }
 
 /**
@@ -2267,9 +2298,9 @@ async function sendPushCopies(deps: RegistryDeps, copies: PushCopy[]) {
       copies.flatMap((copy) =>
         subscriptions
           .filter(({ userId }) => userId === copy.recipientId)
-          .map(({ subscription }) =>
+          .map(({ subscription, locale }) =>
             deps.notifier
-              .push(subscription, copy.message)
+              .push(subscription, copy.message, locale)
               .then((outcome) => void (outcome === "expired" && expired.push(subscription)))
               .catch((error) => console.error("Nie wysłano powiadomienia push", copy.message.window, error)),
           ),
@@ -2368,6 +2399,7 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     full_name: string;
     role: Role;
     must_change_password: boolean;
+    locale: string;
     company_id: string;
     company_name: string;
     company_demo: boolean;
@@ -2376,7 +2408,7 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     paid_until: string | null;
     manual_read_only: boolean | null;
   }>(
-    `select u.full_name, u.role, u.must_change_password, c.id as company_id, c.name as company_name, c.demo_since is not null as company_demo,
+    `select u.full_name, u.role, u.must_change_password, u.locale, c.id as company_id, c.name as company_name, c.demo_since is not null as company_demo,
             c.site_managers_see_costs, c.owner_idle_logout_minutes, to_char(p.paid_until, 'YYYY-MM-DD') as paid_until, p.manual_read_only
      from app.users u join app.companies c on c.id = u.company_id
      left join app.current_company_plan() p on true
@@ -2390,6 +2422,7 @@ async function loadSession(sql: Sql, userId: string, now: Date): Promise<Session
     role: row.role,
     mustChangePassword: row.must_change_password,
     idleLogoutMinutes: idleLogout.idleLogoutMinutes(row.role, row.company_demo, row.owner_idle_logout_minutes),
+    locale: isLocale(row.locale) && !row.company_demo ? row.locale : "pl",
     company: {
       id: row.company_id,
       name: row.company_name,

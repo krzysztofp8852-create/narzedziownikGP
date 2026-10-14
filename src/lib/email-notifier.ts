@@ -1,6 +1,6 @@
 import { formatCalendarDay, formatDateTime } from "@/i18n/dates";
 import { formatMoney } from "@/i18n/money";
-import { t } from "@/i18n/t";
+import { currentLocale, t } from "@/i18n/t";
 import type { Notifier } from "@/registry/ports";
 import {
   type CallbackRequest,
@@ -182,7 +182,7 @@ function reportEmail(recipient: { email: string; fullName: string }, report: Rep
 
   const muted = "color:#6b6b66;";
   const html = `<!doctype html>
-<html lang="pl">
+<html lang="${currentLocale()}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:0;background:#f4f4f1;">
 <div style="max-width:600px;margin:0 auto;padding:20px 16px;background:#ffffff;color:#1d1d1b;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:16px;line-height:1.5;">

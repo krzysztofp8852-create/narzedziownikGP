@@ -325,6 +325,7 @@ describe("raporty otrzymane i rodzaje na teraz", () => {
       role,
       mustChangePassword: false,
       idleLogoutMinutes: null,
+      locale: "pl",
       company: { id: randomUUID(), name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
     expect(reportKindsOf(as("wlasciciel"))).toEqual(["tygodniowy", "piatkowy"]);

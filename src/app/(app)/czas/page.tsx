@@ -9,7 +9,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canSeeTimeOnSiteSummary, type OwnTimeOnSite, type TimeOnSiteSummary } from "@/registry/registry";
 import { PunchEntry } from "../lokalizacje/people-on-site";
 
-export const metadata: Metadata = { title: t("timeOnSite.title") };
+export const generateMetadata = (): Metadata => ({ title: t("timeOnSite.title") });
 
 const monthSearch = (month: string) => `?${new URLSearchParams({ [COST_PARAMS.month]: month })}`;
 

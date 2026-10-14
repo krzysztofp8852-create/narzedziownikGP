@@ -6,7 +6,7 @@ import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { QualificationList } from "../qualifications";
 
-export const metadata: Metadata = { title: t("qualifications.title") };
+export const generateMetadata = (): Metadata => ({ title: t("qualifications.title") });
 
 /**
  * Karta osoby z kartoteki: jej uprawnienia z datami, dokumentami i odnowieniami. Właściciel i kierownik widzą każdą

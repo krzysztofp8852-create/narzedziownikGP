@@ -45,7 +45,7 @@ import { TutorialCard } from "./samouczek/tutorial";
 import { DemoSiteMap, type MapDevice, type MapPlace } from "./demo-site-map";
 import { SiteMap, type SiteMapPin } from "./site-map";
 
-export const metadata: Metadata = { title: t("board.title") };
+export const generateMetadata = (): Metadata => ({ title: t("board.title") });
 
 function Services({ services }: { services: WhereIsWhat["services"] }) {
   const withTools = services.filter((service) => service.tools.length > 0);

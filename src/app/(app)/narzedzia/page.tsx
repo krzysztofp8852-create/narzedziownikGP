@@ -6,7 +6,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canImportTools, canSeeValues } from "@/registry/registry";
 import { ToolBrowser } from "./tool-browser";
 
-export const metadata: Metadata = { title: t("toolsPage.title") };
+export const generateMetadata = (): Metadata => ({ title: t("toolsPage.title") });
 
 /**
  * Cały sprzęt firmy dla każdej roli: gdzie jest, od ilu dni i kto odpowiada, z filtrami kategorii i miejsca. Zaginione

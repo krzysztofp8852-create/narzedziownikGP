@@ -22,6 +22,7 @@ describe("dodawanie osoby do zespołu", () => {
       role: "kierownik",
       mustChangePassword: true,
       idleLogoutMinutes: null,
+      locale: "pl",
       company: { id: zawbud.companyId, name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
   });

@@ -6,7 +6,7 @@ import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 
-export const metadata: Metadata = { title: t("changeLog.title") };
+export const generateMetadata = (): Metadata => ({ title: t("changeLog.title") });
 
 /** Dziennik zmian kont i ustawień jednej firmy dla super-admina. */
 export default async function CompanyChangeLogPage(props: PageProps<"/super-admin/firmy/[id]/dziennik">) {

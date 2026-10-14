@@ -8,7 +8,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { reportLink, reportSummary, reportTitle } from "@/lib/report-text";
 import { canSeeReports, reportKindsOf } from "@/registry/registry";
 
-export const metadata: Metadata = { title: t("reports.page.title") };
+export const generateMetadata = (): Metadata => ({ title: t("reports.page.title") });
 
 /**
  * Raporty aktora: na teraz (właściciel tygodniowy i piątkowy, kierownik piątkowy ze swoimi lokalizacjami) i te, które

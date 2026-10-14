@@ -10,7 +10,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canCloseSite, canForceCloseSites, canMoveTools } from "@/registry/registry";
 import { CloseSiteForm, ForceCloseForm, ReturnForm, TransferForm } from "./closing-forms";
 
-export const metadata: Metadata = { title: t("siteClosing.close") };
+export const generateMetadata = (): Metadata => ({ title: t("siteClosing.close") });
 
 /**
  * Domykanie budowy: lista narzędzi, które na niej zostały, z akcjami zwrotu i przeniesienia.

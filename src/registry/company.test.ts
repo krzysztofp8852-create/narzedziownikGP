@@ -18,6 +18,7 @@ describe("zakładanie firmy", () => {
       role: "wlasciciel",
       mustChangePassword: true,
       idleLogoutMinutes: null,
+      locale: "pl",
       company: { id: created.companyId, name: "Zawbud", readOnly: false, demo: false, siteManagersSeeCosts: false },
     });
   });

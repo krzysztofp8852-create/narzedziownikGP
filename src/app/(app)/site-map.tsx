@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { t } from "@/i18n/t";
+import { type MessageKey, t } from "@/i18n/t";
 import { forgetAuthFailure, loadGoogleMaps } from "@/lib/google-maps-loader";
 import type { MapPin, MapPosition } from "@/registry/registry";
 import { moveMapPin } from "./lokalizacje/actions";
@@ -24,11 +24,11 @@ const POLAND = { center: { lat: 52.07, lng: 19.48 }, zoom: 6 };
 const SINGLE_PIN_ZOOM = 14;
 const FIT_PADDING = 48;
 
-const STATUS_TEXT: Record<Exclude<Status, "ready">, string> = {
-  loading: t("siteMap.loading"),
-  offline: t("siteMap.offline"),
-  failed: t("siteMap.failed"),
-};
+const STATUS_TEXT = {
+  loading: "siteMap.loading",
+  offline: "siteMap.offline",
+  failed: "siteMap.failed",
+} as const satisfies Record<Exclude<Status, "ready">, MessageKey>;
 
 function pinLabel(pin: MapPin) {
   return `${pin.kind === "baza" ? t("board.baseKind") : t("board.siteKind")}: ${pin.name}`;
@@ -247,7 +247,7 @@ export function SiteMap({ pins, maps, canEdit }: { pins: SiteMapPin[]; maps: Goo
       <div className="location site-map">
         <div className="site-map-canvas" data-map-status={status} aria-busy={status === "loading" || saving}>
           <div ref={container} className="site-map-google" />
-          {status !== "ready" && <p className="site-map-status">{STATUS_TEXT[status]}</p>}
+          {status !== "ready" && <p className="site-map-status">{t(STATUS_TEXT[status])}</p>}
         </div>
         {placing && (
           <p role="status" className="site-map-placing">

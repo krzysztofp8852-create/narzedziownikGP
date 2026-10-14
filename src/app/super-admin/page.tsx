@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { PaidUntil, RecorderUsage, SubscriptionStatus, ToolUsage } from "./subscription-status";
 
-export const metadata: Metadata = { title: t("superAdmin.companiesTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("superAdmin.companiesTitle") });
 
 /** Wszystkie firmy z pakietem, liczbą narzędzi, liczbą osób zapisujących ruchy, „opłacone do” i stanem abonamentu. */
 export default async function CompaniesPage(props: PageProps<"/super-admin">) {

@@ -18,7 +18,7 @@ import { LossStats } from "./loss-stats";
 import mapa from "./mapa.jpg";
 
 // Pod „/” niezalogowany widzi tę stronę (src/proxy.ts), więc wyszukiwarka zna ją pod adresem głównym.
-export const metadata: Metadata = {
+export const generateMetadata = (): Metadata => ({
   title: { absolute: t("landing.title") },
   description: t("landing.description"),
   alternates: { canonical: "/" },
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     images: [{ url: "/og.png", width: 1200, height: 630, alt: t("landing.title") }],
   },
   twitter: { card: "summary_large_image" },
-};
+});
 
 /** Moduły programu (ADR 0027), wszystkie w cenie abonamentu; ewidencja sprzętu to jeden z nich. Każdy ma stronę modułu (ADR 0046). */
 const FEATURE_GROUPS = [

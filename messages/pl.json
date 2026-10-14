@@ -88,6 +88,7 @@
     "documents": "Dokumenty",
     "settings": "Ustawienia",
     "tutorial": "Samouczek",
+    "language": "Język / Language",
     "deleteAccount": "Usuń konto",
     "logout": "Wyloguj"
   },
@@ -2525,6 +2526,16 @@
     "submitting": "Zapisywanie…",
     "saved": "Zapisano.",
     "signedOut": "Wylogowaliśmy Cię po bezczynności, tak jak ustawiono w firmie. Zaloguj się ponownie."
+  },
+  "language": {
+    "title": "Język",
+    "intro": "Język aplikacji na Twoim koncie. Zmiana dotyczy tylko Ciebie: inne osoby w firmie widzą swój własny język.",
+    "demoIntro": "W demo język zapisuje się tylko w tej przeglądarce, bo z kont demo korzysta wiele osób naraz.",
+    "label": "Język aplikacji",
+    "submit": "Zapisz język",
+    "submitting": "Zapisywanie…",
+    "invalid": "Wybierz język z listy.",
+    "back": "← Wróć do tablicy"
   },
   "costSettings": {
     "title": "Kto widzi koszty",

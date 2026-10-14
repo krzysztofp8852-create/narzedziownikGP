@@ -9,7 +9,7 @@ import { serverEnv } from "@/lib/env";
 import { getRegistry } from "@/lib/registry-instance";
 import { markAllNotificationsRead, markNotificationRead, openNotification } from "./actions";
 
-export const metadata: Metadata = { title: t("bell.title") };
+export const generateMetadata = (): Metadata => ({ title: t("bell.title") });
 
 /** Dzwonek: powiadomienia użytkownika od najnowszego, nieprzeczytane wyróżnione. */
 export default async function BellPage() {

@@ -8,7 +8,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canImportTools } from "@/registry/registry";
 import { ToolImport } from "./tool-import";
 
-export const metadata: Metadata = { title: t("import.title") };
+export const generateMetadata = (): Metadata => ({ title: t("import.title") });
 
 /** Import listy narzędzi z pliku: podgląd z błędami, potem zapis wszystko albo nic. Tylko właściciel. */
 export default async function ImportPage() {

@@ -96,6 +96,7 @@ export const EXPORT_TABLES: ExportTable[] = [
       temporary_password_issued_at: "Kiedy nadano ostatnie hasło tymczasowe.",
       username: "Nazwa użytkownika pracownika do logowania.",
       tutorial: "Samouczek: ukonczony, pominiety albo puste (nie zakończony).",
+      locale: "Język interfejsu wybrany przez osobę: pl, uk, ru, en, ka albo be.",
       anonymized_at: "Kiedy konto zanonimizowano razem z jego osobą (bez e-maila i loginu, nie loguje się); puste u pozostałych.",
     },
   },

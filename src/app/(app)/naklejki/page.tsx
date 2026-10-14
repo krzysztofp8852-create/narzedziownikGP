@@ -7,7 +7,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canPrintStickers } from "@/registry/registry";
 import { StickerSheetForm } from "./sticker-forms";
 
-export const metadata: Metadata = { title: t("stickers.title") };
+export const generateMetadata = (): Metadata => ({ title: t("stickers.title") });
 
 /** Naklejki QR do wydruku: wszystkie nieoklejone albo wybrane narzędzia, na wybranym arkuszu A4. Tylko właściciel. */
 export default async function StickersPage() {

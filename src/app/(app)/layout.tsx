@@ -9,12 +9,14 @@ import { IdleLogout } from "@/components/idle-logout";
 import { InstallBanner } from "@/components/install-banner";
 import { OfflineSync } from "@/components/offline-sync";
 import { SupportChatLink } from "@/components/support-chat-link";
+import { requestLocale } from "@/i18n/server-locale";
 import { t } from "@/i18n/t";
 import { appMenu } from "@/lib/app-menu";
 import { currentIdleStatus, requireSession } from "@/lib/auth";
 import { serverEnv } from "@/lib/env";
 import { getRegistry } from "@/lib/registry-instance";
 import { canUseSupportChat } from "@/registry/registry";
+import { LocaleSync } from "./jezyk/locale-sync";
 
 function SearchIcon() {
   return (
@@ -138,6 +140,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </div>
       )}
       {serverEnv.googlePlay() && <InstallBanner />}
+      {/* Język konta zmieniony na innym urządzeniu: ta przeglądarka dogania go po jednym przeładowaniu (ADR 0047). */}
+      {!session.company.demo && session.locale !== requestLocale() && <LocaleSync locale={session.locale} />}
       <main className="app-main">{children}</main>
       {session.company.demo && (
         // Nowy przewodnik po przełączeniu roli; parametr adresu czyta dopiero przeglądarka.

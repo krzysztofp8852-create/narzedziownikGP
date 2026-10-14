@@ -7,7 +7,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { ISSUE_KINDS, type IssueKind, MAX_ISSUE_TEXT_LENGTH } from "@/registry/registry";
 import { IssueForm } from "./issue-form";
 
-export const metadata: Metadata = { title: t("issues.new") };
+export const generateMetadata = (): Metadata => ({ title: t("issues.new") });
 
 /**
  * Nowe zgłoszenie. `?narzedzie=<id>&rodzaj=uszkodzenie` (przycisk „Zgłoś uszkodzenie” na karcie narzędzia)
