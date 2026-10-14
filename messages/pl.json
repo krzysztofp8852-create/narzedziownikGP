@@ -1761,7 +1761,7 @@
   "demo": {
     "title": "Wersja demo",
     "heading": "Zobacz NarzędziownikGP w działaniu",
-    "lead": "To przykładowa firma budowlana „DemoBud”: kilkadziesiąt narzędzi, pięć budów, trzy busy, dwa serwisy, dziewięć kont, brygada bez kont w kartotece Ludzie i kilka tygodni historii. Wejdź bez logowania w dowolną rolę. Na każdej stronie przełączysz się na inną paskiem u góry.",
+    "lead": "To przykładowa firma budowlana „DemoBud”: kilkadziesiąt narzędzi, pięć budów, trzy busy i osobówka, dwa serwisy, dziewięć kont, brygada bez kont w kartotece Ludzie i kilka tygodni historii: ruchy sprzętu, odbicia na budowach, koszty, terminy i uprawnienia. Wejdź bez logowania w dowolną rolę. Na każdej stronie przełączysz się na inną paskiem u góry.",
     "enter": "Wejdź jako {role}",
     "entering": "Wchodzę…",
     "person": "W demo: {name}",
@@ -1769,23 +1769,23 @@
     "roles": {
       "wlasciciel": {
         "summary": "Widzi całą firmę i pilnuje pieniędzy.",
-        "points": "Tablica „Gdzie jest co” z wartością sprzętu w zł i kwotą poza bazą\nAlarmy: co za długo stoi na budowie, co zaginęło, co jest w serwisie\nAkceptuje narzędzia kupione przez kierowników, robi korekty i wycofania\nBudowy, busy, kartoteka Ludzie, naklejki QR, import z Excela i raporty"
+        "points": "Tablica „Gdzie jest co” z wartością sprzętu w zł i kwotą poza bazą\nAlarmy: co za długo stoi na budowie, co zaginęło, co jest w serwisie\nKoszty sprzętu każdej budowy i pojazdu ze stawek dziennych\nCzas na budowie każdej osoby z odbić na plakatach budów\nTerminy przeglądów, kalibracji, zwrotów do wypożyczalni, pojazdów i uprawnień ludzi\nAkceptuje narzędzia kupione przez kierowników; naklejki QR, import z Excela i raporty"
       },
       "kierownik": {
-        "summary": "Rusza sprzęt na swoich budowach i busie.",
-        "points": "Wydania, zwroty, przeniesienia i serwis: checklistą, skanerem QR, tekstem albo głosem\nPowiadomienie w dzwonku, gdy ktoś zabierze mu sprzęt z budowy\nZgłasza narzędzia kupione na budowę i zamyka swoje budowy\nRuchy zapisane bez zasięgu wysyłają się same, gdy wróci sieć"
+        "summary": "Rusza sprzęt i pilnuje ludzi na swoich budowach.",
+        "points": "Wydania, zwroty, przeniesienia i serwis: checklistą, skanerem QR, tekstem albo głosem\nOdbija na plakacie budowy siebie i brygadę bez telefonu, wyjaśnia odbicia poza budową\nPowiadomienie w dzwonku, gdy ktoś zabierze mu sprzęt z budowy\nZgłasza narzędzia kupione na budowę i zamyka swoje budowy\nRuchy i odbicia zapisane bez zasięgu wysyłają się same, gdy wróci sieć"
       },
       "magazynier": {
         "summary": "Obsługuje bazę i serwisy.",
-        "points": "Wydaje i przyjmuje sprzęt dla wszystkich budów i busów\nWysyła narzędzia do serwisu i przyjmuje je z powrotem\nWidzi zgłoszenia braków i uszkodzeń od brygady\nPełna historia ruchów z filtrami i eksportem do Excela"
+        "points": "Wydaje i przyjmuje sprzęt dla wszystkich budów i busów\nWysyła narzędzia do serwisu, przyjmuje je z powrotem i wpisuje wykonane przeglądy i kalibracje\nWidzi zgłoszenia braków i uszkodzeń od brygady\nPełna historia ruchów z filtrami i eksportem do Excela\nOdbija się na plakacie bazy i widzi swój czas pracy"
       },
       "pracownik": {
-        "summary": "Sprawdza, gdzie jest sprzęt, i zgłasza problemy.",
-        "points": "Widzi tablicę i karty narzędzi, ale nie rejestruje ruchów\nZgłasza uszkodzenia, braki i inne sprawy, także ze zdjęciem\nWidzi odpowiedzi w wątku zgłoszenia\nLoguje się nazwą użytkownika, bez e-maila"
+        "summary": "Odbija się na budowie, sprawdza, gdzie jest sprzęt, i zgłasza problemy.",
+        "points": "Odbija wejście i wyjście, skanując telefonem plakat budowy\nWidzi swój czas na budowie i swoje uprawnienia z terminami\nWidzi tablicę i karty narzędzi, ale nie rejestruje ruchów\nZgłasza uszkodzenia, braki i inne sprawy, także ze zdjęciem, i widzi odpowiedzi\nLoguje się nazwą użytkownika, bez e-maila"
       }
     },
     "tipsTitle": "Co warto kliknąć",
-    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał, i kto za nie teraz odpowiada.\nLupa w nagłówku: wpisz albo powiedz, czego szukasz, np. „gdzie jest niwelator?”.\nJako kierownik: panel „Operacje”. Kliknij „Wydaj z bazy” albo „Powiedz lub wpisz” i napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nDzwonek i 📋 w nagłówku: alarmy, raporty i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
+    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał, i kto za nie teraz odpowiada.\nLupa w nagłówku: wpisz albo powiedz, czego szukasz, np. „gdzie jest niwelator?”.\nJako kierownik: panel „Operacje”. Kliknij „Wydaj z bazy” albo „Powiedz lub wpisz” i napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nJako kierownik: „Odbij się” na górze tablicy. Kod plakatu jest na stronie budowy Osiedle Zielone Tarasy, w zakładce „Ludzie na budowie”. Po skanie odbijesz też brygadę bez telefonu.\nJako właściciel, w menu „Koszty sprzętu”: ile w tym miesiącu kosztuje sprzęt na każdej budowie i busie, z plikiem Excel dla księgowej.\nJako właściciel, w menu „Czas na budowie” i „Odbicia do wyjaśnienia”: godziny ludzi w miesiącu i odbicia bez wyjścia albo bez położenia telefonu.\nJako właściciel, w menu „Terminy” i „Ludzie”: przegląd busa i kalibracja po terminie, podnośnik do zwrotu do wypożyczalni, szkolenie BHP do odnowienia.\nDzwonek i 📋 w nagłówku: alarmy, raporty i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
     "note": "To wspólne demo: inni oglądający też mogą w nim coś zmienić, a my co jakiś czas przywracamy je do stanu wyjściowego. E-maile z demo nigdzie nie wychodzą.",
     "contact": "Chcesz takie narzędzie dla swojej firmy?",
     "bar": {
@@ -1868,9 +1868,25 @@
         "title": "Dzwonek",
         "text": "Powiadomienia: ktoś zabrał sprzęt z Twojej budowy, ruch zapisany bez zasięgu czeka na wyjaśnienie albo przyszedł raport."
       },
+      "punch": {
+        "title": "Odbij się",
+        "text": "Każdy z kontem odbija wejście i wyjście, skanując telefonem plakat budowy. Program sprawdza tylko odległość od budowy i nie śledzi telefonu. Kierownik po skanie odbija też brygadę bez telefonu. W demo kod plakatu wpiszesz ręcznie: jest na stronie budowy, w zakładce „Ludzie na budowie”."
+      },
+      "punchWorker": {
+        "title": "Odbij się",
+        "text": "Przy wejściu i przy wyjściu skanujesz telefonem plakat budowy albo bazy. Swoje godziny zobaczysz w menu, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
+      },
+      "deadlines": {
+        "title": "Terminy",
+        "text": "Przeglądy, kalibracje, badania UDT, gwarancje i zwroty do wypożyczalni, a przy pojazdach przegląd, OC, AC i tachograf. Przypomnienie przychodzi do dzwonka tydzień przed terminem, a o OC, AC i tachografie 30 dni przed. Pełną listę otworzysz tutaj albo w menu, w „Terminy”, a uprawnienia ludzi (BHP, badania, UDT) w „Ludzie”."
+      },
+      "costs": {
+        "title": "Koszty sprzętu",
+        "text": "Każde narzędzie ma stawkę dzienną (w demo 1% wartości, pomiarowe 2%), więc program liczy, ile kosztuje sprzęt na każdej budowie i każdym pojeździe. Zestawienie z plikiem dla księgowej jest w menu, w „Koszty sprzętu”, a stawki w ustawieniach."
+      },
       "menu": {
         "title": "Menu",
-        "text": "Pod trzema kreskami są wszystkie podstrony: terminy, historia, naklejki QR, kartoteka Ludzie i ustawienia firmy (próg dni alarmu, kto widzi zgłoszenia, serwisy, abonament). Budowy i pojazdy dodajesz na tablicy."
+        "text": "Pod trzema kreskami są wszystkie podstrony: narzędzia, terminy, historia, naklejki QR, pojazdy, koszty sprzętu, kartoteka Ludzie z uprawnieniami, czas na budowie, odbicia do wyjaśnienia, raporty i ustawienia firmy (próg dni alarmu, stawki dzienne, kto widzi zgłoszenia, serwisy, abonament). Budowę dodasz na tablicy, a pojazd na tablicy albo na stronie Pojazdy."
       },
       "finish": {
         "title": "Gotowe",

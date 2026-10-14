@@ -135,7 +135,7 @@ function DeadlinesDue({ board }: { board: WhereIsWhat }) {
   if (tools.length === 0) return null;
   const overdue = tools.filter((tool) => tool.nextDeadline?.overdue).length;
   return (
-    <section className="location location-reports" aria-labelledby="deadlines-due">
+    <section className="location location-reports" aria-labelledby="deadlines-due" data-tour="deadlines">
       <div className="location-head">
         <h2 id="deadlines-due" className="display section-title">
           {t("deadlines.boardDue", { days: UPCOMING_DAYS, count: tools.length })}

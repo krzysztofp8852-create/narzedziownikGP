@@ -45,7 +45,13 @@ export function PunchButton({ userId, punchesOthers }: { userId: string; punches
 
   return (
     <section className="punch-button" aria-label={t("punches.button")}>
-      <button className={open ? "button" : "button button-quiet"} type="button" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>
+      <button
+        className={open ? "button" : "button button-quiet"}
+        type="button"
+        aria-expanded={open}
+        onClick={() => (open ? close() : setOpen(true))}
+        data-tour="punch"
+      >
         {t("punches.button")}
       </button>
       {open && offlineCode && <OfflinePunch key={offlineCode} userId={userId} code={offlineCode} punchesOthers={punchesOthers} onClose={close} />}

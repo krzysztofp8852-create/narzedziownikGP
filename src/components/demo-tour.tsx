@@ -17,6 +17,8 @@ const STEPS = {
   operationsOwner: "operations",
   operationsManager: "operations",
   operationsStorekeeper: "operations",
+  punch: "punch",
+  punchWorker: "punch",
   recent: "recent",
   recentWorker: "recent",
   map: "map",
@@ -24,14 +26,17 @@ const STEPS = {
   issues: "issues",
   issuesWorker: "issues",
   bell: "bell",
+  deadlines: "deadlines",
+  // Koszty mają tylko stronę w menu, więc dymek wskazuje przycisk menu.
+  costs: "menu",
   menu: "menu",
   finish: null,
 } as const;
 
 type StepId = keyof typeof STEPS;
 
-/** Kroki, których element zależy od danych firmy (alarm, zgłoszenia narzędzi, zaginione). */
-const DATA_STEPS = new Set<StepId>(["alarmTool", "toolReports", "lost"]);
+/** Kroki, których element zależy od danych firmy (alarm, zgłoszenia narzędzi, zaginione, terminy). */
+const DATA_STEPS = new Set<StepId>(["alarmTool", "toolReports", "lost", "deadlines"]);
 
 const ROLE_STEPS: Record<DemoRole, StepId[]> = {
   wlasciciel: [
@@ -43,17 +48,33 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "alarmTool",
     "search",
     "operationsOwner",
+    "punch",
     "map",
     "lost",
     "issues",
     "bell",
+    "deadlines",
+    "costs",
     "menu",
     "finish",
   ],
-  kierownik: ["welcome", "roles", "alarms", "alarmTool", "search", "operationsManager", "recent", "bell", "issues", "finish"],
-  magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "issues", "finish"],
+  kierownik: [
+    "welcome",
+    "roles",
+    "alarms",
+    "alarmTool",
+    "search",
+    "operationsManager",
+    "punch",
+    "recent",
+    "bell",
+    "deadlines",
+    "issues",
+    "finish",
+  ],
+  magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "punchWorker", "issues", "finish"],
   // Pracownik nie rejestruje ruchów, więc nie ma czego cofać.
-  pracownik: ["welcome", "roles", "alarmTool", "search", "issuesWorker", "recentWorker", "finish"],
+  pracownik: ["welcome", "roles", "punchWorker", "alarmTool", "search", "issuesWorker", "recentWorker", "finish"],
 };
 
 /** Adres, który włącza przewodnik od początku (przycisk „Przewodnik” na pasku demo). */

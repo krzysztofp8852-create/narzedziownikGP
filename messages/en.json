@@ -1555,7 +1555,7 @@
   "demo": {
     "title": "Demo",
     "heading": "See NarzędziownikGP in action",
-    "lead": "This is a sample construction company, “DemoBud”: dozens of tools, five sites, three vans, two service shops, nine accounts, a crew without accounts in the People directory and several weeks of history. Enter any role without signing in. On every page you can switch to another one using the bar at the top.",
+    "lead": "This is a sample construction company, “DemoBud”: dozens of tools, five sites, three vans and a car, two service shops, nine accounts, a crew without accounts in the People directory and several weeks of history: equipment movements, clock-ins on sites, costs, deadlines and qualifications. Enter any role without signing in. On every page you can switch to another one using the bar at the top.",
     "enter": "Enter as {role}",
     "entering": "Entering…",
     "person": "In the demo: {name}",
@@ -1563,23 +1563,23 @@
     "roles": {
       "wlasciciel": {
         "summary": "Sees the whole company and keeps an eye on the money.",
-        "points": "The “What's where” board with equipment value in zł and the amount off Base\nAlarms: what's been on a site too long, what's lost, what's in service\nAccepts tools bought by site managers, makes corrections and retirements\nSites, vans, People directory, QR stickers, Excel import and reports"
+        "points": "The “What's where” board with equipment value in zł and the amount off Base\nAlarms: what's been on a site too long, what's lost, what's in service\nEquipment costs of every site and vehicle from daily rates\nTime on site of every person from clock-ins on site posters\nDeadlines for inspections, calibrations, rental returns, vehicles and people's qualifications\nApproves tools bought by site managers; QR stickers, Excel import and reports"
       },
       "kierownik": {
-        "summary": "Moves equipment on their sites and van.",
-        "points": "Issuing, returns, transfers and service: by checklist, QR scanner, text or voice\nA notification when someone takes equipment from their site\nReports tools bought for the site and closes their sites\nMovements saved without signal send themselves when the connection is back"
+        "summary": "Moves equipment and keeps track of people on their sites.",
+        "points": "Issuing, returns, transfers and service: by checklist, QR scanner, text or voice\nClocks in themselves and crew members without a phone on the site poster, clarifies clock-ins off site\nA notification when someone takes equipment from their site\nReports tools bought for the site and closes their sites\nMovements and clock-ins saved without signal are sent automatically when the network is back"
       },
       "magazynier": {
         "summary": "Runs the Base and service shops.",
-        "points": "Issues and takes back equipment for all sites and vans\nSends tools to service and takes them back\nSees issues about missing items and damage from the crew\nFull movement history with filters and Excel export"
+        "points": "Issues and takes back equipment for all sites and vans\nSends tools to service, takes them back and records completed inspections and calibrations\nSees issues about missing items and damage from the crew\nFull movement history with filters and Excel export\nClocks in on the base poster and sees their own working time"
       },
       "pracownik": {
-        "summary": "Checks where equipment is and reports problems.",
-        "points": "Sees the board and tool cards, but doesn't record movements\nReports damage, missing items and other matters, also with a photo\nSees replies in the issue thread\nSigns in with a username, no email needed"
+        "summary": "Clocks in on site, checks where equipment is and reports problems.",
+        "points": "Clocks in and out by scanning the site poster with their phone\nSees their own time on site and their qualifications with deadlines\nSees the board and tool cards, but doesn't record movements\nReports damage, missing items and other matters, also with a photo, and sees replies\nSigns in with a username, no email needed"
       }
     },
     "tipsTitle": "What to click",
-    "tips": "As the owner: the red alarms on the board, the amount off Base and two tools waiting for acceptance.\nAny tool on the board: its card with history, who moved it and when, and who's responsible for it now.\nThe magnifier in the header: type or say what you're looking for, e.g. “where's the level?”.\nAs a site manager: the “Operations” panel. Click “Issue from Base” or “Say or type” and write what you're taking, e.g. “taking two drills to Tarasy”.\nNotifications (the bell) and 📋 in the header: alarms, reports and issues raised by the crew.\nHistory: filters by site, person and tool, and export to Excel.",
+    "tips": "As the owner: the red alarms on the board, the amount off Base and two tools waiting for acceptance.\nAny tool on the board: its card with history, who moved it and when, and who's responsible for it now.\nThe magnifier in the header: type or say what you're looking for, e.g. “where's the level?”.\nAs a site manager: the “Operations” panel. Click “Issue from Base” or “Say or type” and write what you're taking, e.g. “taking two drills to Tarasy”.\nAs a site manager: “Clock in” at the top of the board. The poster code is on the Osiedle Zielone Tarasy site page, in the “People on site” tab. After the scan you can also clock in crew members without a phone.\nAs the owner, in the “Equipment costs” menu item: how much the equipment on each site and van costs this month, with an Excel file for the accountant.\nAs the owner, in “Time on site” and “Clock-ins to clarify”: people's hours in the month and clock-ins without an exit or without phone location.\nAs the owner, in “Deadlines” and “People”: an overdue van inspection and calibration, a lift to return to the rental shop, health and safety training to renew.\nNotifications (the bell) and 📋 in the header: alarms, reports and issues raised by the crew.\nHistory: filters by site, person and tool, and export to Excel.",
     "note": "This is a shared demo: other viewers can change things too, and we reset it to its starting state from time to time. Emails from the demo aren't sent anywhere.",
     "contact": "Want a tool like this for your company?",
     "bar": {
@@ -1662,9 +1662,25 @@
         "title": "Notifications",
         "text": "Notifications: someone took equipment from your site, a movement saved without signal needs clarifying, or a report has arrived."
       },
+      "punch": {
+        "title": "Clock in",
+        "text": "Everyone with an account clocks in and out by scanning the site poster with their phone. The app only checks the distance from the site and doesn't track the phone. After the scan, a site manager can also clock in crew members without a phone. In the demo you type the poster code by hand: it's on the site page, in the “People on site” tab."
+      },
+      "punchWorker": {
+        "title": "Clock in",
+        "text": "When you arrive and when you leave, you scan the site or base poster with your phone. Your hours are in the menu under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
+      },
+      "deadlines": {
+        "title": "Deadlines",
+        "text": "Inspections, calibrations, UDT inspections, warranties and rental returns, and for vehicles the roadworthiness test, third-party and comprehensive insurance and the tachograph. A reminder arrives in the bell a week before the deadline, and 30 days before for insurance and the tachograph. Open the full list here or in the menu under “Deadlines”, and people's qualifications (health and safety, medical checks, UDT) under “People”."
+      },
+      "costs": {
+        "title": "Equipment costs",
+        "text": "Every tool has a daily rate (in the demo 1% of its value, measuring tools 2%), so the app calculates what the equipment costs on each site and each vehicle. The summary with a file for the accountant is in the menu under “Equipment costs”, and the rates are in the settings."
+      },
       "menu": {
         "title": "Menu",
-        "text": "Under the three lines you'll find all subpages: deadlines, history, QR stickers, the People directory and company settings (alarm day limit, who sees issues, service shops, subscription). You add sites and vehicles on the board."
+        "text": "Under the three lines you'll find all subpages: tools, deadlines, history, QR stickers, vehicles, equipment costs, the People directory with qualifications, time on site, clock-ins to clarify, reports and company settings (alarm day limit, daily rates, who sees issues, service shops, subscription). You add sites on the board, and vehicles on the board or on the Vehicles page."
       },
       "finish": {
         "title": "All set",
