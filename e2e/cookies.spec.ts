@@ -113,7 +113,7 @@ test.describe("na domenie produkcji", () => {
     expect(analyticsRequests).toEqual([]);
   });
 
-  test("po zgodzie wejście do firmy demo wyłącza Google Analytics i Ads", async ({ page }) => {
+  test("po zgodzie wejście do firmy demo to konwersja dodatkowa, a potem Google Analytics i Ads są wyłączone", async ({ page }) => {
     const analyticsRequests = await recordAnalytics(page);
     await page.goto("/");
     await page.evaluate(() => localStorage.setItem("zgoda-cookies", "analityka"));
@@ -125,8 +125,23 @@ test.describe("na domenie produkcji", () => {
     const enter = page.getByRole("button", { name: "Wejdź jako właściciel" });
     test.skip(await enter.isDisabled(), "W tej bazie nie założono demo (npm run demo:create)");
     analyticsRequests.length = 0;
+    // Atrapa gtag.js nic nie wysyła, więc polecenia dla Google odkładamy w sessionStorage: przetrwają wejście do demo.
+    await page.evaluate(() => {
+      const dataLayer = (window as unknown as { dataLayer: unknown[] }).dataLayer;
+      const push = dataLayer.push.bind(dataLayer);
+      dataLayer.push = (...items) => {
+        const queued = JSON.parse(sessionStorage.getItem("gtag-commands") ?? "[]");
+        queued.push(...items.map((item) => Array.from(item as ArrayLike<unknown>)));
+        sessionStorage.setItem("gtag-commands", JSON.stringify(queued));
+        return push(...items);
+      };
+    });
     await enter.click();
     await expect(page.getByTestId("company-name")).toBeVisible({ timeout: 20_000 });
+    // Wejście do demo to konwersja dodatkowa w Google Ads, a do Analytics trafia jako `demo_start`.
+    const commands = await page.evaluate(() => JSON.parse(sessionStorage.getItem("gtag-commands") ?? "[]"));
+    expect(commands).toContainEqual(["event", "demo_start", { demo_role: "wlasciciel" }]);
+    expect(commands).toContainEqual(["event", "conversion", expect.objectContaining({ send_to: expect.stringMatching(/^AW-18411446988\//) })]);
     await expect.poll(googleTagsRunning(page)).toBe(false);
     await page.reload();
     await expect(page.getByTestId("company-name")).toBeVisible();

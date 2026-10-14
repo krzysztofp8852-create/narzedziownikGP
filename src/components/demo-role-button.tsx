@@ -4,10 +4,12 @@ import { useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import type { DemoRole } from "@/demo/company";
 import { t } from "@/i18n/t";
+import { reportDemoEntry } from "@/lib/google-tags";
 
 /**
  * Przycisk wejścia do roli demo; w formularzu z kilkoma rolami „Wchodzę…” pokazuje tylko kliknięty. `current`: rola,
- * w której oglądający już jest; na telefonie wiersz ról przewija się tak, żeby było ją widać.
+ * w której oglądający już jest; na telefonie wiersz ról przewija się tak, żeby było ją widać. Kliknięcie to konwersja
+ * dodatkowa w Google Ads (`reportDemoEntry`), jeśli na stronie działają tagi Google: na /demo tak, w programie nie.
  */
 export function DemoRoleButton({
   role,
@@ -44,6 +46,7 @@ export function DemoRoleButton({
       value={role}
       disabled={pending || current || disabled}
       aria-current={current || undefined}
+      onClick={() => reportDemoEntry(role)}
     >
       {entering ? t("demo.entering") : label}
     </button>

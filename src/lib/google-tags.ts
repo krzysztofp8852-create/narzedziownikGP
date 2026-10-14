@@ -4,6 +4,11 @@ export const GOOGLE_ANALYTICS_ID = "G-E6D4F37H36";
 export const GOOGLE_ADS_ID = "AW-18411446988";
 /** Konwersja Google Ads „Kontakt (mail, telefon, czat, formularz)”, wartość 1 zł. */
 export const CONTACT_CONVERSION = { send_to: `${GOOGLE_ADS_ID}/H9cBCNfFwewcEMzFoctE`, value: 1.0, currency: "PLN" };
+/**
+ * Konwersja dodatkowa Google Ads „NGP – wejście do demo”, wartość 30 zł. Widać ją tylko we „Wszystkich konwersjach”:
+ * kampanie nie optymalizują pod nią, główną konwersją jest prośba o telefon (`CONTACT_CONVERSION`).
+ */
+export const DEMO_CONVERSION = { send_to: `${GOOGLE_ADS_ID}/x0UMCNbMrpwdEMzFoctE`, value: 30.0, currency: "PLN" };
 
 /**
  * Czy na tej domenie wolno wczytać Google Analytics i Ads. Tylko produkcja: `localhost` z testami e2e, podglądy
@@ -42,4 +47,13 @@ export function startGoogleTags() {
   window.gtag("js", new Date());
   window.gtag("config", GOOGLE_ANALYTICS_ID);
   window.gtag("config", GOOGLE_ADS_ID);
+}
+
+/**
+ * Wejście do firmy demo (przycisk roli na /demo): zdarzenie `demo_start` w Analytics i konwersja dodatkowa w Google Ads.
+ * Bez działających tagów (brak zgody, poza produkcją, przełączanie roli w programie) nic nie wysyła.
+ */
+export function reportDemoEntry(role: string) {
+  window.gtag?.("event", "demo_start", { demo_role: role });
+  window.gtag?.("event", "conversion", DEMO_CONVERSION);
 }

@@ -121,7 +121,7 @@ function choose(choice: Choice) {
  * W aplikacji nie ma ani banera, ani Google Analytics, także przy zgodzie zapisanej wcześniej. Poza domeną produkcji
  * (localhost, testy e2e, podglądy Vercel) baner działa, ale Google Analytics nie wczytuje się mimo zgody.
  *
- * Razem z Analytics wczytuje się Google Ads, który tylko mierzy konwersje (formularz „oddzwonimy”), bez ciasteczek
+ * Razem z Analytics wczytuje się Google Ads, który tylko mierzy konwersje (formularz „oddzwonimy”, wejście do demo), bez ciasteczek
  * reklamowych: przy odmowie ad_storage Google dostaje pingi bez ciasteczek i modeluje konwersje.
  */
 export function CookieConsent() {
