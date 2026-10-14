@@ -62,6 +62,8 @@ export function appMenu(session: Session): MenuGroup[] {
         ...link("/ustawienia#legal", t("menu.documents"), canManageSettings(session)),
         ...link("/ustawienia", t("menu.settings"), canManageSettings(session)),
         ...link("/samouczek", t("menu.tutorial"), hasTutorial(session)),
+        // Każdy wybiera język sam dla siebie (ADR 0047); nazwa pozycji ma też „Language”, żeby trafił każdy.
+        ...link("/jezyk", t("menu.language")),
         // Publiczna strona, jak poprosić o usunięcie konta i danych; Google Play wymaga drogi do niej z aplikacji.
         ...link(LEGAL_DOCUMENTS["usun-konto"].path, t("menu.deleteAccount")),
         { kind: "signOut", label: t("menu.logout") },

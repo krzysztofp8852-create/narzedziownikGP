@@ -7,7 +7,7 @@ import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instan
 import { getRegistry } from "@/lib/registry-instance";
 import { TutorialCard } from "./tutorial";
 
-export const metadata: Metadata = { title: t("tutorial.title") };
+export const generateMetadata = (): Metadata => ({ title: t("tutorial.title") });
 
 /** Samouczek otwarty ponownie z menu, także po pominięciu albo ukończeniu. */
 export default async function TutorialPage() {

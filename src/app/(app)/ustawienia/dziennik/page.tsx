@@ -7,7 +7,7 @@ import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { canReadChangeLog } from "@/registry/registry";
 
-export const metadata: Metadata = { title: t("changeLog.title") };
+export const generateMetadata = (): Metadata => ({ title: t("changeLog.title") });
 
 /** Dziennik zmian kont i ustawień firmy dla właściciela. */
 export default async function ChangeLogPage() {

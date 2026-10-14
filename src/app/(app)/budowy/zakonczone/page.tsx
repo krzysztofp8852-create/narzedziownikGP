@@ -8,7 +8,7 @@ import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
 import { locationPagePath } from "../../lokalizacje/location-page";
 
-export const metadata: Metadata = { title: t("siteClosing.finishedTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("siteClosing.finishedTitle") });
 
 /** Zakończone budowy, których nie ma już na tablicy, z odnośnikiem do ich historii ruchów. */
 export default async function FinishedSitesPage() {

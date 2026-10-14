@@ -9,7 +9,7 @@ import { isRegistryError } from "@/registry/errors";
 import { canPunchOthers, type PersonToPunch, type PunchPreview } from "@/registry/registry";
 import { PunchFlow } from "./punch-flow";
 
-export const metadata: Metadata = { title: t("punches.title") };
+export const generateMetadata = (): Metadata => ({ title: t("punches.title") });
 
 /**
  * Strona odbicia z adresu w kodzie QR plakatu (niezalogowany wraca tu po logowaniu). Nieważny kod (stary plakat

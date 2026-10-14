@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { messagePreview, supportThreadOpenLink } from "@/lib/support-chat-text";
 
-export const metadata: Metadata = { title: t("supportChat.admin.title") };
+export const generateMetadata = (): Metadata => ({ title: t("supportChat.admin.title") });
 
 /** Wątki czatu z supportem ze wszystkich firm: z nowymi wiadomościami na górze, potem od najnowszej. */
 export default async function SupportThreadsPage() {

@@ -4,7 +4,7 @@ import { AuthShell } from "@/components/auth-shell";
 import { t } from "@/i18n/t";
 import { ResetPasswordForm } from "./reset-password-form";
 
-export const metadata: Metadata = { title: t("resetPassword.title") };
+export const generateMetadata = (): Metadata => ({ title: t("resetPassword.title") });
 
 export default async function ResetPasswordPage(props: PageProps<"/reset-hasla">) {
   const { blad } = await props.searchParams;

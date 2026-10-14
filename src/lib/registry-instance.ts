@@ -1,3 +1,4 @@
+import { withLocale } from "@/i18n/server-locale";
 import { createPgDb } from "@/registry/pg-db";
 import { type Geocoder, noGeocoder, type Notifier, systemClock } from "@/registry/ports";
 import { createRegistry, type Registry, type RegistryDeps } from "@/registry/registry";
@@ -49,7 +50,14 @@ function notifier(): Notifier {
   const fcm = serverEnv.fcm();
   const email = resend ? createResendNotifier({ ...resend, appUrl: serverEnv.appUrl(), supportAddress: serverEnv.supportEmail() }) : logNotifier;
   const push = pushByKind({ przegladarka: webPush ? createWebPushChannel(webPush) : logPush, aplikacja: fcm ? createFcmChannel(fcm) : logFcmPush });
-  return { send: email.send, sendToSupport: email.sendToSupport, sendCallbackRequest: email.sendCallbackRequest, push };
+  // Tekst powiadomienia powstaje przy wysyłce, więc w języku adresata, a nie osoby, której ruch je wywołał (ADR 0047).
+  // GP Engineering czyta po polsku.
+  return {
+    send: (notification, locale = "pl") => withLocale(locale, () => email.send(notification)),
+    sendToSupport: (message) => withLocale("pl", () => email.sendToSupport(message)),
+    sendCallbackRequest: (request) => withLocale("pl", () => email.sendCallbackRequest(request)),
+    push: (subscription, message, locale = "pl") => withLocale(locale, () => push(subscription, message)),
+  };
 }
 
 /** Poza lokalnym Supabase połączenie jest szyfrowane, a certyfikat serwera sprawdzany względem CA Supabase. */

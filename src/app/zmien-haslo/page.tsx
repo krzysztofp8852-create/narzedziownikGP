@@ -7,7 +7,7 @@ import { MIN_PASSWORD_LENGTH } from "@/registry/registry";
 import { changePassword } from "./actions";
 import { ChangePasswordForm } from "./change-password-form";
 
-export const metadata: Metadata = { title: t("changePassword.title") };
+export const generateMetadata = (): Metadata => ({ title: t("changePassword.title") });
 
 export default async function ChangePasswordPage() {
   if (!(await requireMember()).mustChangePassword) redirect("/");

@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { TIERS } from "@/registry/registry";
 import { CreateCompanyForm } from "./create-company-form";
 
-export const metadata: Metadata = { title: t("superAdmin.createTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("superAdmin.createTitle") });
 
 /** Wdrożenie klienta po rozmowie: firma z bazą, abonamentem w pakiecie, danymi do faktury i właścicielem. */
 export default async function NewCompanyPage() {

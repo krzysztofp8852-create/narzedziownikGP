@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthShell } from "@/components/auth-shell";
 import { t } from "@/i18n/t";
 
-export const metadata: Metadata = { title: t("offline.pageTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("offline.pageTitle") });
 
 /**
  * Strona, którą service worker pokazuje bez zasięgu zamiast stron spoza tablicy (ADR 0010). Statyczna i bez

@@ -7,7 +7,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { anonymizePerson } from "../../../actions";
 
-export const metadata: Metadata = { title: t("superAdmin.peopleTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("superAdmin.peopleTitle") });
 
 /**
  * Osoby jednej firmy dla super-admina, z anonimizacją na prośbę osoby, która przyszła do GP Engineering. Konto

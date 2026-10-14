@@ -8,7 +8,7 @@ import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { resolveRejectedMovement } from "./actions";
 
-export const metadata: Metadata = { title: t("toClarify.title") };
+export const generateMetadata = (): Metadata => ({ title: t("toClarify.title") });
 
 /** Lista „Do wyjaśnienia”: ruchy z kolejki offline, których serwer nie przyjął, z powodem odrzucenia. */
 export default async function ToClarifyPage() {

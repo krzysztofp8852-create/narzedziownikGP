@@ -14,7 +14,7 @@ import { screenFromQuery } from "@/lib/support-chat-text";
 import { canUseSupportChat, MAX_SUPPORT_MESSAGE_LENGTH } from "@/registry/registry";
 import { sendSupportMessage } from "./actions";
 
-export const metadata: Metadata = { title: t("supportChat.title") };
+export const generateMetadata = (): Metadata => ({ title: t("supportChat.title") });
 
 /**
  * Okno 💬: rozmowa z GP Engineering jak w komunikatorze, z numerem telefonu do supportu w stopce. `?ekran=`

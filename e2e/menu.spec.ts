@@ -69,6 +69,7 @@ test("właściciel otwiera menu ze wszystkimi podstronami, przechodzi na podstro
     "Dokumenty",
     "Ustawienia",
     "Samouczek",
+    "Język / Language",
     "Usuń konto",
   ]);
   await expect(menu(page).getByRole("button", { name: "Wyloguj" })).toBeVisible();
@@ -170,6 +171,7 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
     "Odbicia do wyjaśnienia",
     "Raporty",
     "Samouczek",
+    "Język / Language",
     "Usuń konto",
   ]);
   // Kierownik ma na teraz tylko raport piątkowy ze swoimi lokalizacjami; tygodniowy jest właściciela.
@@ -196,6 +198,7 @@ test("kierownik i pracownik widzą w menu tylko podstrony, które mogą otworzy�
     "Pojazdy",
     "Moje uprawnienia",
     "Mój czas na budowie",
+    "Język / Language",
     "Usuń konto",
   ]);
   // Z menu aplikacji pracownik dojdzie do strony, jak poprosić o usunięcie konta (wymóg Google Play).

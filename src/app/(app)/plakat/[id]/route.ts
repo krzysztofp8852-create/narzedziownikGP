@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { withLocale } from "@/i18n/server-locale";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { serverEnv } from "@/lib/env";
@@ -13,6 +14,11 @@ import { isRegistryError } from "@/registry/errors";
  * zapisuje, więc działa także w trybie tylko do odczytu. Błąd to tekst do pokazania.
  */
 export async function GET(request: NextRequest, context: RouteContext<"/plakat/[id]">) {
+  // Plakat wisi na budowie dla wszystkich, a jego czcionka nie ma cyrylicy ani gruzińskiego: zawsze po polsku (ADR 0047).
+  return withLocale("pl", () => posterResponse(request, context));
+}
+
+async function posterResponse(request: NextRequest, context: RouteContext<"/plakat/[id]">) {
   const session = await requireSession();
   const { id } = await context.params;
   try {

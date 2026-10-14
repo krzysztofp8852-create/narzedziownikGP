@@ -8,7 +8,7 @@ import { AddLocationTile, VehicleCard } from "../lokalizacje/location-cards";
 import { AddVehicleForm } from "../lokalizacje/location-forms";
 import { locationPagePath } from "../lokalizacje/location-page";
 
-export const metadata: Metadata = { title: t("vehiclesPage.title") };
+export const generateMetadata = (): Metadata => ({ title: t("vehiclesPage.title") });
 
 /**
  * Flota firmy dla każdej roli: aktywne pojazdy jak na tablicy (kierownik, sprzęt na pokładzie) z numerem rejestracyjnym

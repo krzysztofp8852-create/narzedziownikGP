@@ -5,12 +5,13 @@ import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { canManageSettings, canPrintStickers } from "@/registry/registry";
+import { LanguageSection } from "../jezyk/language-section";
 import { BaseAddressForm } from "../lokalizacje/location-forms";
 import { ServicesSection } from "../lokalizacje/services-section";
 import { CostSettingsSection, DailyRatesSection, IdleLogoutSection, IssueSettingsSection, LegalSection, SettingsSection } from "./settings-section";
 import { SubscriptionSection } from "./subscription-section";
 
-export const metadata: Metadata = { title: t("settingsPage.title") };
+export const generateMetadata = (): Metadata => ({ title: t("settingsPage.title") });
 
 /**
  * Sprawy firmy, które nie są codzienną pracą na tablicy: abonament, serwisy, próg alarmu, kto widzi zgłoszenia,
@@ -40,6 +41,7 @@ export default async function SettingsPage() {
       <h1 className="display page-title">{t("settingsPage.title")}</h1>
       <div className="company-grid">
         <SubscriptionSection subscription={subscription} />
+        <LanguageSection demo={session.company.demo} />
         <SettingsSection settings={settings} />
         <IssueSettingsSection settings={settings} />
         <DailyRatesSection rates={dailyRates} categories={categories} />

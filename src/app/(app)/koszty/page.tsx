@@ -11,7 +11,7 @@ import { canManageRates, canSeeCosts, type CostedKind, type CostSummary } from "
 import { CostPeriodPicker } from "../lokalizacje/cost-period-picker";
 import { locationPagePath } from "../lokalizacje/location-page";
 
-export const metadata: Metadata = { title: t("costSummary.title") };
+export const generateMetadata = (): Metadata => ({ title: t("costSummary.title") });
 
 /**
  * Zestawienie kosztów sprzętu: każda budowa i pojazd z kwotą za wybrany okres (bez okresu: ten miesiąc), z eksportem

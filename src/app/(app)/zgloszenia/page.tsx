@@ -12,7 +12,7 @@ import { canReviewToolReports, type IssueSummary } from "@/registry/registry";
 import { ToolReportReview } from "../narzedzia/tool-report-review";
 import { markAllIssueEntriesRead } from "./actions";
 
-export const metadata: Metadata = { title: t("issues.title") };
+export const generateMetadata = (): Metadata => ({ title: t("issues.title") });
 
 /**
  * Okno 📋: zgłoszenia, które aktor widzi (otwarte, potem zamknięte), a u właściciela także zgłoszone narzędzia

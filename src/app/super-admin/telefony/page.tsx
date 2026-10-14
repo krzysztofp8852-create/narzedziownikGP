@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { formatPhone } from "@/registry/registry";
 
-export const metadata: Metadata = { title: t("superAdmin.callbacks.title") };
+export const generateMetadata = (): Metadata => ({ title: t("superAdmin.callbacks.title") });
 
 /** Prośby o telefon z formularza „Zostaw numer, oddzwonimy” z ostatnich 90 dni, od najnowszej, z licznikami. */
 export default async function CallbackRequestsPage() {

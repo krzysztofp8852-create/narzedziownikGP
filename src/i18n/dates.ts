@@ -1,3 +1,6 @@
+import { INTL_LOCALE, type Locale } from "./locales";
+import { currentLocale } from "./t";
+
 const TIME_ZONE = "Europe/Warsaw";
 const dateTime = new Intl.DateTimeFormat("pl-PL", { dateStyle: "short", timeStyle: "short", timeZone: TIME_ZONE });
 const time = new Intl.DateTimeFormat("pl-PL", { timeStyle: "short", timeZone: TIME_ZONE });
@@ -45,11 +48,17 @@ export function formatCalendarDay(day: string): string {
   return calendarDay.format(new Date(`${day}T00:00:00Z`));
 }
 
-const monthName = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" });
+const monthNames = new Map<Locale, Intl.DateTimeFormat>();
 
-/** Miesiąc zapisany jako RRRR-MM, np. „marzec 2026”. */
+/** Miesiąc zapisany jako RRRR-MM, np. „marzec 2026”, w języku tej osoby (daty liczbowe zostają w zapisie polskim). */
 export function formatMonth(month: string): string {
-  return monthName.format(new Date(`${month}-01T00:00:00Z`));
+  const locale = currentLocale();
+  let format = monthNames.get(locale);
+  if (!format) {
+    format = new Intl.DateTimeFormat(INTL_LOCALE[locale], { month: "long", year: "numeric", timeZone: "UTC" });
+    monthNames.set(locale, format);
+  }
+  return format.format(new Date(`${month}-01T00:00:00Z`));
 }
 
 /** Wartość pola `datetime-local` (RRRR-MM-DDTHH:MM) z godziną w Polsce. */

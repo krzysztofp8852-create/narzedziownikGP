@@ -12,7 +12,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { MAX_ISSUE_TEXT_LENGTH } from "@/registry/registry";
 import { CloseIssueForm, CommentForm } from "./issue-thread-forms";
 
-export const metadata: Metadata = { title: t("issues.title") };
+export const generateMetadata = (): Metadata => ({ title: t("issues.title") });
 
 /** Zgłoszenie z opisem, zdjęciem i wątkiem; komentuje każdy, kto je widzi, a zamyka właściciel (i magazynier za zgodą). */
 export default async function IssuePage(props: PageProps<"/zgloszenia/[id]">) {

@@ -7,7 +7,7 @@ import { canAddQualificationKinds, canManageQualifications, canManageTeam } from
 import { PeopleSection } from "./people-section";
 import { PeopleWithQualifications, QualificationKinds, QualificationList, UpcomingQualifications } from "./qualifications";
 
-export const metadata: Metadata = { title: t("people.title") };
+export const generateMetadata = (): Metadata => ({ title: t("people.title") });
 
 /**
  * Kartoteka Ludzie. Właściciel: konta w programie i osoby bez konta z zarządzaniem kontami, uprawnienia po terminie

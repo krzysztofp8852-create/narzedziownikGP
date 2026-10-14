@@ -1,3 +1,4 @@
+import { isLocale, type Locale } from "@/i18n/locales";
 import { RegistryError } from "./errors";
 import type { IssueEntry } from "./issues";
 import type { NotificationContent } from "./notifications";
@@ -65,9 +66,13 @@ export async function unsubscribe(sql: Sql, session: Session, device: PushDevice
  * Subskrypcje adresatów, w transakcji systemowej (poza RLS). Bez kont firm demo: tych nikt nie ma na własność,
  * a subskrypcja sprzed wyłączenia push w demo nie może dalej dostawać kopii.
  */
-export async function subscriptionsOf(sql: Sql, userIds: string[]): Promise<{ userId: string; subscription: PushSubscriptionData }[]> {
-  const rows = await sql<{ user_id: string; kind: string; endpoint: string; p256dh: string; auth: string; token: string }>(
-    `select s.user_id, s.kind, s.endpoint, s.p256dh, s.auth, s.token
+export async function subscriptionsOf(
+  sql: Sql,
+  userIds: string[],
+): Promise<{ userId: string; subscription: PushSubscriptionData; locale: Locale }[]> {
+  const rows = await sql<{ user_id: string; kind: string; endpoint: string; p256dh: string; auth: string; token: string; locale: string | null }>(
+    `select s.user_id, s.kind, s.endpoint, s.p256dh, s.auth, s.token,
+            (select u.locale from app.users u where u.user_id = s.user_id) as locale
      from app.push_subscriptions s
      where s.user_id = any($1::uuid[])
        and not exists (
@@ -79,6 +84,7 @@ export async function subscriptionsOf(sql: Sql, userIds: string[]): Promise<{ us
   );
   return rows.map((row) => ({
     userId: row.user_id,
+    locale: isLocale(row.locale) ? row.locale : "pl",
     subscription:
       row.kind === "aplikacja"
         ? { kind: "aplikacja", token: row.token }

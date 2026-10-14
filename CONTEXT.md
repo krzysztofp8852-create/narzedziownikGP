@@ -23,6 +23,10 @@ Rola w firmie obsługująca bazę; rejestruje ruchy dla wszystkich lokalizacji.
 Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłoszenia. Loguje się nazwą użytkownika nadaną przez właściciela, bez wymogu e-maila.
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
+**Język**:
+Język interfejsu, który konto wybiera samo dla siebie (polski, ukraiński, rosyjski, angielski, gruziński, białoruski; domyślnie polski). Nie zmienia nic innym w firmie; e-maile i powiadomienia push idą w języku adresata (ADR 0047).
+_Avoid_: lokalizacja (to miejsce sprzętu), wersja językowa firmy
+
 **Ludzie**:
 Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w menu. Prowadzi ją właściciel; przy osobie widać, czy ma konto i jaką rolę. Kierownik widzi w niej osoby z uprawnieniami, a magazynier i pracownik tylko własne uprawnienia („Moje uprawnienia”).
 _Avoid_: zespół, kadry, pracownicy (pracownik to rola)

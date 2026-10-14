@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n/locales";
 import type { CallbackRequest } from "./callback-requests";
 import type { EmailedNotification } from "./notifications";
 import type { PushMessage, PushSubscriptionData } from "./push";
@@ -34,12 +35,12 @@ export interface AuthAdmin {
  */
 export interface Notifier {
   /** Kanał e-mail. */
-  send(notification: EmailedNotification): Promise<void>;
+  send(notification: EmailedNotification, locale?: Locale): Promise<void>;
   /**
    * Kanał push: kopia na jedno urządzenie, wysłana według rodzaju subskrypcji. `expired`, gdy usługa push odpowie,
    * że subskrypcja wygasła albo jej nie ma (token aplikacji nieważny albo wyrejestrowany); Rejestr ją wtedy usuwa.
    */
-  push(subscription: PushSubscriptionData, message: PushMessage): Promise<"sent" | "expired">;
+  push(subscription: PushSubscriptionData, message: PushMessage, locale?: Locale): Promise<"sent" | "expired">;
   /** E-mail na adres supportu GP Engineering (zna go adapter): nowa wiadomość użytkownika na czacie. */
   sendToSupport(message: UserMessage): Promise<void>;
   /** E-mail na ten sam adres GP Engineering: ktoś zostawił numer w formularzu „oddzwonimy”. */

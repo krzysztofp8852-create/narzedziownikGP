@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { demoEventText, demoVisitDuration } from "@/lib/demo-log-text";
 import { getRegistry } from "@/lib/registry-instance";
 
-export const metadata: Metadata = { title: t("superAdmin.demoLog.title") };
+export const generateMetadata = (): Metadata => ({ title: t("superAdmin.demoLog.title") });
 
 const time = new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Warsaw" });
 

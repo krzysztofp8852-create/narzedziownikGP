@@ -7,7 +7,7 @@ import { currentUserId } from "@/lib/auth";
 import { safeNextPath } from "@/lib/next-path";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: t("login.title") };
+export const generateMetadata = (): Metadata => ({ title: t("login.title") });
 
 export default async function LoginPage(props: PageProps<"/logowanie">) {
   const { next, powod } = await props.searchParams;

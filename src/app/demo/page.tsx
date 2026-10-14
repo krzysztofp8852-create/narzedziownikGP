@@ -8,7 +8,7 @@ import { t } from "@/i18n/t";
 import { getRegistry } from "@/lib/registry-instance";
 import { enterDemo } from "./actions";
 
-export const metadata: Metadata = { title: t("demo.title") };
+export const generateMetadata = (): Metadata => ({ title: t("demo.title") });
 
 // Konta demo zmieniają się przy każdym zakładaniu demo, więc strona nie może być zbudowana raz na zawsze.
 export const dynamic = "force-dynamic";

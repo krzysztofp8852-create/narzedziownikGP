@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
+import { LocaleProvider } from "@/components/locale-provider";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { messagesFor, requestLocale } from "@/i18n/server-locale";
 import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
 import "./globals.css";
@@ -12,7 +14,8 @@ const plate = JetBrains_Mono({ variable: "--font-plate", subsets: ["latin", "lat
 const siteUrl = serverEnv.siteUrl();
 const googleSiteVerification = serverEnv.googleSiteVerification();
 
-export const metadata: Metadata = {
+// Funkcja, nie stała: tytuł i opis w języku tego żądania (ADR 0047).
+export const generateMetadata = (): Metadata => ({
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
   title: { default: t("app.name"), template: `%s · ${t("app.name")}` },
   description: t("app.description"),
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
   // iPhone: aplikacja dodana do ekranu głównego otwiera się bez paska Safari, pod nazwą NarzędziownikGP.
   appleWebApp: { capable: true, title: t("app.name"), statusBarStyle: "default" },
   icons: { apple: "/icons/apple-touch-icon.png" },
-};
+});
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
@@ -35,11 +38,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Każda strona na żądanie: skrypty Next.js dostają nonce z polityki treści tej odpowiedzi (ADR 0041), a strona
   // zbudowana z góry miałaby skrypty bez nonce, które polityka zablokuje.
   await connection();
+  const locale = requestLocale();
   return (
-    <html lang="pl" className={`${body.variable} ${plate.variable}`}>
+    <html lang={locale} className={`${body.variable} ${plate.variable}`}>
       <body>
-        {children}
-        <ServiceWorkerRegistration />
+        <LocaleProvider locale={locale} messages={messagesFor(locale)}>
+          {children}
+          <ServiceWorkerRegistration />
+        </LocaleProvider>
       </body>
     </html>
   );

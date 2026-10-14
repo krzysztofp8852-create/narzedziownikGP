@@ -206,6 +206,7 @@ function evidence(company: EvalCompany, actor: string): InterpretationActor {
       role: person.role,
       mustChangePassword: false,
       idleLogoutMinutes: null,
+      locale: "pl",
       company: { id: "firma", name: company.name, readOnly: false, demo: false, siteManagersSeeCosts: false },
     }),
     toolCatalog: async () => catalog,

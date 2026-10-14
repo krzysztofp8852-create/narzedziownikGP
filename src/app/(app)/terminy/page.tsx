@@ -7,7 +7,7 @@ import { daysLeftText, deadlineLink, upcomingDeadlineText } from "@/lib/deadline
 import { getRegistry } from "@/lib/registry-instance";
 import { UPCOMING_DAYS } from "@/registry/registry";
 
-export const metadata: Metadata = { title: t("deadlines.pageTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("deadlines.pageTitle") });
 
 /**
  * Terminy sprzętu i pojazdów z najbliższych 30 dni i te po terminie, dla każdej roli: co, kiedy, gdzie jest sprzęt

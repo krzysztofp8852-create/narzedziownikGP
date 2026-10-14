@@ -12,7 +12,7 @@ import { locationPagePath } from "../lokalizacje/location-page";
 import { CorrectPunch, PunchEntry } from "../lokalizacje/people-on-site";
 import { ExplainPunchConflictForm, ExplainPunchForm } from "../lokalizacje/punch-forms";
 
-export const metadata: Metadata = { title: t("punches.toClarifyTitle") };
+export const generateMetadata = (): Metadata => ({ title: t("punches.toClarifyTitle") });
 
 /**
  * Odbicia do wyjaśnienia (poza budową, bez położenia, bez sprawdzenia, bez wyjścia) dla właściciela i kierownika

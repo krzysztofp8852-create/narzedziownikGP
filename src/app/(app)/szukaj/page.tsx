@@ -8,7 +8,7 @@ import type { SearchTool } from "@/lib/tool-search";
 import type { CatalogTool, ToolOnBoard } from "@/registry/registry";
 import { ToolFinder } from "./tool-finder";
 
-export const metadata: Metadata = { title: t("search.title") };
+export const generateMetadata = (): Metadata => ({ title: t("search.title") });
 
 /**
  * Lupa w nagłówku: gdzie jest narzędzie, od ilu dni, kto za nie odpowiada i najbliższy termin, dla każdej roli. Lista to tablica

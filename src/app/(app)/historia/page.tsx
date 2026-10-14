@@ -6,7 +6,7 @@ import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { HISTORY_PARAMS, historySearch, parseHistoryFilters } from "@/lib/history-filters";
 
-export const metadata: Metadata = { title: t("history.title") };
+export const generateMetadata = (): Metadata => ({ title: t("history.title") });
 
 /** Tyle najnowszych ruchów pokazuje strona; eksport zawiera wszystkie pasujące. */
 const HISTORY_LIMIT = 200;
