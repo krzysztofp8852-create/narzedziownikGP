@@ -58,7 +58,8 @@
     "issues": "Issues",
     "issuesUnread": "Issues, unread: {count}",
     "chat": "Support chat",
-    "chatUnread": "Support chat, new replies: {count}"
+    "chatUnread": "Support chat, new replies: {count}",
+    "loading": "Loading page…"
   },
   "menu": {
     "title": "Menu",

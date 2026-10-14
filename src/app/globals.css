@@ -4998,3 +4998,76 @@ a.tool-row:hover .tool-row-name {
   letter-spacing: 0.03em;
   overflow-wrap: anywhere;
 }
+
+/*
+ * Zarys strony w czasie wczytywania (loading.tsx). Pojawia się po chwili, żeby szybkie przejście nie mignęło szarym
+ * ekranem, a potem pulsuje, żeby było widać, że coś się dzieje.
+ */
+.skeleton {
+  display: grid;
+  gap: 14px;
+  animation: skeleton-in 0.2s ease-out 0.12s both;
+}
+
+.skeleton-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skeleton-bone {
+  display: block;
+  max-width: 100%;
+  border-radius: 6px;
+  background: var(--border);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  align-items: start;
+  margin-top: 6px;
+}
+
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skeleton-row .skeleton-bone:first-child {
+  flex: none;
+}
+
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bone {
+    animation: none;
+  }
+}

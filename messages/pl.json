@@ -61,7 +61,8 @@
     "issues": "Zgłoszenia",
     "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
     "chat": "Czat z supportem",
-    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}"
+    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}",
+    "loading": "Wczytywanie strony…"
   },
   "menu": {
     "title": "Menu",
