@@ -1,7 +1,9 @@
 import { SALES_EMAIL, SALES_PHONE } from "@/components/sales-contact";
 import { t } from "@/i18n/t";
+import { GOOGLE_PLAY_URL } from "@/lib/google-play";
 import { TIERS } from "@/registry/subscriptions";
 import { tierPeople, tierTools } from "./pricing-text";
+import { VENDOR_PROFILES } from "./vendor-profiles";
 
 /** Dane spółki ze stopki strony o programie, rozpisane na pola schema.org. */
 const VENDOR = {
@@ -12,6 +14,7 @@ const VENDOR = {
   taxID: "6211856675",
   krs: "0001262659",
 };
+
 
 /** Cena brutto w złotówkach (VAT nie jest doliczany); z `unitText` za okres, np. „rok”. */
 const netPrice = (price: number, unitText?: string) => ({
@@ -25,8 +28,9 @@ const netPrice = (price: number, unitText?: string) => ({
 /**
  * Dane strukturalne strony o programie (JSON-LD): dostawca, serwis pod nazwą programu (nazwa witryny w wynikach Google)
  * i sam program z cenami pakietów: wdrożenie i opłata za rok. Ceny z `TIERS`, tych samych co w cenniku na stronie.
+ * Gdy aplikacja jest w Google Play (`googlePlay`), program wskazuje jej stronę w sklepie.
  */
-export function landingStructuredData(siteUrl: string) {
+export function landingStructuredData(siteUrl: string, { googlePlay }: { googlePlay: boolean }) {
   const url = new URL("/", siteUrl).href;
   const organization = `${url}#organizacja`;
   return {
@@ -43,6 +47,8 @@ export function landingStructuredData(siteUrl: string) {
         telephone: SALES_PHONE.href.replace("tel:", ""),
         taxID: VENDOR.taxID,
         identifier: { "@type": "PropertyValue", propertyID: "KRS", value: VENDOR.krs },
+        // Po profilach w serwisach Google łączy stronę z firmą.
+        sameAs: VENDOR_PROFILES.map((profile) => profile.href),
         address: {
           "@type": "PostalAddress",
           streetAddress: VENDOR.streetAddress,
@@ -69,6 +75,7 @@ export function landingStructuredData(siteUrl: string) {
         operatingSystem: "Android, iOS, Windows, macOS",
         inLanguage: "pl-PL",
         provider: { "@id": organization },
+        ...(googlePlay && { sameAs: [GOOGLE_PLAY_URL], installUrl: GOOGLE_PLAY_URL }),
         offers: TIERS.map((tier) => ({
           "@type": "Offer",
           name: tier.name,
@@ -78,6 +85,18 @@ export function landingStructuredData(siteUrl: string) {
           priceSpecification: [netPrice(tier.implementationPrice), netPrice(tier.yearlyPrice, "rok")],
         })),
       },
+    ],
+  };
+}
+
+/** Dane strukturalne strony modułu: ścieżka „strona główna → moduł” do wyświetlenia w wynikach Google zamiast adresu. */
+export function modulePageStructuredData(siteUrl: string, page: { name: string; path: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: t("app.name"), item: new URL("/", siteUrl).href },
+      { "@type": "ListItem", position: 2, name: page.name, item: new URL(page.path, siteUrl).href },
     ],
   };
 }

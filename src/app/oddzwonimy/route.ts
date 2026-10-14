@@ -22,7 +22,7 @@ export async function POST(request: Request): Promise<Response> {
 async function callbackState(formData: FormData): Promise<CallbackFormState> {
   const phone = formText(formData, "phone");
   const source = formText(formData, "source");
-  const done = formatPhone(normalizePhone(phone) ?? phone.trim());
+  const done = t("callback.done", { phone: formatPhone(normalizePhone(phone) ?? phone.trim()) });
   if (formText(formData, "website")) return { done };
   if (!isCallbackSource(source)) return { error: t("errors.invalid_input") };
   try {

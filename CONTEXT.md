@@ -47,6 +47,10 @@ _Avoid_: konto testowe, piaskownica
 Publiczna strona dla właściciela firmy budowlanej z funkcjami, cennikiem, wejściem do demo i kontaktem handlowym. Niezalogowany widzi ją pod adresem głównym, zalogowany ma tam tablicę.
 _Avoid_: strona główna (to tablica)
 
+**Strona modułu**:
+Publiczna podstrona strony o programie pod `/funkcje/…` z opisem, jak działają funkcje jednego modułu; trafia do wyszukiwarki, a po cennik i kontakt odsyła na stronę o programie.
+_Avoid_: landing modułu, podstrona funkcji
+
 **Dziennik demo**:
 Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje oglądających. Wizyta to jedna przeglądarka, także po przełączeniu roli. Zostaje po usunięciu firmy demo.
 _Avoid_: analityka, śledzenie

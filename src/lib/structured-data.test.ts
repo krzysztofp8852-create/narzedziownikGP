@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { jsonLdScript, landingStructuredData } from "./structured-data";
+import { GOOGLE_PLAY_URL } from "./google-play";
+import { jsonLdScript, landingStructuredData, modulePageStructuredData } from "./structured-data";
 
-const graph = landingStructuredData("https://narzedziownikgp.pl")["@graph"];
+const graph = landingStructuredData("https://narzedziownikgp.pl", { googlePlay: false })["@graph"];
 const ofType = (type: string) => graph.find((node) => node["@type"] === type) as Record<string, unknown>;
 
 describe("dane strukturalne strony o programie", () => {
@@ -11,6 +12,7 @@ describe("dane strukturalne strony o programie", () => {
       legalName: "GP Engineering sp. z o.o.",
       taxID: "6211856675",
       address: { streetAddress: "ul. Piłsudskiego 6", postalCode: "63-700", addressLocality: "Krotoszyn", addressCountry: "PL" },
+      sameAs: expect.arrayContaining(["https://www.linkedin.com/company/gp-engineering-sp-z-o-o/", "https://www.youtube.com/@GPEngineering_GP"]),
     });
   });
 
@@ -26,6 +28,23 @@ describe("dane strukturalne strony o programie", () => {
       ["Średni", "do 30 osób decyzyjnych, do 500 narzędzi", 6000, expect.objectContaining({ price: 800, unitText: "rok" })],
       ["Duży", "ponad 30 osób decyzyjnych, bez limitu narzędzi", 12000, expect.objectContaining({ price: 2000, unitText: "rok" })],
     ]);
+  });
+
+  it("program wskazuje stronę w Google Play dopiero wtedy, gdy aplikacja tam jest", () => {
+    expect(ofType("SoftwareApplication")).not.toHaveProperty("sameAs");
+    const withPlay = landingStructuredData("https://narzedziownikgp.pl", { googlePlay: true })["@graph"];
+    expect(withPlay.find((node) => node["@type"] === "SoftwareApplication")).toMatchObject({ sameAs: [GOOGLE_PLAY_URL], installUrl: GOOGLE_PLAY_URL });
+  });
+
+  it("strona modułu ma ścieżkę od strony głównej do modułu z pełnymi adresami", () => {
+    expect(modulePageStructuredData("https://narzedziownikgp.pl", { name: "Pojazdy", path: "/funkcje/terminy-pojazdow" })).toEqual({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "NarzędziownikGP", item: "https://narzedziownikgp.pl/" },
+        { "@type": "ListItem", position: 2, name: "Pojazdy", item: "https://narzedziownikgp.pl/funkcje/terminy-pojazdow" },
+      ],
+    });
   });
 
   it("nie pozwala tekstowi zamknąć znacznika script", () => {

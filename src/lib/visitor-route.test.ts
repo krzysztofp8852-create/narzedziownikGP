@@ -45,6 +45,13 @@ describe("dokąd trafia wejście na adres aplikacji", () => {
     expect(visitorRoute({ pathname: "/csp-raport", search: "", method: "POST" }, false)).toEqual({ kind: "page" });
   });
 
+  it("strony modułów otwierają się bez logowania, a nieznany adres pod /funkcje prowadzi do logowania", () => {
+    for (const path of ["/funkcje/ewidencja-narzedzi", "/funkcje/koszty-sprzetu", "/funkcje/terminy-pojazdow"]) {
+      expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });
+    }
+    expect(visitorRoute(get("/funkcje/nie-ma-takiej"), false)).toEqual({ kind: "login", next: "/funkcje/nie-ma-takiej" });
+  });
+
   it("regulamin, polityka prywatności i umowa powierzenia otwierają się bez logowania", () => {
     for (const path of ["/regulamin", "/polityka-prywatnosci", "/umowa-powierzenia"]) {
       expect(visitorRoute(get(path), false)).toEqual({ kind: "page" });

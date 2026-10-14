@@ -1,3 +1,4 @@
+import { t } from "@/i18n/t";
 import { currentUserId } from "@/lib/auth";
 import { CookieConsent } from "./cookie-consent";
 
@@ -6,5 +7,7 @@ import { CookieConsent } from "./cookie-consent";
  * dokumenty prawne. Tylko bez logowania: zalogowany, także w firmie demo, jest już w programie, a w nim analityki nie ma.
  */
 export async function VisitorCookieConsent() {
-  return (await currentUserId()) ? null : <CookieConsent />;
+  if (await currentUserId()) return null;
+  const texts = { title: t("cookies.title"), text: t("cookies.text"), more: t("cookies.more"), accept: t("cookies.accept"), reject: t("cookies.reject") };
+  return <CookieConsent texts={texts} />;
 }

@@ -62,3 +62,37 @@ test("niezalogowany pod adresem głównym widzi stronę o programie z cennikiem,
   await expect(page).toHaveURL(/\/logowanie$/);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex");
 });
+
+test("strona modułu opisuje, jak działa moduł, trafia do wyszukiwarki i prowadzi do cennika i pozostałych modułów", async ({ page }) => {
+  await page.goto("/");
+  // Ze strony o programie do opisu modułu, a ze stopki do każdego z nich.
+  await page.getByRole("link", { name: "Jak działa moduł „Koszty sprzętu” →" }).click();
+  await expect(page).toHaveURL(/\/funkcje\/koszty-sprzetu$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Koszty sprzętu: ile narzędzi zjadła każda budowa, w złotówkach");
+  await expect(page).toHaveTitle("Koszty sprzętu na budowie i pojeździe · NarzędziownikGP");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "index, follow");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/funkcje\/koszty-sprzetu$/);
+  await expect(page.getByRole("navigation", { name: "Jesteś tutaj" })).toContainText("Koszty sprzętu");
+
+  // Spis treści prowadzi do sekcji z pliku Markdown, a odnośniki w treści do innych modułów.
+  await page.getByRole("navigation", { name: "Na tej stronie" }).getByRole("link", { name: "Kto widzi koszty" }).click();
+  await expect(page).toHaveURL(/#kto-widzi-koszty$/);
+  await expect(page.getByRole("heading", { name: "Kto widzi koszty" })).toBeInViewport();
+
+  const others = page.getByRole("region", { name: "Pozostałe moduły" });
+  await expect(others.getByRole("link")).toHaveCount(5);
+  await expect(page.getByRole("navigation", { name: "Opisy modułów" }).getByRole("link")).toHaveCount(6);
+  const profiles = page.getByRole("navigation", { name: "GP Engineering w serwisach" });
+  await expect(profiles.getByRole("link")).toHaveCount(4);
+  await expect(profiles.getByRole("link", { name: "GP Engineering w serwisie LinkedIn" })).toHaveAttribute(
+    "href",
+    "https://www.linkedin.com/company/gp-engineering-sp-z-o-o/",
+  );
+  await expect(page.getByRole("region", { name: "Porozmawiajmy" }).getByTestId("callback-form")).toBeVisible();
+
+  await others.getByRole("link", { name: /Pojazdy/ }).click();
+  await expect(page).toHaveURL(/\/funkcje\/terminy-pojazdow$/);
+  await page.getByRole("link", { name: "Zobacz cennik" }).click();
+  await expect(page).toHaveURL(/\/#cennik$/);
+  await expect(page.getByRole("region", { name: "Cennik" })).toBeVisible();
+});

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useSyncExternalStore } from "react";
-import { t } from "@/i18n/t";
 import { GOOGLE_ANALYTICS_ID, googleTagsAllowed, googleTagsStarted, startGoogleTags } from "@/lib/google-tags";
 import { useInApp } from "@/lib/platform";
+
+export type CookieConsentTexts = Record<"title" | "text" | "more" | "accept" | "reject", string>;
 
 // Wybór zapamiętany w tej przeglądarce. Bez wyboru Google Analytics się nie wczytuje, a baner czeka na decyzję.
 const CHOICE_KEY = "zgoda-cookies";
@@ -123,8 +124,10 @@ function choose(choice: Choice) {
  *
  * Razem z Analytics wczytuje się Google Ads, który tylko mierzy konwersje (formularz „oddzwonimy”, wejście do demo), bez ciasteczek
  * reklamowych: przy odmowie ad_storage Google dostaje pingi bez ciasteczek i modeluje konwersje.
+ *
+ * Teksty podaje serwer (`VisitorCookieConsent`), bo strony dla odwiedzających nie wczytują pliku tłumaczeń do przeglądarki.
  */
-export function CookieConsent() {
+export function CookieConsent({ texts }: { texts: CookieConsentTexts }) {
   const choice = useChoice();
   const inApp = useInApp();
   // `choice` jest znany dopiero w przeglądarce, więc `location` przy zgodzie już jest.
@@ -148,17 +151,17 @@ export function CookieConsent() {
   // Wybór zapisany, także zgoda poza domeną produkcji: bez banera i bez Google Analytics.
   if (choice !== null) return null;
   return (
-    <section className="cookie-consent" role="region" aria-label={t("cookies.title")} data-testid="cookie-consent">
+    <section className="cookie-consent" role="region" aria-label={texts.title} data-testid="cookie-consent">
       <p>
-        <strong>{t("cookies.title")}</strong> {t("cookies.text")}{" "}
-        <Link href="/polityka-prywatnosci#10-pliki-cookies-i-pamiec-urzadzenia">{t("cookies.more")}</Link>
+        <strong>{texts.title}</strong> {texts.text}{" "}
+        <Link href="/polityka-prywatnosci#10-pliki-cookies-i-pamiec-urzadzenia">{texts.more}</Link>
       </p>
       <div className="cookie-consent-actions">
         <button type="button" className="button button-quiet" onClick={() => choose("niezbedne")}>
-          {t("cookies.reject")}
+          {texts.reject}
         </button>
         <button type="button" className="button" onClick={() => choose("analityka")}>
-          {t("cookies.accept")}
+          {texts.accept}
         </button>
       </div>
     </section>
@@ -169,13 +172,13 @@ export function CookieConsent() {
  * Odnośnik w stopce: kasuje wybór, więc baner wraca i można zmienić zdanie. Tylko na stronie z banerem: w programie
  * i w aplikacji nie ma czego ustawiać.
  */
-export function CookieSettingsButton() {
+export function CookieSettingsButton({ label }: { label: string }) {
   const inApp = useInApp();
   const onBannerPage = useOnBannerPage();
   if (inApp || !onBannerPage) return null;
   return (
     <button type="button" className="link-button" onClick={() => writeChoice(null)}>
-      {t("cookies.settings")}
+      {label}
     </button>
   );
 }

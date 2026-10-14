@@ -1,11 +1,12 @@
 import { LEGAL_PATHS } from "@/legal/documents";
 import { CSP_REPORT_PATH } from "@/lib/security-headers";
+import { MODULE_PAGE_PATHS } from "@/module-pages/pages";
 
 /** Strona o programie, którą niezalogowany widzi pod adresem głównym. */
 export const LANDING_PATH = "/o-programie";
 
 // Do demo wchodzi się bez logowania, a formularz „oddzwonimy” wysyła się z niego i ze strony o programie. Zadania harmonogramu same sprawdzają sekret, bez logowania użytkownika. „Brak sieci” service worker
-// pobiera przy instalacji, także przed zalogowaniem. Stronę o programie, robots.txt i mapę strony czytają wyszukiwarki.
+// pobiera przy instalacji, także przed zalogowaniem. Stronę o programie, strony modułów, robots.txt i mapę strony czytają wyszukiwarki.
 // Regulamin, politykę prywatności i umowę powierzenia czyta się przed założeniem konta, a stronę „Usuń konto” bez konta. Raporty naruszeń CSP przeglądarka
 // wysyła bez sesji.
 const PUBLIC_PATHS = [
@@ -26,6 +27,7 @@ const PUBLIC_PATHS = [
   "/sitemap.xml",
   CSP_REPORT_PATH,
   ...LEGAL_PATHS,
+  ...MODULE_PAGE_PATHS,
 ];
 
 /**

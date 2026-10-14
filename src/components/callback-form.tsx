@@ -1,94 +1,32 @@
-"use client";
-
-import Link from "next/link";
-import { useActionState, useEffect } from "react";
 import { t } from "@/i18n/t";
-import { submitKeepingValues } from "@/lib/forms";
-import { CONTACT_CONVERSION } from "@/lib/google-tags";
-import { type CallbackSource, MAX_CALLBACK_NAME_LENGTH } from "@/registry/callback-requests";
+import type { CallbackSource } from "@/registry/callback-requests";
+import { CallbackFormView } from "./callback-form-view";
 
-export interface CallbackFormState {
-  error?: string;
-  /** Zapisane; numer, na który oddzwonimy, do podziękowania. */
-  done?: string;
-}
-
-/** Wysyła formularz na `/oddzwonimy` (zob. tam, czemu to nie akcja serwera). */
-async function requestCallback(_prev: CallbackFormState, formData: FormData): Promise<CallbackFormState> {
-  try {
-    const response = await fetch("/oddzwonimy", { method: "POST", body: formData });
-    if (!response.ok) throw new Error(`Formularz „oddzwonimy” odrzucony (${response.status})`);
-    return (await response.json()) as CallbackFormState;
-  } catch (error) {
-    console.error(error);
-    return { error: t("errors.unexpected") };
-  }
-}
+export type { CallbackFormState } from "./callback-form-view";
 
 /**
  * „Zostaw numer, oddzwonimy” obok telefonu i e-maila działu handlowego. Prośba trafia do panelu super-admina
  * i e-mailem do GP Engineering, a do Google (jeśli tag się wczytał) jako zdarzenie `generate_lead` w Analytics
- * i konwersja „Kontakt” w Google Ads.
+ * i konwersja „Kontakt” w Google Ads. Teksty podaje serwer, bo strony dla odwiedzających nie wczytują pliku tłumaczeń
+ * do przeglądarki (szybsze pierwsze wyświetlenie strony o programie).
  */
 export function CallbackForm({ source }: { source: CallbackSource }) {
-  const [state, formAction, pending] = useActionState(requestCallback, {});
-
-  useEffect(() => {
-    if (!state.done) return;
-    window.gtag?.("event", "generate_lead", { lead_source: source });
-    window.gtag?.("event", "conversion", CONTACT_CONVERSION);
-  }, [state.done, source]);
-
-  if (state.done) {
-    return (
-      <p className="form-success callback-done" role="status" data-testid="callback-done">
-        {t("callback.done", { phone: state.done })}
-      </p>
-    );
-  }
-
   return (
-    <form onSubmit={submitKeepingValues(formAction)} className="callback-form" data-testid="callback-form">
-      <h3 className="callback-title">{t("callback.title")}</h3>
-      <p>{t("callback.lead")}</p>
-      <input type="hidden" name="source" value={source} />
-      {/* Pułapka na boty: człowiek tego pola nie widzi i go nie wypełni. */}
-      <div className="callback-trap" aria-hidden>
-        <label htmlFor={`callback-website-${source}`}>{t("callback.website")}</label>
-        <input id={`callback-website-${source}`} name="website" type="text" tabIndex={-1} autoComplete="off" />
-      </div>
-      <div className="field-row">
-        <div className="field">
-          <label htmlFor={`callback-phone-${source}`}>{t("callback.phone")}</label>
-          <input
-            id={`callback-phone-${source}`}
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            required
-            maxLength={30}
-            placeholder={t("callback.phonePlaceholder")}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor={`callback-name-${source}`}>{t("callback.name")}</label>
-          <input id={`callback-name-${source}`} name="name" type="text" autoComplete="name" maxLength={MAX_CALLBACK_NAME_LENGTH} />
-        </div>
-      </div>
-      {state.error && (
-        <p className="form-error" role="alert">
-          {state.error}
-        </p>
-      )}
-      <div className="form-actions">
-        <button className="button" type="submit" disabled={pending}>
-          {pending ? t("callback.submitting") : t("callback.submit")}
-        </button>
-      </div>
-      <p className="callback-privacy">
-        {t("callback.privacy")} <Link href="/polityka-prywatnosci#3-dane-za-ktore-odpowiadamy-my">{t("callback.privacyLink")}</Link>
-      </p>
-    </form>
+    <CallbackFormView
+      source={source}
+      texts={{
+        title: t("callback.title"),
+        lead: t("callback.lead"),
+        website: t("callback.website"),
+        phone: t("callback.phone"),
+        phonePlaceholder: t("callback.phonePlaceholder"),
+        name: t("callback.name"),
+        submit: t("callback.submit"),
+        submitting: t("callback.submitting"),
+        privacy: t("callback.privacy"),
+        privacyLink: t("callback.privacyLink"),
+        unexpected: t("errors.unexpected"),
+      }}
+    />
   );
 }

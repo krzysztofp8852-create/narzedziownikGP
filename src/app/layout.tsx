@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
   title: { default: t("app.name"), template: `%s · ${t("app.name")}` },
   description: t("app.description"),
-  // W wyszukiwarce tylko strona o programie (ona sama to nadpisuje); aplikacji i demo tam nie ma.
+  // W wyszukiwarce tylko strona o programie i strony modułów (same to nadpisują); aplikacji i demo tam nie ma.
   robots: { index: false },
   verification: googleSiteVerification ? { google: googleSiteVerification } : undefined,
   openGraph: { siteName: t("app.name"), locale: "pl_PL", images: [{ url: "/og.png", width: 1200, height: 630 }] },

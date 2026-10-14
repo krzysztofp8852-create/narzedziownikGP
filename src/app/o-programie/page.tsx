@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { LegalLinks } from "@/components/legal-links";
+import { display } from "@/components/display-font";
 import { VisitorCookieConsent } from "@/components/visitor-cookie-consent";
-import { CallbackForm } from "@/components/callback-form";
-import { SalesContact } from "@/components/sales-contact";
+import { VisitorContact, VisitorFooter, VisitorHeader } from "@/components/visitor-site";
 import { formatMoney, formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { serverEnv } from "@/lib/env";
 import { GOOGLE_PLAY_URL } from "@/lib/google-play";
 import { type PriceText, pricing } from "@/lib/pricing-text";
 import { jsonLdScript, landingStructuredData } from "@/lib/structured-data";
+import { modulePagePath } from "@/module-pages/pages";
 import { TIERS } from "@/registry/subscriptions";
 import { HERO_MAP } from "./hero-map";
 import { LossStats } from "./loss-stats";
@@ -36,10 +35,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-/** Wąski krój nagłówków jak na tablicach budowy; tylko na tej stronie. */
-const display = Barlow_Condensed({ variable: "--font-display", subsets: ["latin", "latin-ext"], weight: ["600", "700"] });
-
-/** Moduły programu (ADR 0027), wszystkie w cenie abonamentu; ewidencja sprzętu to jeden z nich. */
+/** Moduły programu (ADR 0027), wszystkie w cenie abonamentu; ewidencja sprzętu to jeden z nich. Każdy ma stronę modułu (ADR 0046). */
 const FEATURE_GROUPS = [
   { id: "tools", features: ["stickers", "places", "voice", "offline", "alarms", "deadlines", "rented", "import"] },
   { id: "costs", features: ["dailyRate", "siteCosts", "costSummary", "value"] },
@@ -196,24 +192,12 @@ export default function LandingPage() {
     <>
       {/* `data-signed-out`: service worker po tym poznaje, że pod `/` nie ma już tablicy tej sesji (ADR 0021). */}
       <div className={`landing ${display.variable}`} data-signed-out>
-        {siteUrl && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(landingStructuredData(siteUrl)) }} />}
+        {siteUrl && (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(landingStructuredData(siteUrl, { googlePlay })) }} />
+        )}
         <div className="landing-hazard" aria-hidden />
         <div className="landing-top">
-          <header className="landing-header">
-            <div className="brand">
-              <p className="display brand-name">
-                {t("app.nameLead")}
-                <span>{t("app.nameMark")}</span>
-              </p>
-              <p className="muted">{t("app.vendor")}</p>
-            </div>
-            <nav className="landing-nav">
-              <a href="#cennik">{t("landing.hero.pricing")}</a>
-              <a href="#pytania">{t("landing.nav.faq")}</a>
-              <a href="#kontakt">{t("landing.nav.contact")}</a>
-              <Link href="/logowanie">{t("landing.signIn")}</Link>
-            </nav>
-          </header>
+          <VisitorHeader sections="" />
 
           <section className="landing-hero" aria-labelledby="landing-title">
             <div className="landing-hero-text">
@@ -296,6 +280,9 @@ export default function LandingPage() {
                 <div className="landing-feature-head">
                   <h3>{t(`landing.features.groups.${group.id}.title`)}</h3>
                   <p>{t(`landing.features.groups.${group.id}.text`)}</p>
+                  <Link href={modulePagePath(group.id)} className="landing-feature-more">
+                    {t("landing.features.more", { title: t(`landing.features.groups.${group.id}.title`) })}
+                  </Link>
                 </div>
                 <ul>
                   {group.features.map((feature, index) => (
@@ -388,39 +375,8 @@ export default function LandingPage() {
           </section>
         </main>
 
-        <section className="landing-contact" aria-labelledby="kontakt">
-          <div className="landing-contact-inner">
-            <h2 id="kontakt" className="landing-section-title">
-              {t("landing.contact.title")}
-            </h2>
-            <p>{t("landing.contact.text")}</p>
-            <div className="landing-sales">
-              <SalesContact />
-            </div>
-            <CallbackForm source="o-programie" />
-            <div className="landing-actions">
-              <Link href="/demo" className="button">
-                {t("landing.hero.demo")}
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <footer className="landing-footer">
-          <div className="landing-company">
-            <p>{t("landing.footer.product")}</p>
-            {/* Dane, które spółka z o.o. podaje na swoich stronach (art. 206 KSH). */}
-            <address>
-              <strong>{t("landing.footer.companyName")}</strong>, {t("landing.footer.companyAddress")}
-            </address>
-            <p>{t("landing.footer.companyRegistry")}</p>
-          </div>
-          <nav className="landing-nav">
-            <Link href="/demo">{t("landing.hero.demo")}</Link>
-            <Link href="/logowanie">{t("landing.signIn")}</Link>
-          </nav>
-          <LegalLinks className="landing-nav" />
-        </footer>
+        <VisitorContact />
+        <VisitorFooter />
       </div>
       <VisitorCookieConsent />
     </>

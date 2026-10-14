@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/naklejki/pdf": ["./src/stickers/fonts/*.ttf"],
     ...Object.fromEntries(LEGAL_PATHS.map((path) => [path, ["./messages/prawne/*.md"]])),
+    // Strony modułów (ADR 0046) czytają treść z dysku tak samo.
+    "/funkcje/*": ["./messages/funkcje/*.md"],
   },
   // Test e2e Google Analytics otwiera lokalny serwer pod nazwą produkcji (e2e/security-headers.spec.ts), bo tylko tam
   // wczytuje się GA; `next dev` bez tego blokuje stronie pod obcą nazwą odświeżanie modułów.

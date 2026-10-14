@@ -16,7 +16,7 @@ export function LegalLinks({ className = "legal-links" }: { className?: string }
           {t(`legal.documents.${id}`)}
         </Link>
       ))}
-      <CookieSettingsButton />
+      <CookieSettingsButton label={t("cookies.settings")} />
     </nav>
   );
 }
