@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { DemoRole } from "@/demo/company";
@@ -112,6 +113,13 @@ const EDGE = 16;
 /** Od tej szerokości dymek stoi przy elemencie; węższy ekran ma go na dole. */
 const WIDE = 640;
 
+/** Pakiet firmy demo z ceną, do ostatniego kroku (`demoPlan`). */
+export interface DemoTourOffer {
+  name: string;
+  implementation: string;
+  yearly: string;
+}
+
 interface Layout {
   ring: CSSProperties | null;
   card: CSSProperties | null;
@@ -120,9 +128,10 @@ interface Layout {
 /**
  * Przewodnik po tablicy w firmie demo: dymki „kliknij tu, zobacz to” z podświetleniem elementu, osobne dla
  * każdej roli. Włącza się sam przy pierwszym wejściu do roli, można go pominąć w każdym kroku, a przycisk
- * „Przewodnik” na pasku demo włącza go od nowa. Strona pod spodem cały czas działa.
+ * „Przewodnik” na pasku demo włącza go od nowa. Strona pod spodem cały czas działa. Ostatni krok podaje cenę pakietu
+ * dla firmy wielkości DemoBud i prowadzi do „Chcę to u siebie”.
  */
-export function DemoTour({ role }: { role: DemoRole }) {
+export function DemoTour({ role, offer }: { role: DemoRole; offer: DemoTourOffer }) {
   const pathname = usePathname();
   const requested = useSearchParams().has("przewodnik");
   const router = useRouter();
@@ -132,6 +141,7 @@ export function DemoTour({ role }: { role: DemoRole }) {
   const [layout, setLayout] = useState<Layout>({ ring: null, card: null });
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  const offerRef = useRef<HTMLAnchorElement>(null);
 
   const begin = useCallback(
     (from: number) => {
@@ -205,7 +215,7 @@ export function DemoTour({ role }: { role: DemoRole }) {
   }, [visible, id]);
 
   useEffect(() => {
-    if (visible) nextRef.current?.focus({ preventScroll: true });
+    if (visible) (offerRef.current ?? nextRef.current)?.focus({ preventScroll: true });
   }, [visible, id]);
 
   const close = useCallback(
@@ -247,7 +257,7 @@ export function DemoTour({ role }: { role: DemoRole }) {
         <h2 id="demo-tour-title" className="display demo-tour-title">
           {t(`demo.tour.${id}.title`)}
         </h2>
-        <p id="demo-tour-text">{t(`demo.tour.${id}.text`)}</p>
+        <p id="demo-tour-text">{t(`demo.tour.${id}.text`, id === "finish" ? { ...offer } : undefined)}</p>
         <div className="demo-tour-actions">
           {!last && (
             <button type="button" className="demo-tour-skip" onClick={() => close(true)}>
@@ -259,9 +269,21 @@ export function DemoTour({ role }: { role: DemoRole }) {
               {t("demo.tour.back")}
             </button>
           )}
-          <button ref={nextRef} type="button" className="button button-small" onClick={next}>
-            {last ? t("demo.tour.done") : t("demo.tour.next")}
-          </button>
+          {last ? (
+            <>
+              <button type="button" className="button button-quiet button-small" onClick={next}>
+                {t("demo.tour.done")}
+              </button>
+              {/* Przewodnik kończy się przy przejściu, więc po powrocie na tablicę już się nie włączy. */}
+              <Link href="/oferta" className="button button-small" ref={offerRef} onClick={() => close(false)} data-testid="demo-tour-offer">
+                {t("demo.tour.offer")}
+              </Link>
+            </>
+          ) : (
+            <button ref={nextRef} type="button" className="button button-small" onClick={next}>
+              {t("demo.tour.next")}
+            </button>
+          )}
         </div>
       </div>
     </>

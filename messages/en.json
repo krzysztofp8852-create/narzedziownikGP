@@ -986,7 +986,9 @@
     "recorders": "People recording movements",
     "recorderUsage": "{count} of {limit}",
     "recordersNoLimit": "{count} (unlimited plan)",
-    "hint": "Arrange plan changes and payments with GP Engineering. Accounts don't count toward the tool limit, and workers don't count toward the limit of people recording movements."
+    "hint": "Arrange plan changes and payments with GP Engineering. Accounts don't count toward the tool limit, and workers don't count toward the limit of people recording movements.",
+    "demoPrice": "A company the size of DemoBud fits the {name} plan: {implementation} for setup with training and {yearly} a year for maintenance, gross.",
+    "demoOffer": "I want this for my company →"
   },
   "toolLimit": {
     "warning": "Everything is saved, but the company has exceeded the tool limit in the {tier} plan: {count} of {limit}. The owner can switch to the {suggested} plan.",
@@ -1586,7 +1588,9 @@
       "label": "Demo",
       "switch": "View as:",
       "about": "How does the demo work?",
-      "tour": "Guide"
+      "tour": "Guide",
+      "offer": "I want this",
+      "offerShort": "Price"
     },
     "tour": {
       "count": "Step {step} of {count}",
@@ -1684,11 +1688,27 @@
       },
       "finish": {
         "title": "All set",
-        "text": "Click around freely, this is sample data. Also try another role on the yellow bar at the top."
-      }
+        "text": "Click around freely, this is sample data, and try another role on the yellow bar at the top. A company the size of DemoBud fits the {name} plan: {implementation} for setup with training and {yearly} a year for maintenance."
+      },
+      "offer": "I want this for my company"
     },
     "contactPhone": "Call:",
-    "contactEmail": "Write:"
+    "contactEmail": "Write:",
+    "offer": {
+      "title": "NarzędziownikGP in your company",
+      "back": "← Back to the demo",
+      "planTitle": "{name} plan",
+      "lead": "A company the size of DemoBud, up to {people} decision-makers and up to {tools} tools, fits this plan. This is the price of everything you see in the demo:",
+      "implementation": "Setup with training",
+      "once": "gross, one-off",
+      "yearly": "Maintenance",
+      "perYear": "gross per year",
+      "included": "All modules from the demo: tools, people and qualifications, punches, costs, deadlines and vehicles\nUnlimited worker accounts; decision-makers are you, site managers and storekeepers\nTraining for you and your team, on site at your company or remotely\nMovements and punches saved without signal are sent automatically when the network is back\nGross prices: nothing is added on top",
+      "bigger": "More people or tools?",
+      "allPlans": "See all plans",
+      "contactTitle": "Contact",
+      "call": "Prefer to call right away?"
+    }
   },
   "tutorial": {
     "title": "Tutorial",

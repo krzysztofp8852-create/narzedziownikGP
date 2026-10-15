@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CallbackForm } from "@/components/callback-form";
 import { ChatMessageForm } from "@/components/chat-message-form";
 import { ChatThread } from "@/components/chat-thread";
 import { SalesContact } from "@/components/sales-contact";
@@ -72,7 +73,8 @@ export default async function SupportChatPage(props: PageProps<"/czat">) {
 
 /**
  * Okno 💬 w firmie demo: konto roli dzielą wszyscy oglądający, więc wspólny wątek pokazałby następnemu wiadomości
- * poprzedniego (np. jego telefon). Zamiast niego mówimy, jak czat działa u klienta, i podajemy kontakt handlowy.
+ * poprzedniego (np. jego telefon). Zamiast niego mówimy, jak czat działa u klienta, i podajemy kontakt handlowy
+ * z prośbą o telefon: kto tu zagląda, ma pytanie.
  */
 function DemoChat() {
   return (
@@ -89,6 +91,7 @@ function DemoChat() {
           <p>{t("supportChat.demo.contact")}</p>
           <SalesContact />
         </div>
+        <CallbackForm source="demo" />
       </section>
     </>
   );

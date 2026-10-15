@@ -1,12 +1,19 @@
+import Link from "next/link";
 import { formatCalendarDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
+import { demoPlan } from "@/lib/pricing-text";
 import type { CompanySubscription } from "@/registry/registry";
 import { STATUS_CLASS } from "@/app/super-admin/subscription-status";
 
-/** Abonament w ustawieniach właściciela: pakiet, narzędzia i osoby zapisujące ruchy wobec jego limitów, termin płatności. */
-export function SubscriptionSection({ subscription }: { subscription: CompanySubscription }) {
+/**
+ * Abonament w ustawieniach właściciela: pakiet, narzędzia i osoby zapisujące ruchy wobec jego limitów, termin płatności.
+ * W demo zamiast umawiania zmian z GP Engineering: ile kosztuje ten pakiet i „Chcę to u siebie”.
+ */
+export function SubscriptionSection({ subscription, demo }: { subscription: CompanySubscription; demo: boolean }) {
   const { tier, toolCount, paidUntil, readOnlyFrom, status, limitWarning, recorders } = subscription;
   const recorderLimit = tier.maxPeople;
+  // Cena pakietu demo, a nie bieżącego: demo sprzed zmiany na mały pakiet ma jeszcze duży.
+  const demoOffer = demoPlan();
   return (
     <section className="company-card" aria-labelledby="subscription" data-testid="subscription">
       <h2 id="subscription" className="display section-title">
@@ -47,7 +54,14 @@ export function SubscriptionSection({ subscription }: { subscription: CompanySub
           {t("toolLimit.settings", { suggested: limitWarning.suggestedTier.name })}
         </p>
       )}
-      <p className="muted">{t("subscription.hint")}</p>
+      {demo ? (
+        <p data-testid="subscription-demo-price">
+          {t("subscription.demoPrice", { name: demoOffer.name, implementation: demoOffer.implementation.price, yearly: demoOffer.yearly.price })}{" "}
+          <Link href="/oferta">{t("subscription.demoOffer")}</Link>
+        </p>
+      ) : (
+        <p className="muted">{t("subscription.hint")}</p>
+      )}
     </section>
   );
 }

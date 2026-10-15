@@ -989,7 +989,9 @@
     "recorders": "Osoby zapisujące ruchy",
     "recorderUsage": "{count} z {limit}",
     "recordersNoLimit": "{count} (pakiet bez limitu)",
-    "hint": "Zmianę pakietu i płatności ustalisz z GP Engineering. Konta nie wchodzą do limitu narzędzi, a pracownicy do limitu osób zapisujących ruchy."
+    "hint": "Zmianę pakietu i płatności ustalisz z GP Engineering. Konta nie wchodzą do limitu narzędzi, a pracownicy do limitu osób zapisujących ruchy.",
+    "demoPrice": "Firma wielkości DemoBud mieści się w pakiecie {name}: {implementation} za wdrożenie ze szkoleniem i {yearly} za rok utrzymania, brutto.",
+    "demoOffer": "Chcę to u siebie →"
   },
   "toolLimit": {
     "warning": "Wszystko zapisane, ale firma przekroczyła limit narzędzi w pakiecie {tier}: {count} z {limit}. Właściciel może przejść na pakiet {suggested}.",
@@ -1792,7 +1794,9 @@
       "label": "Demo",
       "switch": "Zobacz jako:",
       "about": "Jak działa demo?",
-      "tour": "Przewodnik"
+      "tour": "Przewodnik",
+      "offer": "Chcę to u siebie",
+      "offerShort": "Cena"
     },
     "tour": {
       "count": "Krok {step} z {count}",
@@ -1890,11 +1894,27 @@
       },
       "finish": {
         "title": "Gotowe",
-        "text": "Klikaj śmiało, to przykładowe dane. Zajrzyj też do innej roli na żółtym pasku u góry."
-      }
+        "text": "Klikaj śmiało, to przykładowe dane, i zajrzyj do innej roli na żółtym pasku. Firma wielkości DemoBud to pakiet {name}: {implementation} za wdrożenie ze szkoleniem i {yearly} za rok utrzymania."
+      },
+      "offer": "Chcę to u siebie"
     },
     "contactPhone": "Zadzwoń:",
-    "contactEmail": "Napisz:"
+    "contactEmail": "Napisz:",
+    "offer": {
+      "title": "NarzędziownikGP w Twojej firmie",
+      "back": "← Wróć do demo",
+      "planTitle": "Pakiet {name}",
+      "lead": "Firma wielkości DemoBud, do {people} osób decyzyjnych i do {tools} narzędzi, mieści się w tym pakiecie. Tyle kosztuje wszystko, co widzisz w demo:",
+      "implementation": "Wdrożenie ze szkoleniem",
+      "once": "brutto, jednorazowo",
+      "yearly": "Utrzymanie",
+      "perYear": "brutto za rok",
+      "included": "Wszystkie moduły z demo: narzędzia, ludzie i uprawnienia, odbicia, koszty, terminy i pojazdy\nKonta pracowników bez limitu; osoby decyzyjne to Ty, kierownicy i magazynierzy\nSzkolenie z programu dla Ciebie i zespołu, na miejscu w firmie albo zdalnie\nRuchy i odbicia zapisane bez zasięgu wysyłają się same, gdy wróci sieć\nCeny brutto: nic do nich nie doliczamy",
+      "bigger": "Więcej osób albo narzędzi?",
+      "allPlans": "Zobacz wszystkie pakiety",
+      "contactTitle": "Kontakt",
+      "call": "Wolisz zadzwonić od razu?"
+    }
   },
   "callback": {
     "title": "Zostaw numer, oddzwonimy",

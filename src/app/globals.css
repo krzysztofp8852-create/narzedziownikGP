@@ -2815,6 +2815,15 @@ a.tool-row:hover .tool-row-name {
   display: none;
 }
 
+.demo-bar-offer {
+  flex: none;
+  white-space: nowrap;
+}
+
+.demo-bar-offer-short {
+  display: none;
+}
+
 @media (max-width: 719px) {
   .demo-bar-switch,
   .demo-bar-link-text {
@@ -2844,6 +2853,74 @@ a.tool-row:hover .tool-row-name {
     display: inline;
     font-weight: 800;
   }
+
+  .demo-bar-offer-long {
+    /* Czytnik ekranu dalej słyszy pełne „Chcę to u siebie”. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .demo-bar-offer-short {
+    display: inline;
+  }
+
+  .demo-bar-about {
+    display: none;
+  }
+}
+
+/* „Chcę to u siebie” w demo: cena pakietu obok prośby o telefon, na telefonie jedno pod drugim. */
+.demo-offer {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+  max-width: 960px;
+}
+
+@media (min-width: 860px) {
+  .demo-offer {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.demo-offer-contact {
+  display: grid;
+  gap: 16px;
+}
+
+.demo-offer-plan {
+  border-top: 4px solid var(--brand);
+}
+
+.demo-offer-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+
+.demo-offer-prices dt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.demo-offer-prices strong {
+  font-size: 1.8rem;
+}
+
+.demo-offer-prices span {
+  color: var(--text-muted);
+}
+
+.demo-offer-points {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
 }
 
 /* Przewodnik po demo: podświetlenie elementu przyciemnia resztę strony, ale jej nie blokuje. */

@@ -1,6 +1,6 @@
 import { formatPrice } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import { type SubscriptionTier, TIERS, type TierId } from "@/registry/subscriptions";
+import { DEMO_TIER, type SubscriptionTier, TIERS, type TierId } from "@/registry/subscriptions";
 
 /** Cena z dopiskiem: „3 000 zł” „brutto, jednorazowo”. */
 export interface PriceText {
@@ -50,4 +50,9 @@ export function pricing(): PricingPlan[] {
     yearly: { price: formatPrice(tier.yearlyPrice), period: t("landing.pricing.perYear") },
     popular: tier.id === POPULAR_TIER,
   }));
+}
+
+/** Pakiet firmy demo z ceną: strona „Chcę to u siebie”, ostatni krok przewodnika i ustawienia w demo. */
+export function demoPlan(): PricingPlan {
+  return pricing().find((plan) => plan.id === DEMO_TIER)!;
 }

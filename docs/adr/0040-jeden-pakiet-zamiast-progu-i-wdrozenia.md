@@ -25,7 +25,10 @@ gotowe pakiety, każdy z ceną wdrożenia i opłatą za utrzymanie.
 - Limity działają jak dotąd: limit osób blokuje dodanie kierownika albo magazyniera (ADR 0024), a limit narzędzi tylko
   ostrzega. Dopłata do wyższego pakietu przy braku miejsc to różnica cen wdrożenia.
 - Migracja daje każdej firmie wyższy z dwóch dotychczasowych progów (plan indywidualny to duży), więc żadnej limit się
-  nie obniża. Firmy zakładane skryptem i firma demo mają duży pakiet.
+  nie obniża. Firmy zakładane skryptem mają duży pakiet. Firma demo ma mały (`DEMO_TIER`, zmiana z 2026-10-15), bo
+  DemoBud się w nim mieści: ustawienia, ostatni krok przewodnika i strona „Chcę to u siebie” (`/oferta`) pokazują
+  oglądającemu cenę dla firmy jego wielkości, a nie najdroższego pakietu. Pięć osób zapisujących ruchy to cały limit,
+  więc dodanie w demo kierownika albo magazyniera kończy się komunikatem o limicie i dopłacie do średniego.
 - Kolumna `implementation_tier` zostaje bez użycia, dopóki po migracji może działać wersja aplikacji sprzed zmiany;
   usunie ją kolejna migracja.
 - Cennik na stronie o programie pokazuje trzy karty pakietów; mały jest wyróżniony jako najpopularniejszy wśród małych

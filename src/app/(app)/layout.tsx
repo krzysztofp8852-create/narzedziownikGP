@@ -4,7 +4,7 @@ import { AppMenu } from "@/components/app-menu";
 import { AppPush } from "@/components/app-push";
 import { DemoBar } from "@/components/demo-bar";
 import { DemoPageLog } from "@/components/demo-page-log";
-import { DemoTour } from "@/components/demo-tour";
+import { DemoTour, type DemoTourOffer } from "@/components/demo-tour";
 import { IdleLogout } from "@/components/idle-logout";
 import { InstallBanner } from "@/components/install-banner";
 import { OfflineSync } from "@/components/offline-sync";
@@ -14,6 +14,7 @@ import { t } from "@/i18n/t";
 import { appMenu } from "@/lib/app-menu";
 import { currentIdleStatus, requireSession } from "@/lib/auth";
 import { serverEnv } from "@/lib/env";
+import { demoPlan } from "@/lib/pricing-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { canUseSupportChat } from "@/registry/registry";
 import { LocaleSync } from "./jezyk/locale-sync";
@@ -66,6 +67,12 @@ function UnreadCount({ count, testId }: { count: number; testId: string }) {
       </span>
     )
   );
+}
+
+/** Cena pakietu firmy demo do ostatniego kroku przewodnika. */
+function demoTourOffer(): DemoTourOffer {
+  const plan = demoPlan();
+  return { name: plan.name, implementation: plan.implementation.price, yearly: plan.yearly.price };
 }
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -146,7 +153,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       {session.company.demo && (
         // Nowy przewodnik po przełączeniu roli; parametr adresu czyta dopiero przeglądarka.
         <Suspense fallback={null}>
-          <DemoTour key={session.userId} role={session.role} />
+          <DemoTour key={session.userId} role={session.role} offer={demoTourOffer()} />
         </Suspense>
       )}
       {session.company.demo && <DemoPageLog key={session.userId} />}

@@ -169,15 +169,17 @@ describe("firmy bez limitu", () => {
       seatsLeft: null,
     });
   });
+});
 
-  it("firma demo ma duży pakiet, nawet gdy wcześniej miała mniejszy", async () => {
-    const zawbud = await givenCompanyWithPackage("maly");
+describe("pakiet firmy demo", () => {
+  it("demo ma mały pakiet, nawet gdy wcześniej miało duży, a limit osób działa jak u klienta", async () => {
+    const zawbud = await givenCompanyWithPackage("duzy");
     await addManagers(zawbud, 4);
 
     await testbed.registry.system().activateDemoCompany(zawbud.companyId);
 
-    await zawbud.owner.addMember(person("magazynier"));
-    expect((await zawbud.owner.subscription()).recorders).toMatchObject({ tier: { id: "duzy" }, seatsLeft: null });
+    expect((await zawbud.owner.subscription()).recorders).toMatchObject({ tier: { id: "maly" }, seatsLeft: 0 });
+    await expect(zawbud.owner.addMember(person("magazynier"))).rejects.toMatchObject({ code: "recorder_limit" });
   });
 });
 

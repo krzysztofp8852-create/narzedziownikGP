@@ -3,6 +3,7 @@ import { RegistryError } from "./errors";
 import { UUID_PATTERN } from "./validation";
 import type { Sql } from "./ports";
 import type { Role, Session } from "./registry";
+import { DEMO_TIER } from "./subscriptions";
 
 /** Konta firmy demo mają adresy w tej domenie; e-maile na nie nie wychodzą. */
 export const DEMO_EMAIL_DOMAIN = "demo.narzedziownik.gp-engineering.pl";
@@ -74,7 +75,7 @@ export async function isDemoAccount(sql: Sql, userId: string): Promise<boolean> 
 const DEMO_PAID_DAYS = 3650;
 
 /**
- * Firma staje się obecnym demo (od `now`): próg „Średni” i abonament opłacony na lata. Konta poprzednich firm demo
+ * Firma staje się obecnym demo (od `now`): pakiet `DEMO_TIER` i abonament opłacony na lata. Konta poprzednich firm demo
  * (z ich osobami) są dezaktywowane, a ich identyfikatory wracają, żeby zablokować też logowanie.
  */
 export async function activateDemoCompany(sql: Sql, companyId: string, now: Date): Promise<string[]> {
@@ -88,7 +89,7 @@ export async function activateDemoCompany(sql: Sql, companyId: string, now: Date
   const [company] = await sql<{ id: string }>("update app.companies set demo_since = $2 where id = $1 returning id", [companyId, now]);
   if (!company) throw new RegistryError("not_found");
   const paidUntil = new Date(now.getTime() + DEMO_PAID_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  await sql("update app.subscriptions set tier = 'duzy', paid_until = $2 where company_id = $1", [companyId, paidUntil]);
+  await sql("update app.subscriptions set tier = $3, paid_until = $2 where company_id = $1", [companyId, paidUntil, DEMO_TIER]);
   return retired.map((row) => row.user_id);
 }
 

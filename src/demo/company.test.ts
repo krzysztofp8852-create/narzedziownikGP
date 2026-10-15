@@ -127,6 +127,17 @@ describe("firma demo", () => {
     expect((await bed.registry.as(accounts[0].userId).subscription()).recorders.recorderCount).toBe(5);
   });
 
+  it("mieści się w małym pakiecie, więc pokazuje cenę dla firmy tej wielkości", async () => {
+    await demo();
+    const [owner] = await bed.registry.system().demoAccounts();
+
+    expect(await bed.registry.as(owner.userId).subscription()).toMatchObject({
+      tier: { id: "maly" },
+      recorders: { recorderCount: 5, seatsLeft: 0 },
+      limitWarning: null,
+    });
+  });
+
   it("osoby mają badania, szkolenia i uprawnienia, w tym jedno po terminie; przypomnienia trafiają do właściciela i pracownika", async () => {
     await demo();
     const [owner, manager, , , , worker] = await bed.registry.system().demoAccounts();

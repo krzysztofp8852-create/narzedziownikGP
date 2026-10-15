@@ -48,6 +48,9 @@ export interface RecorderSeats {
 /** Pakiet firm założonych skryptem, bez wyboru pakietu: bez limitów, jak firmy sprzed pakietów. */
 export const DEFAULT_TIER: TierId = "duzy";
 
+/** Pakiet firmy demo: w małym mieści się DemoBud (pięć osób zapisujących ruchy, kilkadziesiąt narzędzi), więc demo pokazuje cenę dla firmy tej wielkości. */
+export const DEMO_TIER: TierId = "maly";
+
 /** Po tylu dniach od „opłacone do” firma przechodzi w tryb tylko do odczytu. */
 export const GRACE_DAYS = 14;
 

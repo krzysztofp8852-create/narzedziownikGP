@@ -40,7 +40,7 @@ export default async function SettingsPage() {
       </p>
       <h1 className="display page-title">{t("settingsPage.title")}</h1>
       <div className="company-grid">
-        <SubscriptionSection subscription={subscription} />
+        <SubscriptionSection subscription={subscription} demo={session.company.demo} />
         <LanguageSection demo={session.company.demo} />
         <SettingsSection settings={settings} />
         <IssueSettingsSection settings={settings} />
