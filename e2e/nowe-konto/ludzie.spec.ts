@@ -330,7 +330,10 @@ test("właściciel nowej firmy buduje kartotekę Ludzie: konta kierownika, praco
   const workerCredentials: Credentials = await firstSignIn(worker, workerLogin, workerPassword, companyName);
   await openFromNav(worker, "Moje uprawnienia");
   await expect(worker.getByRole("heading", { level: 1, name: "Moje uprawnienia" })).toBeVisible();
-  expect((await worker.goto(`/ludzie/${marekId}`))?.status()).toBe(404);
+  // Cudza karta to „nie znaleziono”. Strona aplikacji płynie od razu (loading.tsx), więc status zostaje 200, a o 404
+  // mówi treść strony (i noindex), jak przy naklejkach.
+  await worker.goto(`/ludzie/${marekId}`);
+  await expect(worker.getByRole("heading", { level: 1 })).toHaveText("404");
 
   // Właściciel dezaktywuje konto pracownika: status w kartotece i blokada logowania.
   await page.setViewportSize(devices["Pixel 7"].viewport);
@@ -583,7 +586,8 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   expect((await worker.request.get(medicalDocumentUrl)).status()).toBe(404);
   expect((await worker.request.get(safetyDocumentUrl)).status()).toBe(200);
   // Cudzej karty nie ma, własna jest.
-  expect((await worker.goto(`/ludzie/${ids.marek}`))?.status()).toBe(404);
+  await worker.goto(`/ludzie/${ids.marek}`);
+  await expect(worker.getByRole("heading", { level: 1 })).toHaveText("404");
   expect((await worker.goto(`/ludzie/${ids.tomasz}`))?.status()).toBe(200);
   await expect(worker.getByRole("heading", { level: 1, name: "Tomasz Pracowity" })).toBeVisible();
   await expectNoHorizontalScroll(worker);
