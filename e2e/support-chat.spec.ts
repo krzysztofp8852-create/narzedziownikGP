@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { appNav, moreButton, openFromNav, openMyAccount } from "./support/navigation";
 
 interface Seeded {
   companyName: string;
@@ -35,15 +36,17 @@ test("właściciel pisze na czacie z ekranu historii, dostaje automatyczną odpo
   await signIn(page, seeded.owner.email, seeded.owner.password);
   await expect(page.getByTestId("company-name")).toHaveText(seeded.companyName);
   await page.goto("/historia");
-  await page.getByRole("link", { name: "Czat z supportem" }).click();
+  // Czat jest w Pomocy; ekran, z którego ją otwarto, idzie do wiadomości jako kontekst.
+  await openFromNav(page, "Pomoc");
+  await page.getByRole("link", { name: "Otwórz czat" }).click();
   await expect(page.getByRole("heading", { name: "Czat z supportem" })).toBeVisible();
   await page.getByLabel("Wiadomość").fill("Jak dodać drugiego magazyniera?");
   await page.getByRole("button", { name: "Wyślij" }).click();
 
   await expect(page.getByTestId("chat-message")).toHaveCount(2);
   await expect(page.getByTestId("chat-message").last()).toContainText("Dzięki za wiadomość! Odpiszemy, jak tylko znajdziemy chwilę.");
-  // W aplikacji firmy „Wyloguj” jest w menu; panel super-admina ma je w nagłówku.
-  await page.getByRole("button", { name: "Menu" }).click();
+  // W aplikacji firmy „Wyloguj” jest w Moim koncie; panel super-admina ma je w nagłówku.
+  await openMyAccount(page);
   await signOut(page);
 
   await signIn(page, seeded.superAdmin.email, seeded.superAdmin.password);
@@ -57,8 +60,12 @@ test("właściciel pisze na czacie z ekranu historii, dostaje automatyczną odpo
   await signOut(page);
 
   await signIn(page, seeded.owner.email, seeded.owner.password);
-  await expect(page.getByTestId("chat-count")).toHaveText("1");
-  await page.getByRole("link", { name: "Czat z supportem, nowe odpowiedzi: 1" }).click();
+  await expect(page.getByTestId("company-name")).toHaveText(seeded.companyName);
+  await moreButton(page).click();
+  await expect(page.getByTestId("help-count")).toHaveText("1");
+  await appNav(page).getByRole("link", { name: /^Pomoc/ }).click();
+  await expect(page.getByTestId("help-chat-unread")).toHaveText("Nowe odpowiedzi: 1");
+  await page.getByRole("link", { name: "Otwórz czat" }).click();
   await expect(page.getByTestId("chat-message").last()).toContainText("W Zespole: Dodaj osobę, rola magazynier.");
-  await expect(page.getByTestId("chat-count")).toHaveCount(0);
+  await expect(page.getByTestId("help-count")).toHaveCount(0);
 });

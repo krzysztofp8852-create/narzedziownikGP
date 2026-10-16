@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -49,8 +50,7 @@ test("kierownik ma w telefonie kopię tablicy bez złotówek, a po wylogowaniu k
   expect(await cachedBoard(page)).not.toContain("zł");
   await expect(page.getByTestId("board-snapshot")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   expect(await cachedBoard(page)).toBeNull();

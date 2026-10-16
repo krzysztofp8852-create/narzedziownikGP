@@ -28,9 +28,9 @@ const STEPS = {
   issuesWorker: "issues",
   bell: "bell",
   deadlines: "deadlines",
-  // Koszty mają tylko stronę w menu, więc dymek wskazuje przycisk menu.
-  costs: "menu",
-  menu: "menu",
+  // Koszty mają tylko stronę pod „Więcej”, więc dymek wskazuje ten przycisk nawigacji.
+  costs: "more",
+  menu: "more",
   finish: null,
 } as const;
 
@@ -123,6 +123,8 @@ export interface DemoTourOffer {
 interface Layout {
   ring: CSSProperties | null;
   card: CSSProperties | null;
+  /** Na telefonie dymek u góry ekranu, bo element jest na dole (dolny pasek nawigacji). */
+  sheetTop?: boolean;
 }
 
 /**
@@ -198,6 +200,7 @@ export function DemoTour({ role, offer }: { role: DemoRole; offer: DemoTourOffer
       setLayout({
         ring: rect && { top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12 },
         card,
+        sheetTop: !card && !!rect && rect.top > window.innerHeight / 2,
       });
     };
     if (element) {
@@ -240,7 +243,11 @@ export function DemoTour({ role, offer }: { role: DemoRole; offer: DemoTourOffer
   }, [visible, close]);
 
   if (!visible || index === null || !id) return null;
-  const cardClass = layout.card ? "demo-tour-card" : layout.ring ? "demo-tour-card demo-tour-sheet" : "demo-tour-card demo-tour-center";
+  const cardClass = layout.card
+    ? "demo-tour-card"
+    : layout.ring
+      ? `demo-tour-card demo-tour-sheet${layout.sheetTop ? " demo-tour-sheet-top" : ""}`
+      : "demo-tour-card demo-tour-center";
   return (
     <>
       {layout.ring ? <div className="demo-tour-ring" style={layout.ring} aria-hidden /> : <div className="demo-tour-backdrop" aria-hidden />}

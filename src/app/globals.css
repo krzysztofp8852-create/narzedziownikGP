@@ -299,36 +299,166 @@ a.button {
   }
 }
 
-/*
- * Menu pod trzema kreskami: ten sam panel na telefonie i komputerze, przy prawej krawędzi przycisku. Szerokość
- * zostawia margines strony, więc na wąskim telefonie panel nie wychodzi poza ekran.
- */
-.app-menu {
-  position: relative;
+/* Moje konto w nagłówku: ikona z imieniem osoby; długie imię się skraca. */
+.app-header-account-name {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.app-menu-panel {
-  position: absolute;
-  top: calc(100% + 8px);
+/*
+ * Nawigacja konta: jeden element, który na telefonie jest dolnym paskiem, a od szerokości tabletu stałym panelem
+ * bocznym (próg też w `app-navigation.tsx`). Aplikacja na Androida nie ma viewport-fit=cover, więc Capacitor odsuwa
+ * stronę od pasków systemowych i pasek na nie nie zachodzi; zapas z safe-area działa tam, gdzie ekran ma wcięcie.
+ * `--app-nav-height` mówi, ile dołu ekranu zajmuje pasek, żeby przyklejone do dołu elementy stały nad nim.
+ */
+:root {
+  --app-nav-height: 0px;
+  --app-nav-inset: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+
+.app-shell {
+  padding-bottom: var(--app-nav-height);
+}
+
+.app-nav {
+  position: fixed;
+  left: 0;
   right: 0;
+  bottom: 0;
   z-index: 900;
-  width: min(18rem, calc(100vw - 2 * var(--gutter)));
-  max-height: calc(100dvh - 96px);
+  padding-bottom: var(--app-nav-inset);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgb(20 23 28 / 0.06);
+}
+
+.app-nav-bar {
+  list-style: none;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  height: 64px;
+}
+
+.app-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 6px 2px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.app-nav-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-nav-item[aria-current="page"],
+.app-nav-item[data-current],
+.app-nav-item[aria-expanded="true"] {
+  color: var(--accent);
+}
+
+/* Bieżąca pozycja paska: kreska u góry. */
+.app-nav-item[aria-current="page"]::before,
+.app-nav-item[data-current]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--accent);
+}
+
+/* Skanuj: wyróżnione koło na środku paska, wystające ponad niego. */
+.app-nav-scan {
+  color: var(--text);
+}
+
+.app-nav-scan svg {
+  box-sizing: content-box;
+  margin-top: -22px;
+  padding: 12px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 12px rgb(26 86 219 / 0.35);
+}
+
+.app-nav-scan:hover svg {
+  background: var(--accent-hover);
+}
+
+/* Nowe odpowiedzi czatu pod „Więcej”: kropka na przycisku i licznik przy Pomocy. */
+.app-nav-dot {
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 8px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.app-nav-count {
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* „Więcej” na telefonie: arkusz nad paskiem. */
+.app-nav-more {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--app-nav-height);
+  max-height: calc(100dvh - var(--app-nav-height) - 72px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   gap: 12px;
-  padding: 12px;
+  padding: 16px var(--gutter);
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgb(20 23 28 / 0.16);
+  border-top: 1px solid var(--border);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -8px 24px rgb(20 23 28 / 0.16);
 }
 
-.app-menu-panel[hidden] {
+.app-nav-more[hidden] {
   display: none;
 }
 
-.app-menu-group-title {
+.app-nav-group-title {
   padding: 0 10px 4px;
   color: var(--text-muted);
   font-size: 0.8rem;
@@ -337,46 +467,146 @@ a.button {
   text-transform: uppercase;
 }
 
-.app-menu-group ul {
+.app-nav-group ul {
   list-style: none;
   display: grid;
   gap: 2px;
 }
 
-.app-menu-link {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
+/* Grupa bez nazwy (Pomoc) oddzielona kreską. */
+.app-nav-group:has(> ul:first-child) {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
-.app-menu-link:hover {
+.app-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.app-nav-link:hover {
   background: var(--surface-raised);
 }
 
-.app-menu-link[aria-current="page"] {
+.app-nav-link[aria-current="page"] {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 700;
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
+@media (max-width: 767px) {
+  :root:has(.app-nav) {
+    --app-nav-height: calc(64px + var(--app-nav-inset));
+  }
+}
+
+/* Komputer i tablet: stały panel boczny z tymi samymi pozycjami, a „Więcej” rozwija się w nim. */
+@media (min-width: 768px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    max-width: calc(var(--page-width) + 232px);
+    margin: 0 auto;
+  }
+
+  .app-nav {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100dvh;
+    overflow-y: auto;
+    padding: 20px 8px 20px var(--gutter);
+    background: none;
+    border-top: 0;
+    box-shadow: none;
+  }
+
+  .app-nav-bar {
+    grid-auto-flow: row;
+    gap: 2px;
+    height: auto;
+  }
+
+  .app-nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 1rem;
+    text-align: left;
+  }
+
+  .app-nav-item:hover {
+    background: var(--surface);
+  }
+
+  .app-nav-item[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .app-nav-item[aria-current="page"]::before,
+  .app-nav-item[data-current]::before {
+    content: none;
+  }
+
+  .app-nav-scan,
+  .app-nav-scan:hover {
+    margin: 6px 0;
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .app-nav-scan:hover {
+    background: var(--accent-hover);
+  }
+
+  .app-nav-scan svg,
+  .app-nav-scan:hover svg {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    box-shadow: none;
+  }
+
+  .app-nav-dot {
+    position: static;
+    margin-left: auto;
+  }
+
+  .app-nav-more {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 8px 0 0 12px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .app-nav-link:hover {
+    background: var(--surface);
+  }
+}
+
 .app-header-company {
   font-size: 1.2rem;
   overflow-wrap: anywhere;
-}
-
-.app-header-user {
-  font-size: 0.9rem;
 }
 
 /* Tryb tylko do odczytu: stały baner pod nagłówkiem na każdej stronie firmy. */
@@ -432,6 +662,8 @@ a.button {
   max-width: var(--page-width);
   margin: 0 auto;
   display: grid;
+  /* Obok wyższego panelu bocznego krótka strona nie rozciąga odstępów między sekcjami. */
+  align-content: start;
   gap: 16px;
 }
 
@@ -1032,7 +1264,7 @@ a.tool-row:hover .tool-row-name {
 
 .checklist-summary {
   position: sticky;
-  bottom: 0;
+  bottom: var(--app-nav-height);
   display: grid;
   gap: 12px;
   padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
@@ -2970,7 +3202,13 @@ a.tool-row:hover .tool-row-name {
 .demo-tour-sheet {
   left: var(--gutter);
   right: var(--gutter);
-  bottom: var(--gutter);
+  bottom: calc(var(--app-nav-height) + var(--gutter));
+}
+
+/* Element na dole ekranu (dolny pasek nawigacji): dymek u góry, żeby go nie zasłaniał. */
+.demo-tour-sheet-top {
+  top: var(--gutter);
+  bottom: auto;
 }
 
 .demo-tour-count {

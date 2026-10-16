@@ -1,6 +1,7 @@
 import { type Locator, type Page, test } from "@playwright/test";
 import readXlsxFile from "read-excel-file/node";
 import { expectNoHorizontalScroll, firstSignIn, openFreshAccount } from "../support/fresh-account";
+import { appNav, moreButton, openFromNav } from "../support/navigation";
 import { addCategory, addManager, addSite, addTool, expect, money, openOperation, plDay, secondPhone, skipTutorial, warsawDay, zl } from "../support/equipment";
 
 /**
@@ -148,9 +149,8 @@ test("właściciel: sprzęt wynajęty od przyjęcia na bazę, przez wydanie na b
   await page.reload();
   await expect(detail(page, "Stawka dzienna")).toHaveText(/^450,00\s*zł za dzień \(stawka wypożyczalni\)$/);
 
-  // Zestawienie z menu.
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Koszty sprzętu" }).click();
+  // Zestawienie spod „Więcej”.
+  await openFromNav(page, "Koszty sprzętu");
   await expect(page.getByRole("heading", { name: "Koszty sprzętu", level: 1 })).toBeVisible();
   await expect(page.getByTestId("cost-total")).toHaveText(zl("486,51"));
   await expect(page.getByRole("list", { name: "Budowy" }).getByRole("link")).toHaveCount(1);
@@ -360,9 +360,9 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await expect(manager).toHaveURL(/\/budowy\/[0-9a-f-]{36}$/);
   await manager.goto("/koszty");
   await expect(manager).toHaveURL(/\/$/);
-  await manager.getByRole("button", { name: "Menu" }).click();
-  await expect(manager.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Koszty sprzętu" })).toHaveCount(0);
-  await manager.getByRole("button", { name: "Menu" }).click();
+  await moreButton(manager).click();
+  await expect(appNav(manager).getByRole("link", { name: "Koszty sprzętu" })).toHaveCount(0);
+  await moreButton(manager).click();
 
   // Nagrzewnicy z bazy kierownik nie oddaje ani nie przedłuża: to nie jego lokalizacja.
   await manager.goto("/narzedzia");

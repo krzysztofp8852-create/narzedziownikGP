@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
+import { openFromNav, signOut } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -35,7 +36,7 @@ async function signIn(page: Page, login: string, password: string) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samouczek nie wraca sam, ale otwiera się z menu", async ({
+test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samouczek nie wraca sam, ale otwiera się z Pomocy", async ({
   page,
 }) => {
   const company = createCompany();
@@ -57,8 +58,8 @@ test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samou
   await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Samouczek" }).click();
+  await openFromNav(page, "Pomoc");
+  await page.getByRole("link", { name: "Otwórz samouczek" }).click();
   await expect(page).toHaveURL(/\/samouczek$/);
   await expect(page.getByTestId("tutorial").getByRole("heading", { name: "Pierwsze kroki" })).toBeVisible();
   await page.getByTestId("tutorial").getByRole("button", { name: "Gotowe" }).click();
@@ -66,7 +67,7 @@ test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samou
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
 });
 
-test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik przechodzi samouczek zapisu ruchu", async ({ page }) => {
+test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik bez samouczka na start otwiera samouczek zapisu ruchu z Pomocy", async ({ page }) => {
   const company = seedCompany();
 
   await signIn(page, company.owner.email, company.owner.password);
@@ -80,16 +81,19 @@ test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik
   await tutorial.getByRole("link", { name: "Przejdź do naklejek →" }).click();
   await expect(page).toHaveURL(/\/naklejki$/);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
-  await page.getByRole("button", { name: "Wyloguj" }).click();
-  await expect(page).toHaveURL(/\/logowanie$/);
+  await signOut(page);
   await signIn(page, company.manager.email, company.manager.password);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
+  // Samouczek ekran po ekranie nie startuje sam: kierownik otwiera go z Pomocy, kiedy zechce.
+  const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
+  await expect(recent).toBeVisible();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+  const movementCount = await recent.locator("li").count();
+  await openFromNav(page, "Pomoc");
+  await page.getByRole("link", { name: "Otwórz samouczek" }).click();
+  await expect(page).toHaveURL(/\/samouczek$/);
   const guide = page.getByTestId("tutorial");
   await expect(guide.getByRole("heading", { name: "Ruchy na Twoich budowach" })).toBeVisible();
-  const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
-  const movementCount = await recent.locator("li").count();
   await guide.getByRole("button", { name: "Dalej" }).click();
   await expect(guide.getByRole("heading", { name: "Wydanie z bazy" })).toBeVisible();
   await guide.getByRole("button", { name: "Wstecz" }).click();
@@ -102,6 +106,7 @@ test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik
   while (await guide.getByRole("button", { name: "Dalej" }).isVisible()) await guide.getByRole("button", { name: "Dalej" }).click();
   await expect(guide.getByRole("heading", { name: "Gotowe" })).toBeVisible();
   await guide.getByRole("button", { name: "Gotowe" }).click();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
   // Samouczek niczego nie zapisał.
   await expect(recent.locator("li")).toHaveCount(movementCount);

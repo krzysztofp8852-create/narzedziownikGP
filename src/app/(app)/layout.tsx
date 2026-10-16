@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AppMenu } from "@/components/app-menu";
+import { AppNavigation } from "@/components/app-navigation";
 import { AppPush } from "@/components/app-push";
 import { DemoBar } from "@/components/demo-bar";
 import { DemoPageLog } from "@/components/demo-page-log";
@@ -8,15 +8,14 @@ import { DemoTour, type DemoTourOffer } from "@/components/demo-tour";
 import { IdleLogout } from "@/components/idle-logout";
 import { InstallBanner } from "@/components/install-banner";
 import { OfflineSync } from "@/components/offline-sync";
-import { SupportChatLink } from "@/components/support-chat-link";
 import { requestLocale } from "@/i18n/server-locale";
 import { t } from "@/i18n/t";
-import { appMenu } from "@/lib/app-menu";
 import { currentIdleStatus, requireSession } from "@/lib/auth";
 import { serverEnv } from "@/lib/env";
+import { ACCOUNT_HREF } from "@/lib/nav-path";
+import { navigation } from "@/lib/navigation";
 import { demoPlan } from "@/lib/pricing-text";
 import { getRegistry } from "@/lib/registry-instance";
-import { canUseSupportChat } from "@/registry/registry";
 import { LocaleSync } from "./jezyk/locale-sync";
 
 function SearchIcon() {
@@ -50,10 +49,11 @@ function ClipboardIcon() {
   );
 }
 
-function ChatIcon() {
+function UserIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
     </svg>
   );
 }
@@ -69,6 +69,9 @@ function UnreadCount({ count, testId }: { count: number; testId: string }) {
   );
 }
 
+/** Imię do nagłówka: pierwsze słowo nazwy osoby. */
+const firstName = (fullName: string) => fullName.trim().split(/\s+/)[0];
+
 /** Cena pakietu firmy demo do ostatniego kroku przewodnika. */
 function demoTourOffer(): DemoTourOffer {
   const plan = demoPlan();
@@ -78,29 +81,23 @@ function demoTourOffer(): DemoTourOffer {
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
-  const chat = canUseSupportChat(session);
+  const nav = navigation(session);
   const [unread, unreadIssues, unreadChat, idle] = await Promise.all([
     registry.unreadNotificationCount(),
     registry.unreadIssueEntryCount(),
-    chat ? registry.unreadSupportReplyCount() : 0,
+    nav.help.includes("chat") ? registry.unreadSupportReplyCount() : 0,
     currentIdleStatus(),
   ]);
   const bellLabel = unread > 0 ? t("header.bellUnread", { count: unread }) : t("header.bell");
   const issuesLabel = unreadIssues > 0 ? t("header.issuesUnread", { count: unreadIssues }) : t("header.issues");
-  const chatLabel = unreadChat > 0 ? t("header.chatUnread", { count: unreadChat }) : t("header.chat");
   return (
     <>
       <header className="app-header">
         <div className="hazard" aria-hidden />
         <div className="app-header-bar">
-          <div>
-            <p className="display app-header-company" data-testid="company-name">
-              {session.company.name}
-            </p>
-            <p className="muted app-header-user">
-              {session.fullName} · {t(`roles.${session.role}`)}
-            </p>
-          </div>
+          <p className="display app-header-company" data-testid="company-name">
+            {session.company.name}
+          </p>
           <div className="app-header-actions">
             <OfflineSync userId={session.userId} />
             <AppPush />
@@ -128,13 +125,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <BellIcon />
               <UnreadCount count={unread} testId="bell-count" />
             </Link>
-            {chat && (
-              <SupportChatLink label={chatLabel}>
-                <ChatIcon />
-                <UnreadCount count={unreadChat} testId="chat-count" />
-              </SupportChatLink>
-            )}
-            <AppMenu groups={appMenu(session)} />
+            {/* Moje konto: imię osoby, a cała nazwa w opisie dla czytnika ekranu. */}
+            <Link href={ACCOUNT_HREF} className="button button-quiet icon-button app-header-account" aria-label={t("nav.account", { name: session.fullName })}>
+              <UserIcon />
+              <span className="app-header-account-name">{firstName(session.fullName)}</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -149,7 +144,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       {serverEnv.googlePlay() && <InstallBanner />}
       {/* Język konta zmieniony na innym urządzeniu: ta przeglądarka dogania go po jednym przeładowaniu (ADR 0047). */}
       {!session.company.demo && session.locale !== requestLocale() && <LocaleSync locale={session.locale} />}
-      <main className="app-main">{children}</main>
+      <div className="app-shell">
+        <AppNavigation bar={nav.bar} more={nav.more} helpCount={unreadChat} />
+        <main className="app-main">{children}</main>
+      </div>
       {session.company.demo && (
         // Nowy przewodnik po przełączeniu roli; parametr adresu czyta dopiero przeglądarka.
         <Suspense fallback={null}>

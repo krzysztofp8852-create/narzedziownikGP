@@ -28,7 +28,7 @@ Język interfejsu, który konto wybiera samo dla siebie (polski, ukraiński, ros
 _Avoid_: lokalizacja (to miejsce sprzętu), wersja językowa firmy
 
 **Ludzie**:
-Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w menu. Prowadzi ją właściciel; przy osobie widać, czy ma konto i jaką rolę. Kierownik widzi w niej osoby z uprawnieniami, a magazynier i pracownik tylko własne uprawnienia („Moje uprawnienia”).
+Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w nawigacji. Prowadzi ją właściciel; przy osobie widać, czy ma konto i jaką rolę. Kierownik widzi w niej osoby z uprawnieniami, a magazynier i pracownik tylko własne uprawnienia („Moje uprawnienia”).
 _Avoid_: zespół, kadry, pracownicy (pracownik to rola)
 
 **Osoba**:
@@ -60,7 +60,7 @@ Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje 
 _Avoid_: analityka, śledzenie
 
 **Samouczek**:
-Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Startuje sam po pierwszym logowaniu, dopóki go nie pominięto ani nie ukończono; potem otwiera się z menu pod trzema kreskami. Pracownik i firma demo go nie mają.
+Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Pierwsze kroki startują same po pierwszym logowaniu właściciela, dopóki ich nie pominięto ani nie ukończono; samouczek kierownika i magazyniera nie startuje sam. Oba otwierają się z Pomocy. Pracownik i firma demo go nie mają.
 _Avoid_: onboarding (to wdrożenie), tutorial, przewodnik (to przewodnik po tablicy w demo)
 
 **Super-admin**:
@@ -207,7 +207,7 @@ Dni narzędzi na budowie albo pojeździe razy stawka dzienna z każdego dnia, w 
 _Avoid_: koszt wynajmu, amortyzacja
 
 **Zestawienie kosztów**:
-Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, pozycja „Koszty sprzętu” w menu. Pokazuje każdą aktywną budowę i aktywny pojazd, a zakończone i nieaktywne tylko z kosztem w okresie.
+Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, pozycja „Koszty sprzętu” pod „Więcej”. Pokazuje każdą aktywną budowę i aktywny pojazd, a zakończone i nieaktywne tylko z kosztem w okresie.
 
 ## Odbijanie na budowie
 
@@ -345,3 +345,15 @@ _Avoid_: aplikacja (to wersja z Google Play), skrót
 **Aplikacja**:
 NarzędziownikGP na Androida instalowany z Google Play: ten sam program co w przeglądarce, z tymi samymi kontami, otwarty w natywnej skorupie z dostępem do funkcji telefonu. Zmiany programu dochodzą do niej bez aktualizacji ze sklepu.
 _Avoid_: aplikacja mobilna, apka, PWA (to wersja z przeglądarki)
+
+**Nawigacja**:
+Pasek na dole ekranu telefonu i stały panel z boku na komputerze, z tymi samymi pozycjami zależnymi od konta: kilka najczęstszych, wyróżnione Skanuj i „Więcej” z resztą modułów (u pracownika „Moje”). Pokazuje tylko to, co dane konto może otworzyć (ADR 0048).
+_Avoid_: menu, hamburger, menu pod trzema kreskami
+
+**Moje konto**:
+Sprawy osobiste osoby, otwierane kliknięciem jej imienia w nagłówku: język, zmiana hasła, informacja o usunięciu konta i wylogowanie.
+_Avoid_: profil, ustawienia (to ustawienia firmy)
+
+**Pomoc**:
+Czat z obsługą (GP Engineering) i samouczek, pod „Więcej”. Pracownik jej nie ma.
+_Avoid_: wsparcie, support

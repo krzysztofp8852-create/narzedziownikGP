@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { signOut } from "./support/navigation";
 
 interface Credentials {
   login: string;
@@ -30,11 +31,6 @@ async function signIn(page: Page, { login, password }: Credentials, companyName:
   await expect(page.getByTestId("company-name")).toHaveText(companyName);
 }
 
-async function signOut(page: Page) {
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("navigation", { name: "Menu" }).getByRole("button", { name: "Wyloguj" }).click();
-  await expect(page).toHaveURL(/\/logowanie$/);
-}
 
 test("strona Pojazdy pokazuje pojazd z terminami z najbliższych 30 dni i nieaktywne, a zarządzanie tylko właścicielowi", async ({ page }) => {
   const company = seedCompany();

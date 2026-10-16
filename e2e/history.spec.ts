@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
 import readXlsxFile from "read-excel-file/node";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -52,8 +53,7 @@ test("właściciel filtruje historię po narzędziu i eksportuje ją ze stanem d
   expect(ownerFile["Gdzie jest co"]).toContainEqual(expect.arrayContaining(["Rataje", "H-01", 3200]));
   expect(ownerFile["Historia"].map((row) => row[1])).toEqual(["Rodzaj", "Wydanie", "Przyjęcie"]);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.manager);

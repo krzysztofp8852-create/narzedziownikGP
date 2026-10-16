@@ -45,7 +45,7 @@ describe("tłumaczenia interfejsu (ADR 0047)", () => {
 
 describe("t() w języku osoby", () => {
   it("bez wybranego języka i poza żądaniem mówi po polsku", () => {
-    expect(t("menu.settings")).toBe("Ustawienia");
+    expect(t("nav.settings")).toBe("Ustawienia");
   });
 
   it("mówi w wybranym języku, a czego tłumaczenie nie ma, mówi po polsku", () => {
@@ -61,8 +61,8 @@ describe("t() w języku osoby", () => {
   it("język trzyma się kodu asynchronicznego wywołanego w jego zasięgu", async () => {
     const text = await withLocale("uk", async () => {
       await new Promise((resolve) => setTimeout(resolve, 1));
-      return t("menu.language");
+      return t("nav.help");
     });
-    expect(text).toBe("Мова / Language");
+    expect(text).toBe("Допомога");
   });
 });

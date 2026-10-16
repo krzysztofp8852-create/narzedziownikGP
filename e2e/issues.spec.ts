@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Seeded {
   companyName: string;
@@ -39,7 +40,7 @@ test("pracownik zgłasza uszkodzenie z karty narzędzia, a właściciel widzi je
   await expect(page.getByRole("img", { name: "Zdjęcie do zgłoszenia" })).toBeVisible();
   await page.goto(`/narzedzia/${company.toolId}`);
   await expect(page.getByTestId("tool-damaged")).toContainText("Zgłoszone jako uszkodzone dziś");
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   // Logowanie dopiero po wylogowaniu; inaczej /logowanie odeśle zalogowanego pracownika na tablicę.
   await expect(page).toHaveURL(/\/logowanie$/);

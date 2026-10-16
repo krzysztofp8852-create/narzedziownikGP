@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
+import { openFromNav, openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -29,8 +30,7 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
   await signIn(page, company.owner.email, company.owner.password);
   // Przejście dalej dopiero po zalogowaniu; inaczej /ludzie odeśle z powrotem do logowania.
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Ludzie" }).click();
+  await openFromNav(page, "Ludzie");
   await expect(page).toHaveURL(/\/ludzie$/);
   const people = page.locator("#ludzie");
   await people.locator("summary", { hasText: "Dopisz osobę bez konta" }).click();
@@ -55,8 +55,7 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
   await expect(person).toContainText("Konto: Pracownik");
   await expect(person.getByText("Login: jan.kowalski")).toBeVisible();
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, "jan.kowalski", "zle-haslo-123");
@@ -81,7 +80,7 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
   await expect(page.locator("main")).not.toContainText("zł");
 
   // Pracownik zapomniał hasła: właściciel nadaje nowe tymczasowe, a pracownik loguje się nim, odczytanym z ekranu.
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.owner.email, company.owner.password);
@@ -93,8 +92,7 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
   const resetPassword = await member.getByTestId("temporary-password").innerText();
   expect(resetPassword).not.toBe(temporaryPassword);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, "jan.kowalski", resetPassword);
