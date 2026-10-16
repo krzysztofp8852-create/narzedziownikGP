@@ -1858,6 +1858,19 @@ a.tool-row:hover .tool-row-name {
   margin-top: 12px;
 }
 
+/* Przyciski pod filtrami: zaginione, w serwisie, z alarmem; wciśnięty pokazuje tylko swój sprzęt. */
+.tool-browser-shows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tool-browser-show-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
 .found {
   display: grid;
   gap: 8px;

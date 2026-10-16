@@ -1,6 +1,7 @@
 import { LOST_RESPONSIBLE, parseValue, valueColumn, valueJoin } from "./board";
 import type { Sql } from "./ports";
 import type { Session } from "./registry";
+import { hasAlarm } from "./thresholds";
 import { byCode, canSeeValues, daysSince, type LocationKind, type ToolRegistration, type ToolState } from "./tools";
 
 /** Narzędzie na liście całego sprzętu firmy (strona Narzędzia), w każdym stanie. */
@@ -25,6 +26,8 @@ export interface ListedTool {
   damaged: boolean;
   /** Sprzęt wynajęty z wypożyczalni. */
   rented: boolean;
+  /** W obiegu, w lokalizacji z progiem dłużej niż próg dni: ta sama reguła co alarm na tablicy. */
+  alarm: boolean;
   /** Wartość w zł; klucz istnieje tylko dla właściciela. */
   value?: number | null;
 }
@@ -42,6 +45,8 @@ export async function toolList(sql: Sql, session: Session, now: Date): Promise<L
     state: ToolState;
     registration: ToolRegistration;
     location: ListedTool["location"];
+    alarm_enabled: boolean | null;
+    threshold_days: number;
     located_since: Date;
     responsible: string | null;
     damaged: boolean;
@@ -49,7 +54,8 @@ export async function toolList(sql: Sql, session: Session, now: Date): Promise<L
     value: string | null;
   }>(
     `select t.id, t.code, t.name, c.name as category, t.brand, t.model, t.state, t.registration, t.located_since,
-            json_build_object('id', l.id, 'name', l.name, 'kind', l.kind) as location,
+            json_build_object('id', l.id, 'name', l.name, 'kind', l.kind) as location, l.alarm_enabled,
+            co.alarm_threshold_days as threshold_days,
             case
               when t.state = 'w_obiegu' and l.kind in ('budowa', 'pojazd') then mu.full_name
               when t.state = 'zaginione' then ${LOST_RESPONSIBLE}
@@ -60,13 +66,15 @@ export async function toolList(sql: Sql, session: Session, now: Date): Promise<L
      from app.tools t
      join app.categories c on c.id = t.category_id
      join app.locations l on l.id = t.location_id
+     join app.companies co on co.id = t.company_id
      left join app.users mu on mu.user_id = l.manager_id
      ${valueJoin(withValues)}`,
   );
   return rows
-    .map(({ located_since, value, ...tool }) => ({
+    .map(({ located_since, alarm_enabled, threshold_days, value, ...tool }) => ({
       ...tool,
       daysInPlace: daysSince(located_since, now),
+      alarm: tool.state === "w_obiegu" && hasAlarm({ kind: tool.location.kind, alarmEnabled: alarm_enabled }, located_since, threshold_days, now),
       ...(withValues && { value: parseValue(value) }),
     }))
     .sort(byCode);
