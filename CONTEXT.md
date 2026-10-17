@@ -102,7 +102,7 @@ Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany. Może mi
 _Avoid_: magazyn, warsztat
 
 **Budowa**:
-Lokalizacja z adresem, przypisanym kierownikiem i statusem aktywna albo zakończona. Kierownikiem budowy jest kierownik albo właściciel, który sam ją prowadzi.
+Lokalizacja z adresem, przypisanym kierownikiem i statusem aktywna albo zakończona. Kierownikiem budowy jest kierownik albo właściciel, który sam ją prowadzi. Wszystkie budowy firmy są na stronie Budowy; kierownik ma tam „Moje budowy”, czyli tylko te, którymi kieruje.
 _Avoid_: projekt, inwestycja, obiekt
 
 **Serwis**:
@@ -116,7 +116,7 @@ _Avoid_: bus, auto, samochód (jako nazwa rodzaju lokalizacji), flota (jako nazw
 Każda lokalizacja inna niż baza i serwis. Łączna wartość sprzętu poza bazą to miara ryzyka dla właściciela.
 
 **Mapa budów**:
-Mapa na tablicy z bazą (jeśli ma adres) i aktywnymi budowami w miejscu ich adresu. Widzi ją każdy w firmie, a pinezki przesuwa tylko właściciel. Firma demo ma zamiast niej mapę demo z przykładowym położeniem i lokalizatorami.
+Mapa na stronie Budowy (widok Mapa) z bazą (jeśli ma adres) i aktywnymi budowami w miejscu ich adresu. Widzi ją każdy w firmie (kierownik ze swoimi budowami), a pinezki przesuwa tylko właściciel. Firma demo ma zamiast niej mapę demo z przykładowym położeniem i lokalizatorami.
 _Avoid_: mapa lokalizacji (pojazdów i serwisów na niej nie ma)
 
 **Położenie**:

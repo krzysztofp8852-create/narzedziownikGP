@@ -45,7 +45,11 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
 - Skanuj otwiera na tablicy (`/?skanuj=1`) jeden skaner, który sam rozpoznaje kod (#175): plakat budowy prowadzi do
   odbicia, a naklejka narzędzia do ruchu u tego, kto zapisuje ruchy, i do karty narzędzia u pracownika. Przycisk
   „Odbij się” znika z tablicy; zamiast niego jest pasek stanu odbicia („Jesteś na budowie X od 7:12” albo „Nie jesteś
-  odbity”) z otwartego odbicia osoby. Budowy prowadzą do sekcji budów na tablicy do czasu strony Budowy (#176).
+  odbity”) z otwartego odbicia osoby.
+- Budowy prowadzą na stronę Budowy (`/budowy`, #176): aktywne budowy z dodawaniem, zmianą kierownika i adresu
+  oraz zamykaniem, pod nimi zakończone (dawne `/budowy/zakonczone`), a jako drugi widok mapa budów
+  (`?widok=mapa`). Kierownik ma pod „Moje budowy” tę samą stronę, zawężoną do budów, którymi kieruje. Dawna kotwica
+  tablicy `/#budowy` przekierowuje na stronę Budowy. Do nowej tablicy (#180) tablica pokazuje jeszcze stare sekcje.
 - W trybie tylko do odczytu nawigacja nie proponuje operacji: znikają Skanuj i Zgłoś, moduły zostają.
 - Odbicia do wyjaśnienia nie mają pozycji w nawigacji; ich lista zostaje jako widok szczegółowy otwierany ze
   skrzynki „Wymaga uwagi” (#177).

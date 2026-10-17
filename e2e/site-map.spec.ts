@@ -8,6 +8,7 @@ import { openMyAccount } from "./support/navigation";
 const POZNAN = { lat: "52.4083", lng: "16.9335" };
 const GOOGLE_MAPS = /^https:\/\/maps\.googleapis\.com\//;
 const stub = readFileSync("e2e/support/google-maps-stub.js", "utf8");
+const MAP_VIEW = "/budowy?widok=mapa";
 
 interface Credentials {
   email: string;
@@ -28,13 +29,20 @@ async function signIn(page: Page, { email, password }: Credentials) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-test("budowa prawdziwej firmy stoi na mapie pod swoim adresem; właściciel przesuwa pinezkę, a nowy adres ją przenosi", async ({
+test("budowa prawdziwej firmy stoi na mapie strony Budowy pod swoim adresem; właściciel przesuwa pinezkę, a nowy adres ją przenosi", async ({
   page,
 }) => {
   const company = seedCompany();
   await page.route(GOOGLE_MAPS, (route) => route.fulfill({ contentType: "text/javascript", body: stub }));
 
   await signIn(page, company.owner);
+  await expect(page.getByTestId("company-name")).toBeVisible();
+  await page.goto("/budowy");
+  const views = page.getByRole("navigation", { name: "Widok budów" });
+  await expect(views.getByRole("link", { name: "Lista" })).toHaveAttribute("aria-current", "page");
+  await views.getByRole("link", { name: "Mapa" }).click();
+  await expect(page).toHaveURL(MAP_VIEW);
+  await expect(views.getByRole("link", { name: "Mapa" })).toHaveAttribute("aria-current", "page");
   const map = page.getByRole("region", { name: "Mapa" });
   const rataje = map.getByRole("button", { name: "Budowa: Rataje" });
   await expect(rataje).toHaveAttribute("data-lat", POZNAN.lat);
@@ -64,12 +72,15 @@ test("budowa prawdziwej firmy stoi na mapie pod swoim adresem; właściciel prze
   await page.reload();
   await expect(rataje).toHaveAttribute("data-lat", "52.3");
 
+  await page.getByRole("navigation", { name: "Widok budów" }).getByRole("link", { name: "Lista" }).click();
+  await expect(page).toHaveURL(/\/budowy$/);
   const site = page.getByRole("region", { name: "Budowa Rataje" });
   await site.locator("summary", { hasText: "Zmień adres" }).click();
   await site.getByLabel("Nowy adres budowy Rataje").fill("os. Wichrowe 3, Poznań");
   await site.getByRole("button", { name: "Zmień adres" }).click();
   await expect(site.getByRole("status")).toContainText("Zmieniono adres.");
   await expect(site).toContainText("os. Wichrowe 3, Poznań");
+  await page.goto(MAP_VIEW);
   await expect(rataje).toHaveAttribute("data-lat", POZNAN.lat);
 
   await page.goto("/ustawienia");
@@ -77,20 +88,22 @@ test("budowa prawdziwej firmy stoi na mapie pod swoim adresem; właściciel prze
   await baseAddress.getByLabel("Adres bazy").fill("ul. Gołężycka 21, Poznań");
   await baseAddress.getByRole("button", { name: "Zapisz" }).click();
   await expect(baseAddress.getByRole("status")).toContainText("Zapisano adres bazy.");
-  await page.goto("/");
+  await page.goto(MAP_VIEW);
   await expect(map.getByRole("button", { name: "Baza: Magazyn" })).toHaveAttribute("data-lat", POZNAN.lat);
 
   await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.manager);
+  await expect(page.getByTestId("company-name")).toBeVisible();
+  await page.goto(MAP_VIEW);
   await expect(rataje).toHaveAttribute("data-draggable", "false");
   await rataje.click();
   await expect(map).toContainText("os. Wichrowe 3, Poznań");
   await expect(map.getByRole("button", { name: "Wskaż nowe miejsce na mapie" })).toHaveCount(0);
 });
 
-test("firma demo w każdej roli ma dawną mapę demo i nie pyta dostawcy mapy", async ({ browser }) => {
+test("firma demo w każdej roli ma na stronie Budowy dawną mapę demo i nie pyta dostawcy mapy", async ({ browser }) => {
   for (const role of ["właściciel", "kierownik", "magazynier", "pracownik"]) {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -104,6 +117,7 @@ test("firma demo w każdej roli ma dawną mapę demo i nie pyta dostawcy mapy", 
     test.skip(await enter.isDisabled(), "W tej bazie nie założono demo (npm run demo:create)");
     await enter.click();
     await expect(page.getByTestId("company-name")).toBeVisible();
+    await page.goto(MAP_VIEW);
 
     const map = page.getByRole("region", { name: /^Mapa/ });
     await expect(map).toContainText("demo");

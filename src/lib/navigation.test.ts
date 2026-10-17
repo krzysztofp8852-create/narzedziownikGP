@@ -32,7 +32,7 @@ const shown = (role: Role, flags?: Flags) => {
 describe("nawigacja zależna od konta", () => {
   it("właściciel: Tablica, Narzędzia, Skanuj, Budowy i Więcej z resztą modułów w grupach", () => {
     expect(shown("wlasciciel")).toEqual({
-      bar: ["Tablica /", "Narzędzia /narzedzia", "Skanuj /?skanuj=1 ★", "Budowy /#budowy", "Więcej"],
+      bar: ["Tablica /", "Narzędzia /narzedzia", "Skanuj /?skanuj=1 ★", "Budowy /budowy", "Więcej"],
       more: [
         ["Sprzęt", ["Pojazdy /pojazdy", "Terminy /terminy", "Historia /historia", "Koszty sprzętu /koszty"]],
         ["Ludzie", ["Ludzie /ludzie", "Czas na budowie /czas"]],
@@ -46,7 +46,7 @@ describe("nawigacja zależna od konta", () => {
 
   it("kierownik: Moje budowy i Ludzie w pasku, narzędzia i raporty pod Więcej, bez kosztów bez zgody właściciela", () => {
     expect(shown("kierownik")).toEqual({
-      bar: ["Tablica /", "Moje budowy /#budowy", "Skanuj /?skanuj=1 ★", "Ludzie /ludzie", "Więcej"],
+      bar: ["Tablica /", "Moje budowy /budowy", "Skanuj /?skanuj=1 ★", "Ludzie /ludzie", "Więcej"],
       more: [
         ["Sprzęt", ["Narzędzia /narzedzia", "Pojazdy /pojazdy", "Terminy /terminy", "Historia /historia"]],
         ["Ludzie", ["Czas na budowie /czas"]],
@@ -72,7 +72,7 @@ describe("nawigacja zależna od konta", () => {
     expect(shown("magazynier")).toEqual({
       bar: ["Tablica /", "Narzędzia /narzedzia", "Skanuj /?skanuj=1 ★", "Terminy /terminy", "Więcej"],
       more: [
-        ["Sprzęt", ["Budowy /#budowy", "Pojazdy /pojazdy", "Historia /historia"]],
+        ["Sprzęt", ["Budowy /budowy", "Pojazdy /pojazdy", "Historia /historia"]],
         ["Moje", ["Moje uprawnienia /ludzie", "Mój czas na budowie /czas"]],
         [null, ["Pomoc /pomoc"]],
       ],
@@ -91,8 +91,8 @@ describe("nawigacja zależna od konta", () => {
   });
 
   it("w trybie tylko do odczytu nawigacja nie proponuje operacji: znikają Skanuj i Zgłoś, moduły zostają", () => {
-    expect(shown("wlasciciel", { readOnly: true }).bar).toEqual(["Tablica /", "Narzędzia /narzedzia", "Budowy /#budowy", "Więcej"]);
-    expect(shown("kierownik", { readOnly: true }).bar).toEqual(["Tablica /", "Moje budowy /#budowy", "Ludzie /ludzie", "Więcej"]);
+    expect(shown("wlasciciel", { readOnly: true }).bar).toEqual(["Tablica /", "Narzędzia /narzedzia", "Budowy /budowy", "Więcej"]);
+    expect(shown("kierownik", { readOnly: true }).bar).toEqual(["Tablica /", "Moje budowy /budowy", "Ludzie /ludzie", "Więcej"]);
     expect(shown("magazynier", { readOnly: true }).bar).toEqual(["Tablica /", "Narzędzia /narzedzia", "Terminy /terminy", "Więcej"]);
     expect(shown("pracownik", { readOnly: true }).bar).toEqual(["Tablica /", "Moje"]);
     expect(shown("wlasciciel", { readOnly: true }).more).toEqual(shown("wlasciciel").more);

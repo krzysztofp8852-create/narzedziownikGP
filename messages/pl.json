@@ -574,6 +574,17 @@
     "deadlinesLink": "Dane i terminy",
     "inactiveTitle": "Nieaktywne"
   },
+  "sitesPage": {
+    "back": "← Tablica",
+    "intro": "Aktywne budowy firmy: adres, kierownik i ile sprzętu na nich jest. Kliknij budowę, żeby otworzyć jej stronę z pełną listą sprzętu.",
+    "introOwn": "Budowy, którymi kierujesz: adres i ile sprzętu na nich jest. Kliknij budowę, żeby otworzyć jej stronę z pełną listą sprzętu.",
+    "views": "Widok budów",
+    "list": "Lista",
+    "map": "Mapa",
+    "empty": "Firma nie ma aktywnych budów.",
+    "emptyOwner": "Firma nie ma jeszcze aktywnych budów. Dodaj pierwszą, żeby wydawać na nią sprzęt.",
+    "emptyOwn": "Nie kierujesz teraz żadną aktywną budową."
+  },
   "toolReports": {
     "title": "Zgłoszone narzędzia",
     "intro": "Kierownicy zgłosili sprzęt kupiony na budowę. Już jest na tablicy i może jeździć; zaakceptuj go z kodem i wartością albo odrzuć, np. gdy jest już w ewidencji.",
@@ -1228,7 +1239,7 @@
   "siteClosing": {
     "close": "Oznacz budowę jako zakończoną",
     "title": "Zamykanie budowy {name}",
-    "back": "← Wróć do tablicy",
+    "back": "← Budowy",
     "emptyHint": "Na budowie nie zostało żadne narzędzie w obiegu. Po zamknięciu budowa zniknie z tablicy, a jej historia zostanie.",
     "submit": "Oznacz jako zakończoną",
     "confirm": "Zamknąć budowę {name}? Nie da się jej potem otworzyć ponownie.",

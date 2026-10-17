@@ -571,6 +571,17 @@
     "deadlinesLink": "Details and deadlines",
     "inactiveTitle": "Inactive"
   },
+  "sitesPage": {
+    "back": "← Board",
+    "intro": "The company's active sites: address, manager and how much equipment is on them. Click a site to open its page with the full equipment list.",
+    "introOwn": "Sites you manage: address and how much equipment is on them. Click a site to open its page with the full equipment list.",
+    "views": "Sites view",
+    "list": "List",
+    "map": "Map",
+    "empty": "The company has no active sites.",
+    "emptyOwner": "The company has no active sites yet. Add the first one to issue equipment to it.",
+    "emptyOwn": "You are not managing any active site right now."
+  },
   "toolReports": {
     "title": "Reported tools",
     "intro": "Site managers reported equipment bought for the site. It's already on the board and can be moved; accept it with a code and value, or reject it, e.g. if it's already in the records.",
@@ -1211,7 +1222,7 @@
   "siteClosing": {
     "close": "Mark site as finished",
     "title": "Closing site {name}",
-    "back": "← Back to board",
+    "back": "← Sites",
     "emptyHint": "No tools in circulation are left on the site. After closing, the site disappears from the board, but its history stays.",
     "submit": "Mark as finished",
     "confirm": "Close site {name}? It can't be reopened later.",

@@ -5,10 +5,10 @@ import { Money, ToolList } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
 import { t } from "@/i18n/t";
 import { daysLeftText, deadlineName, deadlineWhen } from "@/lib/deadline-text";
-import { type SiteManagerCandidate, UPCOMING_DAYS, type UpcomingDeadline, type WhereIsWhat } from "@/registry/registry";
-import { changeVehicleManager } from "./actions";
+import { canCloseSite, type Session, type SiteManagerCandidate, UPCOMING_DAYS, type UpcomingDeadline, type WhereIsWhat } from "@/registry/registry";
+import { changeSiteManager, changeVehicleManager } from "./actions";
 import { locationPagePath } from "./location-page";
-import { ChangeManagerForm, DeactivateVehicleForm, VehicleAlarmForm } from "./location-forms";
+import { ChangeManagerForm, ChangeSiteAddressForm, DeactivateVehicleForm, VehicleAlarmForm } from "./location-forms";
 
 /** Liczba sztuk i, dla właściciela, suma wartości lokalizacji. */
 export function LocationTotals({ count, totalValue }: { count: number; totalValue?: number }) {
@@ -27,6 +27,64 @@ export function AddLocationTile({ title, form }: { title: string; form: ReactNod
       <summary className="panel-summary">{title}</summary>
       {form}
     </details>
+  );
+}
+
+/**
+ * Aktywna budowa: adres, kierownik i ile sprzętu na niej jest, a z `tools` także jego lista. Kto zarządza lokalizacjami
+ * (`managers`), zmienia tu kierownika i adres; kto może ją zamknąć, ma odnośnik do domykania budowy.
+ */
+export function SiteCard({
+  site,
+  managers,
+  session,
+  tools = false,
+}: {
+  site: WhereIsWhat["sites"][number];
+  managers: SiteManagerCandidate[] | null;
+  session: Session;
+  tools?: boolean;
+}) {
+  return (
+    <section className="location location-site" aria-labelledby={`location-${site.id}`}>
+      <div className="location-head">
+        <h3 id={`location-${site.id}`} className="display location-name">
+          <span className="location-kind">{t("board.siteKind")}</span> <Link href={locationPagePath("budowa", site.id)}>{site.name}</Link>
+        </h3>
+        <LocationTotals count={site.tools.length} totalValue={site.totalValue} />
+      </div>
+      <div className="location-details">
+        <p className="muted">{site.address}</p>
+        <p>
+          <SiteManagerLabel manager={site.manager} />
+        </p>
+      </div>
+      {tools && (site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />)}
+      {managers && (
+        <>
+          <details className="location-more">
+            <summary>{t("locations.changeManager")}</summary>
+            <ChangeManagerForm
+              action={changeSiteManager.bind(null, site.id)}
+              location={site}
+              label={t("locations.newManager", { name: site.name })}
+              managers={managers}
+            />
+          </details>
+          <details className="location-more">
+            <summary>{t("locations.changeAddress")}</summary>
+            <ChangeSiteAddressForm site={site} />
+          </details>
+        </>
+      )}
+      {canCloseSite(session, site) && (
+        <p>
+          <Link className="button button-quiet button-small" href={`/budowy/${site.id}/zamykanie`}>
+            {t("siteClosing.close")}
+          </Link>
+        </p>
+      )}
+    </section>
   );
 }
 

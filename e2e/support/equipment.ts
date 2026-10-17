@@ -66,9 +66,9 @@ export async function addWorker(page: Page, person: { firstName: string; lastNam
   return { username: person.username, temporaryPassword };
 }
 
-/** Budowa z kafelka „Dodaj budowę” na tablicy. */
+/** Budowa z kafelka „Dodaj budowę” na stronie Budowy; potem wraca na tablicę, gdzie są operacje. */
 export async function addSite(page: Page, site: { name: string; address: string; manager: string }) {
-  await page.goto("/");
+  await page.goto("/budowy");
   const tile = page.locator("details.location-add").filter({ has: page.locator("summary", { hasText: "Dodaj budowę" }) });
   await tile.locator("summary").click();
   await tile.getByLabel("Nazwa budowy").fill(site.name);
@@ -78,6 +78,7 @@ export async function addSite(page: Page, site: { name: string; address: string;
   // Zapis budowy czeka na geokodowanie adresu, więc bywa wolniejszy.
   await expect(tile.getByText(`Dodano budowę ${site.name}.`)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("region", { name: `Budowa ${site.name}` })).toBeVisible();
+  await page.goto("/");
 }
 
 /** Otwiera operację z panelu tablicy (drugi klik by ją zwinął) i zwraca jej formularz. */
