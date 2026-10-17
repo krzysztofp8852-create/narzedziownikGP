@@ -36,19 +36,6 @@ function BellIcon() {
   );
 }
 
-function ClipboardIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-      <path d="M12 11h4" />
-      <path d="M12 16h4" />
-      <path d="M8 11h.01" />
-      <path d="M8 16h.01" />
-    </svg>
-  );
-}
-
 function UserIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -58,11 +45,11 @@ function UserIcon() {
   );
 }
 
-/** Licznik nieprzeczytanych przy ikonie w nagłówku. */
-function UnreadCount({ count, testId }: { count: number; testId: string }) {
+/** Licznik spraw „Do zrobienia” przy dzwonku. */
+function ToDoCount({ count }: { count: number }) {
   return (
     count > 0 && (
-      <span className="bell-count" data-testid={testId}>
+      <span className="bell-count" data-testid="bell-count">
         {count > 99 ? "99+" : count}
       </span>
     )
@@ -82,14 +69,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
   const nav = navigation(session);
-  const [unread, unreadIssues, unreadChat, idle] = await Promise.all([
-    registry.unreadNotificationCount(),
-    registry.unreadIssueEntryCount(),
+  const [toDoCount, unreadChat, idle] = await Promise.all([
+    registry.toDoCount(),
     nav.help.includes("chat") ? registry.unreadSupportReplyCount() : 0,
     currentIdleStatus(),
   ]);
-  const bellLabel = unread > 0 ? t("header.bellUnread", { count: unread }) : t("header.bell");
-  const issuesLabel = unreadIssues > 0 ? t("header.issuesUnread", { count: unreadIssues }) : t("header.issues");
+  const bellLabel = toDoCount > 0 ? t("header.bellToDo", { count: toDoCount }) : t("header.bell");
   return (
     <>
       <header className="app-header">
@@ -111,19 +96,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <SearchIcon />
               <span className="icon-button-label">{t("header.searchShort")}</span>
             </Link>
-            <Link
-              href="/zgloszenia"
-              className="button button-quiet icon-button bell-button"
-              aria-label={issuesLabel}
-              title={issuesLabel}
-              data-tour="issues"
-            >
-              <ClipboardIcon />
-              <UnreadCount count={unreadIssues} testId="issues-count" />
-            </Link>
             <Link href="/dzwonek" className="button button-quiet icon-button bell-button" aria-label={bellLabel} title={bellLabel} data-tour="bell">
               <BellIcon />
-              <UnreadCount count={unread} testId="bell-count" />
+              <ToDoCount count={toDoCount} />
             </Link>
             {/* Moje konto: imię osoby, a cała nazwa w opisie dla czytnika ekranu. */}
             <Link href={ACCOUNT_HREF} className="button button-quiet icon-button app-header-account" aria-label={t("nav.account", { name: session.fullName })}>

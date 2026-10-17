@@ -57,11 +57,11 @@ test.describe("telefon: dolny pasek", () => {
     const company = seedCompany();
     await signIn(page, company.owner, company.companyName);
 
-    // Nagłówek: szukaj, zgłoszenia (do skrzynki), dzwonek i Moje konto; bez menu pod trzema kreskami i bez czatu.
+    // Nagłówek: szukaj, dzwonek (skrzynka „Wymaga uwagi”) i Moje konto; bez zgłoszeń, menu pod trzema kreskami i czatu.
     const header = page.getByRole("banner");
     await expect(header.getByRole("link", { name: "Szukaj narzędzia" })).toBeVisible();
-    await expect(header.getByRole("link", { name: "Zgłoszenia" })).toBeVisible();
-    await expect(header.getByRole("link", { name: "Dzwonek" })).toBeVisible();
+    await expect(header.getByRole("link", { name: /^Wymaga uwagi/ })).toBeVisible();
+    await expect(header.getByRole("link", { name: /Zgłoszenia/ })).toHaveCount(0);
     await expect(header.getByRole("link", { name: "Moje konto: Jan Testowy" })).toHaveText("Jan");
     await expect(header.getByRole("button", { name: "Menu" })).toHaveCount(0);
     await expect(header.getByRole("link", { name: /Czat/ })).toHaveCount(0);

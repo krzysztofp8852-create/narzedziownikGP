@@ -1,7 +1,7 @@
 /**
- * Firma do testu dymnego dzwonka: kierownicy Nowak (Rataje) i Kowalski (Winogrady). Nowak zabrał
- * S-01 z Winogrady na Rataje, więc Kowalski ma w dzwonku powiadomienie. Wypisuje dane logowania
- * Kowalskiego jako JSON.
+ * Firma do testu skrzynki „Wymaga uwagi”: kierownicy Nowak (Rataje) i Kowalski (Winogrady). Nowak zabrał S-01
+ * z Winogrady na Rataje, więc Kowalski ma powiadomienie w „Informacjach”, i zgłosił kupioną szlifierkę, więc właściciel
+ * ma ją w „Do zrobienia”. Wypisuje dane logowania właściciela i Kowalskiego jako JSON.
  */
 import { randomUUID } from "node:crypto";
 import { getRegistry } from "@/lib/registry-instance";
@@ -11,13 +11,15 @@ const suffix = randomUUID().slice(0, 8);
 const companyName = `Test dymny dzwonka ${new Date().toISOString().slice(0, 16)}`;
 const signedInNow = () => ({ signedInAt: new Date(Date.now() + 1000) });
 
+const ownerEmail = `smoke-owner-${suffix}@narzedziownik.test`;
 const company = await registry.system().createCompany({
   name: companyName,
   baseName: "Magazyn",
-  owner: { email: `smoke-owner-${suffix}@narzedziownik.test`, fullName: "Jan Testowy" },
+  owner: { email: ownerEmail, fullName: "Jan Testowy" },
 });
 const owner = registry.as(company.ownerUserId);
-await owner.changePassword(`Wlasciciel-${randomUUID()}`, signedInNow());
+const ownerPassword = `Wlasciciel-${randomUUID().slice(0, 8)}`;
+await owner.changePassword(ownerPassword, signedInNow());
 
 async function manager(firstName: string, lastName: string) {
   const email = `smoke-${lastName.toLowerCase()}-${suffix}@narzedziownik.test`;
@@ -39,6 +41,17 @@ const move = (actorId: string, kind: "wydanie" | "przeniesienie", from: string, 
   registry.as(actorId).registerMovement({ operationId: randomUUID(), kind, fromLocationId: from, toLocationId: to, toolIds: [toolId], source: "checklista" });
 await move(kowalski.userId, "wydanie", base.id, winogradyId);
 await move(nowak.userId, "przeniesienie", winogradyId, ratajeId);
+const reported = await registry
+  .as(nowak.userId)
+  .reportTool({ operationId: randomUUID(), siteId: ratajeId, name: "Szlifierka Bosch", categoryId: grinders.id });
 
-console.log(JSON.stringify({ companyName, email: kowalski.email, password: kowalski.password, toolId }));
+console.log(
+  JSON.stringify({
+    companyName,
+    owner: { email: ownerEmail, password: ownerPassword },
+    manager: { email: kowalski.email, password: kowalski.password },
+    toolId,
+    reportedCode: reported.code,
+  }),
+);
 process.exit(0);

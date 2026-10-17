@@ -47,18 +47,22 @@ test("pracownik zgłasza uszkodzenie z karty narzędzia, a właściciel widzi je
 
   await signIn(page, company.owner.email, company.owner.password, company.companyName);
   await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByText("uszkodzone")).toBeVisible();
-  await expect(page.getByTestId("issues-count")).toHaveText("1");
-  await page.getByRole("link", { name: "Zgłoszenia, nieprzeczytane: 1" }).click();
-  await page.getByRole("link", { name: /Nie trzyma udaru, iskrzy/ }).click();
+  await expect(page.getByTestId("bell-count")).toHaveText("1");
+  await page.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
+  const item = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").filter({ hasText: "Nie trzyma udaru, iskrzy" });
+  await expect(item).toContainText("Uszkodzenie W-02 Wiertarka Makita");
+  await item.getByRole("link", { name: "Pokaż" }).click();
 
   await expect(page.getByRole("heading", { name: "Uszkodzenie W-02 Wiertarka Makita" })).toBeVisible();
-  await expect(page.getByTestId("issues-count")).toHaveCount(0);
+  // Właściciel zamyka zgłoszenia, więc przeczytane czeka w „Do zrobienia” aż do zamknięcia.
+  await expect(page.getByTestId("bell-count")).toHaveText("1");
   await page.getByText("Zamknij zgłoszenie", { exact: true }).click();
   await page.getByLabel("Komentarz zamykający").fill("Wymienione szczotki, działa");
   await page.getByLabel("Narzędzie jest sprawne: zdejmij flagę „uszkodzone”").check();
   await page.getByRole("button", { name: "Zamknij z tym komentarzem" }).click();
 
   await expect(page.getByText("Właściciel uznał narzędzie za sprawne.")).toBeVisible();
+  await expect(page.getByTestId("bell-count")).toHaveCount(0);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /W-02/ })).not.toContainText("uszkodzone");
 });

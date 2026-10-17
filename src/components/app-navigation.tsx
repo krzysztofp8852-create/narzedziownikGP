@@ -162,7 +162,7 @@ export function AppNavigation({ bar, more, helpCount }: Pick<Navigation, "bar" |
                 href={item.href}
                 className={item.primary ? "app-nav-item app-nav-scan" : "app-nav-item"}
                 aria-current={isCurrentNavItem(item.href, pathname) ? "page" : undefined}
-                data-tour={item.primary ? "scan" : undefined}
+                data-tour={item.primary ? "scan" : item.icon === "report" ? "report" : undefined}
                 onClick={(event) => {
                   setSheetOn(null);
                   // Na tablicy skaner otwiera się na miejscu, także bez zasięgu.

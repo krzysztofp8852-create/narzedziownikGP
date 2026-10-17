@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
 import { emitPluginEvent, listensTo, pluginCalls, stubAppBridge } from "./support/app-bridge";
 
-type BellCompany = { companyName: string; email: string; password: string; toolId: string };
+type BellCompany = { companyName: string; manager: { email: string; password: string }; toolId: string };
 
 function seedCompany(): BellCompany {
   const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-bell.mts"], { encoding: "utf8" });
@@ -27,8 +27,8 @@ const methods = async (page: Page) => (await pluginCalls(page, "PushNotification
 
 async function logIn(page: Page, company: BellCompany) {
   await page.goto("/logowanie");
-  await page.getByLabel("E-mail lub nazwa użytkownika").fill(company.email);
-  await page.getByLabel("Hasło").fill(company.password);
+  await page.getByLabel("E-mail lub nazwa użytkownika").fill(company.manager.email);
+  await page.getByLabel("Hasło").fill(company.manager.password);
   await page.getByRole("button", { name: "Zaloguj się" }).click();
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 }
@@ -38,7 +38,8 @@ test("w aplikacji przełącznik push rejestruje token FCM, a Android pyta o zgod
   await stubAppBridge(page, { PushNotifications: PUSH });
   await logIn(page, company);
 
-  await page.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
+  // Zabrany sprzęt to informacja, więc licznik „Do zrobienia” jest pusty.
+  await page.getByRole("link", { name: "Wymaga uwagi", exact: true }).click();
   const settings = page.getByRole("region", { name: "Powiadomienia na telefonie" });
   await expect(settings.getByRole("button", { name: "Włącz powiadomienia" })).toBeVisible();
   expect(await methods(page)).not.toContain("requestPermissions");
@@ -48,12 +49,12 @@ test("w aplikacji przełącznik push rejestruje token FCM, a Android pyta o zgod
   await emitPluginEvent(page, "PushNotifications", "registration", { value: TOKEN });
 
   await expect(settings).toContainText("Powiadomienia na tym telefonie są włączone.");
-  expect(subscriptionsOf(company.email)).toEqual([{ kind: "aplikacja", token: TOKEN, endpoint: null }]);
+  expect(subscriptionsOf(company.manager.email)).toEqual([{ kind: "aplikacja", token: TOKEN, endpoint: null }]);
 
   await settings.getByRole("button", { name: "Wyłącz powiadomienia" }).click();
   await expect(settings.getByRole("button", { name: "Włącz powiadomienia" })).toBeVisible();
   expect(await methods(page)).toContain("unregister");
-  expect(subscriptionsOf(company.email)).toEqual([]);
+  expect(subscriptionsOf(company.manager.email)).toEqual([]);
 });
 
 test("dotknięcie powiadomienia w aplikacji otwiera adres z powiadomienia, a obcy adres prowadzi do dzwonka", async ({ page }) => {

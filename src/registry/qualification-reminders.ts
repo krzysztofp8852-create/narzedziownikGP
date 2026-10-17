@@ -2,6 +2,7 @@ import { deliverAsSystem } from "./bell";
 import type { Notification, QualificationsNotification, Recipient } from "./notifications";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
+import type { Session } from "./registry";
 import { type NotifiedQualification, scheduledQualifications } from "./qualifications";
 import { type ReminderLead, reminderPhase } from "./reminder-lead";
 import { owners } from "./reports";
@@ -12,6 +13,19 @@ import { warsawTime } from "./validation";
  * badania albo szkolenie, i raz po końcu ważności.
  */
 const QUALIFICATION_LEAD: ReminderLead = { daysBefore: 30, afterDue: true };
+
+/**
+ * Uprawnienia w skrzynce „Wymaga uwagi”: te, którym należy się dziś przypomnienie (ta sama reguła co w zadaniu
+ * dziennym), póki nikt ich nie odnowi. Właściciel wszystkie, a każdy inny tylko własne. Od najwcześniejszego.
+ */
+export async function qualificationsToHandle(sql: Sql, session: Session, now: Date): Promise<NotifiedQualification[]> {
+  const today = warsawTime(now).day;
+  return (await scheduledQualifications(sql, { today, withinDays: QUALIFICATION_LEAD.daysBefore })).flatMap(({ account, ...qualification }) => {
+    const phase = reminderPhase(QUALIFICATION_LEAD, qualification.dueOn, today);
+    const mine = session.role === "wlasciciel" || account?.userId === session.userId;
+    return phase && mine ? [{ ...qualification, overdue: phase === "po" }] : [];
+  });
+}
 
 /** Firmy z uprawnieniami, dla których zadanie dzienne sprawdza przypomnienia. */
 export async function companiesWithQualifications(sql: Sql): Promise<string[]> {

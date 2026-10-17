@@ -325,7 +325,7 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await expect(overdue).toHaveClass(/tool-row-alarm/);
 
   // Właściciel dostaje wpis w dzwonku o przyjęciu przez kierownika.
-  await page.goto("/dzwonek");
+  await page.goto("/dzwonek?lista=informacje");
   await expect(page.getByText("Sprzęt wynajęty: M-03 Agregat prądotwórczy")).toBeVisible();
   await expect(page.getByText(`Adam Nowak, na budowie Rataje. Wypożyczalnia Wynajem Kowalski, zwrot do ${plDay(yesterday)}.`)).toBeVisible();
 

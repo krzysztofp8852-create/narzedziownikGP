@@ -34,8 +34,8 @@ export default async function IssuesPage() {
   return (
     <>
       <p>
-        <Link href="/" className="muted">
-          {t("issues.back")}
+        <Link href="/dzwonek" className="muted">
+          {t("inbox.back")}
         </Link>
       </p>
       <div className="section-head">

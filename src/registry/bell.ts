@@ -1,4 +1,4 @@
-import type { Notification, NotificationContent } from "./notifications";
+import type { Notification, NotificationContent, NotificationKind } from "./notifications";
 import { dedupeKey } from "./notifications";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
@@ -66,21 +66,22 @@ export function pushCopy(recipientId: string, notificationId: string, notificati
 
 /** Dzwonek aktora: nieprzeczytane i ostatnie powiadomienia. */
 export async function bell(sql: Sql, session: Session, limit: number): Promise<Bell> {
-  const unread = await unreadCount(sql, session);
+  return { unread: await unreadCount(sql, session), entries: await entries(sql, session, limit, null) };
+}
+
+/** Ostatnie powiadomienia aktora, od najnowszego; z `kinds` tylko tych rodzajów. */
+export async function entries(sql: Sql, session: Session, limit: number, kinds: readonly NotificationKind[] | null): Promise<BellEntry[]> {
   const rows = await sql<{ id: string; created_at: Date; read_at: Date | null; content: Record<string, unknown> }>(
     `select id, created_at, read_at, content from app.notifications
-     where recipient_id = $1 order by created_at desc, id desc limit $2`,
-    [session.userId, Math.max(1, Math.min(limit, MAX_ENTRIES))],
+     where recipient_id = $1 and ($3::text[] is null or kind = any($3::text[])) order by created_at desc, id desc limit $2`,
+    [session.userId, Math.max(1, Math.min(limit, MAX_ENTRIES)), kinds],
   );
-  return {
-    unread,
-    entries: rows.map((row) => ({
-      id: row.id,
-      createdAt: new Date(row.created_at),
-      read: row.read_at !== null,
-      notification: reviveContent(row.content),
-    })),
-  };
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: new Date(row.created_at),
+    read: row.read_at !== null,
+    notification: reviveContent(row.content),
+  }));
 }
 
 /** Liczba nieprzeczytanych powiadomień aktora (licznik przy dzwonku). */

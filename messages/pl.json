@@ -56,10 +56,8 @@
     "logout": "Wyloguj",
     "search": "Szukaj narzędzia",
     "searchShort": "Szukaj",
-    "bell": "Dzwonek",
-    "bellUnread": "Dzwonek, nieprzeczytane: {count}",
-    "issues": "Zgłoszenia",
-    "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
+    "bell": "Wymaga uwagi",
+    "bellToDo": "Wymaga uwagi, do zrobienia: {count}",
     "loading": "Wczytywanie strony…"
   },
   "nav": {
@@ -1268,9 +1266,7 @@
     "history": "Historia budowy →"
   },
   "bell": {
-    "title": "Dzwonek",
     "back": "← Wróć do tablicy",
-    "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo pojazdu, albo narzędzie, które stoi za długo.",
     "unread": "Nowe",
     "open": "Pokaż",
     "markRead": "Oznacz jako przeczytane",
@@ -1309,6 +1305,24 @@
     "forgottenExitBody": "Wejście {when}. Bez wyjścia odbicie zamknie się o północy i nie wejdzie do czasu na budowie.",
     "forgottenExits": "Nieodbite wyjścia: {count}",
     "forgottenExitItem": "{person} ({place})"
+  },
+  "inbox": {
+    "title": "Wymaga uwagi",
+    "back": "← Wróć do „Wymaga uwagi”",
+    "lists": "Listy spraw",
+    "toDo": "Do zrobienia",
+    "toDoCount": "Do zrobienia ({count})",
+    "info": "Informacje",
+    "toDoEmpty": "Nic na Ciebie nie czeka. Gdy coś będzie wymagało Twojej reakcji, pojawi się tutaj.",
+    "infoEmpty": "Nie ma jeszcze informacji. Pojawią się tu raporty i potwierdzenia, np. o sprzęcie zabranym z Twojej budowy.",
+    "punch": "Odbicie do wyjaśnienia: {person}, {place}",
+    "punchBody": "{time}. Wejście: {check}.",
+    "punchExit": "Wyjście: {check}.",
+    "punchConflict": "Odbicie offline niezapisane: {person}, {place}",
+    "punchConflictBody": "Skan w telefonie {when}: {reason}.",
+    "alarm": "Sprzęt stoi za długo {place}",
+    "alarmBody": "Narzędzia ponad próg {days} dni: {count}. Zwróć je na bazę albo przenieś, jeśli nie są już potrzebne.",
+    "allIssues": "Wszystkie zgłoszenia, także zamknięte →"
   },
   "push": {
     "title": "Powiadomienia na telefonie",
@@ -1368,8 +1382,7 @@
     "intro": "Ruchy zapisane w telefonie bez zasięgu, których serwer nie przyjął, bo stan zmienił się w międzyczasie. Nic z nich nie trafiło do historii. Sprawdź, gdzie jest sprzęt, zarejestruj ruch jeszcze raz, jeśli trzeba, i oznacz go jako wyjaśniony.",
     "empty": "Nie ma ruchów do wyjaśnienia.",
     "when": "Zapisany w telefonie {recorded}, odrzucony {rejected}",
-    "resolve": "Wyjaśnione",
-    "back": "← Wróć do tablicy"
+    "resolve": "Wyjaśnione"
   },
   "reports": {
     "weeklyTitle": "Raport tygodniowy",
@@ -1650,7 +1663,6 @@
   },
   "issues": {
     "title": "Zgłoszenia",
-    "back": "← Wróć do tablicy",
     "backToList": "← Wróć do zgłoszeń",
     "intro": "Uszkodzenia, braki i inne sprawy do właściciela. Nowe zgłoszenia, komentarze i zamknięcia trafiają tutaj.",
     "new": "Nowe zgłoszenie",
@@ -1905,17 +1917,13 @@
         "title": "Zaginione",
         "text": "Narzędzie, które nie wróciło, oznaczasz jako zaginione. Karta pamięta, gdzie było ostatnio i kto za nie odpowiadał."
       },
-      "issues": {
-        "title": "Zgłoszenia",
-        "text": "Tu trafiają uszkodzenia, braki i inne sprawy od brygady, każda z wątkiem komentarzy. Liczba przy ikonie to nowe wpisy."
-      },
       "issuesWorker": {
         "title": "Zgłoś problem",
-        "text": "Pracownik nie rusza sprzętu, ale zgłasza uszkodzenie albo brak, także ze zdjęciem. Otwórz zgłoszenia i kliknij „Nowe zgłoszenie”."
+        "text": "Pracownik nie rusza sprzętu, ale zgłasza uszkodzenie albo brak, także ze zdjęciem. Kliknij „Zgłoś” i opisz sprawę."
       },
       "bell": {
-        "title": "Dzwonek",
-        "text": "Powiadomienia: ktoś zabrał sprzęt z Twojej budowy, ruch zapisany bez zasięgu czeka na wyjaśnienie albo przyszedł raport."
+        "title": "Wymaga uwagi",
+        "text": "Pod dzwonkiem są dwie listy. „Do zrobienia”: zgłoszenia, alarmy, terminy i odbicia, które czekają na Twoją reakcję; liczba przy dzwonku to właśnie one. „Informacje”: raporty i potwierdzenia."
       },
       "punch": {
         "title": "Odbij się",

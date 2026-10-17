@@ -2,7 +2,7 @@ import { deliverAsSystem } from "./bell";
 import type { Notification, Recipient } from "./notifications";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
-import type { Role } from "./registry";
+import type { Role, Session } from "./registry";
 import { DAY_MS, type LocationKind } from "./tools";
 
 /**
@@ -36,6 +36,43 @@ export function hasAlarm(
   now: Date,
 ): boolean {
   return watchesThreshold(location) && alarmStartsAt(since, thresholdDays).getTime() <= now.getTime();
+}
+
+/** Budowa albo pojazd, na którym sprzęt stoi dłużej niż próg dni firmy. */
+export interface LocationAlarm {
+  location: { id: string; name: string; kind: "budowa" | "pojazd" };
+  /** Ile narzędzi ma tam alarm. */
+  tools: number;
+  thresholdDays: number;
+}
+
+/**
+ * Alarmy w skrzynce „Wymaga uwagi”, po lokalizacji: właściciel wszystkie, kierownik na swoich budowach i pojazdach
+ * (ci sami adresaci co w zadaniu dziennym). Alarm znika, gdy sprzęt zjedzie z lokalizacji. Po nazwie lokalizacji.
+ */
+export async function alarmsToHandle(sql: Sql, session: Session, now: Date): Promise<LocationAlarm[]> {
+  if (session.role !== "wlasciciel" && session.role !== "kierownik") return [];
+  const rows = await sql<{
+    location_id: string;
+    location_name: string;
+    location_kind: "budowa" | "pojazd";
+    located_since: Date;
+    threshold_days: number;
+  }>(
+    `select l.id as location_id, l.name as location_name, l.kind as location_kind, t.located_since, co.alarm_threshold_days as threshold_days
+     from app.tools t
+     join app.locations l on l.id = t.location_id
+     join app.companies co on co.id = t.company_id
+     where t.state = 'w_obiegu' and ${WATCHED_LOCATION} and ($1 or l.manager_id = $2)
+     order by l.name, l.id`,
+    [session.role === "wlasciciel", session.userId],
+  );
+  const alarmed = rows.filter((row) => alarmStartsAt(row.located_since, row.threshold_days).getTime() <= now.getTime());
+  return [...Map.groupBy(alarmed, (row) => row.location_id).values()].map((tools) => ({
+    location: { id: tools[0].location_id, name: tools[0].location_name, kind: tools[0].location_kind },
+    tools: tools.length,
+    thresholdDays: tools[0].threshold_days,
+  }));
 }
 
 /** Firmy z aktywnymi budowami albo pojazdami z alarmem, dla których zadanie dzienne sprawdza progi. */

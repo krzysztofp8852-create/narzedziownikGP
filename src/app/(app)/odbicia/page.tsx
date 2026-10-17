@@ -30,8 +30,8 @@ export default async function PunchesToClarifyPage() {
   return (
     <>
       <p>
-        <Link href="/" className="muted">
-          {t("locationPage.back")}
+        <Link href="/dzwonek" className="muted">
+          {t("inbox.back")}
         </Link>
       </p>
       <h1 className="display page-title">{t("punches.toClarifyTitle")}</h1>
