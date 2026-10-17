@@ -1,6 +1,7 @@
 /**
  * Firma do testu dymnego odbijania: właściciel, kierownik Nowak (Rataje z pinezką w stałym punkcie, bez Google),
- * pracownik z nazwą użytkownika i Wojciech Lis z kartoteki, bez konta. Wypisuje kod plakatu Rataje, położenie budowy i dane logowania jako JSON.
+ * magazynier, pracownik z nazwą użytkownika, Wojciech Lis z kartoteki, bez konta, i szlifierka S-01 na bazie (do
+ * Skanuj z naklejką). Wypisuje kod plakatu Rataje, położenie budowy, narzędzie i dane logowania jako JSON.
  * Z `--zapomniane-wyjscie` pracownik ma też wczorajsze odbicie na Rataje zamknięte o północy „bez wyjścia”, a JSON
  * podaje godzinę wyjścia (pole daty i godziny) osiem godzin po tamtym wejściu.
  */
@@ -17,7 +18,8 @@ const RATAJE = { lat: 52.4083, lng: 16.9335 };
 const ownerEmail = `smoke-owner-${suffix}@narzedziownik.test`;
 const company = await registry.system().createCompany({ name: companyName, baseName: "Magazyn", owner: { email: ownerEmail, fullName: "Jan Testowy" } });
 const owner = registry.as(company.ownerUserId);
-await owner.changePassword(`Wlasciciel-${suffix}`, signedInNow());
+const ownerPassword = `Wlasciciel-${suffix}`;
+await owner.changePassword(ownerPassword, signedInNow());
 
 const managerEmail = `smoke-manager-${suffix}@narzedziownik.test`;
 const manager = await owner.addMember({ firstName: "Adam", lastName: "Nowak", email: managerEmail, role: "kierownik" });
@@ -29,7 +31,15 @@ const worker = await owner.addMember({ firstName: "Piotr", lastName: "Kowalczyk"
 const workerPassword = `Pracownik-${randomUUID().slice(0, 8)}`;
 await registry.as(worker.userId).changePassword(workerPassword, signedInNow());
 
+const storekeeperEmail = `smoke-storekeeper-${suffix}@narzedziownik.test`;
+const storekeeper = await owner.addMember({ firstName: "Ewa", lastName: "Wiśniewska", email: storekeeperEmail, role: "magazynier" });
+const storekeeperPassword = `Magazynier-${randomUUID().slice(0, 8)}`;
+await registry.as(storekeeper.userId).changePassword(storekeeperPassword, signedInNow());
+
 await owner.addPerson({ fullName: "Wojciech Lis", note: "Bez telefonu" });
+
+const grinders = await owner.addCategory({ name: "Szlifierki", prefix: "S" });
+const { toolId } = await owner.addTool({ operationId: randomUUID(), code: "S-01", name: "Szlifierka kątowa", categoryId: grinders.id });
 
 const { locationId: siteId } = await owner.addSite({ name: "Rataje", address: "ul. Piłsudskiego 12, Poznań", managerId: manager.userId });
 await owner.moveMapPin(siteId, RATAJE);
@@ -50,7 +60,10 @@ console.log(
     siteId,
     posterCode: code,
     site: RATAJE,
+    tool: { id: toolId, code: "S-01" },
+    owner: { login: ownerEmail, password: ownerPassword },
     manager: { login: managerEmail, password: managerPassword },
+    storekeeper: { login: storekeeperEmail, password: storekeeperPassword },
     worker: { login: username, password: workerPassword },
     forgottenExitAt,
   }),

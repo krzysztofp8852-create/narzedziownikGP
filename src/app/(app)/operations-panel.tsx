@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { type MessageKey, t } from "@/i18n/t";
+import { useScanRequest } from "@/lib/scan-request";
 import type { Category, RegisteredKind } from "@/registry/registry";
 import { NewToolForm } from "./narzedzia/new-tool-form";
 import { RentedToolForm, type RentedToolFormProps } from "./narzedzia/rented-tool-form";
@@ -36,6 +37,8 @@ export interface OperationsPanelProps {
   recordingId?: string;
   /** Skanuj z nawigacji: skaner otwarty od razu. */
   scan?: boolean;
+  /** Plakat zeskanowany w skanerze: właściciel i kierownik odbijają też osoby z kartoteki. */
+  punchesOthers: boolean;
 }
 
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
@@ -48,6 +51,7 @@ export function OperationsPanel({
   voiceEntry,
   recordingId,
   scan = false,
+  punchesOthers,
 }: OperationsPanelProps) {
   const movements = MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]);
   const [open, setOpen] = useState<Operation | null>(recordingId && textEntry ? "tekst" : scan && movements.length > 0 ? "skaner" : null);
@@ -57,12 +61,18 @@ export function OperationsPanel({
     setLinkedRecording(recordingId);
     if (recordingId && textEntry) setOpen("tekst");
   }
-  // Tak samo Skanuj z nawigacji otwiera skaner na już otwartej tablicy.
+  // Tak samo Skanuj z nawigacji z innej strony otwiera skaner na już otwartej tablicy, a na samej tablicy bez przejścia.
   const [linkedScan, setLinkedScan] = useState(scan);
   if (scan !== linkedScan) {
     setLinkedScan(scan);
     if (scan && movements.length > 0) setOpen("skaner");
   }
+  const sectionRef = useRef<HTMLElement>(null);
+  useScanRequest(() => {
+    if (movements.length === 0) return;
+    setOpen("skaner");
+    sectionRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  });
   const operations: [Operation, string][] = [
     // Skaner podpowiada te same ruchy, więc jest tam, gdzie choć jeden z nich.
     ...(movements.length > 0 ? [["skaner", t("board.scan")] as [Operation, string]] : []),
@@ -79,7 +89,7 @@ export function OperationsPanel({
   if (operations.length === 0) return null;
 
   return (
-    <section className="operations" aria-labelledby="operations-title" data-tour="operations">
+    <section ref={sectionRef} className="operations" aria-labelledby="operations-title" data-tour="operations">
       <h2 id="operations-title" className="display section-title">
         {t("board.operations")}
       </h2>
@@ -107,7 +117,7 @@ export function OperationsPanel({
           {open === "narzedzie" && newTool && <NewToolForm {...newTool} />}
           {open === "zgloszenie" && reportTool && <ReportToolForm {...reportTool} />}
           {open === "wynajem" && rentedTool && <RentedToolForm {...rentedTool} />}
-          {open === "skaner" && <Scanner data={checklist} />}
+          {open === "skaner" && <Scanner data={checklist} punchesOthers={punchesOthers} />}
           {open === "tekst" && <TextEntry data={checklist} voice={voiceEntry} recordingId={recordingId} />}
           {open !== "skaner" && open !== "tekst" && open !== "narzedzie" && open !== "zgloszenie" && open !== "wynajem" && checklist.routes[open] && (
             <Checklist

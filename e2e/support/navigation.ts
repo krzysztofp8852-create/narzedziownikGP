@@ -13,6 +13,18 @@ export async function openFromNav(page: Page, label: string) {
   await link.click();
 }
 
+/** Skanuj w nawigacji: na tablicy otwiera skaner na miejscu (także bez zasięgu), z innej strony prowadzi na tablicę. */
+export async function openScan(page: Page) {
+  await appNav(page).getByRole("link", { name: "Skanuj" }).click();
+}
+
+/** Kod z naklejki albo plakatu wpisany ręcznie w Skanuj. */
+export async function typeScanCode(page: Page, code: string) {
+  const field = page.getByLabel("Kod z naklejki albo plakatu");
+  await field.fill(code);
+  await field.press("Enter");
+}
+
 /** Moje konto: klik w swoje imię w nagłówku. */
 export async function openMyAccount(page: Page) {
   await page.getByRole("banner").getByRole("link", { name: /^Moje konto: / }).click();

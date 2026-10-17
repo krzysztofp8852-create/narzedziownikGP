@@ -73,6 +73,7 @@ import type {
   CorrectPunchInput,
   ExplainPunchConflictInput,
   ExplainPunchInput,
+  OwnOpenPunch,
   PeopleOnSite,
   Poster,
   PersonPunchOutcome,
@@ -258,6 +259,7 @@ export type {
   CorrectPunchInput,
   ExplainPunchConflictInput,
   ExplainPunchInput,
+  OwnOpenPunch,
   PeopleOnSite,
   PhonePosition,
   PersonPunchOutcome,
@@ -806,6 +808,8 @@ export interface Registry {
      * kod” i z innej firmy): `poster_invalid`; zakończona budowa: `site_finished`.
      */
     punchPreview(posterToken: string): Promise<PunchPreview>;
+    /** Pasek stanu odbicia na tablicy: gdzie i od kiedy aktor jest odbity teraz (także przez kierownika); null, gdy nie jest. */
+    ownOpenPunch(): Promise<OwnOpenPunch | null>;
     /**
      * Odbicie aktora skanem plakatu: wejście zapisuje się od razu, wyjście z tej samej budowy dopiero z `confirmExit`
      * (bez niego wynik `potwierdz_wyjscie` i nic się nie zapisuje), a skan na innej budowie to przejście (wyjście
@@ -1785,6 +1789,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         },
         upcomingQualifications: () => asMember((sql) => qualifications.upcomingQualifications(sql, deps.clock.now())),
         punchPreview: (posterToken) => asMember((sql, session) => punches.punchPreview(sql, session, posterToken)),
+        ownOpenPunch: () => asMember((sql, session) => punches.ownOpenPunch(sql, session)),
         punch: async (input) => {
           const attempt = () => asWriter((sql, session) => punches.punch(sql, session, input, deps.clock.now()));
           try {

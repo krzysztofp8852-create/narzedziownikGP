@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChecklistData, ChecklistPlace } from "./checklist";
-import { findToolByCode, planScan } from "./scan-plan";
+import { planScan } from "./scan-plan";
 
 const H03 = "3f2b8c1e-9a4d-4e7b-8c2f-5d6e7f809102";
 const S01 = "00000000-0000-4000-8000-000000000001";
@@ -55,22 +55,6 @@ function brief(data: ChecklistData, scanned: string[]) {
     kinds: group.options.map((option) => [option.kind, option.to.map((place) => place.name)]),
   }));
 }
-
-describe("ręczne wpisanie kodu", () => {
-  it("znajduje narzędzie po kodzie bez względu na wielkość liter, spacje i kreskę", () => {
-    for (const typed of ["H-03", "h-03", " h03 ", "H 03"]) {
-      expect(findToolByCode(places, typed)?.id).toBe(H03);
-    }
-    expect(findToolByCode(places, "z-01")?.id).toBe(Z01);
-  });
-
-  it("nie zgaduje: nieznany albo niepełny kod to brak narzędzia", () => {
-    expect(findToolByCode(places, "H-3")).toBeNull();
-    expect(findToolByCode(places, "H")).toBeNull();
-    expect(findToolByCode(places, "X-99")).toBeNull();
-    expect(findToolByCode(places, "")).toBeNull();
-  });
-});
 
 describe("podpowiedź rodzaju ruchu dla kierownika", () => {
   it("narzędzie z bazy to wydanie na jego budowę", () => {

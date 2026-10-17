@@ -1,16 +1,18 @@
 "use client";
 
-import { type FormEvent, startTransition, useActionState, useRef, useState } from "react";
+import { startTransition, useActionState, useRef, useState } from "react";
 import { t } from "@/i18n/t";
 import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
+import { recognizeCode } from "@/lib/scanned-code";
 import type { RegisteredKind } from "@/registry/registry";
+import { OfflinePunch } from "../odbicie/offline-punch";
+import { usePosterPunch } from "../odbicie/use-poster-punch";
 import { type ChecklistState, registerMovement } from "./actions";
-import { CameraScanner } from "./camera-scanner";
-import { readSticker } from "@/stickers/url";
 import { type ChecklistData, type ChecklistPlace, type ChecklistTool, DamagedWarnings, DeadlineHints, PlaceName, serviceFollowUp } from "./checklist";
 import { type DoneMovement, type FollowUpTool, MovementResult } from "./movement-result";
-import { findToolByCode, planScan, type ScanGroup, type ScanOption } from "./scan-plan";
+import { ScanCodeInput, type ScanFeedback } from "./scan-code-input";
+import { planScan, type ScanGroup, type ScanOption } from "./scan-plan";
 
 /** Co wybrano w grupie zamiast podpowiedzi: rodzaj ruchu i dokąd. */
 type Choice = { kind?: RegisteredKind; to?: string };
@@ -27,15 +29,16 @@ interface Submitted {
 }
 
 /**
- * Skaner naklejek QR: kolejne zeskanowane (albo wpisane) narzędzia trafiają na listę, podzieloną na
- * ruchy według miejsca, w którym są teraz. Każdy ruch ma podpowiedziany rodzaj i zatwierdza się go
- * tak jak checklistę, ze źródłem `qr`.
+ * Skanuj u tych, którzy zapisują ruchy: kolejne zeskanowane (albo wpisane) narzędzia trafiają na listę, podzieloną na
+ * ruchy według miejsca, w którym są teraz. Każdy ruch ma podpowiedziany rodzaj i zatwierdza się go tak jak checklistę,
+ * ze źródłem `qr`. Plakat budowy prowadzi do odbicia (właściciel i kierownik, `punchesOthers`, odbijają też osoby
+ * z kartoteki).
  */
-export function Scanner({ data }: { data: ChecklistData }) {
+export function Scanner({ data, punchesOthers }: { data: ChecklistData; punchesOthers: boolean }) {
   const [scannedIds, setScannedIds] = useState<string[]>([]);
+  const { offlineCode, punchAt, closeOffline } = usePosterPunch();
   const [camera, setCamera] = useState(true);
-  const [typed, setTyped] = useState("");
-  const [feedback, setFeedback] = useState<{ text: string; error: boolean } | null>(null);
+  const [feedback, setFeedback] = useState<ScanFeedback>(null);
   const [choices, setChoices] = useState<Record<string, Choice>>({});
   const [done, setDone] = useState<DoneMovement | null>(null);
   // Ponowne wysłanie tego samego ruchu (np. po zerwanym połączeniu) idzie pod tym samym
@@ -74,22 +77,28 @@ export function Scanner({ data }: { data: ChecklistData }) {
     navigator.vibrate?.(60);
   }
 
-  function onScan(text: string) {
-    const sticker = readSticker(text);
-    const tool = sticker && toolsById.get(sticker.toolId);
-    if (tool) return add(tool);
-    setFeedback({ text: t(sticker ? "scanner.unknownSticker" : "scanner.notSticker"), error: true });
-  }
-
-  function onTyped(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const tool = findToolByCode(data.places, typed);
-    if (!tool) {
-      setFeedback({ text: t("scanner.unknownCode", { code: typed.trim() }), error: true });
-      return;
+  /**
+   * Narzędzie z tablicy trafia na listę, plakat prowadzi do odbicia; true, gdy kod przyjęto. Plakat nie wyrzuca
+   * niezatwierdzonej listy: najpierw trzeba ją zatwierdzić albo wyczyścić.
+   */
+  function recognized(text: string, unrecognized: string): boolean {
+    const code = recognizeCode(text, [...toolsById.values()]);
+    if (code.kind === "plakat" && groups.length > 0) {
+      setFeedback({ text: t("scanner.posterWithList"), error: true });
+      return false;
     }
-    add(tool);
-    setTyped("");
+    if (code.kind === "plakat") {
+      setFeedback(null);
+      punchAt(code.code);
+      return true;
+    }
+    const tool = code.kind === "narzedzie" && toolsById.get(code.toolId);
+    if (tool) {
+      add(tool);
+      return true;
+    }
+    setFeedback({ text: code.kind === "narzedzie" ? t("scanner.unknownSticker") : unrecognized, error: true });
+    return false;
   }
 
   function remove(toolId: string) {
@@ -123,32 +132,18 @@ export function Scanner({ data }: { data: ChecklistData }) {
 
   return (
     <div className="scanner">
-      <div className="scanner-input">
-        {camera && <CameraScanner onScan={onScan} />}
-        <button className="button button-quiet" type="button" onClick={() => setCamera((on) => !on)}>
-          {camera ? t("scanner.cameraOff") : t("scanner.cameraOn")}
-        </button>
-        <form className="scanner-manual" onSubmit={onTyped}>
-          <div className="field">
-            <label htmlFor="scanner-code">{t("scanner.manualCode")}</label>
-            <input
-              id="scanner-code"
-              value={typed}
-              onChange={(event) => setTyped(event.target.value)}
-              placeholder={t("scanner.manualPlaceholder")}
-              autoComplete="off"
-              autoCapitalize="characters"
-              enterKeyHint="done"
-            />
-          </div>
-          <button className="button button-quiet" type="submit" disabled={!typed.trim()}>
-            {t("scanner.manualAdd")}
-          </button>
-        </form>
-        <p className={feedback?.error ? "scanner-feedback scanner-feedback-error" : "scanner-feedback"} aria-live="polite">
-          {feedback?.text}
-        </p>
-      </div>
+      {offlineCode ? (
+        <OfflinePunch key={offlineCode} userId={data.userId} code={offlineCode} punchesOthers={punchesOthers} onClose={closeOffline} />
+      ) : (
+        <ScanCodeInput
+          onScan={(text) => void recognized(text, t("scanner.notRecognized"))}
+          onTyped={(text) => recognized(text, t("scanner.unknownCode", { code: text.trim() }))}
+          feedback={feedback}
+          camera={camera}
+          onCamera={setCamera}
+          submitLabel={t("scanner.manualAdd")}
+        />
+      )}
 
       <MovementResult done={done} state={state} refreshedHint={t("scanner.conflictRefreshed")} />
 

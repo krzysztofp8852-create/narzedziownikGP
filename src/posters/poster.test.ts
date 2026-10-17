@@ -12,7 +12,7 @@ const input = {
   texts: {
     heading: "Odbij się przy wejściu i przy wyjściu",
     codeLabel: "Kod:",
-    instructions: ["Zeskanuj kod aparatem telefonu albo przyciskiem „Odbij się” na tablicy w programie.", "Program sprawdza położenie tylko w chwili skanu."],
+    instructions: ["Zeskanuj kod aparatem telefonu albo przyciskiem „Skanuj” w programie.", "Program sprawdza położenie tylko w chwili skanu."],
   },
 };
 

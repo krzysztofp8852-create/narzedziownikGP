@@ -42,9 +42,10 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
   do Pomocy niesie bieżący ekran (`?ekran=`), który czat dostaje jako kontekst wiadomości, jak dawniej z nagłówka.
 - Samouczek ekran po ekranie przestaje startować sam u kierownika i magazyniera: na tablicy sam startuje już tylko
   pierwszy krok właściciela (lista pierwszych kroków). Stan samouczka zostaje w `app.users.tutorial`.
-- Skanuj na razie otwiera dzisiejszy skaner na tablicy (`/?skanuj=1`): skaner ruchów u tego, kto zapisuje ruchy,
-  a odbicie u pracownika. Jeden skaner rozpoznający kod to #174. Budowy prowadzą do sekcji budów na tablicy do czasu
-  strony Budowy (#176).
+- Skanuj otwiera na tablicy (`/?skanuj=1`) jeden skaner, który sam rozpoznaje kod (#175): plakat budowy prowadzi do
+  odbicia, a naklejka narzędzia do ruchu u tego, kto zapisuje ruchy, i do karty narzędzia u pracownika. Przycisk
+  „Odbij się” znika z tablicy; zamiast niego jest pasek stanu odbicia („Jesteś na budowie X od 7:12” albo „Nie jesteś
+  odbity”) z otwartego odbicia osoby. Budowy prowadzą do sekcji budów na tablicy do czasu strony Budowy (#176).
 - W trybie tylko do odczytu nawigacja nie proponuje operacji: znikają Skanuj i Zgłoś, moduły zostają.
 - Odbicia do wyjaśnienia nie mają pozycji w nawigacji; ich lista zostaje jako widok szczegółowy otwierany ze
   skrzynki „Wymaga uwagi” (#177).

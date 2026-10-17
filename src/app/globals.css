@@ -1556,15 +1556,23 @@ a.tool-row:hover .tool-row-name {
   gap: 10px;
 }
 
-/* „Odbij się” nad tablicą: przycisk, a pod nim skaner plakatu budowy. */
-.punch-button {
+/* Pasek stanu odbicia na górze tablicy: gdzie osoba jest odbita albo że nie jest. */
+.punch-status {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.punch-status-in {
+  font-weight: 700;
+}
+
+/* Skanuj pracownika nad tablicą: skaner plakatu budowy i naklejki narzędzia. */
+.scan-panel {
   display: grid;
   gap: 12px;
   margin-bottom: 20px;
-}
-
-.punch-button > .button {
-  justify-self: start;
 }
 
 .punch-flow {

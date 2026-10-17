@@ -18,8 +18,9 @@ const STEPS = {
   operationsOwner: "operations",
   operationsManager: "operations",
   operationsStorekeeper: "operations",
-  punch: "punch",
-  punchWorker: "punch",
+  // Odbicie to Skanuj z nawigacji: plakat budowy rozpoznaje sam.
+  punch: "scan",
+  punchWorker: "scan",
   recent: "recent",
   recentWorker: "recent",
   map: "map",

@@ -971,20 +971,19 @@
   "scanner": {
     "cameraPreview": "Podgląd aparatu",
     "cameraStarting": "Uruchamianie aparatu…",
-    "cameraHint": "Nakieruj aparat na naklejkę. Możesz skanować kilka naklejek pod rząd.",
+    "cameraHint": "Nakieruj aparat na naklejkę narzędzia albo plakat budowy. Naklejki możesz skanować kilka pod rząd.",
     "cameraDenied": "Brak zgody na użycie aparatu. Zezwól na nie w ustawieniach przeglądarki albo wpisz kod ręcznie.",
     "cameraUnavailable": "Aparat jest niedostępny. Wpisz kod z naklejki ręcznie.",
     "cameraInsecure": "Aparat działa tylko na stronie otwartej przez HTTPS. Wpisz kod z naklejki ręcznie.",
     "cameraOn": "Włącz aparat",
     "cameraOff": "Wyłącz aparat",
-    "manualCode": "Kod z naklejki",
-    "manualPlaceholder": "np. H-03",
+    "manualCode": "Kod z naklejki albo plakatu",
+    "manualPlaceholder": "np. H-03 albo 7K3MQ-9XZ2B",
     "manualAdd": "Dodaj",
     "added": "Dodano {code}.",
     "alreadyAdded": "{code} już jest na liście.",
-    "notSticker": "To nie jest naklejka narzędzia.",
     "unknownSticker": "Tego narzędzia nie ma na tablicy firmy.",
-    "unknownCode": "Nie ma na tablicy narzędzia o kodzie {code}.",
+    "unknownCode": "Nie rozpoznano kodu {code}. To nie jest kod narzędzia z tablicy ani kod plakatu budowy.",
     "empty": "Zeskanuj naklejki albo wpisz kody. Rodzaj ruchu podpowiemy na podstawie tego, gdzie sprzęt jest teraz.",
     "groupLabel": "Ruch z: {place}",
     "from": "Teraz: {place}",
@@ -994,7 +993,9 @@
     "chooseTo": "wybierz, dokąd",
     "cannotMove": "Tego sprzętu nie możesz ruszyć. Usuń go z listy.",
     "clear": "Wyczyść listę",
-    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź ruchy i zatwierdź ponownie."
+    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź ruchy i zatwierdź ponownie.",
+    "notRecognized": "Nie rozpoznano kodu. Zeskanuj naklejkę narzędzia albo plakat budowy.",
+    "posterWithList": "Na liście są niezatwierdzone narzędzia. Zatwierdź ruch albo wyczyść listę, a potem zeskanuj plakat."
   },
   "settings": {
     "title": "Alarm na budowie",
@@ -1820,7 +1821,7 @@
       }
     },
     "tipsTitle": "Co warto kliknąć",
-    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał, i kto za nie teraz odpowiada.\nLupa w nagłówku: wpisz albo powiedz, czego szukasz, np. „gdzie jest niwelator?”.\nJako kierownik: panel „Operacje”. Kliknij „Wydaj z bazy” albo „Powiedz lub wpisz” i napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nJako kierownik: „Odbij się” na górze tablicy. Kod plakatu jest na stronie budowy Osiedle Zielone Tarasy, w zakładce „Ludzie na budowie”. Po skanie odbijesz też brygadę bez telefonu.\nJako właściciel, w menu „Koszty sprzętu”: ile w tym miesiącu kosztuje sprzęt na każdej budowie i busie, z plikiem Excel dla księgowej.\nJako właściciel, w menu „Czas na budowie” i „Odbicia do wyjaśnienia”: godziny ludzi w miesiącu i odbicia bez wyjścia albo bez położenia telefonu.\nJako właściciel, w menu „Terminy” i „Ludzie”: przegląd busa i kalibracja po terminie, podnośnik do zwrotu do wypożyczalni, szkolenie BHP do odnowienia.\nDzwonek i 📋 w nagłówku: alarmy, raporty i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
+    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał, i kto za nie teraz odpowiada.\nLupa w nagłówku: wpisz albo powiedz, czego szukasz, np. „gdzie jest niwelator?”.\nJako kierownik: panel „Operacje”. Kliknij „Wydaj z bazy” albo „Powiedz lub wpisz” i napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nJako kierownik: „Skanuj” w nawigacji. Kod plakatu jest na stronie budowy Osiedle Zielone Tarasy, w zakładce „Ludzie na budowie”. Po skanie odbijesz też brygadę bez telefonu.\nJako właściciel, w menu „Koszty sprzętu”: ile w tym miesiącu kosztuje sprzęt na każdej budowie i busie, z plikiem Excel dla księgowej.\nJako właściciel, w menu „Czas na budowie” i „Odbicia do wyjaśnienia”: godziny ludzi w miesiącu i odbicia bez wyjścia albo bez położenia telefonu.\nJako właściciel, w menu „Terminy” i „Ludzie”: przegląd busa i kalibracja po terminie, podnośnik do zwrotu do wypożyczalni, szkolenie BHP do odnowienia.\nDzwonek i 📋 w nagłówku: alarmy, raporty i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
     "note": "To wspólne demo: inni oglądający też mogą w nim coś zmienić, a my co jakiś czas przywracamy je do stanu wyjściowego. E-maile z demo nigdzie nie wychodzą.",
     "contact": "Chcesz takie narzędzie dla swojej firmy?",
     "bar": {
@@ -1907,11 +1908,11 @@
       },
       "punch": {
         "title": "Odbij się",
-        "text": "Każdy z kontem odbija wejście i wyjście, skanując telefonem plakat budowy. Program sprawdza tylko odległość od budowy i nie śledzi telefonu. Kierownik po skanie odbija też brygadę bez telefonu. W demo kod plakatu wpiszesz ręcznie: jest na stronie budowy, w zakładce „Ludzie na budowie”."
+        "text": "Każdy z kontem odbija wejście i wyjście przyciskiem „Skanuj”: plakat budowy to odbicie, a naklejka narzędzia to ruch narzędzia. Program sprawdza tylko odległość od budowy i nie śledzi telefonu. Kierownik po skanie odbija też brygadę bez telefonu. W demo kod plakatu wpiszesz ręcznie: jest na stronie budowy, w zakładce „Ludzie na budowie”."
       },
       "punchWorker": {
         "title": "Odbij się",
-        "text": "Przy wejściu i przy wyjściu skanujesz telefonem plakat budowy albo bazy. Swoje godziny zobaczysz w nawigacji, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
+        "text": "Przy wejściu i przy wyjściu skanujesz w „Skanuj” plakat budowy albo bazy, a naklejka narzędzia otwiera jego kartę ze zgłoszeniem usterki. Swoje godziny zobaczysz w nawigacji, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
       },
       "deadlines": {
         "title": "Terminy",
@@ -2672,12 +2673,6 @@
     "title": "Odbicie",
     "tab": "Ludzie na budowie",
     "tabBase": "Ludzie na bazie",
-    "button": "Odbij się",
-    "cameraHint": "Nakieruj aparat na kod QR plakatu budowy.",
-    "manualCode": "Kod z plakatu",
-    "manualPlaceholder": "np. 7K3MQ-9XZ2B",
-    "manualGo": "Dalej",
-    "notPoster": "To nie jest kod plakatu budowy.",
     "locating": "Sprawdzam położenie telefonu…",
     "saving": "Zapisuję…",
     "confirmExit": "Kończysz na tej budowie?",
@@ -2753,7 +2748,7 @@
     "openPlace": "Ludzie: {place}",
     "posterHeading": "Odbij się przy wejściu i przy wyjściu",
     "posterCodeLabel": "Kod:",
-    "posterStep1": "Zeskanuj kod QR aparatem telefonu albo przyciskiem „Odbij się” na tablicy w NarzędziownikuGP. Bez aparatu wpisz kod spod kodu QR.",
+    "posterStep1": "Zeskanuj kod QR aparatem telefonu albo przyciskiem „Skanuj” w NarzędziownikuGP. Bez aparatu wpisz kod spod kodu QR.",
     "posterStep2": "Pierwszy skan zapisuje wejście. Przy wyjściu zeskanuj kod jeszcze raz i potwierdź „Kończysz na tej budowie?”. Skan na innej budowie zapisuje przejście.",
     "posterStep3": "Program sprawdza położenie telefonu tylko w chwili skanu i zapisuje tylko odległość od budowy, a nie miejsce, w którym stoisz.",
     "posterFileName": "plakat-odbicia.pdf",
@@ -2793,6 +2788,15 @@
     "peopleDoneTransfer": "{name}: przejście {from} → {place}, {time}",
     "peopleAlreadyHere": "{name}: ktoś odbił tę osobę tutaj w międzyczasie. Zeskanuj plakat jeszcze raz, żeby odbić jej wyjście.",
     "peopleNotHere": "{name}: ktoś odbił tę osobę w międzyczasie gdzie indziej, więc wyjścia nie zapisałem. Zeskanuj plakat jeszcze raz.",
-    "peopleQueued": "Brak zasięgu. Odbicia {count} os. zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć."
+    "peopleQueued": "Brak zasięgu. Odbicia {count} os. zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć.",
+    "statusSite": "Jesteś na budowie {place} od {time}",
+    "statusBase": "Jesteś na bazie ({place}) od {time}",
+    "statusNone": "Nie jesteś odbity"
+  },
+  "scan": {
+    "cameraHint": "Nakieruj aparat na plakat budowy albo naklejkę narzędzia.",
+    "go": "Dalej",
+    "close": "Zamknij",
+    "toolOffline": "Kartę narzędzia otworzysz, gdy wróci zasięg."
   }
 }
