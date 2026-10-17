@@ -1,22 +1,6 @@
 import type { RegisteredKind } from "@/registry/registry";
 import type { ChecklistData, ChecklistPlace, ChecklistTool } from "./checklist";
 
-/** Kod bez spacji i kresek, wielkimi literami: „h 03” i „H03” to H-03. */
-function bareCode(text: string) {
-  return text.replace(/[\s-]/g, "").toUpperCase();
-}
-
-/** Narzędzie z tablicy o wpisanym kodzie, gdy naklejka jest zniszczona. Kod musi pasować w całości. */
-export function findToolByCode(places: ChecklistPlace[], typed: string): ChecklistTool | null {
-  const wanted = bareCode(typed);
-  if (!wanted) return null;
-  for (const place of places) {
-    const tool = place.tools.find((candidate) => bareCode(candidate.code) === wanted);
-    if (tool) return tool;
-  }
-  return null;
-}
-
 /** Rodzaj ruchu, którym aktor może ruszyć grupę, i dokąd (najpierw jego budowy). */
 export interface ScanOption {
   kind: RegisteredKind;

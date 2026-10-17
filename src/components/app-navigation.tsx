@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { t } from "@/i18n/t";
-import { HELP_HREF, helpLink, isCurrentNavItem } from "@/lib/nav-path";
+import { HELP_HREF, helpLink, isCurrentNavItem, SCAN_HREF } from "@/lib/nav-path";
 import type { Navigation, NavIcon } from "@/lib/navigation";
+import { requestScan } from "@/lib/scan-request";
 
 const ICON_PATHS: Record<NavIcon, ReactNode> = {
   board: (
@@ -161,7 +162,15 @@ export function AppNavigation({ bar, more, helpCount }: Pick<Navigation, "bar" |
                 href={item.href}
                 className={item.primary ? "app-nav-item app-nav-scan" : "app-nav-item"}
                 aria-current={isCurrentNavItem(item.href, pathname) ? "page" : undefined}
-                onClick={() => setSheetOn(null)}
+                data-tour={item.primary ? "scan" : undefined}
+                onClick={(event) => {
+                  setSheetOn(null);
+                  // Na tablicy skaner otwiera się na miejscu, także bez zasięgu.
+                  if (item.href === SCAN_HREF && pathname === "/") {
+                    event.preventDefault();
+                    requestScan();
+                  }
+                }}
               >
                 <Icon name={item.icon} />
                 <span className="app-nav-label">{item.label}</span>

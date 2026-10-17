@@ -118,12 +118,12 @@ test.describe("telefon: dolny pasek", () => {
     // Skanuj otwiera skaner ruchów na tablicy, także drugi raz po zamknięciu.
     await appNav(page).getByRole("link", { name: "Skanuj" }).click();
     await expect(page.getByRole("button", { name: "Skanuj QR" })).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByLabel("Kod z naklejki")).toBeVisible();
+    await expect(page.getByLabel("Kod z naklejki albo plakatu")).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
     await page.getByRole("button", { name: "Skanuj QR" }).click();
-    await expect(page.getByLabel("Kod z naklejki")).toBeHidden();
+    await expect(page.getByLabel("Kod z naklejki albo plakatu")).toBeHidden();
     await appNav(page).getByRole("link", { name: "Skanuj" }).click();
-    await expect(page.getByLabel("Kod z naklejki")).toBeVisible();
+    await expect(page.getByLabel("Kod z naklejki albo plakatu")).toBeVisible();
 
     // Pomoc: czat z obsługą i samouczek.
     await openFromNav(page, "Pomoc");
@@ -154,7 +154,7 @@ test.describe("telefon: dolny pasek", () => {
     await expect(page.getByTestId("tutorial")).toHaveCount(0);
     await expectNav(page, MANAGER_BAR, MANAGER_MORE);
     await appNav(page).getByRole("link", { name: "Skanuj" }).click();
-    await expect(page.getByLabel("Kod z naklejki")).toBeVisible();
+    await expect(page.getByLabel("Kod z naklejki albo plakatu")).toBeVisible();
     await openFromNav(page, "Ludzie");
     await expect(page).toHaveURL(/\/ludzie$/);
     await expect(appNav(page).getByRole("link", { name: "Ludzie" })).toHaveAttribute("aria-current", "page");
@@ -173,14 +173,20 @@ test.describe("telefon: dolny pasek", () => {
     await signOut(page);
   });
 
-  test("pracownik ma tylko Tablicę, Skanuj, Zgłoś i Moje; Skanuj otwiera odbicie, a hasło nadaje mu właściciel", async ({ page }) => {
+  test("pracownik ma tylko Tablicę, Skanuj, Zgłoś i Moje; Skanuj otwiera skaner, a hasło nadaje mu właściciel", async ({ page }) => {
     const company = seedCompany();
     await signIn(page, company.worker, company.companyName);
     await expectNav(page, WORKER_BAR, WORKER_MORE);
 
+    // Bez przycisku „Odbij się”: skaner otwiera Skanuj, także drugi raz po zamknięciu.
+    await expect(page.getByRole("button", { name: "Odbij się" })).toHaveCount(0);
     await appNav(page).getByRole("link", { name: "Skanuj" }).click();
-    await expect(page.getByRole("button", { name: "Odbij się" })).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByLabel("Kod z plakatu")).toBeVisible();
+    const scanner = page.getByRole("region", { name: "Skanuj" });
+    await expect(scanner.getByLabel("Kod z naklejki albo plakatu")).toBeVisible();
+    await scanner.getByRole("button", { name: "Zamknij" }).click();
+    await expect(scanner).toHaveCount(0);
+    await appNav(page).getByRole("link", { name: "Skanuj" }).click();
+    await expect(scanner.getByLabel("Kod z naklejki albo plakatu")).toBeVisible();
 
     await openFromNav(page, "Zgłoś");
     await expect(page).toHaveURL(/\/zgloszenia\/nowe$/);

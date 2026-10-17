@@ -95,10 +95,10 @@ async function firstSignIn(page: Page, login: string, temporaryPassword: string,
   return { login, password };
 }
 
-/** Na tablicy, gotowej do pracy bez sieci (nagłówek z nazwą firmy jest na każdej stronie, więc czekamy na „Odbij się”). */
+/** Na tablicy, gotowej do pracy bez sieci (nagłówek z nazwą firmy jest na każdej stronie, więc czekamy na pasek odbicia). */
 export async function onBoard(page: Page) {
   await expect(page).toHaveURL("/");
-  await expect(page.getByRole("button", { name: "Odbij się" })).toBeVisible();
+  await expect(page.getByTestId("punch-status")).toBeVisible();
 }
 
 /** Osoba bez konta, np. robotnik bez telefonu. */

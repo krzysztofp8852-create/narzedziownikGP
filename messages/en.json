@@ -968,20 +968,19 @@
   "scanner": {
     "cameraPreview": "Camera preview",
     "cameraStarting": "Starting camera…",
-    "cameraHint": "Point the camera at the sticker. You can scan several stickers in a row.",
+    "cameraHint": "Point the camera at a tool sticker or a site poster. You can scan several stickers in a row.",
     "cameraDenied": "No permission to use the camera. Allow it in your browser settings or enter the code manually.",
     "cameraUnavailable": "The camera is unavailable. Enter the sticker code manually.",
     "cameraInsecure": "The camera only works on a page opened over HTTPS. Enter the sticker code manually.",
     "cameraOn": "Turn on camera",
     "cameraOff": "Turn off camera",
-    "manualCode": "Sticker code",
-    "manualPlaceholder": "e.g. H-03",
+    "manualCode": "Sticker or poster code",
+    "manualPlaceholder": "e.g. H-03 or 7K3MQ-9XZ2B",
     "manualAdd": "Add",
     "added": "Added {code}.",
     "alreadyAdded": "{code} is already on the list.",
-    "notSticker": "This isn't a tool sticker.",
     "unknownSticker": "This tool isn't on the company board.",
-    "unknownCode": "There's no tool with code {code} on the board.",
+    "unknownCode": "Code {code} not recognized. It isn't a tool code from the board or a site poster code.",
     "empty": "Scan stickers or enter codes. We'll suggest the movement type based on where the equipment is now.",
     "groupLabel": "Movement from: {place}",
     "from": "Now: {place}",
@@ -991,7 +990,9 @@
     "chooseTo": "choose where to",
     "cannotMove": "You can't move this equipment. Remove it from the list.",
     "clear": "Clear list",
-    "conflictRefreshed": "The list below has been refreshed. Check the movements and confirm again."
+    "conflictRefreshed": "The list below has been refreshed. Check the movements and confirm again.",
+    "notRecognized": "Code not recognized. Scan a tool sticker or a site poster.",
+    "posterWithList": "There are unconfirmed tools on the list. Confirm the movement or clear the list, then scan the poster."
   },
   "settings": {
     "title": "Site alarm",
@@ -1614,7 +1615,7 @@
       }
     },
     "tipsTitle": "What to click",
-    "tips": "As the owner: the red alarms on the board, the amount off Base and two tools waiting for acceptance.\nAny tool on the board: its card with history, who moved it and when, and who's responsible for it now.\nThe magnifier in the header: type or say what you're looking for, e.g. “where's the level?”.\nAs a site manager: the “Operations” panel. Click “Issue from Base” or “Say or type” and write what you're taking, e.g. “taking two drills to Tarasy”.\nAs a site manager: “Clock in” at the top of the board. The poster code is on the Osiedle Zielone Tarasy site page, in the “People on site” tab. After the scan you can also clock in crew members without a phone.\nAs the owner, in the “Equipment costs” menu item: how much the equipment on each site and van costs this month, with an Excel file for the accountant.\nAs the owner, in “Time on site” and “Clock-ins to clarify”: people's hours in the month and clock-ins without an exit or without phone location.\nAs the owner, in “Deadlines” and “People”: an overdue van inspection and calibration, a lift to return to the rental shop, health and safety training to renew.\nNotifications (the bell) and 📋 in the header: alarms, reports and issues raised by the crew.\nHistory: filters by site, person and tool, and export to Excel.",
+    "tips": "As the owner: the red alarms on the board, the amount off Base and two tools waiting for acceptance.\nAny tool on the board: its card with history, who moved it and when, and who's responsible for it now.\nThe magnifier in the header: type or say what you're looking for, e.g. “where's the level?”.\nAs a site manager: the “Operations” panel. Click “Issue from Base” or “Say or type” and write what you're taking, e.g. “taking two drills to Tarasy”.\nAs a site manager: “Scan” in the navigation. The poster code is on the Osiedle Zielone Tarasy site page, in the “People on site” tab. After the scan you can also clock in crew members without a phone.\nAs the owner, in the “Equipment costs” menu item: how much the equipment on each site and van costs this month, with an Excel file for the accountant.\nAs the owner, in “Time on site” and “Clock-ins to clarify”: people's hours in the month and clock-ins without an exit or without phone location.\nAs the owner, in “Deadlines” and “People”: an overdue van inspection and calibration, a lift to return to the rental shop, health and safety training to renew.\nNotifications (the bell) and 📋 in the header: alarms, reports and issues raised by the crew.\nHistory: filters by site, person and tool, and export to Excel.",
     "note": "This is a shared demo: other viewers can change things too, and we reset it to its starting state from time to time. Emails from the demo aren't sent anywhere.",
     "contact": "Want a tool like this for your company?",
     "bar": {
@@ -1701,11 +1702,11 @@
       },
       "punch": {
         "title": "Clock in",
-        "text": "Everyone with an account clocks in and out by scanning the site poster with their phone. The app only checks the distance from the site and doesn't track the phone. After the scan, a site manager can also clock in crew members without a phone. In the demo you type the poster code by hand: it's on the site page, in the “People on site” tab."
+        "text": "Everyone with an account clocks in and out with the “Scan” button: a site poster means clocking in, a tool sticker means a tool movement. The app only checks the distance from the site and doesn't track the phone. After the scan, a site manager can also clock in crew members without a phone. In the demo you type the poster code by hand: it's on the site page, in the “People on site” tab."
       },
       "punchWorker": {
         "title": "Clock in",
-        "text": "When you arrive and when you leave, you scan the site or base poster with your phone. Your hours are in the navigation under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
+        "text": "When you arrive and when you leave, you scan the site or base poster with “Scan”; a tool sticker opens the tool's card, where you can report a fault. Your hours are in the navigation under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
       },
       "deadlines": {
         "title": "Deadlines",
@@ -2057,12 +2058,6 @@
     "title": "Clock-in",
     "tab": "People on site",
     "tabBase": "People at the Base",
-    "button": "Clock in",
-    "cameraHint": "Point the camera at the QR code on the site poster.",
-    "manualCode": "Code from the poster",
-    "manualPlaceholder": "e.g. 7K3MQ-9XZ2B",
-    "manualGo": "Next",
-    "notPoster": "This isn't a site poster code.",
     "locating": "Checking the phone's location…",
     "saving": "Saving…",
     "confirmExit": "Are you finishing on this site?",
@@ -2138,7 +2133,7 @@
     "openPlace": "People: {place}",
     "posterHeading": "Clock in when you arrive and when you leave",
     "posterCodeLabel": "Code:",
-    "posterStep1": "Scan the QR code with your phone camera or with the “Clock in” button on the board in NarzędziownikGP. Without a camera, enter the code printed under the QR code.",
+    "posterStep1": "Scan the QR code with your phone camera or with the “Scan” button in NarzędziownikGP. Without a camera, enter the code printed under the QR code.",
     "posterStep2": "The first scan saves your entry. When leaving, scan the code again and confirm “Are you finishing on this site?”. A scan on another site saves a switch.",
     "posterStep3": "The app checks the phone's location only at the moment of the scan and saves only the distance from the site, not where you're standing.",
     "offlineMark": "saved offline",
@@ -2177,6 +2172,15 @@
     "peopleDoneTransfer": "{name}: switch {from} → {place}, {time}",
     "peopleAlreadyHere": "{name}: someone clocked this person in here in the meantime. Scan the poster again to clock their exit.",
     "peopleNotHere": "{name}: someone clocked this person in somewhere else in the meantime, so I didn't save the exit. Scan the poster again.",
-    "peopleQueued": "No signal. Clock-ins for {count} people saved on the phone: {place}, {time}. I'll send them when the connection is back."
+    "peopleQueued": "No signal. Clock-ins for {count} people saved on the phone: {place}, {time}. I'll send them when the connection is back.",
+    "statusSite": "You've been on site {place} since {time}",
+    "statusBase": "You've been at base ({place}) since {time}",
+    "statusNone": "You're not clocked in"
+  },
+  "scan": {
+    "cameraHint": "Point the camera at a site poster or a tool sticker.",
+    "go": "Next",
+    "close": "Close",
+    "toolOffline": "You can open the tool card when you're back online."
   }
 }

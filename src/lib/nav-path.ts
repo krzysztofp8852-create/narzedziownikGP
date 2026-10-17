@@ -1,4 +1,4 @@
-/** Skanuj na razie otwiera dzisiejszy skaner na tablicy: ruchów, a pracownikowi odbicia. */
+/** Skanuj otwiera na tablicy skaner, który sam rozpoznaje kod: plakat budowy to odbicie, naklejka to narzędzie. */
 export const SCAN_HREF = "/?skanuj=1";
 export const ACCOUNT_HREF = "/konto";
 export const HELP_HREF = "/pomoc";

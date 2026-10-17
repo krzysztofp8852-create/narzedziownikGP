@@ -467,6 +467,23 @@ async function punchById(sql: Sql, session: Session, punchId: string): Promise<P
   return punchFromRow(row, session);
 }
 
+/** Gdzie i od kiedy aktor jest odbity teraz. */
+export interface OwnOpenPunch {
+  place: PunchPlace;
+  enteredAt: Date;
+}
+
+/** Otwarte odbicie aktora (najwyżej jedno), z odbić widocznych osobie; null, gdy nie jest odbity. */
+export async function ownOpenPunch(sql: Sql, session: Session): Promise<OwnOpenPunch | null> {
+  const [row] = await sql<{ location_id: string; location_kind: PunchPlaceKind; location_name: string; entered_at: Date }>(
+    `select p.location_id, l.kind as location_kind, l.name as location_name, p.entered_at
+     from app.punches p join app.people pe on pe.id = p.person_id join app.locations l on l.id = p.location_id
+     where pe.user_id = $1 and p.left_at is null`,
+    [session.userId],
+  );
+  return row ? { place: { id: row.location_id, kind: row.location_kind, name: row.location_name }, enteredAt: new Date(row.entered_at) } : null;
+}
+
 /** Otwarte odbicie osoby: gdzie jest odbita teraz. */
 interface OpenPunch {
   id: string;

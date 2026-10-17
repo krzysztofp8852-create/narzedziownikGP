@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { openFreshAccount, signIn, signOut } from "../support/fresh-account";
-import { appNav, moreButton } from "../support/navigation";
+import { appNav, moreButton, openScan, typeScanCode } from "../support/navigation";
 import {
   buildCrew,
   closeCrew,
@@ -256,16 +256,15 @@ test("role i kod plakatu: pracownik nie ma plakatu, poprawek, wyjaśniania ani z
     "Ten kod plakatu nie działa: plakat jest nieaktualny albo z innej firmy. Poproś kierownika budowy o nowy plakat.",
   );
 
-  // Skaner w programie: zły tekst to nie plakat, a nowy kod przepisany małymi literami ze spacją działa.
+  // Skanuj w programie: kod, którego nie ma ani na tablicy, ani na plakacie, jest nierozpoznany, a nowy kod plakatu
+  // przepisany małymi literami ze spacją działa.
   await worker.page.goto("/");
-  const scanner = worker.page.getByRole("region", { name: "Odbij się" });
-  await scanner.getByRole("button", { name: "Odbij się" }).click();
+  await openScan(worker.page);
+  const scanner = worker.page.getByRole("region", { name: "Skanuj" });
   await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
-  await scanner.getByLabel("Kod z plakatu").fill("H-03");
-  await scanner.getByRole("button", { name: "Dalej" }).click();
-  await expect(scanner.getByText("To nie jest kod plakatu budowy.")).toBeVisible();
-  await scanner.getByLabel("Kod z plakatu").fill(`${newCode.slice(0, 5).toLowerCase()} ${newCode.slice(5).toLowerCase()}`);
-  await scanner.getByRole("button", { name: "Dalej" }).click();
+  await typeScanCode(worker.page, "H-03");
+  await expect(scanner.getByText("Nie rozpoznano kodu H-03. To nie jest kod narzędzia z tablicy ani kod plakatu budowy.")).toBeVisible();
+  await typeScanCode(worker.page, `${newCode.slice(0, 5).toLowerCase()} ${newCode.slice(5).toLowerCase()}`);
   await expect(worker.page).toHaveURL(`/odbicie/${newCode}`);
   // Nowy kod nie przerywa pobytu: skan na tej samej budowie to wyjście.
   await expect(worker.page.getByText("Kończysz na tej budowie?")).toBeVisible();
@@ -293,12 +292,10 @@ test("bez zasięgu: wyjście czeka w kolejce i dochodzi z oznaczeniem „zapisan
   const pending = (page: typeof worker.page) => page.getByTestId("pending-count");
 
   async function scanOffline(page: typeof worker.page, { firstTime = false } = {}) {
-    const scanner = page.getByRole("region", { name: "Odbij się" });
-    await scanner.getByRole("button", { name: "Odbij się" }).click();
+    await openScan(page);
     // Wyłączony aparat zostaje wyłączony przy następnym otwarciu skanera.
-    if (firstTime) await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
-    await scanner.getByLabel("Kod z plakatu").fill(typedCode(site));
-    await scanner.getByRole("button", { name: "Dalej" }).click();
+    if (firstTime) await page.getByRole("region", { name: "Skanuj" }).getByRole("button", { name: "Wyłącz aparat" }).click();
+    await typeScanCode(page, typedCode(site));
   }
 
   // Wejście z siecią: telefon poznaje nazwę budowy z kodu.
@@ -399,11 +396,10 @@ test("kierownik bez zasięgu odbija wyjście osoby z kartoteki z listy „Odbij 
 
   // Po południu bez zasięgu: telefon pyta kierownika „Kończysz?” i pokazuje listę z porannego skanu.
   await manager.context.setOffline(true);
-  const scanner = manager.page.getByRole("region", { name: "Odbij się" });
-  await scanner.getByRole("button", { name: "Odbij się" }).click();
-  await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
-  await scanner.getByLabel("Kod z plakatu").fill(typedCode(site));
-  await scanner.getByRole("button", { name: "Dalej" }).click();
+  // Skanuj kierownika to skaner ruchów, który plakat rozpoznaje sam.
+  await openScan(manager.page);
+  await manager.page.getByRole("button", { name: "Wyłącz aparat" }).click();
+  await typeScanCode(manager.page, typedCode(site));
   await expect(manager.page.getByText("Kończysz na tej budowie?")).toBeVisible();
   const offlineList = manager.page.getByRole("region", { name: "Odbij też…" });
   await expect(offlineList).toContainText("Lista z ostatniego odbicia z zasięgiem.");

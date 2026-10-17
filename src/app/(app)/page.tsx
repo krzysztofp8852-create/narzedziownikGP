@@ -39,7 +39,8 @@ import { locationPagePath } from "./lokalizacje/location-page";
 import { AddSiteForm, AddVehicleForm, ChangeManagerForm, ChangeSiteAddressForm } from "./lokalizacje/location-forms";
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
-import { PunchButton } from "./punch-button";
+import { PunchStatus } from "./punch-status";
+import { ScanPanel } from "./scan-panel";
 import { ForgetScanParam } from "./scan-param";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
@@ -275,12 +276,13 @@ function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; m
 export default async function BoardPage(props: PageProps<"/">) {
   const session = await requireSession();
   const { nagranie, skanuj } = await props.searchParams;
-  // Skanuj z nawigacji otwiera dzisiejszy skaner: ruchów, a kto ruchów nie zapisuje (pracownik), odbicia.
-  const scan = skanuj !== undefined && !session.company.readOnly;
+  // Skanuj z nawigacji otwiera skaner, który sam rozpoznaje kod: plakat budowy to odbicie, naklejka to narzędzie.
+  const readOnly = session.company.readOnly;
+  const scan = skanuj !== undefined && !readOnly;
   const registry = getRegistry().as(session.userId);
   // Firma demo ma mapę demo bez dostawcy mapy; prawdziwa firma mapę Google, o ile jest klucz przeglądarki.
   const googleMaps = session.company.demo ? null : serverEnv.googleMaps();
-  const [board, movements, managers, categories, reports, tutorial, mapPins] = await Promise.all([
+  const [board, movements, managers, categories, reports, tutorial, mapPins, openPunch] = await Promise.all([
     registry.whereIsWhat(),
     registry.recentMovements(),
     canManageLocations(session) ? registry.siteManagerCandidates() : null,
@@ -288,6 +290,7 @@ export default async function BoardPage(props: PageProps<"/">) {
     canReviewToolReports(session) ? registry.toolReports() : [],
     registry.tutorial(),
     googleMaps ? registry.siteMap() : null,
+    readOnly ? null : registry.ownOpenPunch(),
   ]);
   // Chwila pobrania stanu: tablica z kopii w telefonie pokazuje ją bez sieci (service worker czyta ją z atrybutu).
   const fetchedAt = new Date().toISOString();
@@ -297,6 +300,7 @@ export default async function BoardPage(props: PageProps<"/">) {
   const { base, sites, vehicles } = board;
   const onSites = sites.reduce((sum, site) => sum + site.tools.length, 0);
   const onVehicles = vehicles.reduce((sum, vehicle) => sum + vehicle.tools.length, 0);
+  const checklist = checklistData(session, board);
 
   return (
     <>
@@ -305,16 +309,23 @@ export default async function BoardPage(props: PageProps<"/">) {
       {tutorial?.closed === null && tutorial.role === "wlasciciel" && (
         <TutorialCard tutorial={tutorial} entry={{ textEntry: textEntryEnabled(), voiceEntry: voiceEntryEnabled() }} />
       )}
-      {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy, a bez sieci do kolejki. */}
+      {/* Odbija się każdy z kontem, skanując plakat w Skanuj (albo aparatem telefonu), więc każdy widzi, gdzie jest odbity. */}
+      {!readOnly && <PunchStatus open={openPunch} now={new Date(fetchedAt)} />}
       {scan && <ForgetScanParam />}
-      {!session.company.readOnly && (
-        <PunchButton userId={session.userId} punchesOthers={canPunchOthers(session)} opened={scan && !canRegisterMovements(session)} />
+      {/* Kto zapisuje ruchy, ma skaner w operacjach; pracownik dostaje go osobno, z kartą narzędzia zamiast ruchu. */}
+      {!readOnly && !canRegisterMovements(session) && (
+        <ScanPanel
+          userId={session.userId}
+          punchesOthers={canPunchOthers(session)}
+          tools={[...checklist.places.flatMap((place) => place.tools), ...board.lost].map(({ id, code }) => ({ id, code }))}
+          opened={scan}
+        />
       )}
       {/* Znak „bez kopii” tylko na tablicy bez kopii: inaczej nazwa atrybutu i tak trafiłaby do danych React w HTML. */}
       <div className="board" data-fetched-at={fetchedAt} {...(keepCopy ? {} : { "data-no-copy": "" })}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
           <OperationsPanel
-            checklist={checklistData(session, board)}
+            checklist={checklist}
             newTool={
               categories &&
               canManageTools(session) && {
@@ -329,6 +340,7 @@ export default async function BoardPage(props: PageProps<"/">) {
             voiceEntry={voiceEntryEnabled()}
             recordingId={typeof nagranie === "string" ? nagranie : undefined}
             scan={scan}
+            punchesOthers={canPunchOthers(session)}
             reportTool={
               categories &&
               canReportTools(session) && {
