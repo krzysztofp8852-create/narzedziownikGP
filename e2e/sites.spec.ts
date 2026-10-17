@@ -32,6 +32,8 @@ const activeSites = (page: Page) => page.locator(".site-grid").first().locator("
 const finishedSites = (page: Page) => page.getByRole("region", { name: "Zakończone budowy" }).locator("h3");
 
 test("właściciel dodaje budowę i zmienia kierownika na stronie Budowy, a kierownik w „Moje budowy” widzi tylko swoje", async ({ page }) => {
+  // Trzy logowania i dodanie budowy, które czeka na geokodowanie adresu.
+  test.setTimeout(90_000);
   const company = seedCompany();
   await signIn(page, company.owner, company.companyName);
 

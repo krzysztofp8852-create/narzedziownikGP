@@ -32,6 +32,8 @@ async function signIn(page: Page, { email, password }: Credentials) {
 test("budowa prawdziwej firmy stoi na mapie strony Budowy pod swoim adresem; właściciel przesuwa pinezkę, a nowy adres ją przenosi", async ({
   page,
 }) => {
+  // Kilka przeładowań, zapisy pinezki i adresu oraz drugie logowanie.
+  test.setTimeout(90_000);
   const company = seedCompany();
   await page.route(GOOGLE_MAPS, (route) => route.fulfill({ contentType: "text/javascript", body: stub }));
 
@@ -57,7 +59,10 @@ test("budowa prawdziwej firmy stoi na mapie strony Budowy pod swoim adresem; wł
   await expect(map).toContainText("2 szt.");
   await map.getByRole("button", { name: "Wskaż nowe miejsce na mapie" }).click();
   await expect(map.getByRole("status")).toContainText("Kliknij na mapie, gdzie jest Rataje.");
+  // Przeładowanie przed końcem zapisu przerwałoby go, więc czekamy na odpowiedź akcji serwera.
+  const placed = page.waitForResponse((response) => response.request().method() === "POST");
   await page.evaluate(() => (window as unknown as { __stubMap: { clickAt(lat: number, lng: number): void } }).__stubMap.clickAt(52.25, 17.09));
+  await placed;
   await expect(map.getByRole("status")).toHaveCount(0);
 
   await page.reload();
