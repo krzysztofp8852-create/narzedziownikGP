@@ -234,7 +234,26 @@
   },
   "settingsPage": {
     "title": "Ustawienia",
-    "back": "← Wróć do tablicy"
+    "backToSettings": "← Wróć do ustawień",
+    "pages": {
+      "firma": {
+        "title": "Firma i abonament",
+        "hint": "Pakiet, wykorzystanie limitów narzędzi i osób, termin płatności."
+      },
+      "sprzet": {
+        "title": "Sprzęt",
+        "hint": "Stawki dzienne, alarm na budowie, naklejki QR, serwisy i baza na mapie."
+      },
+      "dostep": {
+        "title": "Ludzie i dostęp",
+        "hint": "Kto widzi koszty, kto widzi zgłoszenia i wylogowanie po bezczynności.",
+        "hintDemo": "Kto widzi koszty i kto widzi zgłoszenia."
+      },
+      "dokumenty": {
+        "title": "Dokumenty i dziennik zmian",
+        "hint": "Regulamin, polityka prywatności, umowa powierzenia i dziennik zmian."
+      }
+    }
   },
   "changeLog": {
     "title": "Dziennik zmian",

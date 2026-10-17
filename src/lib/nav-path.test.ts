@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { helpLink, isCurrentNavItem, SITES_HREF } from "./nav-path";
+import { helpLink, isCurrentNavItem, SETTINGS_HREF, SITES_HREF } from "./nav-path";
 
 describe("bieżąca podstrona w nawigacji", () => {
   it("tablica jest bieżąca tylko na samej tablicy", () => {
@@ -22,6 +22,11 @@ describe("bieżąca podstrona w nawigacji", () => {
   it("odnośnik do miejsca na stronie nie jest bieżący, żeby wyróżniona była sama strona", () => {
     expect(isCurrentNavItem("/ustawienia#zespol", "/ustawienia")).toBe(false);
     expect(isCurrentNavItem("/ustawienia", "/ustawienia")).toBe(true);
+  });
+
+  it("Ustawienia są bieżące na każdej z czterech podstron", () => {
+    expect(isCurrentNavItem(SETTINGS_HREF, "/ustawienia/sprzet")).toBe(true);
+    expect(isCurrentNavItem(SETTINGS_HREF, "/ustawienia/dokumenty")).toBe(true);
   });
 });
 
