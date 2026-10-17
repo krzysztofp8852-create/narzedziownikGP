@@ -219,8 +219,10 @@ test("raporty: na teraz i z harmonogramu; właściciel oba, kierownik tylko pią
   await moreButton(worker).click();
   await worker.goto("/raporty");
   await expect(worker).toHaveURL(/\/$/);
+  // Raport piątkowy odsyła do Raportów, a te pracownika na tablicę. Czekamy na koniec tej drogi, bo przekierowanie
+  // w drodze przerwałoby następne `goto` (net::ERR_ABORTED).
   await worker.goto("/raporty/piatkowy");
-  await expect(worker).toHaveURL(/\/raporty$|\/$/);
+  await expect(worker).toHaveURL(/\/$/);
   await worker.goto("/koszty");
   await expect(worker).toHaveURL(/\/$/);
   await worker.goto("/narzedzia");
