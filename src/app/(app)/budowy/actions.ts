@@ -1,12 +1,14 @@
 "use server";
 
-import { refresh, revalidatePath } from "next/cache";
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
 import { MovementConflictError } from "@/registry/registry";
+import { revalidateSites } from "../lokalizacje/revalidate-sites";
+import { FINISHED_SITES_HREF } from "@/lib/sites-view";
 
 export interface SiteClosingState {
   error?: string;
@@ -34,7 +36,7 @@ export async function moveFromSite(siteId: string, _prev: SiteClosingState, form
     if (error instanceof MovementConflictError) refresh();
     return { error: errorMessage(error) };
   }
-  revalidatePath("/");
+  revalidateSites();
   refresh();
   return {};
 }
@@ -48,8 +50,8 @@ export async function closeSite(siteId: string): Promise<SiteClosingState> {
     refresh();
     return { error: errorMessage(error) };
   }
-  revalidatePath("/");
-  redirect("/budowy/zakonczone");
+  revalidateSites();
+  redirect(FINISHED_SITES_HREF);
 }
 
 export async function forceCloseSite(siteId: string, _prev: SiteClosingState, formData: FormData): Promise<SiteClosingState> {
@@ -61,6 +63,6 @@ export async function forceCloseSite(siteId: string, _prev: SiteClosingState, fo
   } catch (error) {
     return { error: errorMessage(error) };
   }
-  revalidatePath("/");
-  redirect("/budowy/zakonczone");
+  revalidateSites();
+  redirect(FINISHED_SITES_HREF);
 }

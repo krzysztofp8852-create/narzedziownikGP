@@ -6,6 +6,7 @@ import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
 import type { MapPosition } from "@/registry/registry";
+import { revalidateSites } from "./revalidate-sites";
 
 export interface LocationFormState {
   error?: string;
@@ -29,7 +30,7 @@ export async function addSite(_prev: LocationFormState, formData: FormData): Pro
     const { locationId } = await getRegistry()
       .as(session.userId)
       .addSite({ name, address: formText(formData, "address"), managerId: formText(formData, "managerId") });
-    revalidatePath("/");
+    revalidateSites();
     return { added: { id: locationId, name: name.trim() } };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -129,7 +130,7 @@ export async function changeSiteManager(siteId: string, _prev: ChangeManagerStat
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).changeSiteManager(siteId, formText(formData, "managerId"));
-    revalidatePath("/");
+    revalidateSites();
     return { changed: true };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -146,7 +147,7 @@ export async function changeSiteAddress(siteId: string, _prev: AddressFormState,
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).changeSiteAddress(siteId, formText(formData, "address"));
-    revalidatePath("/");
+    revalidateSites();
     return { changed: true };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -158,7 +159,7 @@ export async function setBaseAddress(_prev: AddressFormState, formData: FormData
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).setBaseAddress(formText(formData, "address"));
-    revalidatePath("/");
+    revalidateSites();
     revalidatePath("/ustawienia");
     return { changed: true };
   } catch (error) {
@@ -171,7 +172,7 @@ export async function moveMapPin(locationId: string, position: MapPosition): Pro
   const session = await requireSession();
   try {
     await getRegistry().as(session.userId).moveMapPin(locationId, position);
-    revalidatePath("/");
+    revalidateSites();
     return {};
   } catch (error) {
     return { error: errorMessage(error) };

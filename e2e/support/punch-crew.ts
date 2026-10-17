@@ -113,23 +113,23 @@ async function addPersonWithoutAccount(page: Page, fullName: string) {
 }
 
 /**
- * Właściciel dodaje na tablicy budowę z adresem i kierownikiem, stawia jej pinezkę w `position` (atrapa mapy) i odczytuje
+ * Właściciel dodaje na stronie Budowy budowę z adresem i kierownikiem, stawia jej pinezkę w `position` (atrapa mapy) i odczytuje
  * kod plakatu w zakładce „Ludzie na budowie”. Strona właściciela musi mieć podmienione Google Maps (`stubGoogleMaps`).
  */
 export async function addSiteWithPin(page: Page, site: { name: string; address: string; manager: string; position: { lat: number; lng: number } }): Promise<Site> {
-  await page.goto("/");
-  const add = page.locator("#budowy details", { hasText: "Dodaj budowę" });
+  await page.goto("/budowy");
+  const add = page.locator("details.location-add", { hasText: "Dodaj budowę" });
   await add.locator("summary").click();
   await add.getByLabel("Nazwa budowy").fill(site.name);
   await add.getByLabel("Adres", { exact: true }).fill(site.address);
   await add.getByLabel("Kierownik", { exact: true }).selectOption({ label: site.manager });
   await add.getByRole("button", { name: "Dodaj budowę" }).click();
   await expect(add.getByText(`Dodano budowę ${site.name}.`)).toBeVisible();
-  const link = page.locator("#budowy").getByRole("link", { name: site.name, exact: true });
+  const link = page.getByRole("region", { name: `Budowa ${site.name}` }).getByRole("link", { name: site.name, exact: true });
   const id = /\/budowy\/([0-9a-f-]{36})$/.exec((await link.getAttribute("href"))!)![1];
 
   // Pinezka: geokodowanie adresu mogło ją już postawić (wtedy „Wskaż nowe miejsce na mapie”) albo nie znaleźć adresu.
-  await page.reload();
+  await page.goto("/budowy?widok=mapa");
   const map = page.getByRole("region", { name: "Mapa" });
   const pin = map.getByRole("button", { name: `Budowa: ${site.name}` });
   const unplaced = map.locator("li", { hasText: site.name }).getByRole("button", { name: "Wskaż na mapie" });
@@ -151,7 +151,7 @@ export async function addSiteWithPin(page: Page, site: { name: string; address: 
   await expect(pin).toHaveAttribute("data-lat", String(site.position.lat));
   await expect(pin).toHaveAttribute("data-lng", String(site.position.lng));
 
-  await link.click();
+  await page.goto(`/budowy/${id}`);
   await page.getByRole("navigation", { name: "Zakładki" }).getByRole("link", { name: "Ludzie na budowie" }).click();
   await expect(page).toHaveURL(`/budowy/${id}/ludzie`);
   const poster = page.getByRole("region", { name: "Plakat budowy" });

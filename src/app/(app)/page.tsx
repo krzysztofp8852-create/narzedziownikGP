@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MovementEntry } from "@/components/movement-entry";
-import { SiteManagerLabel } from "@/components/site-manager-label";
 import { Money, ToolList } from "@/components/tool-list";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
@@ -12,7 +11,6 @@ import { serverEnv } from "@/lib/env";
 import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
 import {
-  canCloseSite,
   canImportTools,
   canManageLocations,
   canManageTools,
@@ -24,19 +22,19 @@ import {
   canReportTools,
   canReviewToolReports,
   canSeeValues,
-  type MapPin,
   type RecentMovement,
   type Session,
   type SiteManagerCandidate,
-  type ToolOnBoard,
   type ToolReport,
   UPCOMING_DAYS,
   type WhereIsWhat,
 } from "@/registry/registry";
-import { changeSiteManager } from "./lokalizacje/actions";
-import { AddLocationTile, LocationTotals, VehicleCard } from "./lokalizacje/location-cards";
+import { AddLocationTile, LocationTotals, SiteCard, VehicleCard } from "./lokalizacje/location-cards";
 import { locationPagePath } from "./lokalizacje/location-page";
-import { AddSiteForm, AddVehicleForm, ChangeManagerForm, ChangeSiteAddressForm } from "./lokalizacje/location-forms";
+import { AddSiteForm, AddVehicleForm } from "./lokalizacje/location-forms";
+import { SitesMap } from "./lokalizacje/sites-map";
+import { FINISHED_SITES_HREF } from "@/lib/sites-view";
+import { SitesAnchorRedirect } from "./budowy/sites-anchor";
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
 import { PunchStatus } from "./punch-status";
@@ -45,8 +43,6 @@ import { ForgetScanParam } from "./scan-param";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
 import { TutorialCard } from "./samouczek/tutorial";
-import { DemoSiteMap, type MapDevice, type MapPlace } from "./demo-site-map";
-import { SiteMap, type SiteMapPin } from "./site-map";
 
 export const generateMetadata = (): Metadata => ({ title: t("board.title") });
 
@@ -174,84 +170,6 @@ function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   );
 }
 
-function SiteCard({
-  site,
-  managers,
-  session,
-}: {
-  site: WhereIsWhat["sites"][number];
-  managers: SiteManagerCandidate[] | null;
-  session: Session;
-}) {
-  return (
-    <section className="location location-site" aria-labelledby={`location-${site.id}`}>
-      <div className="location-head">
-        <h3 id={`location-${site.id}`} className="display location-name">
-          <span className="location-kind">{t("board.siteKind")}</span> <Link href={locationPagePath("budowa", site.id)}>{site.name}</Link>
-        </h3>
-        <LocationTotals count={site.tools.length} totalValue={site.totalValue} />
-      </div>
-      <div className="location-details">
-        <p className="muted">{site.address}</p>
-        <p>
-          <SiteManagerLabel manager={site.manager} />
-        </p>
-      </div>
-      {site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />}
-      {managers && (
-        <>
-          <details className="location-more">
-            <summary>{t("locations.changeManager")}</summary>
-            <ChangeManagerForm
-              action={changeSiteManager.bind(null, site.id)}
-              location={site}
-              label={t("locations.newManager", { name: site.name })}
-              managers={managers}
-            />
-          </details>
-          <details className="location-more">
-            <summary>{t("locations.changeAddress")}</summary>
-            <ChangeSiteAddressForm site={site} />
-          </details>
-        </>
-      )}
-      {canCloseSite(session, site) && (
-        <p>
-          <Link className="button button-quiet button-small" href={`/budowy/${site.id}/zamykanie`}>
-            {t("siteClosing.close")}
-          </Link>
-        </p>
-      )}
-    </section>
-  );
-}
-
-/**
- * Mapa firmy demo (ADR 0026): rejestr nie zna lokalizatorów, więc „urządzeniami z lokalizatorem” są pierwsze
- * narzędzia z każdego miejsca. Prawdziwa firma tego nie widzi.
- */
-function demoMapData({ base, sites, vehicles }: WhereIsWhat): { places: MapPlace[]; devices: MapDevice[] } {
-  const places: MapPlace[] = [
-    { id: base.id, kind: "base", name: base.name, toolCount: base.tools.length },
-    ...sites.map((site) => ({ id: site.id, kind: "site" as const, name: site.name, address: site.address, toolCount: site.tools.length })),
-    ...vehicles.map((vehicle) => ({ id: vehicle.id, kind: "vehicle" as const, name: vehicle.name, toolCount: vehicle.tools.length })),
-  ];
-  const tracked = (placeId: string, tools: ToolOnBoard[], count: number) =>
-    tools.slice(0, count).map((tool) => ({ id: tool.id, code: tool.code, name: tool.name, placeId }));
-  const devices = [
-    ...tracked(base.id, base.tools, 2),
-    ...sites.flatMap((site) => tracked(site.id, site.tools, 2)),
-    ...vehicles.flatMap((vehicle) => tracked(vehicle.id, vehicle.tools, 1)),
-  ];
-  return { places, devices };
-}
-
-/** Pinezki mapy budów z liczbą narzędzi z tablicy (tej samej chwili co reszta tablicy). */
-function sitePins(pins: MapPin[], { base, sites }: WhereIsWhat): SiteMapPin[] {
-  const toolCounts = new Map([base, ...sites].map((place) => [place.id, place.tools.length]));
-  return pins.map((pin) => ({ ...pin, toolCount: toolCounts.get(pin.id) ?? 0 }));
-}
-
 function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; managers: SiteManagerCandidate[] | null }) {
   // Firma bez pojazdów nie potrzebuje tej sekcji; właściciel widzi ją, żeby dodać pierwszy.
   if (vehicles.length === 0 && !managers) return null;
@@ -312,6 +230,7 @@ export default async function BoardPage(props: PageProps<"/">) {
       {/* Odbija się każdy z kontem, skanując plakat w Skanuj (albo aparatem telefonu), więc każdy widzi, gdzie jest odbity. */}
       {!readOnly && <PunchStatus open={openPunch} now={new Date(fetchedAt)} />}
       {scan && <ForgetScanParam />}
+      <SitesAnchorRedirect />
       {/* Kto zapisuje ruchy, ma skaner w operacjach; pracownik dostaje go osobno, z kartą narzędzia zamiast ruchu. */}
       {!readOnly && !canRegisterMovements(session) && (
         <ScanPanel
@@ -418,27 +337,22 @@ export default async function BoardPage(props: PageProps<"/">) {
               )}
             </section>
 
-            <div id="budowy" className="site-grid">
+            <div className="site-grid">
               {sites.length === 0 && !managers && (
                 <div className="empty">
                   <p>{t("board.noSites")}</p>
                 </div>
               )}
               {sites.map((site) => (
-                <SiteCard key={site.id} site={site} managers={managers} session={session} />
+                <SiteCard key={site.id} site={site} managers={managers} session={session} tools />
               ))}
               {managers && <AddLocationTile title={t("board.addSite")} form={<AddSiteForm managers={managers} />} />}
             </div>
             <div className="section-head">
-              <Link href="/budowy/zakonczone">{t("siteClosing.finishedLink")}</Link>
+              <Link href={FINISHED_SITES_HREF}>{t("siteClosing.finishedLink")}</Link>
             </div>
 
-            {session.company.demo ? (
-              <DemoSiteMap {...demoMapData(board)} />
-            ) : (
-              googleMaps &&
-              mapPins && <SiteMap pins={sitePins(mapPins, board)} maps={googleMaps} canEdit={canManageLocations(session)} />
-            )}
+            <SitesMap demo={session.company.demo} board={board} pins={mapPins} maps={googleMaps} canEdit={canManageLocations(session)} />
 
             <Vehicles vehicles={vehicles} managers={managers} />
 

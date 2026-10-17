@@ -2,8 +2,8 @@
 export const SCAN_HREF = "/?skanuj=1";
 export const ACCOUNT_HREF = "/konto";
 export const HELP_HREF = "/pomoc";
-/** Budowy nie mają jeszcze własnej strony, więc prowadzą do swojej sekcji tablicy. */
-export const SITES_HREF = "/#budowy";
+/** Strona Budowy (u kierownika „Moje budowy”). Dawna kotwica tablicy `/#budowy` przekierowuje tutaj. */
+export const SITES_HREF = "/budowy";
 
 /** Pozycja nawigacji prowadzi na bieżącą podstronę (albo jej podstronę). Odnośnik do sekcji strony nigdy nie jest bieżący. */
 export function isCurrentNavItem(href: string, pathname: string): boolean {

@@ -6,8 +6,10 @@ import { SiteManagerLabel } from "@/components/site-manager-label";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
+import { SITES_HREF } from "@/lib/nav-path";
 import { getRegistry } from "@/lib/registry-instance";
 import { canCloseSite, canForceCloseSites, canMoveTools } from "@/registry/registry";
+import { FINISHED_SITES_HREF } from "@/lib/sites-view";
 import { CloseSiteForm, ForceCloseForm, ReturnForm, TransferForm } from "./closing-forms";
 
 export const generateMetadata = (): Metadata => ({ title: t("siteClosing.close") });
@@ -24,7 +26,7 @@ export default async function SiteClosingPage(props: PageProps<"/budowy/[id]/zam
   const site = board.sites.find((candidate) => candidate.id === id);
   if (!site) {
     // Zamkniętą budowę widać już tylko wśród zakończonych.
-    if ((await registry.finishedSites()).some((finished) => finished.id === id)) redirect("/budowy/zakonczone");
+    if ((await registry.finishedSites()).some((finished) => finished.id === id)) redirect(FINISHED_SITES_HREF);
     notFound();
   }
   if (!canCloseSite(session, site)) redirect("/");
@@ -37,7 +39,7 @@ export default async function SiteClosingPage(props: PageProps<"/budowy/[id]/zam
   return (
     <>
       <p>
-        <Link href="/" className="muted">
+        <Link href={SITES_HREF} className="muted">
           {t("siteClosing.back")}
         </Link>
       </p>
