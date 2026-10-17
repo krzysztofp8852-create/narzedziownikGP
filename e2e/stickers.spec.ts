@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -30,8 +31,7 @@ test("adres z naklejki QR bez logowania prowadzi do logowania, a po nim do karty
   await expect(page).toHaveURL(stickerPath);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("H-01 Młot Hilti");
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, otherOwner);

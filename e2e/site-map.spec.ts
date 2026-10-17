@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 // Test dymny potrzebuje serwera z GEOCODER=staly (każdy adres w środku Poznania, jak FIXED_POSITION w
 // src/lib/google-geocoder.ts) i dowolnym GOOGLE_MAPS_BROWSER_KEY: zamiast Google przeglądarka dostaje atrapę mapy.
@@ -79,8 +80,7 @@ test("budowa prawdziwej firmy stoi na mapie pod swoim adresem; właściciel prze
   await page.goto("/");
   await expect(map.getByRole("button", { name: "Baza: Magazyn" })).toHaveAttribute("data-lat", POZNAN.lat);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.manager);

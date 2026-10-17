@@ -7,7 +7,7 @@ import { screenFromQuery } from "@/lib/support-chat-text";
 import { canUseSupportChat } from "@/registry/registry";
 
 /**
- * Otwarcie okna 💬 z nagłówka albo z powiadomienia push: odpowiedzi supportu stają się przeczytane, a użytkownik
+ * Otwarcie okna 💬 z Pomocy albo z powiadomienia push: odpowiedzi supportu stają się przeczytane, a użytkownik
  * trafia do okna czatu, pod ostatnią wiadomość. `?ekran=` (ekran, z którego pisze) idzie dalej jako kontekst.
  */
 export async function GET(request: NextRequest) {

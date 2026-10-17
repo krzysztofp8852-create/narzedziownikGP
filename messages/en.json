@@ -57,38 +57,68 @@
     "bellUnread": "Notifications, unread: {count}",
     "issues": "Issues",
     "issuesUnread": "Issues, unread: {count}",
-    "chat": "Support chat",
-    "chatUnread": "Support chat, new replies: {count}",
     "loading": "Loading page…"
   },
-  "menu": {
-    "title": "Menu",
-    "groups": {
-      "equipment": "Equipment",
-      "places": "Sites and vehicles",
-      "people": "People",
-      "company": "Company"
-    },
+  "nav": {
+    "title": "Navigation",
     "board": "Board",
     "tools": "Tools",
+    "scan": "Scan",
+    "sites": "Sites",
+    "mySites": "My sites",
+    "people": "People",
     "deadlines": "Deadlines",
+    "report": "Report",
+    "more": "More",
+    "mine": "Mine",
     "history": "History",
     "stickers": "Stickers",
-    "sites": "Sites",
     "vehicles": "Vehicles",
     "costs": "Equipment costs",
-    "people": "People",
     "myQualifications": "My qualifications",
-    "punchesToClarify": "Clock-ins to clarify",
     "timeOnSite": "Time on site",
     "myTimeOnSite": "My time on site",
     "reports": "Reports",
-    "documents": "Documents",
     "settings": "Settings",
-    "tutorial": "Tutorial",
-    "language": "Language",
-    "deleteAccount": "Delete account",
-    "logout": "Sign out"
+    "help": "Help",
+    "account": "My account: {name}",
+    "groups": {
+      "equipment": "Equipment",
+      "people": "People",
+      "mine": "Mine",
+      "company": "Company"
+    }
+  },
+  "myAccount": {
+    "title": "My account",
+    "password": {
+      "title": "Password",
+      "linkIntro": "We'll send a link for setting a new password to this account's email. The link works for an hour.",
+      "submit": "Send a password change link",
+      "submitting": "Sending…",
+      "sent": "Link sent. Open it from the email and set a new password.",
+      "fromOwner": "A new password is issued by the company owner. Ask them for a temporary password, and you'll set your own at the next sign-in."
+    },
+    "deleteAccount": {
+      "title": "Deleting your account",
+      "text": "We delete accounts and data on request. A separate page explains how to ask and what happens to the data.",
+      "link": "How to delete your account and data"
+    },
+    "signOut": {
+      "title": "Signing out",
+      "text": "Signing out removes the copy of the board from this device and turns off its notifications."
+    }
+  },
+  "help": {
+    "chat": {
+      "open": "Open the chat",
+      "unread": "New replies: {count}"
+    },
+    "tutorial": {
+      "textOwner": "The company's first four steps with progress: site manager, site, tools and stickers.",
+      "textMovements": "Screen by screen: how to record issuing, returning and moving equipment.",
+      "open": "Open the tutorial"
+    }
   },
   "board": {
     "title": "What's where",
@@ -1675,19 +1705,19 @@
       },
       "punchWorker": {
         "title": "Clock in",
-        "text": "When you arrive and when you leave, you scan the site or base poster with your phone. Your hours are in the menu under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
+        "text": "When you arrive and when you leave, you scan the site or base poster with your phone. Your hours are in the navigation under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
       },
       "deadlines": {
         "title": "Deadlines",
-        "text": "Inspections, calibrations, UDT inspections, warranties and rental returns, and for vehicles the roadworthiness test, third-party and comprehensive insurance and the tachograph. A reminder arrives in the bell a week before the deadline, and 30 days before for insurance and the tachograph. Open the full list here or in the menu under “Deadlines”, and people's qualifications (health and safety, medical checks, UDT) under “People”."
+        "text": "Inspections, calibrations, UDT inspections, warranties and rental returns, and for vehicles the roadworthiness test, third-party and comprehensive insurance and the tachograph. A reminder arrives in the bell a week before the deadline, and 30 days before for insurance and the tachograph. Open the full list here or under “More”, in “Deadlines”, and people's qualifications (health and safety, medical checks, UDT) under “People”."
       },
       "costs": {
         "title": "Equipment costs",
-        "text": "Every tool has a daily rate (in the demo 1% of its value, measuring tools 2%), so the app calculates what the equipment costs on each site and each vehicle. The summary with a file for the accountant is in the menu under “Equipment costs”, and the rates are in the settings."
+        "text": "Every tool has a daily rate (in the demo 1% of its value, measuring tools 2%), so the app calculates what the equipment costs on each site and each vehicle. The summary with a file for the accountant is under “More”, in “Equipment costs”, and the rates are in the settings."
       },
       "menu": {
-        "title": "Menu",
-        "text": "Under the three lines you'll find all subpages: tools, deadlines, history, QR stickers, vehicles, equipment costs, the People directory with qualifications, time on site, clock-ins to clarify, reports and company settings (alarm day limit, daily rates, who sees issues, service shops, subscription). You add sites on the board, and vehicles on the board or on the Vehicles page."
+        "title": "More",
+        "text": "At the bottom of the screen (on a computer, at the side) you have Board, Tools, Scan and Sites, and under “More” the rest in groups: vehicles, deadlines, history, equipment costs, QR stickers, the People directory with qualifications, time on site, reports, company settings (alarm day limit, daily rates, who sees issues, service shops, subscription) and Help. Language, password and sign-out are in My account, opened by clicking your name in the header."
       },
       "finish": {
         "title": "All set",
@@ -1720,7 +1750,7 @@
     "next": "Next",
     "back": "Back",
     "count": "Step {step} of {count}",
-    "reopen": "You can reopen the tutorial with the “?” sign in the header.",
+    "reopen": "You can reopen the tutorial under “More”, in “Help”.",
     "firstSteps": {
       "title": "First steps",
       "intro": "Every company starts with these four things. Steps tick themselves off once the thing is already in your company.",
@@ -1959,8 +1989,7 @@
     "label": "App language",
     "submit": "Save language",
     "submitting": "Saving…",
-    "invalid": "Choose a language from the list.",
-    "back": "← Back to board"
+    "invalid": "Choose a language from the list."
   },
   "costSettings": {
     "title": "Who sees costs",

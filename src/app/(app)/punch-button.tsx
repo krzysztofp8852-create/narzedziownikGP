@@ -12,10 +12,17 @@ import { CameraScanner } from "./ruch/camera-scanner";
  * „Odbij się” na górze tablicy: skaner w programie (ten sam co przy naklejkach, z ręcznym wpisaniem kodu z plakatu)
  * prowadzi na stronę odbicia, tak jak kod QR plakatu zeskanowany aparatem telefonu. Bez zasięgu odbicie trafia od
  * razu do kolejki offline z chwilą skanu, a właściciel i kierownik (`punchesOthers`) odbijają też osoby z kartoteki.
+ * Pracownikowi otwiera go też Skanuj z nawigacji.
  */
-export function PunchButton({ userId, punchesOthers }: { userId: string; punchesOthers: boolean }) {
+export function PunchButton({ userId, punchesOthers, opened = false }: { userId: string; punchesOthers: boolean; opened?: boolean }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(opened);
+  // Skanuj z nawigacji (`opened`) otwiera skaner także na już otwartej tablicy.
+  const [linkedOpened, setLinkedOpened] = useState(opened);
+  if (opened !== linkedOpened) {
+    setLinkedOpened(opened);
+    if (opened) setOpen(true);
+  }
   const [camera, setCamera] = useState(true);
   const [typed, setTyped] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);

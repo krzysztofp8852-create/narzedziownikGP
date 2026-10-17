@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 /** Zakłada nową firmę tym samym skryptem, którego używa GP Engineering. */
 function createCompany() {
@@ -46,7 +47,7 @@ test("właściciel loguje się hasłem tymczasowym, musi je zmienić i widzi pus
   await expect(page.getByText("Na bazie nie ma jeszcze żadnych narzędzi.")).toBeVisible();
 
   // Nowe hasło działa po wylogowaniu, a zmiana nie jest już wymagana.
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await page.getByLabel("E-mail").fill(company.email);

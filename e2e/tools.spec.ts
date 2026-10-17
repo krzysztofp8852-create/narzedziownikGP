@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -57,7 +58,7 @@ test("właściciel widzi cały sprzęt z wartościami, zawęża listę i otwiera
   await expect(page).toHaveURL(/\/narzedzia\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name: /Szlifierka mała/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.manager);

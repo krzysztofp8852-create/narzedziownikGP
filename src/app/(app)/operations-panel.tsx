@@ -34,18 +34,35 @@ export interface OperationsPanelProps {
   voiceEntry: boolean;
   /** Propozycja z nagrania z kolejki offline do otwarcia (link „Do zatwierdzenia” w nagłówku). */
   recordingId?: string;
+  /** Skanuj z nawigacji: skaner otwarty od razu. */
+  scan?: boolean;
 }
 
 /** Wszystkie operacje tablicy w jednym miejscu: przycisk otwiera formularz tuż pod sobą, drugi klik go zwija. */
-export function OperationsPanel({ checklist, newTool, reportTool, rentedTool, textEntry, voiceEntry, recordingId }: OperationsPanelProps) {
-  const [open, setOpen] = useState<Operation | null>(recordingId && textEntry ? "tekst" : null);
+export function OperationsPanel({
+  checklist,
+  newTool,
+  reportTool,
+  rentedTool,
+  textEntry,
+  voiceEntry,
+  recordingId,
+  scan = false,
+}: OperationsPanelProps) {
+  const movements = MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]);
+  const [open, setOpen] = useState<Operation | null>(recordingId && textEntry ? "tekst" : scan && movements.length > 0 ? "skaner" : null);
   // Link „Do zatwierdzenia” w nagłówku otwiera głos i wpis tekstem także na już otwartej tablicy.
   const [linkedRecording, setLinkedRecording] = useState(recordingId);
   if (recordingId !== linkedRecording) {
     setLinkedRecording(recordingId);
     if (recordingId && textEntry) setOpen("tekst");
   }
-  const movements = MOVEMENT_BUTTONS.filter(([kind]) => checklist.routes[kind]).map(([kind, label]): [Operation, string] => [kind, t(label)]);
+  // Tak samo Skanuj z nawigacji otwiera skaner na już otwartej tablicy.
+  const [linkedScan, setLinkedScan] = useState(scan);
+  if (scan !== linkedScan) {
+    setLinkedScan(scan);
+    if (scan && movements.length > 0) setOpen("skaner");
+  }
   const operations: [Operation, string][] = [
     // Skaner podpowiada te same ruchy, więc jest tam, gdzie choć jeden z nich.
     ...(movements.length > 0 ? [["skaner", t("board.scan")] as [Operation, string]] : []),

@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
+import { openMyAccount } from "./navigation";
 
 /** Logowanie i zmiana hasła idą przez Supabase Auth: przy kilku testach naraz na jednym serwerze dev trwają dłużej niż 5 s. */
 const AUTH_TIMEOUT = 20_000;
@@ -84,8 +85,8 @@ export async function firstSignIn(page: Page, login: string, temporaryPassword: 
 }
 
 export async function signOut(page: Page) {
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("navigation", { name: "Menu" }).getByRole("button", { name: "Wyloguj" }).click();
+  await openMyAccount(page);
+  await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/, { timeout: AUTH_TIMEOUT });
 }
 

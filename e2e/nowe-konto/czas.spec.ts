@@ -1,6 +1,7 @@
 import { type Locator, type Page, test } from "@playwright/test";
 import readXlsxFile from "read-excel-file/node";
 import { expectNoHorizontalScroll } from "../support/fresh-account";
+import { openFromNav } from "../support/navigation";
 import {
   addSiteWithPin,
   buildCrew,
@@ -126,8 +127,7 @@ test("czas na budowie z odbić: przejście między budowami, poprawki godzin, su
 
   // Właściciel: cała firma, osoby w wierszach, budowy w kolumnach, sumy na końcu.
   await owner.page.goto("/");
-  await owner.page.getByRole("button", { name: "Menu" }).click();
-  await owner.page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Czas na budowie" }).click();
+  await openFromNav(owner.page, "Czas na budowie");
   await expect(owner.page).toHaveURL("/czas");
   await expect(owner.page.getByRole("navigation", { name: "Miesiąc" }).getByRole("link", { name: "Ten miesiąc" })).toHaveAttribute("aria-current", "page");
   await expect(owner.page.getByTestId("time-on-site-total")).toHaveText("17 godz. 0 min");

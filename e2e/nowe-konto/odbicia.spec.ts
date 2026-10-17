@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { openFreshAccount, signIn, signOut } from "../support/fresh-account";
+import { appNav, moreButton } from "../support/navigation";
 import {
   buildCrew,
   closeCrew,
@@ -167,10 +168,8 @@ test("położenie przy skanie: 5 km od budowy, telefon bez zgody na GPS, słaba 
   await expect(list).toContainText("Do wyjaśnienia przez kierownika: poza budową, 100 m.");
 
   // Właściciel widzi wszystkie trzy oznaczone odbicia, od najnowszego; własne odbicie na budowie nie jest oznaczone.
-  await owner.page.goto("/");
-  await owner.page.getByRole("button", { name: "Menu" }).click();
-  await owner.page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
-  await expect(owner.page).toHaveURL("/odbicia");
+  // Lista nie ma pozycji w nawigacji; wejście do niej da skrzynka „Wymaga uwagi” (#177).
+  await owner.page.goto("/odbicia");
   const ownerList = owner.page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
   const heads = (page: typeof owner.page) =>
     page.getByRole("list", { name: "Odbicia do wyjaśnienia" }).getByTestId("punch").locator(".movement-head > span:first-child");
@@ -223,14 +222,12 @@ test("role i kod plakatu: pracownik nie ma plakatu, poprawek, wyjaśniania ani z
   expect(posterResponse.status()).toBe(400);
   expect(await posterResponse.text()).toBe("Nie masz uprawnień do tej operacji.");
 
-  // Bez listy do wyjaśnienia, a w menu tylko własny czas na budowie.
+  // Bez listy do wyjaśnienia, a pod „Moje” tylko własny czas na budowie.
   await worker.page.goto("/odbicia");
   await expect(worker.page).toHaveURL("/");
-  await worker.page.getByRole("button", { name: "Menu" }).click();
-  const menu = worker.page.getByRole("navigation", { name: "Menu" });
-  await expect(menu.getByRole("link", { name: "Odbicia do wyjaśnienia" })).toHaveCount(0);
-  await expect(menu.getByRole("link", { name: "Czas na budowie", exact: true })).toHaveCount(0);
-  await menu.getByRole("link", { name: "Mój czas na budowie" }).click();
+  await moreButton(worker.page).click();
+  await expect(appNav(worker.page).getByRole("link", { name: "Czas na budowie", exact: true })).toHaveCount(0);
+  await appNav(worker.page).getByRole("link", { name: "Mój czas na budowie" }).click();
   await expect(worker.page).toHaveURL("/czas");
   await expect(worker.page.getByText("Twoje odbicia i czas na budowie w tym i poprzednim miesiącu.", { exact: false })).toBeVisible();
   await expect(worker.page.getByRole("link", { name: "Pobierz Excel" })).toHaveCount(0);
@@ -473,9 +470,7 @@ test("zapomniane wyjście: wczorajsze odbicie zamyka się o północy „bez wyj
   await expect(owner.page.getByTestId("time-on-site-total")).toHaveText("0 min");
 
   // Kierownik budowy dostaje odbicie do wyjaśnienia i uzupełnia wyjście; wyjście przed wejściem nie przejdzie.
-  await manager.page.goto("/");
-  await manager.page.getByRole("button", { name: "Menu" }).click();
-  await manager.page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  await manager.page.goto("/odbicia");
   const forgotten = punchOf(manager.page.getByRole("list", { name: "Odbicia do wyjaśnienia" }), "Piotr Kowalczyk");
   await expect(forgotten).toContainText(`${shownDateTime(yesterday, "07:00")} – bez wyjścia`);
   await expect(forgotten).toContainText("Wyjście: bez wyjścia, zamknięte o północy");

@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -38,8 +39,7 @@ test("właściciel widzi na tablicy kwotę poza bazą i sumy lokalizacji, a kier
   await expect(page.getByRole("region", { name: "W serwisie" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Zaginione" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   // Wylogowanie kończy się przekierowaniem; wcześniej /logowanie odesłałoby na tablicę starej sesji.
   await expect(page).toHaveURL(/\/logowanie$/);

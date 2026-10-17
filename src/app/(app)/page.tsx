@@ -19,6 +19,7 @@ import {
   canHandleRentalsAt,
   canPrintStickers,
   canPunchOthers,
+  canRegisterMovements,
   canRentTools,
   canReportTools,
   canReviewToolReports,
@@ -39,6 +40,7 @@ import { AddSiteForm, AddVehicleForm, ChangeManagerForm, ChangeSiteAddressForm }
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
 import { PunchButton } from "./punch-button";
+import { ForgetScanParam } from "./scan-param";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
 import { TutorialCard } from "./samouczek/tutorial";
@@ -272,7 +274,9 @@ function Vehicles({ vehicles, managers }: { vehicles: WhereIsWhat["vehicles"]; m
 
 export default async function BoardPage(props: PageProps<"/">) {
   const session = await requireSession();
-  const { nagranie } = await props.searchParams;
+  const { nagranie, skanuj } = await props.searchParams;
+  // Skanuj z nawigacji otwiera dzisiejszy skaner: ruchów, a kto ruchów nie zapisuje (pracownik), odbicia.
+  const scan = skanuj !== undefined && !session.company.readOnly;
   const registry = getRegistry().as(session.userId);
   // Firma demo ma mapę demo bez dostawcy mapy; prawdziwa firma mapę Google, o ile jest klucz przeglądarki.
   const googleMaps = session.company.demo ? null : serverEnv.googleMaps();
@@ -296,12 +300,16 @@ export default async function BoardPage(props: PageProps<"/">) {
 
   return (
     <>
-      {/* Samouczek startuje sam, dopóki go nie pominięto ani nie ukończono. */}
-      {tutorial?.closed === null && (
+      {/* Pierwsze kroki właściciela startują same, dopóki ich nie pominięto ani nie ukończono. Samouczek kierownika
+          i magazyniera otwiera się tylko z Pomocy. */}
+      {tutorial?.closed === null && tutorial.role === "wlasciciel" && (
         <TutorialCard tutorial={tutorial} entry={{ textEntry: textEntryEnabled(), voiceEntry: voiceEntryEnabled() }} />
       )}
       {/* Odbija się każdy z kontem; skaner prowadzi na stronę odbicia, jak kod QR plakatu budowy, a bez sieci do kolejki. */}
-      {!session.company.readOnly && <PunchButton userId={session.userId} punchesOthers={canPunchOthers(session)} />}
+      {scan && <ForgetScanParam />}
+      {!session.company.readOnly && (
+        <PunchButton userId={session.userId} punchesOthers={canPunchOthers(session)} opened={scan && !canRegisterMovements(session)} />
+      )}
       {/* Znak „bez kopii” tylko na tablicy bez kopii: inaczej nazwa atrybutu i tak trafiłaby do danych React w HTML. */}
       <div className="board" data-fetched-at={fetchedAt} {...(keepCopy ? {} : { "data-no-copy": "" })}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
@@ -320,6 +328,7 @@ export default async function BoardPage(props: PageProps<"/">) {
             textEntry={textEntryEnabled()}
             voiceEntry={voiceEntryEnabled()}
             recordingId={typeof nagranie === "string" ? nagranie : undefined}
+            scan={scan}
             reportTool={
               categories &&
               canReportTools(session) && {

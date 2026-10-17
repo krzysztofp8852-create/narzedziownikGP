@@ -1,7 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
 import { t } from "@/i18n/t";
+import { requestOrigin } from "@/lib/request-origin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface ResetPasswordState {
@@ -14,19 +14,11 @@ export async function sendResetLink(_prev: ResetPasswordState, formData: FormDat
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${await origin()}/auth/confirm`,
+    redirectTo: `${await requestOrigin()}/auth/confirm`,
   });
   if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") {
     return { error: t("resetPassword.tooManyRequests") };
   }
   if (error) console.error(error);
   return { sent: true };
-}
-
-async function origin() {
-  const headerList = await headers();
-  const explicit = headerList.get("origin");
-  if (explicit) return explicit;
-  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  return `${headerList.get("x-forwarded-proto") ?? "https"}://${host}`;
 }

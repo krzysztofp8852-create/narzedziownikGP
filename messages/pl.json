@@ -60,38 +60,68 @@
     "bellUnread": "Dzwonek, nieprzeczytane: {count}",
     "issues": "Zgłoszenia",
     "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
-    "chat": "Czat z supportem",
-    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}",
     "loading": "Wczytywanie strony…"
   },
-  "menu": {
-    "title": "Menu",
-    "groups": {
-      "equipment": "Sprzęt",
-      "places": "Budowy i pojazdy",
-      "people": "Ludzie",
-      "company": "Firma"
-    },
+  "nav": {
+    "title": "Nawigacja",
     "board": "Tablica",
     "tools": "Narzędzia",
+    "scan": "Skanuj",
+    "sites": "Budowy",
+    "mySites": "Moje budowy",
+    "people": "Ludzie",
     "deadlines": "Terminy",
+    "report": "Zgłoś",
+    "more": "Więcej",
+    "mine": "Moje",
     "history": "Historia",
     "stickers": "Naklejki",
-    "sites": "Budowy",
     "vehicles": "Pojazdy",
     "costs": "Koszty sprzętu",
-    "people": "Ludzie",
     "myQualifications": "Moje uprawnienia",
-    "punchesToClarify": "Odbicia do wyjaśnienia",
     "timeOnSite": "Czas na budowie",
     "myTimeOnSite": "Mój czas na budowie",
     "reports": "Raporty",
-    "documents": "Dokumenty",
     "settings": "Ustawienia",
-    "tutorial": "Samouczek",
-    "language": "Język / Language",
-    "deleteAccount": "Usuń konto",
-    "logout": "Wyloguj"
+    "help": "Pomoc",
+    "account": "Moje konto: {name}",
+    "groups": {
+      "equipment": "Sprzęt",
+      "people": "Ludzie",
+      "mine": "Moje",
+      "company": "Firma"
+    }
+  },
+  "myAccount": {
+    "title": "Moje konto",
+    "password": {
+      "title": "Hasło",
+      "linkIntro": "Wyślemy na e-mail tego konta link do ustawienia nowego hasła. Link działa godzinę.",
+      "submit": "Wyślij link do zmiany hasła",
+      "submitting": "Wysyłanie…",
+      "sent": "Link wysłany. Otwórz go w e-mailu i ustaw nowe hasło.",
+      "fromOwner": "Nowe hasło nadaje właściciel firmy. Poproś go o hasło tymczasowe, a przy następnym logowaniu ustawisz własne."
+    },
+    "deleteAccount": {
+      "title": "Usunięcie konta",
+      "text": "Konto i dane usuwamy na prośbę. Jak o to poprosić i co się stanie z danymi, opisuje osobna strona.",
+      "link": "Jak usunąć konto i dane"
+    },
+    "signOut": {
+      "title": "Wylogowanie",
+      "text": "Wylogowanie usuwa z tego urządzenia kopię tablicy i wyłącza na nim powiadomienia."
+    }
+  },
+  "help": {
+    "chat": {
+      "open": "Otwórz czat",
+      "unread": "Nowe odpowiedzi: {count}"
+    },
+    "tutorial": {
+      "textOwner": "Cztery pierwsze kroki firmy z postępem: kierownik, budowa, narzędzia i naklejki.",
+      "textMovements": "Ekran po ekranie: jak zapisać wydanie, zwrot i przeniesienie sprzętu.",
+      "open": "Otwórz samouczek"
+    }
   },
   "board": {
     "title": "Gdzie jest co",
@@ -1881,19 +1911,19 @@
       },
       "punchWorker": {
         "title": "Odbij się",
-        "text": "Przy wejściu i przy wyjściu skanujesz telefonem plakat budowy albo bazy. Swoje godziny zobaczysz w menu, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
+        "text": "Przy wejściu i przy wyjściu skanujesz telefonem plakat budowy albo bazy. Swoje godziny zobaczysz w nawigacji, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
       },
       "deadlines": {
         "title": "Terminy",
-        "text": "Przeglądy, kalibracje, badania UDT, gwarancje i zwroty do wypożyczalni, a przy pojazdach przegląd, OC, AC i tachograf. Przypomnienie przychodzi do dzwonka tydzień przed terminem, a o OC, AC i tachografie 30 dni przed. Pełną listę otworzysz tutaj albo w menu, w „Terminy”, a uprawnienia ludzi (BHP, badania, UDT) w „Ludzie”."
+        "text": "Przeglądy, kalibracje, badania UDT, gwarancje i zwroty do wypożyczalni, a przy pojazdach przegląd, OC, AC i tachograf. Przypomnienie przychodzi do dzwonka tydzień przed terminem, a o OC, AC i tachografie 30 dni przed. Pełną listę otworzysz tutaj albo pod „Więcej”, w „Terminy”, a uprawnienia ludzi (BHP, badania, UDT) w „Ludzie”."
       },
       "costs": {
         "title": "Koszty sprzętu",
-        "text": "Każde narzędzie ma stawkę dzienną (w demo 1% wartości, pomiarowe 2%), więc program liczy, ile kosztuje sprzęt na każdej budowie i każdym pojeździe. Zestawienie z plikiem dla księgowej jest w menu, w „Koszty sprzętu”, a stawki w ustawieniach."
+        "text": "Każde narzędzie ma stawkę dzienną (w demo 1% wartości, pomiarowe 2%), więc program liczy, ile kosztuje sprzęt na każdej budowie i każdym pojeździe. Zestawienie z plikiem dla księgowej jest pod „Więcej”, w „Koszty sprzętu”, a stawki w ustawieniach."
       },
       "menu": {
-        "title": "Menu",
-        "text": "Pod trzema kreskami są wszystkie podstrony: narzędzia, terminy, historia, naklejki QR, pojazdy, koszty sprzętu, kartoteka Ludzie z uprawnieniami, czas na budowie, odbicia do wyjaśnienia, raporty i ustawienia firmy (próg dni alarmu, stawki dzienne, kto widzi zgłoszenia, serwisy, abonament). Budowę dodasz na tablicy, a pojazd na tablicy albo na stronie Pojazdy."
+        "title": "Więcej",
+        "text": "Na dole ekranu (na komputerze z boku) są Tablica, Narzędzia, Skanuj i Budowy, a pod „Więcej” reszta w grupach: pojazdy, terminy, historia, koszty sprzętu, naklejki QR, kartoteka Ludzie z uprawnieniami, czas na budowie, raporty, ustawienia firmy (próg dni alarmu, stawki dzienne, kto widzi zgłoszenia, serwisy, abonament) i Pomoc. Język, hasło i wylogowanie są w Moim koncie, po kliknięciu imienia w nagłówku."
       },
       "finish": {
         "title": "Gotowe",
@@ -2331,7 +2361,7 @@
     "next": "Dalej",
     "back": "Wstecz",
     "count": "Krok {step} z {count}",
-    "reopen": "Samouczek otworzysz ponownie znakiem „?” w nagłówku.",
+    "reopen": "Samouczek otworzysz ponownie w Pomocy, pod „Więcej”.",
     "firstSteps": {
       "title": "Pierwsze kroki",
       "intro": "Od tych czterech rzeczy zaczyna każda firma. Kroki odhaczają się same, gdy dana rzecz już jest w firmie.",
@@ -2574,8 +2604,7 @@
     "label": "Język aplikacji",
     "submit": "Zapisz język",
     "submitting": "Zapisywanie…",
-    "invalid": "Wybierz język z listy.",
-    "back": "← Wróć do tablicy"
+    "invalid": "Wybierz język z listy."
   },
   "costSettings": {
     "title": "Kto widzi koszty",

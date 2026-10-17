@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   login: string;
@@ -100,7 +101,7 @@ test("odbicie 5 km od budowy przyciskiem „Odbij się” zapisuje się z oznacz
   await expect(page.getByTestId("punch-done")).toHaveText(/^Wejście zapisane: Rataje/);
   await expect(page.getByTestId("punch-check")).toHaveText("Do wyjaśnienia przez kierownika: poza budową, 5,0 km.");
 
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await fillLogin(page, company.manager);
@@ -111,8 +112,8 @@ test("odbicie 5 km od budowy przyciskiem „Odbij się” zapisuje się z oznacz
   await expect(present).toContainText("Piotr Kowalczyk");
   await expect(present).toContainText("poza budową, 5,0 km");
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  // Lista nie ma pozycji w nawigacji; wejście do niej da skrzynka „Wymaga uwagi” (#177).
+  await page.goto("/odbicia");
   const toClarify = page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
   await expect(toClarify.getByTestId("punch")).toHaveCount(1);
   await toClarify.getByLabel("Notatka (opcjonalnie)").fill("Był na budowie, zły GPS");
@@ -128,8 +129,7 @@ test("kierownik uzupełnia z powodem wyjście odbicia zamkniętego o północy �
   await fillLogin(page, company.manager);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  await page.goto("/odbicia");
   const toClarify = page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
   await expect(toClarify.getByTestId("punch")).toHaveCount(1);
   await expect(toClarify).toContainText("Wyjście: bez wyjścia, zamknięte o północy");
@@ -185,7 +185,7 @@ test("pracownik bez zasięgu odbija wejście i wyjście skanerem programu: telef
   await context.setOffline(false);
   await expect(page.getByTestId("pending-count")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await fillLogin(page, company.manager);
