@@ -231,7 +231,26 @@
   },
   "settingsPage": {
     "title": "Settings",
-    "back": "← Back to board"
+    "backToSettings": "← Back to settings",
+    "pages": {
+      "firma": {
+        "title": "Company and subscription",
+        "hint": "Plan, tool and people limit usage, payment due date."
+      },
+      "sprzet": {
+        "title": "Equipment",
+        "hint": "Daily rates, site alarm, QR stickers, service shops and base on the map."
+      },
+      "dostep": {
+        "title": "People and access",
+        "hint": "Who sees costs, who sees issues and sign out when idle.",
+        "hintDemo": "Who sees costs and who sees issues."
+      },
+      "dokumenty": {
+        "title": "Documents and change log",
+        "hint": "Terms of service, privacy policy, data processing agreement and change log."
+      }
+    }
   },
   "changeLog": {
     "title": "Change log",

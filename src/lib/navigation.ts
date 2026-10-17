@@ -1,5 +1,5 @@
 import { t } from "@/i18n/t";
-import { HELP_HREF, SCAN_HREF, SITES_HREF } from "@/lib/nav-path";
+import { HELP_HREF, SCAN_HREF, SETTINGS_HREF, SITES_HREF } from "@/lib/nav-path";
 import {
   canManageQualifications,
   canManageSettings,
@@ -116,7 +116,7 @@ export function navigation(session: Session): Navigation {
       items: [
         ...link("/raporty", t("nav.reports"), canSeeReports(session)),
         ...link("/naklejki", t("nav.stickers"), canPrintStickers(session)),
-        ...link("/ustawienia", t("nav.settings"), canManageSettings(session)),
+        ...link(SETTINGS_HREF, t("nav.settings"), canManageSettings(session)),
       ],
     },
     help: { label: null, items: link(HELP_HREF, t("nav.help"), help.length > 0) },

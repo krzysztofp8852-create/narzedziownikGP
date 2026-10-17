@@ -36,7 +36,7 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
   spraw „Do zrobienia”; ikona zgłoszeń zniknęła z nagłówka w #177) i imię osoby. Imię prowadzi do **Mojego konta** (`/konto`): język, zmiana hasła (link w e-mailu, ten sam co
   z „Nie pamiętasz hasła?”; pracownik loguje się nazwą, więc dostaje informację, że hasło nadaje właściciel; w demo
   bez hasła, bo konta są wspólne), informacja o usunięciu konta i wylogowanie. Stara strona `/jezyk` przekierowuje do
-  Mojego konta. Język zostaje też w ustawieniach właściciela do podziału ustawień.
+  Mojego konta. Karta języka zniknęła z ustawień właściciela przy ich podziale (#178).
 - Nowa strona **Pomoc** (`/pomoc`, pod „Więcej”) ma czat z obsługą (bez pracownika) i samouczek (bez pracownika
   i demo). Ikona czatu znika z nagłówka; nowe odpowiedzi widać kropką na „Więcej” i licznikiem przy Pomocy. Odnośnik
   do Pomocy niesie bieżący ekran (`?ekran=`), który czat dostaje jako kontekst wiadomości, jak dawniej z nagłówka.
@@ -50,6 +50,12 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
   oraz zamykaniem, pod nimi zakończone (dawne `/budowy/zakonczone`), a jako drugi widok mapa budów
   (`?widok=mapa`). Kierownik ma pod „Moje budowy” tę samą stronę, zawężoną do budów, którymi kieruje. Dawna kotwica
   tablicy `/#budowy` przekierowuje na stronę Budowy. Do nowej tablicy (#180) tablica pokazuje jeszcze stare sekcje.
+- Ustawienia (pod „Więcej”, tylko właściciel) to lista czterech podstron (#178): Firma i abonament
+  (`/ustawienia/firma`), Sprzęt (`/ustawienia/sprzet`: stawki dzienne, alarm na budowie, naklejki QR, serwisy, baza
+  na mapie), Ludzie i dostęp (`/ustawienia/dostep`: kto widzi koszty i zgłoszenia, wylogowanie po bezczynności)
+  oraz Dokumenty i dziennik zmian (`/ustawienia/dokumenty`, a sam dziennik dalej pod `/ustawienia/dziennik`). Dawne
+  kotwice kart jednej strony (np. `/ustawienia#legal`, `#stawki`) przekierowują do karty na jej podstronie, a
+  `#language` do Mojego konta.
 - W trybie tylko do odczytu nawigacja nie proponuje operacji: znikają Skanuj i Zgłoś, moduły zostają.
 - Odbicia do wyjaśnienia nie mają pozycji w nawigacji; ich lista zostaje jako widok szczegółowy otwierany ze
   skrzynki „Wymaga uwagi” (#177).

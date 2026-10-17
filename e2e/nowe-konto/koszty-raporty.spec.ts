@@ -66,7 +66,7 @@ test("stawki z ustawień: 0% dla kategorii, zły procent odrzucony; zestawienie 
   await openFromNav(page, "Koszty sprzętu");
   await expect(page.getByRole("heading", { name: "Ustaw stawkę dzienną" })).toBeVisible();
   await page.getByRole("link", { name: "Ustaw stawkę dzienną w ustawieniach" }).click();
-  await expect(page).toHaveURL(/\/ustawienia#stawki$/);
+  await expect(page).toHaveURL(/\/ustawienia\/sprzet#stawki$/);
 
   const rates = page.getByRole("region", { name: "Stawki dzienne" });
   await expect(rates.getByLabel("Stawka firmy (% wartości na dzień)")).toHaveValue("1");

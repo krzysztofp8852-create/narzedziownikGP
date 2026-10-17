@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import type { MapPosition } from "@/registry/registry";
 import { revalidateSites } from "./revalidate-sites";
 
@@ -42,7 +43,7 @@ export async function addService(_prev: LocationFormState, formData: FormData): 
   try {
     const name = formText(formData, "name");
     const { locationId } = await getRegistry().as(session.userId).addService({ name });
-    revalidatePath("/ustawienia");
+    revalidatePath(settingsHref("sprzet"));
     return { added: { id: locationId, name: name.trim() } };
   } catch (error) {
     return { error: errorMessage(error) };
@@ -160,7 +161,7 @@ export async function setBaseAddress(_prev: AddressFormState, formData: FormData
   try {
     await getRegistry().as(session.userId).setBaseAddress(formText(formData, "address"));
     revalidateSites();
-    revalidatePath("/ustawienia");
+    revalidatePath(settingsHref("sprzet"));
     return { changed: true };
   } catch (error) {
     return { error: errorMessage(error) };

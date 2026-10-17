@@ -7,6 +7,7 @@ import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { costPeriodSearch, parseSummaryPeriod } from "@/lib/cost-period";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import { canManageRates, canSeeCosts, type CostedKind, type CostSummary } from "@/registry/registry";
 import { CostPeriodPicker } from "../lokalizacje/cost-period-picker";
 import { locationPagePath } from "../lokalizacje/location-page";
@@ -41,7 +42,7 @@ export default async function CostSummaryPage(props: PageProps<"/koszty">) {
             </h2>
             <p>{t("costs.startHint")}</p>
             <p>
-              <Link className="button" href="/ustawienia#stawki">
+              <Link className="button" href={settingsHref("sprzet", "stawki")}>
                 {t("costSummary.startSettings")}
               </Link>
             </p>

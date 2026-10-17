@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import { canPrintStickers } from "@/registry/registry";
 import { StickerSheetForm } from "./sticker-forms";
 
@@ -18,7 +19,7 @@ export default async function StickersPage() {
   return (
     <>
       <p>
-        <Link href="/ustawienia" className="muted">
+        <Link href={settingsHref("sprzet")} className="muted">
           {t("stickers.back")}
         </Link>
       </p>

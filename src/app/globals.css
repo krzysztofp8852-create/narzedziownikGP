@@ -1809,6 +1809,18 @@ a.tool-row:hover .tool-row-name {
   border-color: var(--danger);
 }
 
+/* Karta podstrony na stronie ustawień: klikalna cała, a nie tylko tytuł. */
+.settings-page {
+  position: relative;
+}
+
+.settings-page a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+
 .company-team .member-list {
   column-gap: 32px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));

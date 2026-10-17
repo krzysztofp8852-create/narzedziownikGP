@@ -13,6 +13,7 @@ import { requireSession } from "@/lib/auth";
 import { type CostPeriodChoice, costPeriodSearch, parseCostPeriod } from "@/lib/cost-period";
 import { historySearch } from "@/lib/history-filters";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type Site, type ToolCost, type Vehicle } from "@/registry/registry";
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
 import { CostPeriodPicker } from "./cost-period-picker";
@@ -198,7 +199,7 @@ export async function CostsPage({ id, kind, searchParams }: { id: string; kind: 
           <p>{t("costs.startHint")}</p>
           <DailyRatesForm rates={await registry.dailyRates()} categories={[]} />
           <p>
-            <Link href="/ustawienia#stawki">{t("costs.startSettings")}</Link>
+            <Link href={settingsHref("sprzet", "stawki")}>{t("costs.startSettings")}</Link>
           </p>
         </section>
       ) : (

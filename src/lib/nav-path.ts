@@ -2,6 +2,8 @@
 export const SCAN_HREF = "/?skanuj=1";
 export const ACCOUNT_HREF = "/konto";
 export const HELP_HREF = "/pomoc";
+/** Ustawienia właściciela: lista czterech podstron (`settings-pages`). */
+export const SETTINGS_HREF = "/ustawienia";
 /** Strona Budowy (u kierownika „Moje budowy”). Dawna kotwica tablicy `/#budowy` przekierowuje tutaj. */
 export const SITES_HREF = "/budowy";
 
