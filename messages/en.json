@@ -53,10 +53,8 @@
     "logout": "Sign out",
     "search": "Find a tool",
     "searchShort": "Search",
-    "bell": "Notifications",
-    "bellUnread": "Notifications, unread: {count}",
-    "issues": "Issues",
-    "issuesUnread": "Issues, unread: {count}",
+    "bell": "Needs attention",
+    "bellToDo": "Needs attention, to do: {count}",
     "loading": "Loading page…"
   },
   "nav": {
@@ -1251,9 +1249,7 @@
     "history": "Site history →"
   },
   "bell": {
-    "title": "Notifications",
     "back": "← Back to board",
-    "empty": "You don't have any notifications yet. They'll show up here, e.g. when equipment is taken from your site or vehicle, or a tool has been sitting too long.",
     "unread": "New",
     "open": "Show",
     "markRead": "Mark as read",
@@ -1292,6 +1288,24 @@
     "forgottenExitBody": "Entry {when}. Without a clock-out, the record closes at midnight and won't count towards time on site.",
     "forgottenExits": "Missing clock-outs: {count}",
     "forgottenExitItem": "{person} ({place})"
+  },
+  "inbox": {
+    "title": "Needs attention",
+    "back": "← Back to “Needs attention”",
+    "lists": "Lists",
+    "toDo": "To do",
+    "toDoCount": "To do ({count})",
+    "info": "Information",
+    "toDoEmpty": "Nothing is waiting for you. When something needs your action, it will show up here.",
+    "infoEmpty": "No information yet. Reports and confirmations will show up here, e.g. about equipment taken from your site.",
+    "punch": "Clock-in to clarify: {person}, {place}",
+    "punchBody": "{time}. Clock-in: {check}.",
+    "punchExit": "Clock-out: {check}.",
+    "punchConflict": "Unsaved offline clock-in: {person}, {place}",
+    "punchConflictBody": "Scan on the phone {when}: {reason}.",
+    "alarm": "Equipment has been sitting too long {place}",
+    "alarmBody": "Tools over the {days}-day limit: {count}. Return them to the Base or transfer them if they're no longer needed.",
+    "allIssues": "All issues, including closed ones →"
   },
   "push": {
     "title": "Phone notifications",
@@ -1351,8 +1365,7 @@
     "intro": "Movements saved on the phone without signal that the server didn't accept because things changed in the meantime. None of them went into the history. Check where the equipment is, record the movement again if needed, and mark it as clarified.",
     "empty": "No movements to clarify.",
     "when": "Saved on the phone {recorded}, rejected {rejected}",
-    "resolve": "Clarified",
-    "back": "← Back to board"
+    "resolve": "Clarified"
   },
   "reports": {
     "weeklyTitle": "Weekly report",
@@ -1444,7 +1457,6 @@
   },
   "issues": {
     "title": "Issues",
-    "back": "← Back to board",
     "backToList": "← Back to issues",
     "intro": "Damage, missing items and other matters for the owner. New issues, comments and closings show up here.",
     "new": "New issue",
@@ -1699,17 +1711,13 @@
         "title": "Lost",
         "text": "A tool that didn't come back is marked as lost. Its card remembers where it was last and who was responsible for it."
       },
-      "issues": {
-        "title": "Issues",
-        "text": "Damage, missing items and other matters from the crew land here, each with a comment thread. The number on the icon shows new entries."
-      },
       "issuesWorker": {
         "title": "Report an issue",
-        "text": "A worker doesn't move equipment but reports damage or missing items, also with a photo. Open the Issues page and click “New issue”."
+        "text": "A worker doesn't move equipment but reports damage or missing items, also with a photo. Tap “Report” and describe the problem."
       },
       "bell": {
-        "title": "Notifications",
-        "text": "Notifications: someone took equipment from your site, a movement saved without signal needs clarifying, or a report has arrived."
+        "title": "Needs attention",
+        "text": "The bell holds two lists. “To do”: issues, alarms, deadlines and clock-ins waiting for your action; the number on the bell counts exactly these. “Information”: reports and confirmations."
       },
       "punch": {
         "title": "Clock in",

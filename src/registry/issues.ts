@@ -207,6 +207,22 @@ export async function listIssues(sql: Sql, session: Session): Promise<IssueSumma
   return rows.map(toSummary);
 }
 
+/**
+ * Zgłoszenia, które czekają na aktora w skrzynce „Wymaga uwagi”: otwarte, jeśli aktor może je zamknąć (właściciel,
+ * magazynier za zgodą), i każde z nieprzeczytanym wpisem (nowe zgłoszenie u kierownika, odpowiedź u autora). Zamknięte
+ * i przeczytane znika. Od najnowszego.
+ */
+export async function issuesToHandle(sql: Sql, session: Session): Promise<IssueSummary[]> {
+  const rows = await sql<IssueRow>(
+    `${issueSelect(
+      `((i.status = 'otwarte' and app.closes_issues())
+        or exists (select 1 from app.issue_entries e where e.issue_id = i.id and e.recipient_id = $1 and e.read_at is null))`,
+    )} order by i.created_at desc, i.sequence_number desc`,
+    [session.userId],
+  );
+  return rows.map(toSummary);
+}
+
 /** Zgłoszenie z wątkiem albo null, gdy aktor go nie widzi. */
 export async function issueDetails(sql: Sql, session: Session, issueId: string): Promise<Issue | null> {
   if (!UUID_PATTERN.test(issueId)) return null;

@@ -25,8 +25,8 @@ const STEPS = {
   recentWorker: "recent",
   map: "map",
   lost: "lost",
-  issues: "issues",
-  issuesWorker: "issues",
+  // Zgłoszenia otwiera się ze skrzynki pod dzwonkiem, a pracownik zgłasza z pozycji „Zgłoś” w nawigacji.
+  issuesWorker: "report",
   bell: "bell",
   deadlines: "deadlines",
   // Koszty mają tylko stronę pod „Więcej”, więc dymek wskazuje ten przycisk nawigacji.
@@ -53,7 +53,6 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "punch",
     "map",
     "lost",
-    "issues",
     "bell",
     "deadlines",
     "costs",
@@ -71,10 +70,9 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "recent",
     "bell",
     "deadlines",
-    "issues",
     "finish",
   ],
-  magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "punchWorker", "issues", "finish"],
+  magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "punchWorker", "bell", "finish"],
   // Pracownik nie rejestruje ruchów, więc nie ma czego cofać.
   pracownik: ["welcome", "roles", "punchWorker", "alarmTool", "search", "issuesWorker", "recentWorker", "finish"],
 };

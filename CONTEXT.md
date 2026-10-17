@@ -304,8 +304,12 @@ Wniosek kierownika o dopisanie do ewidencji sprzętu kupionego na budowę; końc
 _Avoid_: zgłoszenie (bez dopełnienia)
 
 **Dzwonek**:
-Skrzynka powiadomień użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm, przypomnienia o terminach, raporty, odrzucone ruchy, płatność). Zgłoszenia i czat mają własne okna.
-_Avoid_: powiadomienia (jako nazwa miejsca), inbox
+Wpisy użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm, przypomnienia o terminach, raporty, odrzucone ruchy, płatność), z kopią push. Ikona w nagłówku otwiera **skrzynkę „Wymaga uwagi”**.
+_Avoid_: powiadomienia (jako nazwa miejsca)
+
+**Skrzynka „Wymaga uwagi”**:
+Jedno miejsce pod dzwonkiem z dwiema zakładkami. **Do zrobienia**: sprawy, które czekają na reakcję osoby (zgłoszenia narzędzi do akceptacji, usterki i braki, odrzucone ruchy offline, odbicia do wyjaśnienia i nieodbite wyjścia, alarmy, terminy, uprawnienia); wynikają ze stanu firmy, więc znikają same, gdy ktoś je załatwi, i tylko je liczy licznik przy dzwonku. **Informacje**: raporty i potwierdzenia z dzwonka. Każdy rodzaj wpisu dzwonka ma stałe miejsce w jednej z zakładek. Zgłoszenia i obie listy do wyjaśnienia to widoki szczegółowe otwierane ze skrzynki. W kodzie `inbox`.
+_Avoid_: powiadomienia, okno zgłoszeń
 
 **Czat z supportem**:
 Rozmowa użytkownika firmy z GP Engineering, jeden wątek na użytkownika. Działa także w trybie tylko do odczytu; w firmie demo jest wyłączona.

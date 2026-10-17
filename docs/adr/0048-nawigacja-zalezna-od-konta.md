@@ -32,8 +32,8 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
 - Aplikacja na Androida nie dostaje `viewport-fit=cover`: Capacitor 8 (SystemBars) odsuwa wtedy całą stronę od pasków
   systemowych, więc dolny pasek na nie nie zachodzi, a przycisk wstecz dalej cofa historię WebView. Arkusz „Więcej”
   zamyka się przy każdej zmianie strony, także po cofnięciu.
-- Nagłówek to nazwa firmy, wskaźnik synchronizacji offline, szukaj, zgłoszenia (do skrzynki „Wymaga uwagi”, #177),
-  dzwonek i imię osoby. Imię prowadzi do **Mojego konta** (`/konto`): język, zmiana hasła (link w e-mailu, ten sam co
+- Nagłówek to nazwa firmy, wskaźnik synchronizacji offline, szukaj, dzwonek (skrzynka „Wymaga uwagi” z licznikiem
+  spraw „Do zrobienia”; ikona zgłoszeń zniknęła z nagłówka w #177) i imię osoby. Imię prowadzi do **Mojego konta** (`/konto`): język, zmiana hasła (link w e-mailu, ten sam co
   z „Nie pamiętasz hasła?”; pracownik loguje się nazwą, więc dostaje informację, że hasło nadaje właściciel; w demo
   bez hasła, bo konta są wspólne), informacja o usunięciu konta i wylogowanie. Stara strona `/jezyk` przekierowuje do
   Mojego konta. Język zostaje też w ustawieniach właściciela do podziału ustawień.

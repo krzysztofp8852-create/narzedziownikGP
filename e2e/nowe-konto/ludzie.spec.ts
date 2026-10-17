@@ -475,22 +475,19 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   expect(remindQualifications(companyId)).toEqual({ qualifications: 4 });
   expect(remindQualifications(companyId)).toEqual({ qualifications: 0 });
 
-  // Właściciel dostaje jedno zbiorcze przypomnienie, które prowadzi do kartoteki.
+  // Właściciel ma w „Do zrobienia” każde uprawnienie z przypomnieniem, od najwcześniejszego; każde prowadzi do osoby.
   await page.goto("/");
-  await expect(page.getByTestId("bell-count")).toHaveText("1");
-  await page.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const ownerBell = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(ownerBell).toHaveCount(1);
-  await expect(ownerBell.first()).toContainText("Uprawnienia ludzi: 4");
-  await expect(ownerBell.first()).toContainText(`Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`);
-  await expect(ownerBell.first()).toContainText(`Tomasz Pracowity: Szkolenie BHP okresowe, ważne do ${shown(safetyDue)}`);
-  await expect(ownerBell.first()).toContainText(`Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`);
-  await expect(ownerBell.first()).toContainText(`Marek Brygadzista: Prawo jazdy kat. C+E, ważne do ${shown(licenceDue)}`);
-  await expect(ownerBell.first()).not.toContainText("Ewa Sezonowa");
-  await expect(ownerBell.first()).not.toContainText("Kurs pierwszej pomocy");
-  await ownerBell.first().getByRole("button", { name: "Pokaż" }).click();
-  await expect(page).toHaveURL(/\/ludzie$/);
-  await expect(page.getByTestId("bell-count")).toHaveCount(0);
+  await expect(page.getByTestId("bell-count")).toHaveText("4");
+  await page.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 4" }).click();
+  const ownerToDo = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem");
+  await expect(ownerToDo.locator(".movement-head")).toHaveText([
+    `Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`,
+    `Tomasz Pracowity: Szkolenie BHP okresowe, ważne do ${shown(safetyDue)}`,
+    `Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`,
+    `Marek Brygadzista: Prawo jazdy kat. C+E, ważne do ${shown(licenceDue)}`,
+  ]);
+  await ownerToDo.first().getByRole("link", { name: "Pokaż" }).click();
+  await expect(page).toHaveURL(new RegExp(`/ludzie/${ids.tomasz}$`));
 
   // Raport tygodniowy na teraz ma sekcję uprawnień z odnośnikami do osób.
   await openFromNav(page, "Raporty");
@@ -514,18 +511,19 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   await expect(qualificationItem(page, "Szkolenie BHP okresowe").locator(".deadline-head .tag")).toHaveText("ważne");
   await page.goto("/ludzie");
   await expect(page.getByTestId("upcoming-qualifications").getByRole("link")).toHaveCount(3);
+  // Odnowione znika z „Do zrobienia”.
+  await expect(page.getByTestId("bell-count")).toHaveText("3");
 
-  // Kierownik: przypomnienie tylko o własnym uprawnieniu, a o innych nic.
+  // Kierownik: tylko własne uprawnienie, a o innych nic.
   const manager = await newPhone(browser, testInfo);
   await firstSignIn(manager, managerEmail, managerPassword, companyName);
   await expect(manager.getByTestId("bell-count")).toHaveText("1");
-  await manager.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const managerBell = manager.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(managerBell).toHaveCount(1);
-  await expect(managerBell.first()).toContainText(`Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`);
-  await expect(managerBell.first()).toContainText("Umów badania albo szkolenie na czas.");
-  await expect(managerBell.first()).not.toContainText("Tomasz Pracowity");
-  await managerBell.first().getByRole("button", { name: "Pokaż" }).click();
+  await manager.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
+  const managerToDo = manager.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem");
+  await expect(managerToDo).toHaveCount(1);
+  await expect(managerToDo.first()).toContainText(`Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`);
+  await expect(managerToDo.first()).toContainText("Umów badania albo szkolenie na czas.");
+  await managerToDo.first().getByRole("link", { name: "Pokaż" }).click();
   await expect(manager).toHaveURL(new RegExp(`/ludzie/${ids.anna}$`));
 
   // Kierownik widzi stan wszystkich, z liczbą uprawnień po terminie i wkrótce.
@@ -563,17 +561,15 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   await addQualification(manager, { kind: "Operator koparki", dueOn: addDays(today, 100), note: "Kurs w ośrodku Koparka" }, "Operator koparki");
   await expect(qualificationItem(manager, "Operator koparki")).toContainText("Kurs w ośrodku Koparka");
 
-  // Pracownik: przypomnienie o własnych dwóch uprawnieniach, bez cudzych.
+  // Pracownik: tylko własne uprawnienia, bez cudzych.
   const worker = await newPhone(browser, testInfo);
   await firstSignIn(worker, workerLogin, workerPassword, companyName);
+  // Szkolenie BHP właściciel już odnowił, więc czekają tylko badania.
   await expect(worker.getByTestId("bell-count")).toHaveText("1");
-  await worker.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const workerBell = worker.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(workerBell).toHaveCount(1);
-  await expect(workerBell.first()).toContainText("Uprawnienia ludzi: 2");
-  await expect(workerBell.first()).toContainText(`Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`);
-  await expect(workerBell.first()).not.toContainText("Marek Brygadzista");
-  await expect(workerBell.first()).not.toContainText("Anna Nowak");
+  await worker.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
+  await expect(worker.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").locator(".movement-head")).toHaveText([
+    `Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`,
+  ]);
 
   // „Moje uprawnienia”: tylko podgląd, bez formularzy; zaświadczenie BHP tak, orzeczenie nie.
   await openFromNav(worker, "Moje uprawnienia");

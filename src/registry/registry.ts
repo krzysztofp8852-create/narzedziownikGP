@@ -2,6 +2,8 @@ import * as bell from "./bell";
 import * as callbackRequests from "./callback-requests";
 import type { CallbackRequestInput, CallbackRequestList } from "./callback-requests";
 import type { Bell, BellEntry } from "./bell";
+import * as inbox from "./inbox";
+import type { Inbox } from "./inbox";
 import * as board from "./board";
 import * as catalog from "./catalog";
 import type { CatalogTool } from "./catalog";
@@ -305,6 +307,9 @@ export { canSeeTimeOnSiteSummary } from "./time-on-site";
 export { normalizePosterCode } from "./poster-code";
 export { canSeeReports, isReportKind, reportKindsOf } from "./reports";
 export type { Bell, BellEntry } from "./bell";
+export type { Inbox, InboxList, ToDoItem, ToDoKind } from "./inbox";
+export { inboxList } from "./inbox";
+export type { LocationAlarm } from "./thresholds";
 export type {
   CloseIssueInput,
   CommentOnIssueInput,
@@ -1000,6 +1005,14 @@ export interface Registry {
     historyFilterOptions(): Promise<HistoryFilterOptions>;
     /** Stan „Gdzie jest co” i historia z filtrami do eksportu, w jednej transakcji. */
     exportData(filters?: HistoryFilters): Promise<ExportData>;
+    /**
+     * Skrzynka „Wymaga uwagi” aktora: „Do zrobienia” (zgłoszenia narzędzi, usterki i braki, odrzucone ruchy z kolejki,
+     * odbicia do wyjaśnienia i nieodbite wyjścia, alarmy, terminy, uprawnienia) z licznikiem i „Informacje” (raporty
+     * i potwierdzenia z dzwonka). Sprawa znika z „Do zrobienia”, gdy ktoś ją załatwi.
+     */
+    inbox(): Promise<Inbox>;
+    /** Licznik przy dzwonku: ile spraw aktor ma w „Do zrobienia” (jak `inbox().toDoCount`, bez „Informacji”). */
+    toDoCount(): Promise<number>;
     /** Dzwonek: nieprzeczytane i ostatnie powiadomienia aktora, od najnowszego. */
     bell(options?: { limit?: number }): Promise<Bell>;
     /** Liczba nieprzeczytanych powiadomień aktora (licznik przy dzwonku). */
@@ -1968,6 +1981,8 @@ export function createRegistry(deps: RegistryDeps): Registry {
               movements: (await history.movementHistory(sql, filters, {})).movements,
             };
           }),
+        inbox: () => asMember((sql, session) => inbox.inbox(sql, session, deps.clock.now())),
+        toDoCount: () => asMember((sql, session) => inbox.toDoCount(sql, session, deps.clock.now())),
         bell: ({ limit = 50 } = {}) => asMember((sql, session) => bell.bell(sql, session, limit)),
         unreadNotificationCount: () => asMember((sql, session) => bell.unreadCount(sql, session)),
         markNotificationRead: (notificationId) => asPersonal((sql, session) => bell.markRead(sql, session, notificationId, deps.clock.now())),

@@ -3,6 +3,7 @@ import { type DeadlineKind, scheduledDeadlines } from "./deadlines";
 import type { DeadlinesNotification, Notification, NotifiedDeadline, Recipient } from "./notifications";
 import type { Sql } from "./ports";
 import type { PushCopy } from "./push";
+import type { Session } from "./registry";
 import { owners } from "./reports";
 import { type ReminderLead, reminderPhase, reminderWindow } from "./reminder-lead";
 import { warsawTime } from "./validation";
@@ -25,6 +26,25 @@ const DEADLINE_LEADS: Record<DeadlineKind, ReminderLead> = {
   tachograf: { daysBefore: 30, afterDue: true },
   wlasny: { daysBefore: 7, afterDue: true },
 };
+
+/**
+ * Terminy w skrzynce „Wymaga uwagi”: te, którym należy się dziś przypomnienie (to samo okno co w zadaniu dziennym),
+ * póki nikt ich nie wykona. Właściciel wszystkie, kierownik sprzętu na swojej budowie albo pojeździe i swojego pojazdu,
+ * a do tego magazynier terminy narzędzi, choć przypomnień nie dostaje: sam je wykonuje. Pracownik żadnych. Od
+ * najwcześniejszego.
+ */
+export async function deadlinesToHandle(sql: Sql, session: Session, now: Date): Promise<NotifiedDeadline[]> {
+  if (session.role === "pracownik") return [];
+  const today = warsawTime(now).day;
+  return (await scheduledDeadlines(sql, { today, withinDays: reminderWindow(DEADLINE_LEADS) })).flatMap(({ manager, ...deadline }) => {
+    const phase = reminderPhase(DEADLINE_LEADS[deadline.kind], deadline.dueOn, today);
+    const mine =
+      session.role === "wlasciciel" ||
+      (session.role === "kierownik" && manager?.userId === session.userId) ||
+      (session.role === "magazynier" && deadline.tool !== null);
+    return phase && mine ? [{ ...deadline, overdue: phase === "po" }] : [];
+  });
+}
 
 /** Firmy z terminami, dla których zadanie dzienne sprawdza przypomnienia. */
 export async function companiesWithDeadlines(sql: Sql): Promise<string[]> {

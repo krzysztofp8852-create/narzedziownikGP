@@ -18,8 +18,8 @@ export default async function ToClarifyPage() {
   return (
     <>
       <p>
-        <Link href="/" className="muted">
-          {t("toClarify.back")}
+        <Link href="/dzwonek" className="muted">
+          {t("inbox.back")}
         </Link>
       </p>
       <h1 className="display page-title">{t("toClarify.title")}</h1>

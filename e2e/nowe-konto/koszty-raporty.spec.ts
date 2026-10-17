@@ -188,7 +188,7 @@ test("raporty: na teraz i z harmonogramu; właściciel oba, kierownik tylko pią
   await expect(rataje.getByRole("link")).toHaveText([/H-01/, /M-01/]);
   await page.goto("/raporty/piatkowy/2020-01-03");
   await expect(page.getByText("Nie ma tu takiego raportu.", { exact: false })).toBeVisible();
-  await page.goto("/dzwonek");
+  await page.goto("/dzwonek?lista=informacje");
   await expect(page.getByText("Przed weekendem poza bazą: 2 szt.")).toBeVisible();
 
   // Kierownik: tylko piątkowy, ze swoją budową.
