@@ -221,8 +221,9 @@ describe("firma demo", () => {
     const [owner, manager] = await bed.registry.system().demoAccounts();
     const registry = bed.registry.as(owner.userId);
 
-    for (const attempt of [registry.deactivateMember(manager.userId), registry.resetMemberPassword(manager.userId)]) {
-      const error = await attempt.catch((caught: unknown) => caught);
+    // Po kolei: obie obietnice naraz dałyby nieobsłużone odrzucenie drugiej, zanim test na nią poczeka.
+    for (const attempt of [() => registry.deactivateMember(manager.userId), () => registry.resetMemberPassword(manager.userId)]) {
+      const error = await attempt().catch((caught: unknown) => caught);
       expect(isRegistryError(error) && error.code).toBe("demo_locked");
     }
   });
