@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { changeActor, changeText } from "@/lib/change-log-text";
@@ -5,7 +6,7 @@ import { CHANGE_LOG_LIMIT, type ChangeLogEntry } from "@/registry/registry";
 
 /** Dziennik zmian kont i ustawień firmy, od najnowszego wpisu; wspólny dla właściciela i super-admina. */
 export function ChangeLogList({ entries }: { entries: ChangeLogEntry[] }) {
-  if (entries.length === 0) return <p className="empty">{t("changeLog.empty")}</p>;
+  if (entries.length === 0) return <EmptyState>{t("changeLog.empty")}</EmptyState>;
   return (
     <>
       <ol className="movements" data-testid="change-log">

@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/empty-state";
 import { ToolList } from "@/components/tool-list";
 import { t } from "@/i18n/t";
 import { getRegistry } from "@/lib/registry-instance";
@@ -6,9 +7,8 @@ import { canPunchOthers, type Session } from "@/registry/registry";
 import { BoardSnapshot } from "./board-snapshot";
 import { NeedsAttention } from "./needs-attention";
 import { PunchStatus } from "./punch-status";
-import { ScanLink } from "./scan-link";
 import { ScanPanel } from "./scan-panel";
-import { ForgetScanParam } from "./scan-param";
+import { ForgetBoardParam } from "./board-param";
 
 /** Sprzęt dzisiejszej budowy, tylko do podglądu; bez odbicia podpowiedź, jak się odbić. */
 function TodaysEquipment({ equipment, readOnly }: { equipment: EquipmentWherePunched | null; readOnly: boolean }) {
@@ -20,10 +20,7 @@ function TodaysEquipment({ equipment, readOnly }: { equipment: EquipmentWherePun
         <h2 id="todays-equipment" className="display section-title">
           {t("workerBoard.equipmentTitle")}
         </h2>
-        <p className="empty">{t("workerBoard.punchHint")}</p>
-        <p>
-          <ScanLink className="button">{t("nav.scan")}</ScanLink>
-        </p>
+        <EmptyState step={{ kind: "scan", label: t("nav.scan") }}>{t("workerBoard.punchHint")}</EmptyState>
       </section>
     );
   }
@@ -34,7 +31,11 @@ function TodaysEquipment({ equipment, readOnly }: { equipment: EquipmentWherePun
       <h2 id="todays-equipment" className="display section-title">
         {t(atBase ? "workerBoard.equipmentBase" : "workerBoard.equipmentSite", { place: place.name })}
       </h2>
-      {tools.length === 0 ? <p className="empty">{t(atBase ? "board.baseEmpty" : "board.siteEmpty")}</p> : <ToolList tools={tools} wide atBase={atBase} />}
+      {tools.length === 0 ? (
+        <EmptyState>{t(atBase ? "board.baseEmpty" : "board.siteEmpty")}</EmptyState>
+      ) : (
+        <ToolList tools={tools} wide atBase={atBase} />
+      )}
     </section>
   );
 }
@@ -57,7 +58,7 @@ export async function WorkerBoard({ session, scan }: { session: Session; scan: b
   return (
     <>
       {!readOnly && <PunchStatus open={openPunch} now={new Date(fetchedAt)} />}
-      {scan && <ForgetScanParam />}
+      {scan && <ForgetBoardParam />}
       {!readOnly && (
         <ScanPanel
           userId={session.userId}

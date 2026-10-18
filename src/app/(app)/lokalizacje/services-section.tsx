@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import type { Service } from "@/registry/registry";
 import { AddServiceForm } from "./location-forms";
@@ -17,7 +18,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
         <AddServiceForm />
       </details>
       {services.length === 0 ? (
-        <p className="empty">{t("locations.noServicesYet")}</p>
+        <EmptyState>{t("locations.noServicesYet")}</EmptyState>
       ) : (
         <ul className="member-list">
           {services.map((service) => (

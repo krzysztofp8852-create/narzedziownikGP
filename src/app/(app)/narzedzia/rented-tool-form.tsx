@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
+import type { EmptyStep } from "@/lib/empty-step";
 import { submitKeepingValues } from "@/lib/forms";
 import { newOperationId } from "@/lib/operation-id";
 import { type Category, MAX_RENTAL_COMPANY_LENGTH } from "@/registry/registry";
@@ -17,6 +19,8 @@ export interface RentedToolFormProps {
   /** Pole wartości: tylko właściciel. */
   showValue: boolean;
   operationId: string;
+  /** Bez kategorii: „Dodaj narzędzie” (formularz z nową kategorią) albo kto może je dodać. */
+  noCategories: EmptyStep | null;
 }
 
 /** Przyjęcie sprzętu z wypożyczalni tam, gdzie stoi; po zapisie pusty formularz pod następny. */
@@ -25,8 +29,8 @@ export function RentedToolForm(props: RentedToolFormProps) {
   const [added, setAdded] = useState<RentedToolFormState["added"]>();
   const { base, sites, vehicles } = props.places;
 
-  if (!base && sites.length === 0 && vehicles.length === 0) return <p className="empty">{t("rentals.noPlaces")}</p>;
-  if (props.categories.length === 0) return <p className="empty">{t("rentals.noCategories")}</p>;
+  if (!base && sites.length === 0 && vehicles.length === 0) return <EmptyState>{t("rentals.noPlaces")}</EmptyState>;
+  if (props.categories.length === 0) return <EmptyState step={props.noCategories}>{t("rentals.noCategories")}</EmptyState>;
 
   return (
     <div className="stack-form">

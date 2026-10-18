@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -37,7 +38,7 @@ export default async function PunchesToClarifyPage() {
       <h1 className="display page-title">{t("punches.toClarifyTitle")}</h1>
       <p className="muted">{t(session.role === "wlasciciel" ? "punches.toClarifyIntroOwner" : "punches.toClarifyIntroManager")}</p>
       {punches.length === 0 ? (
-        conflicts.length === 0 && <p className="empty">{t("punches.toClarifyEmpty")}</p>
+        conflicts.length === 0 && <EmptyState>{t("punches.toClarifyEmpty")}</EmptyState>
       ) : (
         <ol className="movements" aria-label={t("punches.toClarifyTitle")}>
           {punches.map((punch) => (

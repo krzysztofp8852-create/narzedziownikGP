@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { FoundToolList } from "@/components/found-tools";
 import { t } from "@/i18n/t";
 import { matchesTool, type SearchTool } from "@/lib/tool-search";
@@ -92,7 +93,7 @@ export function ToolFinder({ tools, voice, initialQuery }: { tools: SearchTool[]
           </p>
         )}
         {!heard && typed && shown.length === 0 ? (
-          <p className="empty">{t("search.noMatches", { query: typed })}</p>
+          <EmptyState>{t("search.noMatches", { query: typed })}</EmptyState>
         ) : (
           shown.length > 0 && <FoundToolList tools={shown} />
         )}

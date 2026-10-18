@@ -2,8 +2,20 @@ import { locationPagePath } from "@/lib/location-path";
 import { ALARM, ALL, OFF_BASE, ON_SITES, type ToolListFilters, toolListSearch } from "@/lib/tool-list-filters";
 import type { PlaceOnBoard, Role, Tutorial, WhereIsWhat } from "@/registry/registry";
 
+const BOARD_OPERATIONS = ["wydanie", "zwrot", "przeniesienie", "do_serwisu", "z_serwisu", "tekst", "narzedzie", "zgloszenie", "wynajem"] as const;
+
 /** Operacja panelu tablicy: ruch z checklisty, głos lub wpis tekstem, nowe, zgłoszone albo wynajęte narzędzie. */
-export type BoardOperation = "wydanie" | "zwrot" | "przeniesienie" | "do_serwisu" | "z_serwisu" | "tekst" | "narzedzie" | "zgloszenie" | "wynajem";
+export type BoardOperation = (typeof BOARD_OPERATIONS)[number];
+
+/** Tablica z otwartą operacją, np. „Dodaj narzędzie” z pustego ekranu. */
+export function boardOperationHref(operation: BoardOperation): string {
+  return `/?operacja=${operation}`;
+}
+
+/** Operacja z adresu tablicy (`?operacja=`); nieznana niczego nie otwiera. */
+export function parseBoardOperation(value: string | string[] | undefined): BoardOperation | null {
+  return BOARD_OPERATIONS.find((operation) => operation === value) ?? null;
+}
 
 /** Częste operacje na wierzchu panelu, w tej kolejności. */
 const TOP: BoardOperation[] = ["wydanie", "zwrot", "tekst"];

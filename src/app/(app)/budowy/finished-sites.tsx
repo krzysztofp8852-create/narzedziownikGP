@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
@@ -14,7 +15,7 @@ export function FinishedSites({ sites }: { sites: FinishedSite[] }) {
         {t("siteClosing.finishedTitle")}
       </h2>
       {sites.length === 0 ? (
-        <p className="empty">{t("siteClosing.finishedEmpty")}</p>
+        <EmptyState>{t("siteClosing.finishedEmpty")}</EmptyState>
       ) : (
         <div className="site-grid">
           {sites.map((site) => (

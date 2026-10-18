@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { FileLink } from "@/components/file-link";
 import { formatCalendarDay, formatDateTime, formatDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { daysLeftText } from "@/lib/deadline-text";
+import { addQualificationStep } from "@/lib/empty-step";
 import { qualificationName, qualificationWhen } from "@/lib/qualification-text";
 import {
   canAttachQualificationDocument,
@@ -59,7 +61,10 @@ export function QualificationList({
       </h2>
       {!person.active && <p className="muted">{t("qualifications.inactive")}</p>}
       {qualifications.length === 0 ? (
-        <p className="empty">{writable && person.active ? t("qualifications.emptyManager") : emptyText}</p>
+        // Osobie, która odeszła, nikt już nie wpisuje uprawnień.
+        <EmptyState step={person.active ? addQualificationStep(session) : null}>
+          {writable && person.active ? t("qualifications.emptyManager") : emptyText}
+        </EmptyState>
       ) : (
         <ul className="deadlines">
           {qualifications.map((qualification) => (
@@ -168,7 +173,7 @@ export function UpcomingQualifications({ qualifications }: { qualifications: Upc
         {t("qualifications.upcomingTitle", { days: UPCOMING_QUALIFICATION_DAYS })}
       </h2>
       {qualifications.length === 0 ? (
-        <p className="empty">{t("qualifications.upcomingEmpty", { days: UPCOMING_QUALIFICATION_DAYS })}</p>
+        <EmptyState>{t("qualifications.upcomingEmpty", { days: UPCOMING_QUALIFICATION_DAYS })}</EmptyState>
       ) : (
         <ul className="tool-list" data-testid="upcoming-qualifications">
           {qualifications.map((qualification) => (
@@ -235,7 +240,7 @@ export function QualificationKinds({ kinds, writable }: { kinds: CustomQualifica
     <details className="panel">
       <summary className="panel-summary">{t("qualifications.kindsTitle")}</summary>
       <p className="muted">{t("qualifications.kindsIntro")}</p>
-      {kinds.length === 0 ? <p className="empty">{t("qualifications.kindsEmpty")}</p> : <p>{kinds.map((kind) => kind.name).join(", ")}</p>}
+      {kinds.length === 0 ? <EmptyState>{t("qualifications.kindsEmpty")}</EmptyState> : <p>{kinds.map((kind) => kind.name).join(", ")}</p>}
       {writable && <AddQualificationKindForm key={kinds.length} />}
     </details>
   );

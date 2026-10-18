@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChatMessageForm } from "@/components/chat-message-form";
 import { ChatThread } from "@/components/chat-thread";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
@@ -29,7 +30,7 @@ export default async function SupportThreadPage(props: PageProps<"/super-admin/c
     return (
       <>
         {back}
-        <p className="empty">{t("errors.not_found")}</p>
+        <EmptyState>{t("errors.not_found")}</EmptyState>
       </>
     );
   }

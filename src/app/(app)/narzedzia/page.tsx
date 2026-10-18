@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { parseToolListFilters, toolListSearch } from "@/lib/tool-list-filters";
+import { addToolStep } from "@/lib/empty-step";
 import { getRegistry } from "@/lib/registry-instance";
 import { canImportTools, canSeeValues } from "@/registry/registry";
 import { ToolBrowser } from "./tool-browser";
@@ -35,7 +37,11 @@ export default async function ToolsPage(props: PageProps<"/narzedzia">) {
         )}
       </div>
       <p className="muted">{t("toolsPage.intro")}</p>
-      {tools.length === 0 ? <p className="empty">{t("toolsPage.empty")}</p> : (
+      {tools.length === 0 ? (
+        <EmptyState step={addToolStep(session)}>
+          {t("toolsPage.empty")}
+        </EmptyState>
+      ) : (
         // Klucz z filtrów: link z innymi filtrami, kliknięty na tej samej stronie, zaczyna od nich, a nie od poprzednich.
         <ToolBrowser key={toolListSearch(filters)} tools={tools} initialFilters={filters} withValues={canSeeValues(session)} />
       )}

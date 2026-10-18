@@ -12,6 +12,25 @@
     "kierownik": "Site manager",
     "pracownik": "Worker"
   },
+  "emptyState": {
+    "roles": {
+      "wlasciciel": "the owner",
+      "kierownik": "the site manager",
+      "magazynier": "the storekeeper",
+      "pracownik": "the worker"
+    },
+    "who": {
+      "sites": "Sites are added by {roles}.",
+      "vehicles": "Vehicles are added by {roles}.",
+      "tools": "Tools are added by {roles}.",
+      "categories": "Tool categories are added by {roles}.",
+      "deadlines": "Deadlines are added by {roles}.",
+      "qualifications": "Qualifications are entered by {roles}.",
+      "rates": "The daily rate is set by {roles}.",
+      "movements": "Equipment is issued by {roles}."
+    },
+    "issueTools": "Issue equipment"
+  },
   "login": {
     "title": "Sign in",
     "login": "Email or username",
@@ -598,7 +617,7 @@
     "list": "List",
     "map": "Map",
     "empty": "The company has no active sites.",
-    "emptyOwner": "The company has no active sites yet. Add the first one to issue equipment to it.",
+    "emptyOwner": "You have no active sites. Add a new one below.",
     "emptyOwn": "You are not managing any active site right now."
   },
   "toolReports": {
@@ -620,7 +639,7 @@
     "site": "To site",
     "sitePlaceholder": "Choose a site",
     "noSites": "You have no active site you can report a tool to.",
-    "noCategories": "The company has no tool categories yet. Ask the owner to add categories.",
+    "noCategories": "The company has no tool categories yet.",
     "reportHint": "The tool will appear on your site right away as “reported”. The owner will fill in the value and accept the report.",
     "submitReport": "Report tool",
     "reported": "Reported {code} {name} to {place}."
@@ -1144,7 +1163,7 @@
       "hint": "An XLSX with the headers we recognize and this company's categories: replace the examples with your equipment."
     },
     "categories": "Company categories",
-    "noCategories": "The company has no categories yet. Add them on the board when adding a tool, before you upload the file.",
+    "noCategories": "The company has no categories yet. Add the first one in the “Add tool” form before you upload the file.",
     "locations": "Locations",
     "file": "XLSX or CSV file",
     "reading": "Reading file…",
@@ -1911,7 +1930,7 @@
     "startTitle": "Set a daily rate",
     "startHint": "Equipment cost is days on site times the daily rate. Set the company rate as a percentage of the tool's value per day; we suggest 1% to start. A rate set for the first time applies retroactively to the whole movement history, so you'll immediately see the cost of ongoing and finished sites.",
     "startSettings": "Category rates in settings",
-    "startManager": "The owner hasn't set a daily rate yet, so there are no equipment costs yet."
+    "startManager": "There are no equipment costs yet because the company has no daily rate."
   },
   "costSummary": {
     "back": "← Back to board",
@@ -2050,7 +2069,7 @@
     "sitesGroup": "Sites",
     "vehiclesGroup": "Vehicles",
     "noPlaces": "You don't have an active site or vehicle where you can receive rented equipment.",
-    "noCategories": "The company doesn't have any tool categories yet. Ask the owner to add categories.",
+    "noCategories": "The company has no tool categories yet.",
     "company": "Rental company",
     "companyPlaceholder": "e.g. Ramirent Poznań",
     "dailyRate": "Daily rate (zł)",

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { EmptyState } from "@/components/empty-state";
 import { FileLink } from "@/components/file-link";
 import { MissingIcon } from "@/components/missing-icon";
 import { formatDateTime } from "@/i18n/dates";
@@ -32,7 +33,7 @@ export default async function IssuePage(props: PageProps<"/zgloszenia/[id]">) {
     return (
       <>
         {back}
-        <p className="empty">{t("errors.not_found")}</p>
+        <EmptyState>{t("errors.not_found")}</EmptyState>
       </>
     );
   }
@@ -91,7 +92,7 @@ export default async function IssuePage(props: PageProps<"/zgloszenia/[id]">) {
           {t("issues.details.thread")}
         </h2>
         {issue.thread.length === 0 ? (
-          <p className="empty">{t("issues.details.threadEmpty")}</p>
+          <EmptyState>{t("issues.details.threadEmpty")}</EmptyState>
         ) : (
           <ol className="movements issue-thread">
             {issue.thread.map((comment) => (

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { serverEnv } from "@/lib/env";
 import { getRegistry } from "@/lib/registry-instance";
 import { parseSitesView, sitesShownTo, type SitesView, sitesViewHref } from "@/lib/sites-view";
+import { addSiteStep } from "@/lib/empty-step";
 import { canManageLocations } from "@/registry/registry";
 import { AddLocationTile, SiteCard } from "../lokalizacje/location-cards";
 import { AddSiteForm } from "../lokalizacje/location-forms";
@@ -65,7 +67,9 @@ export default async function SitesPage(props: PageProps<"/budowy">) {
       ) : (
         <>
           {sites.length === 0 && (
-            <p className="empty">{t(shown.onlyManaged ? "sitesPage.emptyOwn" : managers ? "sitesPage.emptyOwner" : "sitesPage.empty")}</p>
+            <EmptyState step={addSiteStep(session)}>
+              {t(shown.onlyManaged ? "sitesPage.emptyOwn" : managers ? "sitesPage.emptyOwner" : "sitesPage.empty")}
+            </EmptyState>
           )}
           {(sites.length > 0 || managers) && (
             <div className="site-grid">

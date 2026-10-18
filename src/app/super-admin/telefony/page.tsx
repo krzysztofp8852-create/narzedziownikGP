@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
@@ -18,7 +19,7 @@ export default async function CallbackRequestsPage() {
       <h1 className="display page-title">{t("superAdmin.callbacks.title")}</h1>
       <p className="muted">{t("superAdmin.callbacks.intro")}</p>
       {requests.length === 0 ? (
-        <p className="empty">{t("superAdmin.callbacks.empty")}</p>
+        <EmptyState>{t("superAdmin.callbacks.empty")}</EmptyState>
       ) : (
         <>
           <p className="callback-summary" data-testid="callback-summary">

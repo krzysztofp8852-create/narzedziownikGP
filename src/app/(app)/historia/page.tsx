@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { MovementEntry } from "@/components/movement-entry";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -114,7 +115,7 @@ export default async function HistoryPage(props: PageProps<"/historia">) {
 
       <section className="recent history-results" aria-label={t("history.title")}>
         {movements.length === 0 ? (
-          <p className="empty">{t("history.empty")}</p>
+          <EmptyState>{t("history.empty")}</EmptyState>
         ) : (
           <>
             <p className="muted" data-testid="history-count">

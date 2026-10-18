@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Fragment } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { conflictText, movementRoute } from "@/i18n/movement-text";
 import { t } from "@/i18n/t";
@@ -25,7 +26,7 @@ export default async function ToClarifyPage() {
       <h1 className="display page-title">{t("toClarify.title")}</h1>
       <p className="muted">{t("toClarify.intro")}</p>
       {rejections.length === 0 ? (
-        <p className="empty">{t("toClarify.empty")}</p>
+        <EmptyState>{t("toClarify.empty")}</EmptyState>
       ) : (
         <ol className="movements bell-list" aria-label={t("toClarify.title")}>
           {rejections.map((rejection) => (

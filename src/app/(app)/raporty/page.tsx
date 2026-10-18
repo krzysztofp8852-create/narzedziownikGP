@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { formatCalendarDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -51,7 +52,7 @@ export default async function ReportsPage() {
           {t("reports.page.received")}
         </h2>
         {received.length === 0 ? (
-          <p className="empty">{t("reports.page.receivedEmpty")}</p>
+          <EmptyState>{t("reports.page.receivedEmpty")}</EmptyState>
         ) : (
           <ul className="tool-list">
             {received.map((report) => (
