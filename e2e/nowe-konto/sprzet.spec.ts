@@ -271,7 +271,7 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await page.reload();
   body = await openOperation(page, "Dodaj narzędzie");
   await addTool(body, { category: "Maszyny (M)", name: "Zagęszczarka", value: "8000", code: "M-01" });
-  await page.goto("/ustawienia");
+  await page.goto("/ustawienia/sprzet");
   const rates = page.getByRole("region", { name: "Stawki dzienne" });
   await rates.getByLabel("Stawka firmy (% wartości na dzień)").fill("1");
   await rates.getByRole("button", { name: "Zapisz stawki" }).click();
@@ -375,7 +375,7 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await page.goto("/koszty");
   await expect(page.getByRole("list", { name: "Budowy" }).getByRole("link")).toHaveText([/Rataje[\s\S]*300,50\s*zł/, /Winogrady[\s\S]*80,00\s*zł/]);
   await expect(page.getByTestId("cost-total")).toHaveText(zl("380,50"));
-  await page.goto("/ustawienia");
+  await page.goto("/ustawienia/dostep");
   const visibility = page.getByRole("region", { name: "Kto widzi koszty" });
   const consent = visibility.getByLabel("Kierownik widzi koszty swoich budów i pojazdów");
   await expect(consent).not.toBeChecked();

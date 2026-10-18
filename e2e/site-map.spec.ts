@@ -88,7 +88,7 @@ test("budowa prawdziwej firmy stoi na mapie strony Budowy pod swoim adresem; wł
   await page.goto(MAP_VIEW);
   await expect(rataje).toHaveAttribute("data-lat", POZNAN.lat);
 
-  await page.goto("/ustawienia");
+  await page.goto("/ustawienia/sprzet");
   const baseAddress = page.getByRole("region", { name: "Baza na mapie" });
   await baseAddress.getByLabel("Adres bazy").fill("ul. Gołężycka 21, Poznań");
   await baseAddress.getByRole("button", { name: "Zapisz" }).click();

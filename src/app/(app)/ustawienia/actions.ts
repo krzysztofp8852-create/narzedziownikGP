@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formDecimal, formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import { isRegistryError } from "@/registry/errors";
 import { MAX_ALARM_THRESHOLD_DAYS, UUID_PATTERN } from "@/registry/registry";
 
@@ -24,7 +25,7 @@ export async function updateSettings(_prev: SettingsFormState, formData: FormDat
     return { error: errorMessage(error) };
   }
   revalidatePath("/");
-  revalidatePath("/ustawienia");
+  revalidatePath(settingsHref("sprzet"));
   return { saved: true };
 }
 

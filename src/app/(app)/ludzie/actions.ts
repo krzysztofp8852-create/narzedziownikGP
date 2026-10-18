@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { errorMessage } from "@/lib/error-message";
 import { formText } from "@/lib/forms";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import type { AnonymizeState } from "@/components/anonymize-person-button";
 import type { AddedMember, MemberRole } from "@/registry/registry";
 
@@ -25,11 +26,11 @@ export interface PersonFormState {
   savedAt?: number;
 }
 
-/** Po zmianie w kartotece: lista Ludzie, tablica i abonament w ustawieniach (wykorzystanie pakietu wdrożenia). */
+/** Po zmianie w kartotece: lista Ludzie, tablica i abonament w ustawieniach Firmy i abonamentu (wykorzystanie pakietu wdrożenia). */
 function revalidatePeople() {
   revalidatePath("/");
   revalidatePath("/ludzie");
-  revalidatePath("/ustawienia");
+  revalidatePath(settingsHref("firma"));
 }
 
 /**
