@@ -22,7 +22,6 @@ const STEPS = {
   punch: "scan",
   punchWorker: "scan",
   recent: "recent",
-  recentWorker: "recent",
   map: "map",
   lost: "lost",
   // Zgłoszenia otwiera się ze skrzynki pod dzwonkiem, a pracownik zgłasza z pozycji „Zgłoś” w nawigacji.
@@ -73,8 +72,8 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "finish",
   ],
   magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "punchWorker", "bell", "finish"],
-  // Pracownik nie rejestruje ruchów, więc nie ma czego cofać.
-  pracownik: ["welcome", "roles", "punchWorker", "alarmTool", "search", "issuesWorker", "recentWorker", "finish"],
+  // Tablica pracownika nie ma ostatnich ruchów: mówi o nim, a nie o całej firmie.
+  pracownik: ["welcome", "roles", "punchWorker", "alarmTool", "search", "issuesWorker", "finish"],
 };
 
 /** Adres, który włącza przewodnik od początku (przycisk „Przewodnik” na pasku demo). */

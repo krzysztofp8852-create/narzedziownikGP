@@ -1653,6 +1653,12 @@ a.tool-row:hover .tool-row-name {
   }
 }
 
+/* Tablica pracownika: jedna kolumna (sprawy i sprzęt dzisiejszej budowy), także na komputerze. */
+.board.board-worker {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 760px;
+}
+
 /* Liczby na górze tablicy: duża liczba, pod nią podpis */
 .stats {
   display: flex;

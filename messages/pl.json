@@ -181,6 +181,12 @@
     "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
     "toolReportsLink": "Rozpatrz w zgłoszeniach →"
   },
+  "workerBoard": {
+    "equipmentTitle": "Sprzęt na Twojej budowie",
+    "equipmentSite": "Sprzęt na budowie {place}",
+    "equipmentBase": "Sprzęt na bazie ({place})",
+    "punchHint": "Nie jesteś odbity, więc nie wiemy, na której budowie dziś jesteś. Naciśnij Skanuj i zeskanuj plakat budowy, a zobaczysz tu jej sprzęt."
+  },
   "siteMap": {
     "title": "Mapa",
     "demo": "demo",
@@ -1341,7 +1347,8 @@
     "punchConflictBody": "Skan w telefonie {when}: {reason}.",
     "alarm": "Sprzęt stoi za długo {place}",
     "alarmBody": "Narzędzia ponad próg {days} dni: {count}. Zwróć je na bazę albo przenieś, jeśli nie są już potrzebne.",
-    "allIssues": "Wszystkie zgłoszenia, także zamknięte →"
+    "allIssues": "Wszystkie zgłoszenia, także zamknięte →",
+    "seeAll": "Zobacz wszystkie ({count})"
   },
   "push": {
     "title": "Powiadomienia na telefonie",
@@ -1923,10 +1930,6 @@
       "recent": {
         "title": "Ostatnie ruchy",
         "text": "Każdy ruch ma autora i godzinę. Własny ruch cofniesz przez 15 minut. Pełna historia z filtrami i eksportem do Excela jest pod „Cała historia”."
-      },
-      "recentWorker": {
-        "title": "Ostatnie ruchy",
-        "text": "Tu widać, kto, kiedy i dokąd ruszał sprzęt. Pełna historia z filtrami jest pod „Cała historia”."
       },
       "map": {
         "title": "Mapa",

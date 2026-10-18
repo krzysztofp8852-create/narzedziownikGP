@@ -20,7 +20,7 @@ _Avoid_: brygadzista, majster
 Rola w firmie obsługująca bazę; rejestruje ruchy dla wszystkich lokalizacji.
 
 **Pracownik**:
-Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłoszenia. Loguje się nazwą użytkownika nadaną przez właściciela, bez wymogu e-maila.
+Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłoszenia. Loguje się nazwą użytkownika nadaną przez właściciela, bez wymogu e-maila. Jego tablica mówi o nim, a nie o całej firmie: stan odbicia, jego sprawy z „Do zrobienia” i sprzęt na budowie, na której jest odbity.
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
 **Język**:
