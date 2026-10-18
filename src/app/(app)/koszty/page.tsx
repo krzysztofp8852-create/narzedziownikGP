@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { formatCalendarDay } from "@/i18n/dates";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { costPeriodSearch, parseSummaryPeriod } from "@/lib/cost-period";
+import { setRateStep } from "@/lib/empty-step";
 import { getRegistry } from "@/lib/registry-instance";
 import { settingsHref } from "@/lib/settings-pages";
 import { canManageRates, canSeeCosts, type CostedKind, type CostSummary } from "@/registry/registry";
@@ -48,7 +50,7 @@ export default async function CostSummaryPage(props: PageProps<"/koszty">) {
             </p>
           </section>
         ) : (
-          <p className="empty">{t("costs.startManager")}</p>
+          <EmptyState step={setRateStep(session)}>{t("costs.startManager")}</EmptyState>
         )
       ) : (
         <>
@@ -87,7 +89,7 @@ function Summary({ summary, search }: { summary: Extract<CostSummary, { status: 
           </div>
         )}
       </div>
-      {summary.locations.length === 0 && <p className="empty">{t("costSummary.empty")}</p>}
+      {summary.locations.length === 0 && <EmptyState>{t("costSummary.empty")}</EmptyState>}
       {groups.map(({ kind, label }) => {
         const rows = summary.locations.filter((row) => row.location.kind === kind);
         return (

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { VehicleIcon } from "@/components/vehicle-icon";
@@ -27,7 +28,7 @@ export default async function DeadlinesPage() {
       <h1 className="display page-title">{t("deadlines.pageTitle")}</h1>
       <p className="muted">{t("deadlines.pageIntro", { days: UPCOMING_DAYS })}</p>
       {deadlines.length === 0 ? (
-        <p className="empty">{t("deadlines.pageEmpty", { days: UPCOMING_DAYS })}</p>
+        <EmptyState>{t("deadlines.pageEmpty", { days: UPCOMING_DAYS })}</EmptyState>
       ) : (
         <ul className="tool-list tool-list-wide" data-testid="upcoming-deadlines">
           {deadlines.map((deadline) => (

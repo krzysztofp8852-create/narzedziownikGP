@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { CallbackForm } from "@/components/callback-form";
 import { ChatMessageForm } from "@/components/chat-message-form";
 import { ChatThread } from "@/components/chat-thread";
+import { EmptyState } from "@/components/empty-state";
 import { SalesContact } from "@/components/sales-contact";
 import { formatPhone, phoneHref } from "@/i18n/phone";
 import { t } from "@/i18n/t";
@@ -41,7 +42,7 @@ export default async function SupportChatPage(props: PageProps<"/czat">) {
       <p className="muted">{t("supportChat.intro")}</p>
       <section className="chat" aria-label={t("supportChat.title")}>
         {messages.length === 0 ? (
-          <p className="empty">{t("supportChat.empty")}</p>
+          <EmptyState>{t("supportChat.empty")}</EmptyState>
         ) : (
           <ChatThread
             messages={messages}

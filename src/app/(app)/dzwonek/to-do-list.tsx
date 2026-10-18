@@ -1,10 +1,11 @@
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import type { ToDoItem } from "@/registry/registry";
 import { toDoKey, toDoLink, toDoText } from "./to-do-text";
 
 /** Sprawy z „Do zrobienia”, każda z odnośnikiem tam, gdzie się ją załatwia. */
 export function ToDoList({ items }: { items: ToDoItem[] }) {
-  if (items.length === 0) return <p className="empty">{t("inbox.toDoEmpty")}</p>;
+  if (items.length === 0) return <EmptyState>{t("inbox.toDoEmpty")}</EmptyState>;
   return (
     <ol className="movements bell-list" aria-label={t("inbox.toDo")}>
       {items.map((item) => {

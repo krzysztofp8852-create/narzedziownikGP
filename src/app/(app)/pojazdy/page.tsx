@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
 import { canManageLocations, UPCOMING_DAYS, type UpcomingDeadline } from "@/registry/registry";
 import { AddLocationTile, VehicleCard } from "../lokalizacje/location-cards";
 import { AddVehicleForm } from "../lokalizacje/location-forms";
+import { addVehicleStep } from "@/lib/empty-step";
 import { locationPagePath } from "@/lib/location-path";
 
 export const generateMetadata = (): Metadata => ({ title: t("vehiclesPage.title") });
@@ -38,7 +40,9 @@ export default async function VehiclesPage() {
       </p>
       <h1 className="display page-title">{t("vehiclesPage.title")}</h1>
       <p className="muted">{t("vehiclesPage.intro", { days: UPCOMING_DAYS })}</p>
-      {vehicles.length === 0 && <p className="empty">{managers ? t("vehiclesPage.emptyOwner") : t("vehiclesPage.empty")}</p>}
+      {vehicles.length === 0 && (
+        <EmptyState step={addVehicleStep(session)}>{managers ? t("vehiclesPage.emptyOwner") : t("vehiclesPage.empty")}</EmptyState>
+      )}
       {(vehicles.length > 0 || managers) && (
         <div className="site-grid">
           {vehicles.map((vehicle) => (

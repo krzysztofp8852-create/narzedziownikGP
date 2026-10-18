@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime, formatDay } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { matchesTool } from "@/lib/tool-search";
@@ -141,8 +142,6 @@ export function StickerSheetForm({ candidates }: { candidates: StickerCandidate[
     setSelectedIds((ids) => (checked ? [...ids, toolId] : ids.filter((id) => id !== toolId)));
   }
 
-  if (candidates.length === 0) return <p className="empty">{t("stickers.noCandidates")}</p>;
-
   return (
     <form className="checklist" onSubmit={(event) => submit(event, () => setSelectedIds([]))}>
       <SheetFields idPrefix="sheet" />
@@ -155,7 +154,7 @@ export function StickerSheetForm({ candidates }: { candidates: StickerCandidate[
           {t("stickers.unlabeledTitle")}
         </h2>
         {unlabeled === 0 ? (
-          <p className="empty">{t("stickers.noUnlabeled")}</p>
+          <EmptyState>{t("stickers.noUnlabeled")}</EmptyState>
         ) : (
           <>
             <p className="muted">{t("stickers.unlabeledHint")}</p>

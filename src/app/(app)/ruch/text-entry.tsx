@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, startTransition, useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import Link from "next/link";
@@ -402,7 +403,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
         <fieldset className="checklist-section">
           <legend className="scan-legend">{serviceLegend}</legend>
           {plan.services.length === 0 ? (
-            <p className="empty">{t("checklist.kinds.do_serwisu.noTo")}</p>
+            <EmptyState>{t("checklist.kinds.do_serwisu.noTo")}</EmptyState>
           ) : (
             <div className="choice-list">
               {plan.services.map((service) => (
@@ -471,7 +472,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
           </p>
         )}
         {plan.tools.length === 0 ? (
-          <p className="empty">{t("textEntry.noTools")}</p>
+          <EmptyState>{t("textEntry.noTools")}</EmptyState>
         ) : (
           <ul className="scan-tools">
             {plan.tools.map((tool) => (
@@ -521,7 +522,7 @@ function ProposalForm({ proposal, data, occurredAt, onDone }: ProposalFormProps)
             />
           </div>
           {addable.length === 0 ? (
-            <p className="empty">{t("checklist.noMatches")}</p>
+            <EmptyState>{t("checklist.noMatches")}</EmptyState>
           ) : (
             <div className="proposal-options">
               {addable.slice(0, ADDABLE_LIMIT).map((tool) => (

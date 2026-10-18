@@ -43,6 +43,8 @@ export interface OperationsPanelProps {
   recordingId?: string;
   /** Skanuj z nawigacji: skaner otwarty od razu (panel nie ma osobnego przycisku skanera). */
   scan?: boolean;
+  /** Operacja otwarta z odnośnika (`?operacja=`), np. „Dodaj narzędzie” z pustego ekranu; niedostępna niczego nie otwiera. */
+  requestedOperation?: BoardOperation | null;
   /** Plakat zeskanowany w skanerze: właściciel i kierownik odbijają też osoby z kartoteki. */
   punchesOthers: boolean;
 }
@@ -60,6 +62,7 @@ export function OperationsPanel({
   voiceEntry,
   recordingId,
   scan = false,
+  requestedOperation = null,
   punchesOthers,
 }: OperationsPanelProps) {
   const movements = MOVEMENT_KINDS.filter((kind) => checklist.routes[kind]);
@@ -71,7 +74,10 @@ export function OperationsPanel({
     ...(reportTool ? ["zgloszenie" as const] : []),
     ...(rentedTool ? ["wynajem" as const] : []),
   ]);
-  const [open, setOpen] = useState<Operation | null>(recordingId && textEntry ? "tekst" : scan && movements.length > 0 ? "skaner" : null);
+  const available = (requested: BoardOperation | null) => requested !== null && [...top, ...more].includes(requested);
+  const [open, setOpen] = useState<Operation | null>(
+    recordingId && textEntry ? "tekst" : scan && movements.length > 0 ? "skaner" : available(requestedOperation) ? requestedOperation : null,
+  );
   const [moreShown, setMoreShown] = useState(false);
   // Link „Do zatwierdzenia” w nagłówku otwiera głos i wpis tekstem także na już otwartej tablicy.
   const [linkedRecording, setLinkedRecording] = useState(recordingId);
@@ -84,6 +90,12 @@ export function OperationsPanel({
   if (scan !== linkedScan) {
     setLinkedScan(scan);
     if (scan && movements.length > 0) setOpen("skaner");
+  }
+  // I operacja z odnośnika na już otwartej tablicy (np. „Dodaj narzędzie” z pustego ekranu w formularzu obok).
+  const [linkedOperation, setLinkedOperation] = useState(requestedOperation);
+  if (requestedOperation !== linkedOperation) {
+    setLinkedOperation(requestedOperation);
+    if (available(requestedOperation)) setOpen(requestedOperation);
   }
   const sectionRef = useRef<HTMLElement>(null);
   useScanRequest(() => {

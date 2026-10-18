@@ -15,6 +15,25 @@
     "kierownik": "Kierownik",
     "pracownik": "Pracownik"
   },
+  "emptyState": {
+    "roles": {
+      "wlasciciel": "właściciel",
+      "kierownik": "kierownik",
+      "magazynier": "magazynier",
+      "pracownik": "pracownik"
+    },
+    "who": {
+      "sites": "Budowy dodaje {roles}.",
+      "vehicles": "Pojazdy dodaje {roles}.",
+      "tools": "Narzędzia dodaje {roles}.",
+      "categories": "Kategorie narzędzi dodaje {roles}.",
+      "deadlines": "Terminy dodaje {roles}.",
+      "qualifications": "Uprawnienia wpisuje {roles}.",
+      "rates": "Stawkę dzienną ustawia {roles}.",
+      "movements": "Sprzęt wydaje {roles}."
+    },
+    "issueTools": "Wydaj sprzęt"
+  },
   "login": {
     "title": "Logowanie",
     "login": "E-mail lub nazwa użytkownika",
@@ -601,7 +620,7 @@
     "list": "Lista",
     "map": "Mapa",
     "empty": "Firma nie ma aktywnych budów.",
-    "emptyOwner": "Firma nie ma jeszcze aktywnych budów. Dodaj pierwszą, żeby wydawać na nią sprzęt.",
+    "emptyOwner": "Nie masz aktywnych budów. Dodaj nową poniżej.",
     "emptyOwn": "Nie kierujesz teraz żadną aktywną budową."
   },
   "toolReports": {
@@ -623,7 +642,7 @@
     "site": "Na budowę",
     "sitePlaceholder": "Wybierz budowę",
     "noSites": "Nie masz aktywnej budowy, na którą możesz zgłosić narzędzie.",
-    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi.",
     "reportHint": "Narzędzie od razu będzie na Twojej budowie jako „zgłoszone”. Właściciel uzupełni wartość i zaakceptuje zgłoszenie.",
     "submitReport": "Zgłoś narzędzie",
     "reported": "Zgłoszono {code} {name} na {place}."
@@ -1160,7 +1179,7 @@
       "warrantyUntil": "Gwarancja do"
     },
     "categories": "Kategorie firmy",
-    "noCategories": "Firma nie ma jeszcze kategorii. Dodaj je na tablicy przy dodawaniu narzędzia, zanim wgrasz plik.",
+    "noCategories": "Firma nie ma jeszcze kategorii. Dodaj pierwszą w formularzu „Dodaj narzędzie”, zanim wgrasz plik.",
     "locations": "Lokalizacje",
     "file": "Plik XLSX lub CSV",
     "reading": "Wczytywanie pliku…",
@@ -2524,7 +2543,7 @@
     "startTitle": "Ustaw stawkę dzienną",
     "startHint": "Koszt sprzętu to dni na budowie razy stawka dzienna. Ustaw stawkę firmy jako procent wartości narzędzia na dzień; na start proponujemy 1%. Stawka ustawiona pierwszy raz liczy się wstecz przez całą historię ruchów, więc od razu zobaczysz koszt trwających i zakończonych budów.",
     "startSettings": "Stawki kategorii w ustawieniach",
-    "startManager": "Właściciel nie ustawił jeszcze stawki dziennej, więc nie ma jeszcze kosztów sprzętu."
+    "startManager": "Nie ma jeszcze kosztów sprzętu, bo firma nie ma stawki dziennej."
   },
   "costSummary": {
     "back": "← Wróć do tablicy",
@@ -2665,7 +2684,7 @@
     "sitesGroup": "Budowy",
     "vehiclesGroup": "Pojazdy",
     "noPlaces": "Nie masz aktywnej budowy ani pojazdu, na które możesz przyjąć sprzęt wynajęty.",
-    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi.",
     "company": "Wypożyczalnia",
     "companyPlaceholder": "np. Ramirent Poznań",
     "dailyRate": "Stawka dobowa (zł)",

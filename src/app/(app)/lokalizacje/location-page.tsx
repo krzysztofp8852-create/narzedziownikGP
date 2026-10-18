@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { cache } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { ToolList } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
@@ -11,11 +12,23 @@ import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { type CostPeriodChoice, costPeriodSearch, parseCostPeriod } from "@/lib/cost-period";
+import { boardOperationHref } from "@/lib/board-view";
+import { addToolStep, type EmptyStep, emptyStep, setRateStep } from "@/lib/empty-step";
 import { historySearch } from "@/lib/history-filters";
 import { locationPagePath, type PlacePageKind, type SiteOrVehicleKind } from "@/lib/location-path";
 import { getRegistry } from "@/lib/registry-instance";
 import { settingsHref } from "@/lib/settings-pages";
-import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type Site, type ToolCost, type Vehicle } from "@/registry/registry";
+import {
+  canManageRates,
+  canMoveTools,
+  canRegisterMovements,
+  canSeeCostsOf,
+  type LocationCosts,
+  type Session,
+  type Site,
+  type ToolCost,
+  type Vehicle,
+} from "@/registry/registry";
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
 import { CostPeriodPicker } from "./cost-period-picker";
 
@@ -141,6 +154,18 @@ export function LocationShell({
   );
 }
 
+/**
+ * Kolejny krok pustej zakładki „Sprzęt”: na bazę narzędzie się dodaje, a na aktywną budowę albo pojazd wydaje. Przycisk ma
+ * ten, kto rusza sprzęt tego miejsca (kierownik tylko swojego), a zdanie „kto może” wymienia role, które rejestrują ruchy:
+ * kierownik w nim to kierownik tego miejsca. Do zakończonej budowy i nieaktywnego pojazdu sprzęt już nie trafia.
+ */
+function equipmentStep(session: Session, location: PlacePage): EmptyStep | null {
+  if (location.kind === "baza") return addToolStep(session);
+  if (!location.open || !location.manager) return null;
+  const issue = { href: boardOperationHref("wydanie"), label: t("emptyState.issueTools") };
+  return emptyStep(session, canRegisterMovements, issue, "emptyState.who.movements", canMoveTools(session, { manager: location.manager }));
+}
+
 /** Zakładka „Sprzęt”: narzędzia, które są tu teraz (jak na tablicy), i odnośnik do historii ruchów lokalizacji. */
 export async function EquipmentPage({ id, kind }: { id: string | null; kind: PlacePageKind }) {
   const { session, location } = await loadPlacePage(id, kind);
@@ -154,7 +179,7 @@ export async function EquipmentPage({ id, kind }: { id: string | null; kind: Pla
     <LocationShell session={session} location={location} tab="sprzet">
       <section className="board-section" aria-label={t("locationPage.equipmentTab")}>
         {tools.length === 0 ? (
-          <p className="empty">{t(empty[kind])}</p>
+          <EmptyState step={equipmentStep(session, location)}>{t(empty[kind])}</EmptyState>
         ) : (
           <ToolList tools={tools} wide atBase={kind === "baza"} />
         )}
@@ -178,7 +203,7 @@ export async function CostsPage({ id, kind, searchParams }: { id: string; kind: 
   return (
     <LocationShell session={session} location={location} tab="koszty">
       {costs.status === "brak_stawki" && !canManageRates(session) ? (
-        <p className="empty">{t("costs.startManager")}</p>
+        <EmptyState step={setRateStep(session)}>{t("costs.startManager")}</EmptyState>
       ) : costs.status === "brak_stawki" ? (
         <section className="company-card cost-start" aria-labelledby="cost-start">
           <h2 id="cost-start" className="display section-title">
@@ -249,7 +274,7 @@ function SiteOrVehicleCosts({
           )}
         </div>
         {costs.tools.length === 0 ? (
-          <p className="empty">{choice.mode === "cala" ? t("costs.emptyWhole") : t("costs.empty")}</p>
+          <EmptyState>{choice.mode === "cala" ? t("costs.emptyWhole") : t("costs.empty")}</EmptyState>
         ) : (
           <ul className="tool-list tool-list-wide" aria-label={t("costs.title")}>
             {costs.tools.map((row) => (

@@ -703,6 +703,18 @@ a.button {
   background: var(--surface-raised);
   border-radius: var(--radius);
   padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.empty > p {
+  margin: 0;
+}
+
+/* Kto może zrobić kolejny krok, gdy ta osoba nie może: pod zdaniem, mniejszym pismem. */
+.empty-who {
+  font-size: 0.9em;
 }
 
 /* Karta lokalizacji (baza, budowa) i ogólna karta sekcji */

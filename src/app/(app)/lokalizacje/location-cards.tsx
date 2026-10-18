@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { Money, ToolList } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
@@ -122,7 +123,7 @@ export function VehicleCard({
         {!vehicle.alarmEnabled && <p className="muted">{t("board.vehicleAlarmOff")}</p>}
       </div>
       {deadlines && <VehicleDeadlines vehicleId={vehicle.id} deadlines={deadlines} />}
-      {vehicle.tools.length === 0 ? <p className="empty">{t("board.vehicleEmpty")}</p> : <ToolList tools={vehicle.tools} />}
+      {vehicle.tools.length === 0 ? <EmptyState>{t("board.vehicleEmpty")}</EmptyState> : <ToolList tools={vehicle.tools} />}
       {managers && (
         <>
           <details className="location-more">
@@ -153,7 +154,7 @@ function VehicleDeadlines({ vehicleId, deadlines }: { vehicleId: string; deadlin
   return (
     <div className="location-details" aria-label={t("vehiclesPage.deadlines")} role="group">
       {deadlines.length === 0 ? (
-        <p className="muted">{t("vehiclesPage.noDeadlines", { days: UPCOMING_DAYS })}</p>
+        <EmptyState>{t("vehiclesPage.noDeadlines", { days: UPCOMING_DAYS })}</EmptyState>
       ) : (
         <ul className="vehicle-deadline-list">
           {deadlines.map((deadline) => (

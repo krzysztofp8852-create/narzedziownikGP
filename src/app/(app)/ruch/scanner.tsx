@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useRef, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { queuedFromForm, sendOrQueue } from "@/lib/offline/client";
 import { newOperationId } from "@/lib/operation-id";
@@ -148,7 +149,7 @@ export function Scanner({ data, punchesOthers }: { data: ChecklistData; punchesO
       <MovementResult done={done} state={state} refreshedHint={t("scanner.conflictRefreshed")} />
 
       {groups.length === 0 ? (
-        <p className="empty">{t("scanner.empty")}</p>
+        <EmptyState>{t("scanner.empty")}</EmptyState>
       ) : (
         <>
           {groups.map((group) => (
@@ -234,7 +235,7 @@ function ScanGroupForm({ group, choice, pending, onChoose, onRemove, onSubmit }:
       </ul>
 
       {!option ? (
-        <p className="empty">{t("scanner.cannotMove")}</p>
+        <EmptyState>{t("scanner.cannotMove")}</EmptyState>
       ) : (
         <>
           {options.length > 1 && (

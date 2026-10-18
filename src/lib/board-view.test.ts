@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { PlaceOnBoard, Tutorial } from "@/registry/registry";
-import { type BoardOperation, boardCounters, boardOperations, firstStepsOnBoard, placeHref, placesOnBoard } from "./board-view";
+import {
+  type BoardOperation,
+  boardCounters,
+  boardOperationHref,
+  boardOperations,
+  firstStepsOnBoard,
+  parseBoardOperation,
+  placeHref,
+  placesOnBoard,
+} from "./board-view";
 
 const place = (kind: PlaceOnBoard["kind"], name: string, changes: Partial<PlaceOnBoard> = {}): PlaceOnBoard => ({
   kind,
@@ -32,6 +41,20 @@ describe("operacje na tablicy", () => {
   it("bez żadnej z częstych operacji rzadsze stoją od razu na wierzchu, bez przycisku „Więcej operacji”", () => {
     expect(boardOperations(["zgloszenie"])).toEqual({ top: ["zgloszenie"], more: [] });
     expect(boardOperations([])).toEqual({ top: [], more: [] });
+  });
+});
+
+describe("operacja otwarta z odnośnika", () => {
+  it("pusty ekran prowadzi na tablicę z otwartą operacją, np. Dodaj narzędzie", () => {
+    expect(boardOperationHref("narzedzie")).toBe("/?operacja=narzedzie");
+    expect(parseBoardOperation("narzedzie")).toBe("narzedzie");
+    expect(parseBoardOperation("wydanie")).toBe("wydanie");
+  });
+
+  it("nieznana albo powtórzona operacja niczego nie otwiera", () => {
+    expect(parseBoardOperation(undefined)).toBeNull();
+    expect(parseBoardOperation("usun")).toBeNull();
+    expect(parseBoardOperation(["wydanie", "zwrot"])).toBeNull();
   });
 });
 

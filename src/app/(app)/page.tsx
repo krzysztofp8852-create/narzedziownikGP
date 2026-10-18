@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { MovementEntry } from "@/components/movement-entry";
 import { Money } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
 import { formatMoney } from "@/i18n/money";
 import { type MessageKey, t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
-import { type BoardCounter, boardCounters, firstStepsOnBoard, placeHref, placesOnBoard } from "@/lib/board-view";
+import { type BoardCounter, boardCounters, firstStepsOnBoard, parseBoardOperation, placeHref, placesOnBoard } from "@/lib/board-view";
+import { addCategoryStep, addSiteStep } from "@/lib/empty-step";
 import { textEntryEnabled, voiceEntryEnabled } from "@/lib/interpretation-instance";
 import { getRegistry } from "@/lib/registry-instance";
 import {
@@ -29,7 +31,7 @@ import { BoardSnapshot } from "./board-snapshot";
 import { NeedsAttention } from "./needs-attention";
 import { OperationsPanel } from "./operations-panel";
 import { PunchStatus } from "./punch-status";
-import { ForgetScanParam } from "./scan-param";
+import { ForgetBoardParam } from "./board-param";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
 import { TutorialCard } from "./samouczek/tutorial";
@@ -50,7 +52,7 @@ function RecentMovements({ movements }: { movements: RecentMovement[] }) {
         <Link href="/historia">{t("history.fullHistory")}</Link>
       </div>
       {movements.length === 0 ? (
-        <p className="empty">{t("board.recentEmpty")}</p>
+        <EmptyState>{t("board.recentEmpty")}</EmptyState>
       ) : (
         <ol className="movements">
           {movements.map((movement) => (
@@ -150,10 +152,12 @@ function WhereEquipment({ session, places }: { session: Session; places: PlaceOn
  */
 export default async function BoardPage(props: PageProps<"/">) {
   const session = await requireSession();
-  const { nagranie, skanuj } = await props.searchParams;
+  const { nagranie, skanuj, operacja } = await props.searchParams;
   // Skanuj z nawigacji otwiera skaner, który sam rozpoznaje kod: plakat budowy to odbicie, naklejka to narzędzie.
   const readOnly = session.company.readOnly;
   const scan = skanuj !== undefined && !readOnly;
+  // Operacja z odnośnika, np. „Dodaj narzędzie” z pustego ekranu: otwiera się w panelu operacji, o ile ją masz.
+  const operation = readOnly ? null : parseBoardOperation(operacja);
   // Pracownik ma swoją tablicę: o sobie, a nie o całej firmie.
   if (session.role === "pracownik") return <WorkerBoard session={session} scan={scan} />;
   const registry = getRegistry().as(session.userId);
@@ -181,7 +185,7 @@ export default async function BoardPage(props: PageProps<"/">) {
       )}
       {/* Odbija się każdy z kontem, skanując plakat w Skanuj (albo aparatem telefonu), więc każdy widzi, gdzie jest odbity. */}
       {!readOnly && <PunchStatus open={openPunch} now={new Date(fetchedAt)} />}
-      {scan && <ForgetScanParam />}
+      {(scan || operation) && <ForgetBoardParam />}
       <SitesAnchorRedirect />
       {/* Znak „bez kopii” tylko na tablicy bez kopii: inaczej nazwa atrybutu i tak trafiłaby do danych React w HTML. */}
       <div className="board" data-fetched-at={fetchedAt} {...(keepCopy ? {} : { "data-no-copy": "" })}>
@@ -206,6 +210,7 @@ export default async function BoardPage(props: PageProps<"/">) {
             voiceEntry={voiceEntryEnabled()}
             recordingId={typeof nagranie === "string" ? nagranie : undefined}
             scan={scan}
+            requestedOperation={operation}
             punchesOthers={canPunchOthers(session)}
             reportTool={
               categories &&
@@ -213,6 +218,8 @@ export default async function BoardPage(props: PageProps<"/">) {
                 categories,
                 sites: board.sites.filter((site) => site.manager.id === session.userId).map((site) => ({ id: site.id, name: site.name })),
                 operationId: randomUUID(),
+                noSites: addSiteStep(session),
+                noCategories: addCategoryStep(session),
               }
             }
             rentedTool={
@@ -222,6 +229,7 @@ export default async function BoardPage(props: PageProps<"/">) {
                 places: rentalPlaces(session, board),
                 showValue: canSeeValues(session),
                 operationId: randomUUID(),
+                noCategories: addCategoryStep(session),
               }
             }
           />

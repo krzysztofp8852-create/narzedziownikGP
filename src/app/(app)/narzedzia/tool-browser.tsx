@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { EmptyState } from "@/components/empty-state";
 import { KIND_LABELS } from "@/components/found-tools";
 import { Money } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
@@ -123,7 +124,7 @@ export function ToolBrowser({ tools, initialFilters, withValues }: { tools: List
           {withValues && inCirculation.length > 0 && ` · ${t("toolsPage.totalValue", { amount: formatMoney(totalCents / 100) })}`}
         </p>
         {shown.length === 0 ? (
-          <p className="empty">{t("toolsPage.noMatches")}</p>
+          <EmptyState>{t("toolsPage.noMatches")}</EmptyState>
         ) : (
           <ul className="tool-list tool-list-wide" data-testid="tools-list">
             {shown.map((tool) => (

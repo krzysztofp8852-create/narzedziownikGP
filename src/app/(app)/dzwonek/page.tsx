@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { PushToggle } from "@/components/push-toggle";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
@@ -70,7 +71,7 @@ export default async function InboxPage(props: PageProps<"/dzwonek">) {
 }
 
 function InfoList({ entries }: { entries: BellEntry[] }) {
-  if (entries.length === 0) return <p className="empty">{t("inbox.infoEmpty")}</p>;
+  if (entries.length === 0) return <EmptyState>{t("inbox.infoEmpty")}</EmptyState>;
   return (
     <ol className="movements bell-list" aria-label={t("inbox.info")}>
       {entries.map((entry) => {

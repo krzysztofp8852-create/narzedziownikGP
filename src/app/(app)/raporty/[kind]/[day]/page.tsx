@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
@@ -37,7 +38,7 @@ export default async function ReportPage(props: PageProps<"/raporty/[kind]/[day]
     return (
       <>
         {back}
-        <p className="empty">{t("reports.notFound")}</p>
+        <EmptyState>{t("reports.notFound")}</EmptyState>
       </>
     );
   }

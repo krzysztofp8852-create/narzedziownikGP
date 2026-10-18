@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
@@ -35,7 +36,7 @@ export default async function CompaniesPage(props: PageProps<"/super-admin">) {
           </p>
         ))}
       {companies.length === 0 ? (
-        <p className="empty">{t("superAdmin.companiesEmpty")}</p>
+        <EmptyState>{t("superAdmin.companiesEmpty")}</EmptyState>
       ) : (
         <div className="import-table-wrap">
           <table className="import-table">
