@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { openOperation } from "./support/equipment";
 
 interface Seeded {
   companyName: string;
@@ -76,7 +77,7 @@ test("magazynier przyjmuje młotowiertarkę z serwisu, a podpowiedź prowadzi do
   const company = seedCompany();
   await signIn(page, company.storekeeper.email, company.storekeeper.password, company.companyName);
 
-  await page.getByRole("button", { name: "Z serwisu" }).click();
+  await openOperation(page, "Z serwisu");
   await page.getByRole("checkbox", { name: "H-01 Młotowiertarka Hilti" }).check();
   await expect(page.getByTestId("deadline-hints")).toHaveText("H-01: po przyjęciu wpisz na karcie wykonanie (przegląd) i następny termin.");
   await page.getByRole("button", { name: "Zatwierdź ✓" }).click();

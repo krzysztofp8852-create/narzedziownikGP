@@ -65,7 +65,7 @@ describe("firma demo", () => {
       ["WPZ 2C55", true],
       ["PO 5T812", false],
     ]);
-    expect(board.alarmCount).toBe(5);
+    expect(board.counts.alarms).toBe(5);
     expect(board.services.flatMap((service) => service.tools).length).toBe(2);
     expect(board.lost.length).toBe(1);
     expect(board.offBaseValue).toBeGreaterThan(50_000);

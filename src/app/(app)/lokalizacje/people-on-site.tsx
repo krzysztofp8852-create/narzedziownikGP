@@ -7,7 +7,8 @@ import { distanceText, punchChecksText, punchCorrectionText, punchedByText, punc
 import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import { canPrintPoster, canSetPunchRadius, type Poster, type Punch } from "@/registry/registry";
-import { LocationShell, loadPlacePage, type PlacePageKind } from "./location-page";
+import type { PlacePageKind } from "@/lib/location-path";
+import { LocationShell, loadPlacePage } from "./location-page";
 import { CorrectPunchForm, PunchRadiusForm, RenewPosterForm } from "./punch-forms";
 
 /**

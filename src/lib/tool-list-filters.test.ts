@@ -7,6 +7,8 @@ import {
   filterTools,
   IN_SERVICE,
   LOST,
+  OFF_BASE,
+  ON_SITES,
   parseToolListFilters,
   type ToolListFilters,
   toolListOptions,
@@ -77,6 +79,12 @@ describe("filtry listy narzędzi", () => {
     expect(codes(filterTools(tools, { ...noFilters, show: IN_SERVICE, query: "hilti" }))).toEqual([]);
   });
 
+  it("liczniki tablicy: sprzęt w obiegu na budowach i poza bazą (budowy i pojazdy), bez zaginionego i zwróconego", () => {
+    expect(codes(filterTools(tools, { ...noFilters, show: ON_SITES }))).toEqual(["H-01"]);
+    expect(codes(filterTools(tools, { ...noFilters, show: OFF_BASE }))).toEqual(["H-01", "S-01"]);
+    expect(codes(filterTools(tools, { ...noFilters, show: OFF_BASE, withRetiredAndReturned: true }))).toEqual(["H-01", "S-01"]);
+  });
+
   it("zaginione nie są w żadnej lokalizacji: wybór zaginionych czyści lokalizację, a wybór lokalizacji zdejmuje zaginione", () => {
     expect(changeFilters({ ...noFilters, place: "r", category: "Szlifierki" }, { show: LOST })).toEqual({
       ...noFilters,
@@ -92,13 +100,13 @@ describe("filtry listy narzędzi", () => {
     expect(toolListOptions(tools)).toEqual({
       categories: ["Maszyny", "Młotowiertarki", "Szlifierki"],
       places: [base, rataje, bus, serwis],
-      counts: { [LOST]: 1, [IN_SERVICE]: 1, [ALARM]: 1 },
+      counts: { [ON_SITES]: 1, [OFF_BASE]: 2, [LOST]: 1, [IN_SERVICE]: 1, [ALARM]: 1 },
       hasRetiredOrReturned: true,
     });
     expect(toolListOptions([tool("S-04")])).toEqual({
       categories: ["Szlifierki"],
       places: [base],
-      counts: { [LOST]: 0, [IN_SERVICE]: 0, [ALARM]: 0 },
+      counts: { [ON_SITES]: 0, [OFF_BASE]: 0, [LOST]: 0, [IN_SERVICE]: 0, [ALARM]: 0 },
       hasRetiredOrReturned: false,
     });
   });
@@ -110,13 +118,15 @@ describe("filtry listy narzędzi w adresie", () => {
   it("zapisuje filtry po polsku i pomija te, które niczego nie zawężają", () => {
     expect(toolListSearch(noFilters)).toBe("");
     expect(toolListSearch({ ...noFilters, show: ALARM })).toBe("?pokaz=z-alarmem");
+    expect(toolListSearch({ ...noFilters, show: ON_SITES })).toBe("?pokaz=na-budowach");
+    expect(toolListSearch({ ...noFilters, show: OFF_BASE })).toBe("?pokaz=poza-baza");
     expect(toolListSearch({ query: "hilti te", category: "Młotowiertarki", place: rataje, show: IN_SERVICE, withRetiredAndReturned: true })).toBe(
       `?szukaj=hilti+te&kategoria=M%C5%82otowiertarki&lokalizacja=${rataje}&pokaz=w-serwisie&wycofane=tak`,
     );
   });
 
   it("odczytuje każdy filtr z adresu, także z parametrów strony Next.js", () => {
-    for (const show of [LOST, IN_SERVICE, ALARM]) {
+    for (const show of [ON_SITES, OFF_BASE, LOST, IN_SERVICE, ALARM]) {
       expect(parseToolListFilters(new URLSearchParams(`pokaz=${show}`))).toEqual({ ...noFilters, show });
     }
     expect(parseToolListFilters({ szukaj: " hilti ", kategoria: "Młotowiertarki", lokalizacja: rataje, pokaz: ["w-serwisie", "zaginione"], wycofane: "tak" })).toEqual({

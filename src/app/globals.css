@@ -1605,8 +1605,10 @@ a.tool-row:hover .tool-row-name {
   gap: 20px;
 }
 
-/* Na telefonie operacje są na samej górze, a ostatnie ruchy pod tablicą. */
-.board-main,
+/*
+ * Na telefonie od góry: tytuł, operacje, „Wymaga uwagi”, liczniki i kafle, a ostatnie ruchy na końcu. Kolumna boczna
+ * rozpada się na swoje sekcje, żeby ostatnie ruchy zeszły pod kafle.
+ */
 .board-side {
   display: contents;
 }
@@ -1615,7 +1617,7 @@ a.tool-row:hover .tool-row-name {
   order: 1;
 }
 
-.where {
+.board-main {
   order: 2;
 }
 
@@ -1623,7 +1625,8 @@ a.tool-row:hover .tool-row-name {
   order: 3;
 }
 
-.where {
+.board-head,
+.board-main {
   display: grid;
   gap: 16px;
   align-content: start;
@@ -1633,6 +1636,10 @@ a.tool-row:hover .tool-row-name {
   .board {
     grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
     align-items: start;
+  }
+
+  .board-head {
+    grid-column: 1 / -1;
   }
 
   .board-main {
@@ -1659,30 +1666,43 @@ a.tool-row:hover .tool-row-name {
   max-width: 760px;
 }
 
-/* Liczby na górze tablicy: duża liczba, pod nią podpis */
+/* Klikalne liczniki: duża liczba, pod nią podpis; każdy otwiera przefiltrowaną listę narzędzi. */
 .stats {
-  display: flex;
-  flex-wrap: wrap;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
   gap: 8px;
 }
 
-.stats div {
-  display: flex;
-  flex-direction: column-reverse;
-  min-width: 110px;
-  padding: 8px 12px;
+/* Licznik i kafel to odnośniki w kształcie karty. */
+.stats .stat,
+.place-tile {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  color: var(--text);
+  text-decoration: none;
 }
 
-.stats dt {
+.stats .stat:hover,
+.place-tile:hover {
+  border-color: var(--accent);
+}
+
+.stats .stat {
+  display: flex;
+  flex-direction: column-reverse;
+  min-height: 64px;
+  padding: 8px 12px;
+}
+
+.stat-label {
   font-size: 0.85rem;
   color: var(--text-muted);
 }
 
-.stats dd {
+.stat-value {
   font-weight: 700;
   font-size: 1.6rem;
   line-height: 1.1;
@@ -1696,8 +1716,49 @@ a.tool-row:hover .tool-row-name {
   border-color: var(--danger);
 }
 
-.stats .stat-alarm dd {
+.stats .stat-alarm .stat-value {
   color: var(--danger);
+}
+
+/* „Gdzie jest sprzęt”: zwinięte kafle miejsc, klik prowadzi do strony miejsca. */
+.place-grid {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+}
+
+.place-tile {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  height: 100%;
+  padding: 12px 14px;
+}
+
+.place-tile-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.place-tile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+/* Kafel z alarmem: czerwony pasek jak wiersz narzędzia po progu. */
+.place-tile-alarm {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  box-shadow: inset 4px 0 0 var(--danger);
+}
+
+.place-others {
+  display: grid;
+  gap: 10px;
 }
 
 .site-grid {
@@ -1773,8 +1834,22 @@ a.tool-row:hover .tool-row-name {
 }
 
 /* Ostatni przycisk bez pary zajmuje cały wiersz. */
-.operation-tabs .operation-tab-wide {
+.operation-tabs > .button:last-child:nth-child(odd) {
   grid-column: 1 / -1;
+}
+
+/* „Więcej operacji” jest przełącznikiem, a nie operacją: obramowanie neutralne zamiast koloru operacji. */
+.operation-tabs .operation-more {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.operation-tabs[hidden] {
+  display: none;
+}
+
+/* Rzadsze operacje: mniejsze przyciski pod częstymi. */
+.operation-tabs-more .button {
   min-height: 44px;
 }
 

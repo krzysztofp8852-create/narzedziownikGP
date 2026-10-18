@@ -94,7 +94,7 @@ test("super-admin zakłada firmę z właścicielem, zmienia pakiet, wpisuje „o
   await page.getByLabel("Powtórz nowe hasło").fill(ownerPassword);
   await page.getByRole("button", { name: "Zapisz hasło" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
   await expect(page.getByTestId("read-only-banner")).toContainText("Firma jest w trybie tylko do odczytu.");
 
   await page.goto("/ustawienia/firma");

@@ -9,10 +9,14 @@ export const LOST = "zaginione";
 export const IN_SERVICE = "w-serwisie";
 /** Sam sprzęt z alarmem: w lokalizacji z progiem dłużej niż próg dni. */
 export const ALARM = "z-alarmem";
-const SHOWS = [LOST, IN_SERVICE, ALARM] as const;
+/** Sam sprzęt na budowach (licznik „Na budowach” na tablicy). */
+export const ON_SITES = "na-budowach";
+/** Sam sprzęt poza bazą: na budowach i pojazdach, jak kwota „Poza bazą” na tablicy. */
+export const OFF_BASE = "poza-baza";
+const SHOWS = [ON_SITES, OFF_BASE, LOST, IN_SERVICE, ALARM] as const;
 type Show = (typeof SHOWS)[number];
 
-/** Co pokazać: same zaginione, sam sprzęt w serwisie, sam z alarmem albo wszystko (ALL). */
+/** Co pokazać: sprzęt na budowach, poza bazą, same zaginione, sam sprzęt w serwisie, sam z alarmem albo wszystko (ALL). */
 export type ToolListShow = typeof ALL | Show;
 
 /** Filtry strony Narzędzia; `place` to identyfikator lokalizacji albo ALL. */
@@ -29,6 +33,8 @@ const inCirculation = (tool: ListedTool) => tool.state === "w_obiegu";
 const retiredOrReturned = (tool: ListedTool) => tool.state === "wycofane" || tool.state === "zwrocone";
 
 const SHOWN: Record<Show, (tool: ListedTool) => boolean> = {
+  [ON_SITES]: (tool) => inCirculation(tool) && tool.location.kind === "budowa",
+  [OFF_BASE]: (tool) => inCirculation(tool) && (tool.location.kind === "budowa" || tool.location.kind === "pojazd"),
   [LOST]: (tool) => tool.state === "zaginione",
   [IN_SERVICE]: (tool) => inCirculation(tool) && tool.location.kind === "serwis",
   [ALARM]: (tool) => tool.alarm,
@@ -61,7 +67,7 @@ const KIND_ORDER = { baza: 0, budowa: 1, pojazd: 2, serwis: 3 } as const;
 
 /**
  * Czym można zawęzić listę: kategorie sprzętu, miejsca, w których coś teraz jest (baza, budowy, pojazdy, serwisy),
- * i ile jest zaginionych, w serwisie i z alarmem.
+ * i ile jest na budowach, poza bazą, zaginionych, w serwisie i z alarmem.
  */
 export function toolListOptions(tools: ListedTool[]) {
   const places = new Map(tools.filter(inCirculation).map((tool) => [tool.location.id, tool.location]));

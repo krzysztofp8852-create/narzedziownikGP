@@ -165,7 +165,7 @@ describe("lista narzędzi firmy", () => {
     testbed.clock.advance(DAY);
     const alarms = async () => (await z.owner.toolList()).filter((tool) => tool.alarm).map((tool) => tool.code);
     expect(await alarms()).toEqual(["H-01"]);
-    expect((await z.owner.whereIsWhat()).alarmCount).toBe(1);
+    expect((await z.owner.whereIsWhat()).counts.alarms).toBe(1);
 
     await z.owner.setVehicleAlarm(z.busId, true);
     expect(await alarms()).toEqual(["H-01", "S-01"]);

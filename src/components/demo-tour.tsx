@@ -14,7 +14,6 @@ const STEPS = {
   alarms: "alarms",
   alarmTool: "alarm-tool",
   search: "search",
-  toolReports: "tool-reports",
   operationsOwner: "operations",
   operationsManager: "operations",
   operationsStorekeeper: "operations",
@@ -22,12 +21,9 @@ const STEPS = {
   punch: "scan",
   punchWorker: "scan",
   recent: "recent",
-  map: "map",
-  lost: "lost",
   // Zgłoszenia otwiera się ze skrzynki pod dzwonkiem, a pracownik zgłasza z pozycji „Zgłoś” w nawigacji.
   issuesWorker: "report",
   bell: "bell",
-  deadlines: "deadlines",
   // Koszty mają tylko stronę pod „Więcej”, więc dymek wskazuje ten przycisk nawigacji.
   costs: "more",
   menu: "more",
@@ -36,8 +32,8 @@ const STEPS = {
 
 type StepId = keyof typeof STEPS;
 
-/** Kroki, których element zależy od danych firmy (alarm, zgłoszenia narzędzi, zaginione, terminy). */
-const DATA_STEPS = new Set<StepId>(["alarmTool", "toolReports", "lost", "deadlines"]);
+/** Kroki, których element zależy od danych firmy: narzędzie z alarmem jest na liście sprzętu tablicy pracownika. */
+const DATA_STEPS = new Set<StepId>(["alarmTool"]);
 
 const ROLE_STEPS: Record<DemoRole, StepId[]> = {
   wlasciciel: [
@@ -45,15 +41,11 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "roles",
     "offBase",
     "alarms",
-    "toolReports",
     "alarmTool",
     "search",
     "operationsOwner",
     "punch",
-    "map",
-    "lost",
     "bell",
-    "deadlines",
     "costs",
     "menu",
     "finish",
@@ -68,7 +60,6 @@ const ROLE_STEPS: Record<DemoRole, StepId[]> = {
     "punch",
     "recent",
     "bell",
-    "deadlines",
     "finish",
   ],
   magazynier: ["welcome", "roles", "operationsStorekeeper", "recent", "alarmTool", "search", "punchWorker", "bell", "finish"],

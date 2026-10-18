@@ -122,7 +122,6 @@
     }
   },
   "board": {
-    "title": "Gdzie jest co",
     "snapshot": "Brak sieci. Stan z {when}: to, co ten telefon pobrał ostatnio.",
     "baseKind": "Baza",
     "toolCount": "{count} szt.",
@@ -134,11 +133,8 @@
     "siteEmpty": "Na tej budowie nie ma jeszcze narzędzi.",
     "vehicleKind": "Pojazd",
     "vehicleEmpty": "Na tym pojeździe nie ma jeszcze narzędzi.",
-    "vehiclesTitle": "Pojazdy",
     "addVehicle": "Dodaj pojazd",
-    "vehiclesLink": "Wszystkie pojazdy",
     "vehicleAlarmOff": "bez alarmu po progu",
-    "noSites": "Nie ma aktywnych budów.",
     "addSite": "Dodaj budowę",
     "scan": "Skanuj QR",
     "textEntry": "Wpisz tekstem",
@@ -156,8 +152,6 @@
     "sidebar": "Operacje i ostatnie ruchy",
     "statBase": "Na bazie",
     "statSites": "Na budowach",
-    "statSiteCount": "Budowy",
-    "statVehicles": "Na pojazdach",
     "statOffBase": "Poza bazą",
     "statAlarms": "Alarmy",
     "peopleCount": "{count} aktywne",
@@ -165,11 +159,7 @@
     "undoing": "Cofanie…",
     "overThreshold": "po progu",
     "unused": "nieużywane {days}",
-    "servicesTitle": "W serwisie",
-    "servicesEmpty": "W serwisie nie ma żadnego sprzętu.",
     "serviceKind": "Serwis",
-    "lostTitle": "Zaginione",
-    "lostEmpty": "Nie ma zaginionych narzędzi.",
     "lostFor": "zaginione od {days}",
     "reportTool": "Zgłoś narzędzie",
     "addRentedTool": "Sprzęt wynajęty",
@@ -178,8 +168,12 @@
     "reportedMissing": "zgłoszony brak",
     "rented": "wynajęte",
     "returnOverdue": "po terminie zwrotu",
-    "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
-    "toolReportsLink": "Rozpatrz w zgłoszeniach →"
+    "moreOperations": "Więcej operacji",
+    "closeScanner": "Zamknij skaner",
+    "countersLabel": "Liczniki sprzętu",
+    "alarmTag": "alarm",
+    "whereTitle": "Gdzie jest sprzęt",
+    "otherPlaces": "Pozostałe budowy i pojazdy ({count})"
   },
   "workerBoard": {
     "equipmentTitle": "Sprzęt na Twojej budowie",
@@ -584,7 +578,9 @@
     "lostResponsible": "odpowiadał: {name}",
     "lostFor": "zaginione od {days}",
     "stateFor": "od {days}",
-    "import": "Importuj z pliku"
+    "import": "Importuj z pliku",
+    "onSites": "Na budowach",
+    "offBase": "Poza bazą"
   },
   "vehiclesPage": {
     "title": "Pojazdy",
@@ -869,9 +865,6 @@
     "back": "← Wróć do tablicy",
     "itemAt": "{when} · {place}",
     "itemResponsible": " · kierownik: {name}",
-    "boardDue": "Sprzęt z terminem w najbliższych {days} dniach: {count} szt.",
-    "boardOverdue": "po terminie: {count}",
-    "boardLink": "Zobacz terminy",
     "extendRental": "Przedłuż wynajem",
     "policyUntilLabel": "Ostatni dzień polisy",
     "policyDue": "Polisa do {day} ({left})",
@@ -1195,7 +1188,6 @@
     "submit": "Zatwierdź import ({count} szt.)",
     "submitting": "Zapisywanie…",
     "done": "Zaimportowano narzędzia: {count}.",
-    "openBoard": "Zobacz je na tablicy →",
     "rowErrors": {
       "name_missing": "Brak nazwy.",
       "category_missing": "Brak kategorii.",
@@ -1210,7 +1202,8 @@
       "vehicle_inactive": "Pojazd „{value}” jest nieaktywny.",
       "inspection_invalid": "Zła data przeglądu „{value}”: wpisz np. 30.09.2026 albo 2026-09-30.",
       "warranty_invalid": "Zła data końca gwarancji „{value}”: wpisz np. 30.09.2026 albo 2026-09-30."
-    }
+    },
+    "openTools": "Zobacz je na liście narzędzi →"
   },
   "notifications": {
     "greeting": "Dzień dobry, {name}!",
@@ -1285,7 +1278,6 @@
     "forceSubmit": "Zamknij i oznacz jako zaginione",
     "forceConfirm": "Oznaczyć {count} szt. jako zaginione i zamknąć budowę {name}?",
     "finishedTitle": "Zakończone budowy",
-    "finishedLink": "Zakończone budowy →",
     "finishedEmpty": "Nie ma jeszcze zakończonych budów.",
     "finishedOn": "Zamknięcie: {when}, {name}",
     "history": "Historia budowy →"
@@ -1911,10 +1903,6 @@
         "title": "Szukaj",
         "text": "Lupa w nagłówku: wpisz kod, nazwę albo markę i od razu zobaczysz, gdzie jest narzędzie, od ilu dni i kto za nie odpowiada. Możesz też zapytać głosem, np. „gdzie jest niwelator?”."
       },
-      "toolReports": {
-        "title": "Do akceptacji",
-        "text": "Kierownicy dopisują narzędzia kupione na budowie. Właściciel uzupełnia kod i wartość, a potem akceptuje albo odrzuca zgłoszenie."
-      },
       "operationsOwner": {
         "title": "Operacje",
         "text": "Stąd zapiszesz każdy ruch sprzętu, dodasz narzędzie, zaimportujesz listę z Excela i wydrukujesz naklejki QR."
@@ -1931,14 +1919,6 @@
         "title": "Ostatnie ruchy",
         "text": "Każdy ruch ma autora i godzinę. Własny ruch cofniesz przez 15 minut. Pełna historia z filtrami i eksportem do Excela jest pod „Cała historia”."
       },
-      "map": {
-        "title": "Mapa",
-        "text": "Baza, budowy, busy i sprzęt z lokalizatorem na jednej mapie. Kliknij pinezkę, żeby zobaczyć szczegóły."
-      },
-      "lost": {
-        "title": "Zaginione",
-        "text": "Narzędzie, które nie wróciło, oznaczasz jako zaginione. Karta pamięta, gdzie było ostatnio i kto za nie odpowiadał."
-      },
       "issuesWorker": {
         "title": "Zgłoś problem",
         "text": "Pracownik nie rusza sprzętu, ale zgłasza uszkodzenie albo brak, także ze zdjęciem. Kliknij „Zgłoś” i opisz sprawę."
@@ -1954,10 +1934,6 @@
       "punchWorker": {
         "title": "Odbij się",
         "text": "Przy wejściu i przy wyjściu skanujesz w „Skanuj” plakat budowy albo bazy, a naklejka narzędzia otwiera jego kartę ze zgłoszeniem usterki. Swoje godziny zobaczysz w nawigacji, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
-      },
-      "deadlines": {
-        "title": "Terminy",
-        "text": "Przeglądy, kalibracje, badania UDT, gwarancje i zwroty do wypożyczalni, a przy pojazdach przegląd, OC, AC i tachograf. Przypomnienie przychodzi do dzwonka tydzień przed terminem, a o OC, AC i tachografie 30 dni przed. Pełną listę otworzysz tutaj albo pod „Więcej”, w „Terminy”, a uprawnienia ludzi (BHP, badania, UDT) w „Ludzie”."
       },
       "costs": {
         "title": "Koszty sprzętu",
@@ -2405,7 +2381,7 @@
     "count": "Krok {step} z {count}",
     "reopen": "Samouczek otworzysz ponownie w Pomocy, pod „Więcej”.",
     "firstSteps": {
-      "title": "Pierwsze kroki",
+      "title": "Uruchom firmę w 4 krokach",
       "intro": "Od tych czterech rzeczy zaczyna każda firma. Kroki odhaczają się same, gdy dana rzecz już jest w firmie.",
       "progress": "Zrobione: {done} z {count}",
       "doneTag": "zrobione",

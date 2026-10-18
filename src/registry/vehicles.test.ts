@@ -402,7 +402,7 @@ describe("alarm na pojeździe", () => {
 
     const board = await z.owner.whereIsWhat();
     expect(board.vehicles.find((vehicle) => vehicle.id === z.nowakBusId)!.tools[0].alarm).toBe(false);
-    expect(board.alarmCount).toBe(0);
+    expect(board.counts.alarms).toBe(0);
     expect(await testbed.registry.system().notifyExceededThresholds()).toEqual({ tools: 0 });
   });
 
@@ -418,7 +418,7 @@ describe("alarm na pojeździe", () => {
       ["Bus WX 12345", true, [true]],
       ["Bus WX 67890", false, [false]],
     ]);
-    expect(board.alarmCount).toBe(1);
+    expect(board.counts.alarms).toBe(1);
     expect(await testbed.registry.system().notifyExceededThresholds()).toEqual({ tools: 1 });
     const nowakBell = await testbed.registry.as(z.nowakId).bell();
     expect(nowakBell.entries.map((entry) => entry.notification)).toEqual([

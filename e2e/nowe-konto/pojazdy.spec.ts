@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect as baseExpect, type Locator, type Page, test } from "@playwright/test";
+import { openOperation } from "../support/equipment";
 import { type Credentials, expectNoHorizontalScroll, firstSignIn, openFreshAccount, signIn, signOut } from "../support/fresh-account";
 
 /**
@@ -588,8 +589,7 @@ test("pojazd ze sprzętem ma koszt na zakładce Koszty i nie da się go dezaktyw
 
   // Narzędzie z wartością 2000 zł dodane na tablicy i wydane na busa.
   await page.goto("/");
-  await page.getByRole("button", { name: "Dodaj narzędzie" }).click();
-  const body = page.locator("#operation-body");
+  const body = await openOperation(page, "Dodaj narzędzie");
   const category = panel(page, body, "Nowa kategoria");
   await expand(category);
   await category.getByLabel("Nazwa kategorii").fill("Młoty");

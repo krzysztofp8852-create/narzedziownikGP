@@ -43,8 +43,8 @@ test("właściciel loguje się hasłem tymczasowym, musi je zmienić i widzi pus
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("company-name")).toHaveText(company.name);
-  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
-  await expect(page.getByText("Na bazie nie ma jeszcze żadnych narzędzi.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Gdzie jest sprzęt" }).getByRole("link", { name: /^Baza Baza 0 szt\./ })).toBeVisible();
 
   // Nowe hasło działa po wylogowaniu, a zmiana nie jest już wymagana.
   await openMyAccount(page);

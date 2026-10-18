@@ -78,7 +78,7 @@ test("kierownik: w tym samym Skanuj naklejka trafia do ruchu, a plakat do odbici
   await expect(status(page)).toHaveText("Nie jesteś odbity");
 
   await openScan(page);
-  await expect(page.getByRole("button", { name: "Skanuj QR" })).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("button", { name: "Zamknij skaner" })).toBeVisible();
   await page.getByRole("button", { name: "Wyłącz aparat" }).click();
   await typeScanCode(page, "S-01");
   await expect(page.getByRole("form", { name: "Ruch z: Magazyn" }).getByTestId("scan-summary")).toHaveText("Wydanie: S-01 → Rataje");

@@ -166,10 +166,7 @@ export function AppNavigation({ bar, more, helpCount }: Pick<Navigation, "bar" |
                 onClick={(event) => {
                   setSheetOn(null);
                   // Na tablicy skaner otwiera się na miejscu, także bez zasięgu.
-                  if (item.href === SCAN_HREF && pathname === "/") {
-                    event.preventDefault();
-                    requestScan();
-                  }
+                  if (item.href === SCAN_HREF && pathname === "/" && requestScan()) event.preventDefault();
                 }}
               >
                 <Icon name={item.icon} />

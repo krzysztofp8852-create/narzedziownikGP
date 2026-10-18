@@ -11,8 +11,7 @@ export function ScanLink({ className, children }: { className?: string; children
       href={SCAN_HREF}
       className={className}
       onClick={(event) => {
-        event.preventDefault();
-        requestScan();
+        if (requestScan()) event.preventDefault();
       }}
     >
       {children}
