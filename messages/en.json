@@ -178,6 +178,12 @@
     "toolReportsWaiting": "Reported tools waiting for a decision: {count}",
     "toolReportsLink": "Review in issues →"
   },
+  "workerBoard": {
+    "equipmentTitle": "Equipment on your site",
+    "equipmentSite": "Equipment on site {place}",
+    "equipmentBase": "Equipment at the Base ({place})",
+    "punchHint": "You're not clocked in, so we don't know which site you're on today. Tap Scan and scan the site poster to see its equipment here."
+  },
   "siteMap": {
     "title": "Map",
     "demo": "demo",
@@ -1324,7 +1330,8 @@
     "punchConflictBody": "Scan on the phone {when}: {reason}.",
     "alarm": "Equipment has been sitting too long {place}",
     "alarmBody": "Tools over the {days}-day limit: {count}. Return them to the Base or transfer them if they're no longer needed.",
-    "allIssues": "All issues, including closed ones →"
+    "allIssues": "All issues, including closed ones →",
+    "seeAll": "See all ({count})"
   },
   "push": {
     "title": "Phone notifications",
@@ -1717,10 +1724,6 @@
       "recent": {
         "title": "Recent movements",
         "text": "Every movement has an author and a time. You can undo your own movement within 15 minutes. The full history with filters and Excel export is under “Full history”."
-      },
-      "recentWorker": {
-        "title": "Recent movements",
-        "text": "Here you can see who moved equipment, when and where to. The full history with filters is under “Full history”."
       },
       "map": {
         "title": "Map",

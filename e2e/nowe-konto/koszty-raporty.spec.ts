@@ -211,7 +211,8 @@ test("raporty: na teraz i z harmonogramu; właściciel oba, kierownik tylko pią
   await signOut(manager);
   const worker = manager;
   await firstSignIn(worker, company.worker.username, company.worker.temporaryPassword, company.companyName);
-  await skipTutorial(worker);
+  // Pracownik nie ma samouczka, a jego tablica mówi o nim, więc ma własny nagłówek.
+  await expect(worker.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
   await moreButton(worker).click();
   await expect(appNav(worker).getByRole("link", { name: "Mój czas na budowie" })).toBeVisible();
   await expect(appNav(worker).getByRole("link", { name: "Raporty" })).toHaveCount(0);

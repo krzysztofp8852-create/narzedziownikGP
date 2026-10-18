@@ -17,7 +17,6 @@ import {
   canHandleRentalsAt,
   canPrintStickers,
   canPunchOthers,
-  canRegisterMovements,
   canRentTools,
   canReportTools,
   canReviewToolReports,
@@ -38,11 +37,11 @@ import { SitesAnchorRedirect } from "./budowy/sites-anchor";
 import { BoardSnapshot } from "./board-snapshot";
 import { OperationsPanel } from "./operations-panel";
 import { PunchStatus } from "./punch-status";
-import { ScanPanel } from "./scan-panel";
 import { ForgetScanParam } from "./scan-param";
 import { checklistData } from "./ruch/load-checklist";
 import { UndoButton } from "./ruch/undo-button";
 import { TutorialCard } from "./samouczek/tutorial";
+import { WorkerBoard } from "./worker-board";
 
 export const generateMetadata = (): Metadata => ({ title: t("board.title") });
 
@@ -197,6 +196,8 @@ export default async function BoardPage(props: PageProps<"/">) {
   // Skanuj z nawigacji otwiera skaner, który sam rozpoznaje kod: plakat budowy to odbicie, naklejka to narzędzie.
   const readOnly = session.company.readOnly;
   const scan = skanuj !== undefined && !readOnly;
+  // Pracownik ma swoją tablicę: o sobie, a nie o całej firmie.
+  if (session.role === "pracownik") return <WorkerBoard session={session} scan={scan} />;
   const registry = getRegistry().as(session.userId);
   // Firma demo ma mapę demo bez dostawcy mapy; prawdziwa firma mapę Google, o ile jest klucz przeglądarki.
   const googleMaps = session.company.demo ? null : serverEnv.googleMaps();
@@ -231,15 +232,6 @@ export default async function BoardPage(props: PageProps<"/">) {
       {!readOnly && <PunchStatus open={openPunch} now={new Date(fetchedAt)} />}
       {scan && <ForgetScanParam />}
       <SitesAnchorRedirect />
-      {/* Kto zapisuje ruchy, ma skaner w operacjach; pracownik dostaje go osobno, z kartą narzędzia zamiast ruchu. */}
-      {!readOnly && !canRegisterMovements(session) && (
-        <ScanPanel
-          userId={session.userId}
-          punchesOthers={canPunchOthers(session)}
-          tools={[...checklist.places.flatMap((place) => place.tools), ...board.lost].map(({ id, code }) => ({ id, code }))}
-          opened={scan}
-        />
-      )}
       {/* Znak „bez kopii” tylko na tablicy bez kopii: inaczej nazwa atrybutu i tak trafiłaby do danych React w HTML. */}
       <div className="board" data-fetched-at={fetchedAt} {...(keepCopy ? {} : { "data-no-copy": "" })}>
         <aside className="board-side" aria-label={t("board.sidebar")}>
