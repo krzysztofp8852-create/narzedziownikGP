@@ -59,8 +59,12 @@ _Avoid_: landing modułu, podstrona funkcji
 Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje oglądających. Wizyta to jedna przeglądarka, także po przełączeniu roli. Zostaje po usunięciu firmy demo.
 _Avoid_: analityka, śledzenie
 
+**Tablica**:
+Pierwszy ekran po zalogowaniu: co zrobić teraz. U właściciela, kierownika i magazyniera ma pasek stanu odbicia, operacje (Wydaj, Zwróć, Powiedz lub wpisz i „Więcej operacji”), najpilniejsze sprawy z „Do zrobienia”, klikalne liczniki prowadzące do przefiltrowanej listy narzędzi, zwinięte kafle „Gdzie jest sprzęt” (baza, budowy, pojazdy, serwisy ze sprzętem; klik prowadzi na stronę miejsca) i trzy ostatnie ruchy. Kwoty w zł widzi tylko właściciel, a kierownik ma na kaflach przede wszystkim swoje budowy i pojazdy. Tablica pracownika mówi o nim (zob. Pracownik).
+_Avoid_: pulpit, dashboard, „Gdzie jest co” (to zapytanie Rejestru za tablicą, kafelkami i pełnymi listami)
+
 **Samouczek**:
-Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Pierwsze kroki startują same po pierwszym logowaniu właściciela, dopóki ich nie pominięto ani nie ukończono; samouczek kierownika i magazyniera nie startuje sam. Oba otwierają się z Pomocy. Pracownik i firma demo go nie mają.
+Pierwsze kroki właściciela („Uruchom firmę w 4 krokach”: kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy, z paskiem postępu) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Pierwsze kroki stoją na górze tablicy właściciela, dopóki ich nie pominięto, nie ukończono ani nie zrobiono wszystkich kroków; samouczek kierownika i magazyniera nie startuje sam. Oba otwierają się z Pomocy. Pracownik i firma demo go nie mają.
 _Avoid_: onboarding (to wdrożenie), tutorial, przewodnik (to przewodnik po tablicy w demo)
 
 **Super-admin**:
@@ -144,11 +148,11 @@ Flaga narzędzia ustawiana przez zgłoszenie uszkodzenia. Nie blokuje ruchów; z
 _Avoid_: zepsute, niesprawne (jako stan)
 
 **Zgłoszony brak**:
-Dopisek przy narzędziu na tablicy, dopóki jest do niego otwarte zgłoszenie braku lub zaginięcia. Nie jest flagą ani stanem: nie zmienia stanu narzędzia i nie przenosi go do zaginionych (to robi tylko korekta właściciela); znika z zamknięciem ostatniego takiego zgłoszenia.
+Dopisek przy narzędziu na listach sprzętu (strona miejsca, Narzędzia), dopóki jest do niego otwarte zgłoszenie braku lub zaginięcia. Nie jest flagą ani stanem: nie zmienia stanu narzędzia i nie przenosi go do zaginionych (to robi tylko korekta właściciela); znika z zamknięciem ostatniego takiego zgłoszenia.
 _Avoid_: zaginione (to stan narzędzia)
 
 **Sprzęt wynajęty**:
-Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na tablicy ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi pakietu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
+Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na listach sprzętu ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi pakietu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
 _Avoid_: wypożyczone, najem, sprzęt obcy
 
 **Wypożyczalnia**:
@@ -170,7 +174,7 @@ Termin przy pojeździe zamiast narzędzia: przegląd techniczny, OC, AC, legaliz
 _Avoid_: termin floty, ubezpieczenie (jako ogólne pojęcie), badanie techniczne
 
 **Termin zwrotu**:
-Dzień, do którego sprzęt wynajęty ma wrócić do wypożyczalni. Powstaje z przyjęciem, bez cyklu i wykonania; przedłużenie to zmiana tej daty przez tych, którzy mogą zapisać zwrot do wypożyczalni. Przypomina dzień przed i raz po, a po nim tablica ma dopisek „po terminie zwrotu”, który niczego nie blokuje.
+Dzień, do którego sprzęt wynajęty ma wrócić do wypożyczalni. Powstaje z przyjęciem, bez cyklu i wykonania; przedłużenie to zmiana tej daty przez tych, którzy mogą zapisać zwrot do wypożyczalni. Przypomina dzień przed i raz po, a po nim listy sprzętu mają dopisek „po terminie zwrotu”, który niczego nie blokuje.
 _Avoid_: koniec wynajmu, data oddania
 
 **Po terminie**:
@@ -229,7 +233,7 @@ _Avoid_: odrzucony ruch (to ruch z kolejki), błąd odbicia
 
 **Plakat budowy**:
 Kartka A4 z nazwą budowy, kodem QR i instrukcją, wisząca przy wejściu albo kontenerze; ma ją też baza z adresem. Kod QR prowadzi na stronę odbicia po losowym kodzie plakatu, który nie zdradza budowy; ten sam kod jest wydrukowany do wpisania ręcznie. Drukuje go właściciel albo kierownik budowy, a „Nowy kod” unieważnia stary plakat. Pojazd i serwis plakatu nie mają.
-_Avoid_: kod budowy (kod to identyfikator narzędzia), tablica (to ekran „Gdzie jest co”), naklejka (to przy narzędziu)
+_Avoid_: kod budowy (kod to identyfikator narzędzia), tablica (to pierwszy ekran po zalogowaniu), naklejka (to przy narzędziu)
 
 **Promień odbicia**:
 Odległość od położenia budowy albo bazy, do której skan liczy się jako „na budowie”; domyślnie 300 m, zmienia go właściciel (np. dla dużego placu). Budowa bez położenia ma odbicia „bez sprawdzenia”.

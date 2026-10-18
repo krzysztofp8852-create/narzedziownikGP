@@ -1,6 +1,7 @@
 /**
  * Firma do testu dymnego tablicy: właściciel i kierownik z własnymi hasłami, budowa Rataje
  * z młotem H-01 (3200 zł) i szlifierką S-01 (450,50 zł), a na bazie szlifierka S-02 (380 zł).
+ * Z `--tablica` jest też magazynier i zgłoszone przez kierownika narzędzie (zob. niżej). Z `--naklejki` naklejki są już wydrukowane, więc właściciel ma zrobione wszystkie pierwsze kroki.
  * Wypisuje dane logowania obu osób jako JSON.
  *
  * Zakłada wszystko przez Rejestr, tak jak zrobiliby to właściciel i kierownik w aplikacji.
@@ -51,11 +52,26 @@ await registry.as(manager.userId).registerMovement({
   source: "checklista",
 });
 
+if (process.argv.includes("--naklejki")) await owner.printStickers({ unlabeled: true }, async () => null);
+
+// Z `--tablica` w firmie jest też magazynier, a kierownik zgłosił wiertarkę kupioną na Rataje: sprawa „Do zrobienia”
+// właściciela.
+let storekeeper: { email: string; password: string } | undefined;
+if (process.argv.includes("--tablica")) {
+  const storekeeperEmail = `smoke-storekeeper-${suffix}@narzedziownik.test`;
+  const added = await owner.addMember({ firstName: "Ewa", lastName: "Magazyn", email: storekeeperEmail, role: "magazynier" });
+  storekeeper = { email: storekeeperEmail, password: `Magazynier-${randomUUID().slice(0, 8)}` };
+  await registry.as(added.userId).changePassword(storekeeper.password, signedInNow());
+  const drills = await owner.addCategory({ name: "Wiertarki", prefix: "W" });
+  await registry.as(manager.userId).reportTool({ operationId: randomUUID(), siteId: ratajeId, name: "Wiertarka Makita", categoryId: drills.id });
+}
+
 console.log(
   JSON.stringify({
     companyName,
     owner: { email: ownerEmail, password: ownerPassword },
     manager: { email: managerEmail, password: managerPassword },
+    storekeeper,
   }),
 );
 process.exit(0);

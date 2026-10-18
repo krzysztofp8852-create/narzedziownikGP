@@ -49,7 +49,18 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
 - Budowy prowadzą na stronę Budowy (`/budowy`, #176): aktywne budowy z dodawaniem, zmianą kierownika i adresu
   oraz zamykaniem, pod nimi zakończone (dawne `/budowy/zakonczone`), a jako drugi widok mapa budów
   (`?widok=mapa`). Kierownik ma pod „Moje budowy” tę samą stronę, zawężoną do budów, którymi kieruje. Dawna kotwica
-  tablicy `/#budowy` przekierowuje na stronę Budowy. Do nowej tablicy (#180) tablica pokazuje jeszcze stare sekcje.
+  tablicy `/#budowy` przekierowuje na stronę Budowy.
+- Tablica właściciela, kierownika i magazyniera (#180) mówi, co zrobić teraz. Od góry: „Uruchom firmę w 4 krokach”
+  (tylko właściciel; znika po „Pomiń” albo gdy wszystkie kroki są zrobione), pasek stanu odbicia, operacje (Wydaj,
+  Zwróć, Powiedz lub wpisz, a reszta według uprawnień pod „Więcej operacji”), „Wymaga uwagi” (do pięciu spraw
+  z „Do zrobienia”), klikalne liczniki (Na bazie, Na budowach, Alarmy, u właściciela Poza bazą w zł), „Gdzie jest
+  sprzęt” (zwinięte kafle bazy, budów, pojazdów i serwisów ze sprzętem, prowadzące na stronę miejsca) i trzy ostatnie
+  ruchy. Kierownik ma na siatce przede wszystkim swoje budowy i pojazdy, a pozostałe zwinięte pod spodem. Liczniki
+  prowadzą do listy Narzędzia z filtrem (`?lokalizacja=` bazy, `?pokaz=na-budowach`, `z-alarmem`, `poza-baza`).
+  Pełne listy narzędzi są na stronach miejsc i na liście Narzędzia, mapa na stronie Budowy, serwis i zaginione to
+  filtry listy Narzędzia, a banery zastąpiła „Wymaga uwagi”. Kafle i liczniki daje to samo zapytanie „Gdzie jest co”
+  co pełne listy. Kopia tablicy w telefonie (service worker, ADR 0010) zapisuje się i odtwarza jak dotąd, ale ma już
+  tylko kafle, liczniki, sprawy i ostatnie ruchy, a nie listę narzędzi każdego miejsca.
 - Ustawienia (pod „Więcej”, tylko właściciel) to lista czterech podstron (#178): Firma i abonament
   (`/ustawienia/firma`), Sprzęt (`/ustawienia/sprzet`: stawki dzienne, alarm na budowie, naklejki QR, serwisy, baza
   na mapie), Ludzie i dostęp (`/ustawienia/dostep`: kto widzi koszty i zgłoszenia, wylogowanie po bezczynności)
@@ -62,6 +73,8 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
 
 ## Konsekwencje
 
+- Bez zasięgu tablica mówi, ile sprzętu jest w każdym miejscu, ale nie które narzędzia: strony miejsc i lista Narzędzia
+  wymagają sieci. Kopia stron miejsc w telefonie byłaby osobną decyzją.
 - Do czasu skrzynki (#177) do listy odbić do wyjaśnienia prowadzi tylko jej adres. Gałąź `redesign` trafia do `main`
   dopiero razem ze skrzynką.
 - Przewodnik po demo wskazuje „Więcej” w pasku zamiast przycisku menu, a na telefonie stawia dymek u góry ekranu, gdy

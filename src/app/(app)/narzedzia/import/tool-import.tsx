@@ -127,7 +127,7 @@ export function ToolImport(props: { operationId: string }) {
         {reading && <p role="status">{t("import.reading")}</p>}
         {imported !== null && (
           <p role="status" className="checklist-done">
-            {t("import.done", { count: imported.count })} <Link href="/">{t("import.openBoard")}</Link>
+            {t("import.done", { count: imported.count })} <Link href="/narzedzia">{t("import.openTools")}</Link>
           </p>
         )}
         {imported?.limitWarning && (

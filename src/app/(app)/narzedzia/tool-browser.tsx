@@ -16,6 +16,8 @@ import {
   filterTools,
   IN_SERVICE,
   LOST,
+  OFF_BASE,
+  ON_SITES,
   type ToolListFilters,
   toolListOptions,
   toolListSearch,
@@ -23,6 +25,8 @@ import {
 import type { ListedTool } from "@/registry/registry";
 
 const SHOW_LABELS = [
+  [ON_SITES, "toolsPage.onSites"],
+  [OFF_BASE, "toolsPage.offBase"],
   [LOST, "toolsPage.lost"],
   [IN_SERVICE, "toolsPage.inService"],
   [ALARM, "toolsPage.withAlarm"],

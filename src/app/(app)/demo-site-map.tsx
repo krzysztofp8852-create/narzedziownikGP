@@ -179,7 +179,7 @@ export function DemoSiteMap({ places, devices }: { places: MapPlace[]; devices: 
     setSelection((current) => (current?.type === next.type && current.id === next.id ? null : next));
 
   return (
-    <section className="board-section" aria-labelledby="board-map" data-tour="map">
+    <section className="board-section" aria-labelledby="board-map">
       <div className="section-head">
         <h2 id="board-map" className="display section-title">
           {t("siteMap.title")} <span className="tag tag-demo">{t("siteMap.demo")}</span>

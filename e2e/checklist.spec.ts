@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
+import { equipmentAt, placeTile } from "./support/equipment";
 
 function seedCompany() {
   const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-checklist.mts"], {
@@ -35,16 +36,16 @@ test("kierownik wydaje dwie szlifierki z bazy checklistą na tablicy i widzi je 
   // Checklista zostaje na tablicy, pusta i gotowa na następny ruch.
   await expect(page.getByRole("status")).toHaveText("Zapisano: S-01, S-02 → Rataje");
   await expect(page).toHaveURL(/\/$/);
-  const rataje = page.getByRole("region", { name: "Budowa Rataje" });
-  await expect(rataje.getByRole("link", { name: /S-01/ })).toContainText("0 dni");
-  await expect(rataje.getByRole("link", { name: /S-02/ })).toBeVisible();
-  const base = page.getByRole("region", { name: "Baza Magazyn" });
-  // Nazwa bazy to odnośnik do strony bazy; liczymy narzędzia z listy.
-  await expect(base.getByRole("list").getByRole("link")).toHaveCount(1);
-  await expect(base.getByRole("link", { name: /S-03/ })).toBeVisible();
+  await expect(placeTile(page, "Rataje")).toContainText("2 szt.");
+  await expect(placeTile(page, "Magazyn")).toContainText("1 szt.");
   const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
   await expect(recent.getByRole("listitem").first()).toContainText("Wydanie");
   await expect(recent.getByRole("listitem").first()).toContainText("S-01, S-02");
   await expect(recent.getByRole("listitem").first()).toContainText("Magazyn → Rataje");
   await expect(recent.getByRole("listitem").first()).toContainText("Adam Nowak");
+
+  // Pełna lista jest na stronie budowy, jeden klik od kafla.
+  const rataje = await equipmentAt(page, "Rataje");
+  await expect(rataje.getByRole("link", { name: /S-01/ })).toContainText("0 dni");
+  await expect(rataje.getByRole("link", { name: /S-02/ })).toBeVisible();
 });

@@ -8,7 +8,7 @@ import { requireSession } from "@/lib/auth";
 import { punchCheckText } from "@/lib/punch-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { canClarifyPunches, type PunchConflict } from "@/registry/registry";
-import { locationPagePath } from "../lokalizacje/location-page";
+import { locationPagePath } from "@/lib/location-path";
 import { CorrectPunch, PunchEntry } from "../lokalizacje/people-on-site";
 import { ExplainPunchConflictForm, ExplainPunchForm } from "../lokalizacje/punch-forms";
 

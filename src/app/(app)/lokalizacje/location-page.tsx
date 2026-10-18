@@ -12,16 +12,12 @@ import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { type CostPeriodChoice, costPeriodSearch, parseCostPeriod } from "@/lib/cost-period";
 import { historySearch } from "@/lib/history-filters";
+import { locationPagePath, type PlacePageKind, type SiteOrVehicleKind } from "@/lib/location-path";
 import { getRegistry } from "@/lib/registry-instance";
 import { settingsHref } from "@/lib/settings-pages";
 import { canManageRates, canSeeCostsOf, type LocationCosts, type Session, type Site, type ToolCost, type Vehicle } from "@/registry/registry";
 import { DailyRatesForm } from "../ustawienia/daily-rates-form";
 import { CostPeriodPicker } from "./cost-period-picker";
-
-/** Budowa albo pojazd: lokalizacje z zakładką „Koszty”. */
-export type SiteOrVehicleKind = "budowa" | "pojazd";
-/** Lokalizacje z własną stroną: budowa, pojazd i baza. Budowa i baza mają też zakładkę „Ludzie”. */
-export type PlacePageKind = SiteOrVehicleKind | "baza";
 
 export interface PlacePage {
   id: string;
@@ -37,14 +33,6 @@ export interface PlacePage {
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
-
-export type PlacePageTab = "" | "/koszty" | "/koszty/eksport" | "/ludzie" | "/terminy";
-
-/** Adres strony budowy, pojazdu albo bazy, np. /budowy/…/koszty albo /baza/ludzie. */
-export function locationPagePath(kind: PlacePageKind, id: string, tab: PlacePageTab = "") {
-  if (kind === "baza") return `/baza${tab}`;
-  return `${kind === "budowa" ? "/budowy" : "/pojazdy"}/${id}${tab}`;
-}
 
 /**
  * Budowa (także zakończona), pojazd (także nieaktywny) albo baza (bez `id`) raz na żądanie; null, gdy nie ma takiej

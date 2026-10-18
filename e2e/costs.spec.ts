@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
 import readXlsxFile from "read-excel-file/node";
+import { placeTile } from "./support/equipment";
 import { appNav, moreButton, openFromNav, openMyAccount } from "./support/navigation";
 
 interface Credentials {
@@ -24,7 +25,7 @@ test("właściciel ustawia stawkę na zakładce „Koszty” budowy i pobiera ze
   const company = seedCompany();
 
   await signIn(page, company.owner);
-  await page.getByRole("link", { name: "Rataje", exact: true }).click();
+  await placeTile(page, "Rataje").click();
   await expect(page.getByRole("heading", { name: /Rataje/ })).toBeVisible();
   await page.getByRole("link", { name: "Koszty" }).click();
 

@@ -5,7 +5,7 @@ import { issueOpenLink, issueSubjectText } from "@/lib/issue-text";
 import { placeAt } from "@/lib/place-text";
 import { punchCheckText, punchTimeText } from "@/lib/punch-text";
 import type { NotificationContent, ToDoItem } from "@/registry/registry";
-import { locationPagePath } from "../lokalizacje/location-page";
+import { locationPagePath } from "@/lib/location-path";
 
 type NotifiedToDo = Extract<ToDoItem, { kind: "ruch_odrzucony" | "brak_wyjscia" | "termin" | "uprawnienie" }>;
 

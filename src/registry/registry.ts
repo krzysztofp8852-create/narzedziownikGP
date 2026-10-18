@@ -119,7 +119,7 @@ import { isLocale, type Locale } from "@/i18n/locales";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
-export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
+export type { BoardCounts, LostOnBoard, PlaceOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { CatalogTool } from "./catalog";
 export type { CompanyExportSummary, ExportSink } from "./company-export";
 export type { ListedTool } from "./tool-list";
@@ -605,8 +605,9 @@ export interface Registry {
     /** Osoba coś zrobiła w przeglądarce: odsuwa jej wylogowanie po bezczynności, chyba że sesja już wygasła. */
     recordActivity(browser: BrowserSession): Promise<IdleStatus>;
     /**
-     * Tablica „Gdzie jest co”: baza, aktywne budowy i pojazdy, serwisy i zaginione, z alarmami. Wartości
-     * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
+     * „Gdzie jest co”, dane tablicy i stron miejsc: baza, aktywne budowy i pojazdy, serwisy i zaginione, z alarmami, kafle miejsc
+     * (rodzaj, nazwa, liczba narzędzi, alarm, czy to budowa lub pojazd aktora) i liczniki tablicy. Wartości w zł
+     * (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
      */
     whereIsWhat(): Promise<WhereIsWhat>;
     /**

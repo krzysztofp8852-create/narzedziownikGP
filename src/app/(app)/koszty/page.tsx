@@ -10,7 +10,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { settingsHref } from "@/lib/settings-pages";
 import { canManageRates, canSeeCosts, type CostedKind, type CostSummary } from "@/registry/registry";
 import { CostPeriodPicker } from "../lokalizacje/cost-period-picker";
-import { locationPagePath } from "../lokalizacje/location-page";
+import { locationPagePath } from "@/lib/location-path";
 
 export const generateMetadata = (): Metadata => ({ title: t("costSummary.title") });
 

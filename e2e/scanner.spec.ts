@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
+import { placeTile } from "./support/equipment";
 import { openScan, typeScanCode } from "./support/navigation";
 
 function seedCompany() {
@@ -19,7 +20,7 @@ test("kierownik wpisuje kod ze zniszczonej naklejki: system podpowiada wydanie, 
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 
   await openScan(page);
-  await expect(page.getByRole("button", { name: "Skanuj QR" })).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("button", { name: "Zamknij skaner" })).toBeVisible();
   await page.getByRole("button", { name: "Wyłącz aparat" }).click();
 
   await page.getByLabel("Kod z naklejki albo plakatu").fill("s01");
@@ -33,8 +34,7 @@ test("kierownik wpisuje kod ze zniszczonej naklejki: system podpowiada wydanie, 
   await fromBase.getByRole("button", { name: "Zatwierdź ✓" }).click();
 
   await expect(page.getByRole("status")).toHaveText("Zapisano: S-01 → Rataje");
-  const rataje = page.getByRole("region", { name: "Budowa Rataje" });
-  await expect(rataje.getByRole("link", { name: /S-01/ })).toBeVisible();
+  await expect(placeTile(page, "Rataje")).toContainText("1 szt.");
   const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
   await expect(recent.getByRole("listitem").first()).toContainText("Wydanie");
   await expect(recent.getByRole("listitem").first()).toContainText("Adam Nowak · skaner QR");

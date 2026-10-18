@@ -2,7 +2,22 @@ import { type Locator, type Page, test } from "@playwright/test";
 import readXlsxFile from "read-excel-file/node";
 import { expectNoHorizontalScroll, firstSignIn, openFreshAccount } from "../support/fresh-account";
 import { appNav, moreButton, openFromNav } from "../support/navigation";
-import { addCategory, addManager, addSite, addTool, expect, money, openOperation, plDay, secondPhone, skipTutorial, warsawDay, zl } from "../support/equipment";
+import {
+  addCategory,
+  addManager,
+  addSite,
+  addTool,
+  equipmentAt,
+  expect,
+  money,
+  openOperation,
+  placeTile,
+  plDay,
+  secondPhone,
+  skipTutorial,
+  warsawDay,
+  zl,
+} from "../support/equipment";
 
 /**
  * Sprzęt własny i wynajęty na nowym koncie, wszystko przez interfejs: właściciel zakłada kierownika i budowę, dodaje
@@ -65,13 +80,10 @@ test("właściciel: sprzęt wynajęty od przyjęcia na bazę, przez wydanie na b
   await expect(body.getByLabel("Wypożyczalnia")).toHaveValue("");
   await expectNoHorizontalScroll(page);
 
-  const base = page.getByRole("region", { name: "Baza Magazyn" });
-  const rentedAtBase = base.getByRole("link", { name: /M-01/ });
+  const rentedAtBase = (await equipmentAt(page, "Magazyn")).getByRole("link", { name: /M-01/ });
   await expect(rentedAtBase).toContainText("wynajęte");
   await expect(rentedAtBase).not.toContainText("po terminie zwrotu");
   await expect(rentedAtBase).toContainText(money("120 000,00"));
-  // Termin zwrotu ma na tablicy własny dopisek, więc nie wchodzi do zbiorczego „Sprzęt z terminem…” (deadlines.ts).
-  await expect(page.getByRole("heading", { name: /Sprzęt z terminem/ })).toHaveCount(0);
 
   await page.goto("/terminy");
   const deadlines = page.getByTestId("upcoming-deadlines");
@@ -86,11 +98,11 @@ test("właściciel: sprzęt wynajęty od przyjęcia na bazę, przez wydanie na b
   await expect(body.getByRole("radio", { name: /Rataje/ })).toBeChecked();
   await body.getByRole("button", { name: "Zatwierdź ✓" }).click();
   await expect(body.getByRole("status").first()).toContainText(/Zapisano: .*M-01.* → Rataje/);
-  const rataje = page.getByRole("region", { name: "Budowa Rataje" });
+  await expect(placeTile(page, "Magazyn")).toContainText("1 szt.");
+  const rataje = await equipmentAt(page, "Rataje");
   await expect(rataje.getByRole("list").getByRole("link")).toHaveCount(3);
   await expect(rataje.getByRole("link", { name: /M-01/ })).toContainText("wynajęte");
   await expect(rataje.getByRole("link", { name: /M-01/ })).toContainText("0 dni");
-  await expect(base.getByRole("link")).toHaveText([/^Magazyn$/, /S-02/]);
 
   // Karta: wypożyczalnia i stawka dobowa z umowy; przed pierwszą stawką firmy koszty jeszcze nie ruszyły.
   await rataje.getByRole("link", { name: /M-01/ }).click();
@@ -113,7 +125,7 @@ test("właściciel: sprzęt wynajęty od przyjęcia na bazę, przez wydanie na b
 
   // Stawka firmy 1% z zakładki „Koszty” budowy: H-01 3200 zł → 32,00, S-01 450,50 zł → 4,505 → 4,51, M-01 450,00 z umowy.
   await page.goto("/");
-  await page.getByRole("link", { name: "Rataje", exact: true }).click();
+  await placeTile(page, "Rataje").click();
   await page.getByRole("navigation", { name: "Zakładki" }).getByRole("link", { name: "Koszty" }).click();
   await expect(page.getByRole("heading", { name: "Ustaw stawkę dzienną" })).toBeVisible();
   await expect(page.getByLabel("Stawka firmy (% wartości na dzień)")).toHaveValue("1");
@@ -219,11 +231,13 @@ test("właściciel: sprzęt wynajęty od przyjęcia na bazę, przez wydanie na b
 
   // Po zwrocie: nie ma go na tablicy ani w terminach, a doba z dziś zostaje w kosztach budowy.
   await page.goto("/");
-  await expect(rataje.getByRole("list").getByRole("link")).toHaveCount(2);
-  await expect(rataje.getByRole("link", { name: /M-01/ })).toHaveCount(0);
+  await expect(placeTile(page, "Rataje")).toContainText("2 szt.");
   const lastMovement = page.getByRole("region", { name: "Ostatnie ruchy" }).getByRole("listitem").first();
   await expect(lastMovement).toContainText("Zwrot do wypożyczalni");
   await expect(lastMovement).toContainText("M-01");
+  await equipmentAt(page, "Rataje");
+  await expect(rataje.getByRole("list").getByRole("link")).toHaveCount(2);
+  await expect(rataje.getByRole("link", { name: /M-01/ })).toHaveCount(0);
   await page.goto("/terminy");
   await expect(page.getByText("W najbliższych 30 dniach nie ma żadnych terminów.")).toBeVisible();
   await page.goto("/koszty");
@@ -243,8 +257,10 @@ test("właściciel: sprzęt wynajęty od przyjęcia na bazę, przez wydanie na b
   // Pomyłka: autor cofa zwrot w 15 minut i sprzęt wraca na budowę, z terminem zwrotu.
   await page.goto("/");
   await lastMovement.getByRole("button", { name: "Cofnij" }).click();
-  await expect(rataje.getByRole("link", { name: /M-01/ })).toContainText("wynajęte");
   await expect(page.getByRole("region", { name: "Ostatnie ruchy" }).getByRole("listitem").first()).toContainText("Cofnięcie");
+  await expect(placeTile(page, "Rataje")).toContainText("3 szt.");
+  await equipmentAt(page, "Rataje");
+  await expect(rataje.getByRole("link", { name: /M-01/ })).toContainText("wynajęte");
   await page.goto("/terminy");
   await expect(page.getByTestId("upcoming-deadlines").getByRole("link")).toHaveText([/M-01/]);
   await page.goto(excavatorCard);
@@ -312,11 +328,12 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await body.getByRole("button", { name: "Przyjmij sprzęt wynajęty" }).click();
   await expect(body.getByRole("status")).toContainText("Przyjęto M-03 Agregat prądotwórczy: Rataje.");
 
-  const rataje = manager.getByRole("region", { name: "Budowa Rataje" });
+  await expect(manager.getByRole("region", { name: "Gdzie jest sprzęt" })).not.toContainText("zł");
+  const rataje = await equipmentAt(manager, "Rataje");
   const generator = rataje.getByRole("link", { name: /M-03/ });
   await expect(generator).toContainText("wynajęte");
   await expect(generator).toContainText("po terminie zwrotu");
-  await expect(manager.getByRole("region", { name: "Gdzie jest co" })).not.toContainText("zł");
+  await expect(rataje).not.toContainText("zł");
 
   await manager.goto("/terminy");
   const overdue = manager.getByTestId("upcoming-deadlines").getByRole("link", { name: /M-03/ });
@@ -348,11 +365,9 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await returnDeadline.getByRole("button", { name: "Zapisz zmiany" }).click();
   await expect(manager.getByTestId("deadline-zwrot")).toContainText(`Termin: ${plDay(extended)} (za 7 dni)`);
   await expect(manager.getByTestId("deadline-zwrot")).not.toContainText("po terminie");
-  await manager.goto("/");
+  await equipmentAt(manager, "Rataje");
   await expect(generator).toContainText("wynajęte");
   await expect(generator).not.toContainText("po terminie zwrotu");
-
-  await manager.getByRole("link", { name: "Rataje", exact: true }).click();
   await expect(manager).toHaveURL(/\/budowy\/[0-9a-f-]{36}$/);
   await expect(manager.getByRole("heading", { name: /Rataje/, level: 1 })).toBeVisible();
   await expect(manager.getByRole("link", { name: "Koszty", exact: true })).toHaveCount(0);
@@ -406,9 +421,9 @@ test("kierownik przyjmuje wynajęte na swoją budowę po terminie zwrotu, przed�
   await manager.getByRole("button", { name: "Zwrot do wypożyczalni" }).click();
   await manager.getByRole("button", { name: "Tak, zwrócony" }).click();
   await expect(manager.getByTestId("tool-rental")).toContainText("Zwrócony do wypożyczalni. Zostaje w historii.");
-  await manager.goto("/");
+  await equipmentAt(manager, "Rataje");
   await expect(rataje.getByRole("link", { name: /M-03/ })).toHaveCount(0);
-  await expect(rataje.getByText("Na tej budowie nie ma jeszcze narzędzi.")).toBeVisible();
+  await expect(rataje.getByText("Na tej budowie nie ma teraz sprzętu.")).toBeVisible();
   await manager.goto("/koszty");
   await expect(manager.getByTestId("cost-total")).toHaveText(zl("300,50"));
   await page.goto("/terminy");

@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { equipmentAt } from "./support/equipment";
 import { openMyAccount } from "./support/navigation";
 
 interface Seeded {
@@ -46,7 +47,8 @@ test("pracownik zgłasza uszkodzenie z karty narzędzia, a właściciel widzi je
   await expect(page).toHaveURL(/\/logowanie$/);
 
   await signIn(page, company.owner.email, company.owner.password, company.companyName);
-  await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByText("uszkodzone")).toBeVisible();
+  await expect((await equipmentAt(page, "Rataje")).getByRole("link", { name: /W-02/ })).toContainText("uszkodzone");
+  await page.goto("/");
   await expect(page.getByTestId("bell-count")).toHaveText("1");
   await page.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
   const item = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").filter({ hasText: "Nie trzyma udaru, iskrzy" });
@@ -63,13 +65,12 @@ test("pracownik zgłasza uszkodzenie z karty narzędzia, a właściciel widzi je
 
   await expect(page.getByText("Właściciel uznał narzędzie za sprawne.")).toBeVisible();
   await expect(page.getByTestId("bell-count")).toHaveCount(0);
-  await page.goto("/");
-  await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /W-02/ })).not.toContainText("uszkodzone");
+  await expect((await equipmentAt(page, "Rataje")).getByRole("link", { name: /W-02/ })).not.toContainText("uszkodzone");
 });
 
 test("właściciel zgłasza brak narzędzia: tablica pokazuje „zgłoszony brak”, dopóki zgłoszenie jest otwarte", async ({ page }) => {
   const company = seedCompany();
-  const w02OnRataje = () => page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /W-02/ });
+  const w02OnRataje = async () => (await equipmentAt(page, "Rataje")).getByRole("link", { name: /W-02/ });
 
   await signIn(page, company.owner.email, company.owner.password, company.companyName);
   await page.goto(`/narzedzia/${company.toolId}`);
@@ -78,9 +79,10 @@ test("właściciel zgłasza brak narzędzia: tablica pokazuje „zgłoszony brak
   await page.getByRole("button", { name: "Wyślij zgłoszenie" }).click();
   await expect(page.getByRole("heading", { name: /W-02 Wiertarka Makita/ })).toBeVisible();
 
-  await page.goto("/");
-  await expect(w02OnRataje()).toContainText("zgłoszony brak");
-  await expect(page.getByRole("region", { name: "Zaginione" })).toContainText("Nie ma zaginionych narzędzi.");
+  await expect(await w02OnRataje()).toContainText("zgłoszony brak");
+  // Zgłoszony brak nie czyni narzędzia zaginionym.
+  await page.goto("/narzedzia?pokaz=zaginione");
+  await expect(page.getByTestId("tools-count")).toHaveText("Narzędzia: 0");
 
   await page.goto("/zgloszenia");
   await page.getByRole("link", { name: /Nie ma jej w kontenerze od piątku/ }).click();
@@ -89,6 +91,5 @@ test("właściciel zgłasza brak narzędzia: tablica pokazuje „zgłoszony brak
   await page.getByRole("button", { name: "Zamknij z tym komentarzem" }).click();
   await expect(page.getByText("zamknięte", { exact: true })).toBeVisible();
 
-  await page.goto("/");
-  await expect(w02OnRataje()).not.toContainText("zgłoszony brak");
+  await expect(await w02OnRataje()).not.toContainText("zgłoszony brak");
 });

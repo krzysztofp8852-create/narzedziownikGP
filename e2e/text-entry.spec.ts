@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
+import { placeTile } from "./support/equipment";
 
 // Bez klucza OpenAI API aplikacja interpretuje wpis słowami kluczowymi (TEXT_ENTRY_INTERPRETER=slowa).
 test.skip(!process.env.OPENAI_API_KEY && process.env.TEXT_ENTRY_INTERPRETER !== "slowa", "wpis tekstem wyłączony");
@@ -33,13 +34,12 @@ test("kierownik wpisuje „biorę dwie szlifierki na Rataje”, wybiera które i
   await proposal.getByRole("button", { name: "S-03 Szlifierka do betonu" }).click();
   await expect(proposal.getByTestId("proposal-summary")).toHaveText("Wydanie: S-01, S-03 → Rataje");
   // Nic się nie zapisało przed ✓.
-  await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /S-01/ })).toHaveCount(0);
+  await expect(placeTile(page, "Rataje")).toContainText("0 szt.");
 
   await proposal.getByRole("button", { name: "Zatwierdź ✓" }).click();
 
   await expect(page.getByRole("status")).toHaveText("Zapisano: S-01, S-03 → Rataje");
-  const rataje = page.getByRole("region", { name: "Budowa Rataje" });
-  await expect(rataje.getByRole("link", { name: /S-01/ })).toBeVisible();
+  await expect(placeTile(page, "Rataje")).toContainText("2 szt.");
   const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
   await expect(recent.getByRole("listitem").first()).toContainText("Słowami: „biorę dwie szlifierki na Rataje”");
   await expect(recent.getByRole("listitem").first()).toContainText("Adam Nowak · głosem lub tekstem");

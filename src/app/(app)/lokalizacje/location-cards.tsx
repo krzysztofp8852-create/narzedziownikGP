@@ -7,7 +7,7 @@ import { t } from "@/i18n/t";
 import { daysLeftText, deadlineName, deadlineWhen } from "@/lib/deadline-text";
 import { canCloseSite, type Session, type SiteManagerCandidate, UPCOMING_DAYS, type UpcomingDeadline, type WhereIsWhat } from "@/registry/registry";
 import { changeSiteManager, changeVehicleManager } from "./actions";
-import { locationPagePath } from "./location-page";
+import { locationPagePath } from "@/lib/location-path";
 import { ChangeManagerForm, ChangeSiteAddressForm, DeactivateVehicleForm, VehicleAlarmForm } from "./location-forms";
 
 /** Liczba sztuk i, dla właściciela, suma wartości lokalizacji. */
@@ -31,19 +31,17 @@ export function AddLocationTile({ title, form }: { title: string; form: ReactNod
 }
 
 /**
- * Aktywna budowa: adres, kierownik i ile sprzętu na niej jest, a z `tools` także jego lista. Kto zarządza lokalizacjami
+ * Aktywna budowa: adres, kierownik i ile sprzętu na niej jest. Kto zarządza lokalizacjami
  * (`managers`), zmienia tu kierownika i adres; kto może ją zamknąć, ma odnośnik do domykania budowy.
  */
 export function SiteCard({
   site,
   managers,
   session,
-  tools = false,
 }: {
   site: WhereIsWhat["sites"][number];
   managers: SiteManagerCandidate[] | null;
   session: Session;
-  tools?: boolean;
 }) {
   return (
     <section className="location location-site" aria-labelledby={`location-${site.id}`}>
@@ -59,7 +57,6 @@ export function SiteCard({
           <SiteManagerLabel manager={site.manager} />
         </p>
       </div>
-      {tools && (site.tools.length === 0 ? <p className="empty">{t("board.siteEmpty")}</p> : <ToolList tools={site.tools} />)}
       {managers && (
         <>
           <details className="location-more">

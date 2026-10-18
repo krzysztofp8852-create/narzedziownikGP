@@ -4,7 +4,7 @@ import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { historySearch } from "@/lib/history-filters";
 import type { FinishedSite } from "@/registry/registry";
-import { locationPagePath } from "../lokalizacje/location-page";
+import { locationPagePath } from "@/lib/location-path";
 
 /** Zakończone budowy, których nie ma już na tablicy, z odnośnikiem do ich historii ruchów. */
 export function FinishedSites({ sites }: { sites: FinishedSite[] }) {

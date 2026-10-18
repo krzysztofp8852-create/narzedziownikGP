@@ -119,7 +119,6 @@
     }
   },
   "board": {
-    "title": "What's where",
     "snapshot": "No connection. State from {when}: what this phone downloaded last.",
     "baseKind": "Base",
     "toolCount": "{count} pcs",
@@ -131,11 +130,8 @@
     "siteEmpty": "There are no tools on this site yet.",
     "vehicleKind": "Vehicle",
     "vehicleEmpty": "There are no tools in this vehicle yet.",
-    "vehiclesTitle": "Vehicles",
     "addVehicle": "Add vehicle",
-    "vehiclesLink": "All vehicles",
     "vehicleAlarmOff": "no day-limit alarm",
-    "noSites": "There are no active sites.",
     "addSite": "Add site",
     "scan": "Scan QR",
     "textEntry": "Type text",
@@ -153,8 +149,6 @@
     "sidebar": "Operations and recent movements",
     "statBase": "At Base",
     "statSites": "On sites",
-    "statSiteCount": "Sites",
-    "statVehicles": "In vehicles",
     "statOffBase": "Off Base",
     "statAlarms": "Alarms",
     "peopleCount": "{count} active",
@@ -162,11 +156,7 @@
     "undoing": "Undoing…",
     "overThreshold": "over limit",
     "unused": "unused for {days}",
-    "servicesTitle": "In service",
-    "servicesEmpty": "No equipment is in service.",
     "serviceKind": "Service",
-    "lostTitle": "Lost",
-    "lostEmpty": "There are no lost tools.",
     "lostFor": "lost for {days}",
     "reportTool": "Report a tool",
     "addRentedTool": "Rented equipment",
@@ -175,8 +165,12 @@
     "reportedMissing": "reported missing",
     "rented": "rented",
     "returnOverdue": "return overdue",
-    "toolReportsWaiting": "Reported tools waiting for a decision: {count}",
-    "toolReportsLink": "Review in issues →"
+    "moreOperations": "More operations",
+    "closeScanner": "Close scanner",
+    "countersLabel": "Equipment counters",
+    "alarmTag": "alarm",
+    "whereTitle": "Where the equipment is",
+    "otherPlaces": "Other sites and vehicles ({count})"
   },
   "workerBoard": {
     "equipmentTitle": "Equipment on your site",
@@ -581,7 +575,9 @@
     "lostResponsible": "was responsible: {name}",
     "lostFor": "lost for {days}",
     "stateFor": "for {days}",
-    "import": "Import from file"
+    "import": "Import from file",
+    "onSites": "On sites",
+    "offBase": "Off base"
   },
   "vehiclesPage": {
     "title": "Vehicles",
@@ -866,9 +862,6 @@
     "back": "← Back to board",
     "itemAt": "{when} · {place}",
     "itemResponsible": " · site manager: {name}",
-    "boardDue": "Equipment with a deadline in the next {days} days: {count} pcs",
-    "boardOverdue": "overdue: {count}",
-    "boardLink": "See deadlines",
     "extendRental": "Extend rental",
     "policyUntilLabel": "Last day of policy",
     "policyDue": "Policy until {day} ({left})",
@@ -1179,7 +1172,6 @@
     "submit": "Confirm import ({count} pcs)",
     "submitting": "Saving…",
     "done": "Tools imported: {count}.",
-    "openBoard": "See them on the board →",
     "rowErrors": {
       "name_missing": "Name missing.",
       "category_missing": "Category missing.",
@@ -1194,7 +1186,8 @@
       "vehicle_inactive": "Vehicle “{value}” is inactive.",
       "inspection_invalid": "Invalid inspection date “{value}”: enter e.g. 30.09.2026 or 2026-09-30.",
       "warranty_invalid": "Invalid warranty end date “{value}”: enter e.g. 30.09.2026 or 2026-09-30."
-    }
+    },
+    "openTools": "See them in the tool list →"
   },
   "notifications": {
     "greeting": "Hello, {name}!",
@@ -1268,7 +1261,6 @@
     "forceSubmit": "Close and mark as lost",
     "forceConfirm": "Mark {count} pcs as lost and close site {name}?",
     "finishedTitle": "Finished sites",
-    "finishedLink": "Finished sites →",
     "finishedEmpty": "No finished sites yet.",
     "finishedOn": "Closed: {when}, {name}",
     "history": "Site history →"
@@ -1705,10 +1697,6 @@
         "title": "Search",
         "text": "The magnifier in the header: type a code, name or brand and you'll instantly see where the tool is, for how many days and who's responsible for it. You can also ask by voice, e.g. “where's the level?”."
       },
-      "toolReports": {
-        "title": "To accept",
-        "text": "Site managers add tools bought on site. The owner fills in the code and value, then accepts or rejects the tool report."
-      },
       "operationsOwner": {
         "title": "Operations",
         "text": "From here you can record any equipment movement, add a tool, import a list from Excel and print QR stickers."
@@ -1725,14 +1713,6 @@
         "title": "Recent movements",
         "text": "Every movement has an author and a time. You can undo your own movement within 15 minutes. The full history with filters and Excel export is under “Full history”."
       },
-      "map": {
-        "title": "Map",
-        "text": "The Base, sites, vans and equipment with trackers on one map. Click a pin to see details."
-      },
-      "lost": {
-        "title": "Lost",
-        "text": "A tool that didn't come back is marked as lost. Its card remembers where it was last and who was responsible for it."
-      },
       "issuesWorker": {
         "title": "Report an issue",
         "text": "A worker doesn't move equipment but reports damage or missing items, also with a photo. Tap “Report” and describe the problem."
@@ -1748,10 +1728,6 @@
       "punchWorker": {
         "title": "Clock in",
         "text": "When you arrive and when you leave, you scan the site or base poster with “Scan”; a tool sticker opens the tool's card, where you can report a fault. Your hours are in the navigation under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
-      },
-      "deadlines": {
-        "title": "Deadlines",
-        "text": "Inspections, calibrations, UDT inspections, warranties and rental returns, and for vehicles the roadworthiness test, third-party and comprehensive insurance and the tachograph. A reminder arrives in the bell a week before the deadline, and 30 days before for insurance and the tachograph. Open the full list here or under “More”, in “Deadlines”, and people's qualifications (health and safety, medical checks, UDT) under “People”."
       },
       "costs": {
         "title": "Equipment costs",
@@ -1794,7 +1770,7 @@
     "count": "Step {step} of {count}",
     "reopen": "You can reopen the tutorial under “More”, in “Help”.",
     "firstSteps": {
-      "title": "First steps",
+      "title": "Get your company running in 4 steps",
       "intro": "Every company starts with these four things. Steps tick themselves off once the thing is already in your company.",
       "progress": "Done: {done} of {count}",
       "doneTag": "done",

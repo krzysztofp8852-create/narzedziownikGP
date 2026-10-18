@@ -76,12 +76,12 @@ describe("alarm: narzędzie na budowie dłużej niż próg", () => {
     testbed.clock.advance(30 * DAY);
     const before = await z.owner.whereIsWhat();
     expect(alarmsOn(before)).toEqual([]);
-    expect(before.alarmCount).toBe(0);
+    expect(before.counts.alarms).toBe(0);
 
     testbed.clock.advance(DAY);
     const board = await z.owner.whereIsWhat();
     expect(alarmsOn(board)).toEqual(["H-01"]);
-    expect(board.alarmCount).toBe(1);
+    expect(board.counts.alarms).toBe(1);
     expect(board.sites[0].tools[0]).toMatchObject({ code: "H-01", daysInPlace: 31, alarm: true });
     expect(board.base.tools.map((tool) => [tool.code, tool.daysInPlace, tool.alarm])).toEqual([
       ["A-01", 31, false],
@@ -174,8 +174,80 @@ describe("wartości tylko dla właściciela", () => {
       expect(board.sites[0].tools.map((tool) => tool.code)).toEqual(["H-01"]);
       expect(board.services[0].tools.map((tool) => tool.code)).toEqual(["S-02"]);
       expect(board.lost.map((tool) => tool.code)).toEqual(["S-01"]);
-      expect(stripValues(ownerBoard)).toEqual(board);
+      // Kafle różnią się tylko tym, czyje są (`mine`); poza tym to ta sama tablica bez kwot.
+      const withoutMine = ({ places, ...rest }: typeof board) => ({ ...rest, places: places.map((place) => ({ ...place, mine: undefined })) });
+      expect(withoutMine(stripValues(ownerBoard) as typeof board)).toEqual(withoutMine(board));
     }
+  });
+});
+
+describe("podsumowanie lokalizacji i liczniki", () => {
+  /**
+   * Zawbud z drugą budową Tarasy (kierownik Kowalski) i busem Nowaka. H-01 i S-01 leżą na Rataje ponad próg, agregat
+   * A-01 jeździ busem bez alarmu, S-02 jest w serwisie, a baza jest pusta.
+   */
+  async function givenSpreadOut() {
+    const z = await givenZawbud();
+    const kowalskiId = await testbed.givenMember(z.zawbud, "kierownik", "Jan Kowalski");
+    const { locationId: tarasyId } = await z.owner.addSite({ name: "Tarasy", address: "ul. Wołowa 3", managerId: kowalskiId });
+    const { locationId: busId } = await z.owner.addVehicle({ name: "Bus WX 12345", managerId: z.nowakId });
+    await issue(z, [z.h01, z.s01]);
+    await z.owner.registerMovement({
+      operationId: randomUUID(),
+      kind: "wydanie",
+      fromLocationId: z.baseId,
+      toLocationId: busId,
+      toolIds: [z.a01],
+      source: "checklista",
+    });
+    await z.owner.correctTool({ operationId: randomUUID(), toolId: z.s02, locationId: z.hiltiId, reason: "naprawa" });
+    testbed.clock.advance(31 * DAY);
+    return { ...z, kowalskiId, tarasyId, busId };
+  }
+
+  it("właściciel dostaje kafel bazy, każdej budowy, pojazdu i serwisu ze sprzętem: liczba narzędzi, alarm i suma w zł", async () => {
+    const z = await givenSpreadOut();
+
+    const board = await z.owner.whereIsWhat();
+
+    expect(board.places).toEqual([
+      { kind: "baza", id: z.baseId, name: "Magazyn Swarzędz", toolCount: 0, alarm: false, mine: false, totalValue: 0 },
+      { kind: "budowa", id: z.ratajeId, name: "Rataje", toolCount: 2, alarm: true, mine: false, totalValue: 3650.5 },
+      { kind: "budowa", id: z.tarasyId, name: "Tarasy", toolCount: 0, alarm: false, mine: false, totalValue: 0 },
+      { kind: "pojazd", id: z.busId, name: "Bus WX 12345", toolCount: 1, alarm: false, mine: false, totalValue: 0 },
+      { kind: "serwis", id: z.hiltiId, name: "Serwis Hilti", toolCount: 1, alarm: false, mine: false, totalValue: 380 },
+    ]);
+    expect(board.counts).toEqual({ atBase: 0, onSites: 2, alarms: 2 });
+    expect(board.offBaseValue).toBe(3650.5);
+  });
+
+  it("kierownik widzi, które budowy i pojazdy są jego, i nie widzi żadnej kwoty", async () => {
+    const z = await givenSpreadOut();
+
+    const board = await testbed.registry.as(z.nowakId).whereIsWhat();
+
+    expect(board.places.map(({ name, toolCount, alarm, mine }) => ({ name, toolCount, alarm, mine }))).toEqual([
+      { name: "Magazyn Swarzędz", toolCount: 0, alarm: false, mine: false },
+      { name: "Rataje", toolCount: 2, alarm: true, mine: true },
+      { name: "Tarasy", toolCount: 0, alarm: false, mine: false },
+      { name: "Bus WX 12345", toolCount: 1, alarm: false, mine: true },
+      { name: "Serwis Hilti", toolCount: 1, alarm: false, mine: false },
+    ]);
+    expect(board.counts).toEqual({ atBase: 0, onSites: 2, alarms: 2 });
+    expect(JSON.stringify(board.places)).not.toMatch(/value/i);
+    expect(board).not.toHaveProperty("offBaseValue");
+  });
+
+  it("serwisu bez sprzętu nie ma wśród kafli, a narzędzia na bazie liczą się do „Na bazie”", async () => {
+    const z = await givenZawbud();
+
+    const board = await z.owner.whereIsWhat();
+
+    expect(board.places.map((place) => [place.kind, place.name, place.toolCount])).toEqual([
+      ["baza", "Magazyn Swarzędz", 4],
+      ["budowa", "Rataje", 0],
+    ]);
+    expect(board.counts).toEqual({ atBase: 4, onSites: 0, alarms: 0 });
   });
 });
 

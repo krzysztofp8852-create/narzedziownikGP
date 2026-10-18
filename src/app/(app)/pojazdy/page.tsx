@@ -6,7 +6,7 @@ import { getRegistry } from "@/lib/registry-instance";
 import { canManageLocations, UPCOMING_DAYS, type UpcomingDeadline } from "@/registry/registry";
 import { AddLocationTile, VehicleCard } from "../lokalizacje/location-cards";
 import { AddVehicleForm } from "../lokalizacje/location-forms";
-import { locationPagePath } from "../lokalizacje/location-page";
+import { locationPagePath } from "@/lib/location-path";
 
 export const generateMetadata = (): Metadata => ({ title: t("vehiclesPage.title") });
 
