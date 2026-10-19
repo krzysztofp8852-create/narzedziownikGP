@@ -27,6 +27,9 @@ const LABELS: Record<Exclude<BoardOperation, "tekst">, MessageKey> = {
   wynajem: "board.addRentedTool",
 };
 
+/** Przyciski, które wskazuje przewodnik demo: wydanie na budowę i przyjęcie zwrotu. */
+const TOUR_TARGETS: Partial<Record<BoardOperation, string>> = { wydanie: "issue", zwrot: "return" };
+
 export interface OperationsPanelProps {
   checklist: ChecklistData;
   /** Dodawanie narzędzi: tylko dla tych, którzy mogą zarządzać narzędziami. */
@@ -112,6 +115,7 @@ export function OperationsPanel({
       type="button"
       className={open === operation ? "button" : "button button-quiet"}
       aria-expanded={open === operation}
+      data-tour={TOUR_TARGETS[operation]}
       onClick={() => setOpen((current) => (current === operation ? null : operation))}
     >
       {label(operation)}
@@ -125,7 +129,7 @@ export function OperationsPanel({
   };
 
   return (
-    <section ref={sectionRef} className="operations" aria-labelledby="operations-title" data-tour="operations">
+    <section ref={sectionRef} className="operations" aria-labelledby="operations-title">
       <h2 id="operations-title" className="display section-title">
         {t("board.operations")}
       </h2>

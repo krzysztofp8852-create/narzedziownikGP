@@ -180,7 +180,6 @@ export function AppNavigation({ bar, more, helpCount }: Pick<Navigation, "bar" |
                 aria-expanded={open}
                 aria-controls={`${id}-more`}
                 data-current={moreCurrent || undefined}
-                data-tour="more"
                 onClick={toggle}
               >
                 <Icon name={item.icon} />

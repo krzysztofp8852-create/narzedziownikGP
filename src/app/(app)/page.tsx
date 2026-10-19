@@ -44,7 +44,7 @@ const RECENT_ON_BOARD = 3;
 
 function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   return (
-    <section className="recent" aria-labelledby="recent-movements" data-tour="recent">
+    <section className="recent" aria-labelledby="recent-movements">
       <div className="section-head">
         <h2 id="recent-movements" className="display section-title">
           {t("board.recentTitle")}
@@ -66,20 +66,20 @@ function RecentMovements({ movements }: { movements: RecentMovement[] }) {
   );
 }
 
-/** Podpis licznika, a dla przewodnika demo i testów jego znaczniki. */
-const COUNTERS: Record<BoardCounter["key"], { label: MessageKey; tour?: string; testId?: string }> = {
+/** Podpis licznika, a dla testów jego znacznik. */
+const COUNTERS: Record<BoardCounter["key"], { label: MessageKey; testId?: string }> = {
   atBase: { label: "board.statBase" },
   onSites: { label: "board.statSites" },
-  alarms: { label: "board.statAlarms", tour: "alarms", testId: "alarm-count" },
-  offBase: { label: "board.statOffBase", tour: "off-base", testId: "off-base-value" },
+  alarms: { label: "board.statAlarms", testId: "alarm-count" },
+  offBase: { label: "board.statOffBase", testId: "off-base-value" },
 };
 
 /** Klikalne liczniki: każdy otwiera listę narzędzi przefiltrowaną do tego, co liczy; kwota poza bazą jest w zł. */
 function Counters({ counters }: { counters: BoardCounter[] }) {
   return (
-    <ul className="stats" aria-label={t("board.countersLabel")} data-tour="stats">
+    <ul className="stats" aria-label={t("board.countersLabel")}>
       {counters.map(({ key, value, href }) => (
-        <li key={key} data-tour={COUNTERS[key].tour}>
+        <li key={key}>
           <Link href={href} className={key === "alarms" && value > 0 ? "stat stat-alarm" : "stat"}>
             <span className="stat-label">{t(COUNTERS[key].label)}</span>{" "}
             <strong className="stat-value" data-testid={COUNTERS[key].testId}>
@@ -130,7 +130,7 @@ function WhereEquipment({ session, places }: { session: Session; places: PlaceOn
     </ul>
   );
   return (
-    <section className="board-section" aria-labelledby="where-equipment">
+    <section className="board-section" aria-labelledby="where-equipment" data-tour="where">
       <h2 id="where-equipment" className="display section-title">
         {t("board.whereTitle")}
       </h2>

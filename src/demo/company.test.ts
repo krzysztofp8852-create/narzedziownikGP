@@ -187,6 +187,30 @@ describe("firma demo", () => {
     }
   });
 
+  it("przewodnik pracownika podaje kod plakatu budowy, na której pracownik demo się odbija, i tylko w obecnym demo", async () => {
+    await demo();
+    const accounts = await bed.registry.system().demoAccounts();
+    const owner = bed.registry.as(accounts[0].userId);
+    const worker = accounts.find((account) => account.role === "pracownik")!;
+    const tarasy = (await owner.locations()).sites.find((site) => site.name === "Osiedle Zielone Tarasy")!;
+
+    expect(await bed.registry.system().demoPoster(worker.userId)).toEqual({ place: "Osiedle Zielone Tarasy", code: (await owner.poster(tarasy.id)).code });
+    // Nowy kod plakatu (np. kliknięty przez innego oglądającego) przewodnik podaje od razu.
+    await owner.renewPosterToken(tarasy.id);
+    expect(await bed.registry.system().demoPoster(worker.userId)).toMatchObject({ code: (await owner.poster(tarasy.id)).code });
+    // Po odbiciu na plakacie bazy przewodnik podaje plakat bazy.
+    const { base } = await owner.locations();
+    const baseCode = (await owner.poster(base.id)).code;
+    await bed.registry.as(worker.userId).punch({ operationId: randomUUID(), posterToken: baseCode, position: null, confirmExit: false });
+    expect(await bed.registry.system().demoPoster(worker.userId)).toEqual({ place: base.name, code: baseCode });
+
+    // Konto zwykłej firmy i konto zastąpionego demo nie dostają kodu.
+    const zawbud = await bed.givenActiveCompany("Zawbud");
+    expect(await bed.registry.system().demoPoster(zawbud.ownerId)).toBeNull();
+    await demo(minutesAfterStart(1));
+    expect(await bed.registry.system().demoPoster(worker.userId)).toBeNull();
+  });
+
   it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();

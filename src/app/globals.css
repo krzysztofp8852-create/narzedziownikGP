@@ -3055,7 +3055,7 @@ a.tool-row:hover .tool-row-name {
 
 .demo-role {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
   gap: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -3074,30 +3074,14 @@ a.tool-row:hover .tool-row-name {
   font-weight: 600;
 }
 
-.demo-role-points {
-  display: grid;
-  gap: 8px;
-  padding-left: 18px;
-  font-size: 0.95rem;
-}
-
 .demo-role-enter {
   width: 100%;
 }
 
-.demo-tips {
+.demo-about {
   display: grid;
   gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-}
-
-.demo-tips ol {
-  display: grid;
-  gap: 8px;
-  padding-left: 22px;
+  max-width: 760px;
 }
 
 .demo-contact {
@@ -3347,6 +3331,11 @@ a.tool-row:hover .tool-row-name {
 
 .demo-tour-title {
   font-size: 1.2rem;
+}
+
+.demo-tour-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
 .demo-tour-actions {

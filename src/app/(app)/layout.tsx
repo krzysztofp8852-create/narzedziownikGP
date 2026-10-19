@@ -8,14 +8,17 @@ import { DemoTour, type DemoTourOffer } from "@/components/demo-tour";
 import { IdleLogout } from "@/components/idle-logout";
 import { InstallBanner } from "@/components/install-banner";
 import { OfflineSync } from "@/components/offline-sync";
+import { isDemoRole } from "@/demo/company";
 import { requestLocale } from "@/i18n/server-locale";
 import { t } from "@/i18n/t";
 import { currentIdleStatus, requireSession } from "@/lib/auth";
+import { tourSteps } from "@/lib/demo-tour";
 import { serverEnv } from "@/lib/env";
 import { ACCOUNT_HREF } from "@/lib/nav-path";
 import { navigation } from "@/lib/navigation";
 import { demoPlan } from "@/lib/pricing-text";
 import { getRegistry } from "@/lib/registry-instance";
+import { formatPosterCode } from "@/posters/url";
 import { LocaleSync } from "./jezyk/locale-sync";
 
 function SearchIcon() {
@@ -69,10 +72,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
   const registry = getRegistry().as(session.userId);
   const nav = navigation(session);
-  const [toDoCount, unreadChat, idle] = await Promise.all([
+  const [toDoCount, unreadChat, idle, demoPoster] = await Promise.all([
     registry.toDoCount(),
     nav.help.includes("chat") ? registry.unreadSupportReplyCount() : 0,
     currentIdleStatus(),
+    // Kod plakatu do kroku „Odbij się” przewodnika pracownika: w demo nie ma plakatu do zeskanowania.
+    session.company.demo && isDemoRole(session.role) && tourSteps(session.role).some((step) => step.id === "punch")
+      ? getRegistry().system().demoPoster(session.userId)
+      : null,
   ]);
   const bellLabel = toDoCount > 0 ? t("header.bellToDo", { count: toDoCount }) : t("header.bell");
   return (
@@ -86,17 +93,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <div className="app-header-actions">
             <OfflineSync userId={session.userId} />
             <AppPush />
-            <Link
-              href="/szukaj"
-              className="button button-quiet icon-button"
-              aria-label={t("header.search")}
-              title={t("header.search")}
-              data-tour="search"
-            >
+            <Link href="/szukaj" className="button button-quiet icon-button" aria-label={t("header.search")} title={t("header.search")}>
               <SearchIcon />
               <span className="icon-button-label">{t("header.searchShort")}</span>
             </Link>
-            <Link href="/dzwonek" className="button button-quiet icon-button bell-button" aria-label={bellLabel} title={bellLabel} data-tour="bell">
+            <Link href="/dzwonek" className="button button-quiet icon-button bell-button" aria-label={bellLabel} title={bellLabel}>
               <BellIcon />
               <ToDoCount count={toDoCount} />
             </Link>
@@ -126,7 +127,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       {session.company.demo && (
         // Nowy przewodnik po przełączeniu roli; parametr adresu czyta dopiero przeglądarka.
         <Suspense fallback={null}>
-          <DemoTour key={session.userId} role={session.role} offer={demoTourOffer()} />
+          <DemoTour
+            key={session.userId}
+            role={session.role}
+            offer={demoTourOffer()}
+            poster={demoPoster && { place: demoPoster.place, code: formatPosterCode(demoPoster.code) }}
+          />
         </Suspense>
       )}
       {session.company.demo && <DemoPageLog key={session.userId} />}

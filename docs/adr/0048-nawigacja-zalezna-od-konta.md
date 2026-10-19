@@ -77,8 +77,8 @@ ekranie, czy chcieli, czy nie. Przebudowa architektury informacji idzie w kilku 
   wymagają sieci. Kopia stron miejsc w telefonie byłaby osobną decyzją.
 - Do czasu skrzynki (#177) do listy odbić do wyjaśnienia prowadzi tylko jej adres. Gałąź `redesign` trafia do `main`
   dopiero razem ze skrzynką.
-- Przewodnik po demo wskazuje „Więcej” w pasku zamiast przycisku menu, a na telefonie stawia dymek u góry ekranu, gdy
-  element jest na dole. Krótszy przewodnik wokół jednego zadania to osobne zgłoszenie.
+- Przewodnik po demo na telefonie stawia dymek u góry ekranu, gdy element jest na dole (Skanuj i Zgłoś w pasku).
+  Krótszy przewodnik wokół jednego zadania (#182) opisuje ADR 0017.
 - Nowa pozycja nawigacji wymaga decyzji, w którym miejscu tabeli stoi, i etykiety we wszystkich sześciu językach.
 - Szeroki ekran rozpoznaje przeglądarka (`matchMedia`); serwer renderuje nawigację jak na telefonie, a układ na
   komputerze daje sam CSS, więc przed załadowaniem skryptów panel boczny już stoi na miejscu.
