@@ -22,7 +22,7 @@ import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
 import type { AddDocumentInput, CompleteDeadlineInput, Deadline, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
 import * as demo from "./demo";
-import type { DemoAccount, DemoDevice, DemoUse, DemoVisit } from "./demo";
+import type { DemoAccount, DemoDevice, DemoPoster, DemoUse, DemoVisit } from "./demo";
 import * as history from "./history";
 import * as idleLogout from "./idle-logout";
 import type { BrowserSession, IdleStatus } from "./idle-logout";
@@ -348,7 +348,7 @@ export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
 export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
-export type { DemoAccount, DemoUse } from "./demo";
+export type { DemoAccount, DemoPoster, DemoUse } from "./demo";
 export type { CallbackRequest, CallbackRequestInput, CallbackRequestList, CallbackSource } from "./callback-requests";
 export { formatPhone, isCallbackSource, MAX_CALLBACK_NAME_LENGTH, normalizePhone } from "./callback-requests";
 export { DEMO_EMAIL_DOMAIN, isDemoEmail, LOGGED_DEMO_COMMANDS } from "./demo";
@@ -545,6 +545,8 @@ export interface Registry {
     demoAccounts(): Promise<DemoAccount[]>;
     /** Kiedy ktoś ostatnio wszedł do obecnego demo (zadanie godzinowe odświeża tylko używane); null, gdy demo nie założono. */
     demoUse(): Promise<DemoUse | null>;
+    /** Plakat, na którym konto obecnego demo odbiło się ostatnio (kod do przewodnika pracownika); null poza demo. */
+    demoPoster(userId: string): Promise<DemoPoster | null>;
     /** Czy użytkownik ma konto w firmie demo, obecnej albo poprzedniej (wtedy wraca na stronę /demo). */
     isDemoAccount(userId: string): Promise<boolean>;
     /**
@@ -1268,6 +1270,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
       },
       demoAccounts: () => deps.db.transaction((sql) => demo.demoAccounts(sql)),
       demoUse: () => deps.db.transaction((sql) => demo.demoUse(sql)),
+      demoPoster: (userId) => deps.db.transaction((sql) => demo.demoPoster(sql, userId)),
       isDemoAccount: (userId) => deps.db.transaction((sql) => demo.isDemoAccount(sql, userId)),
       activateDemoCompany: async (companyId) => {
         const retired = await deps.db.transaction((sql) => demo.activateDemoCompany(sql, companyId, deps.clock.now()));

@@ -13,9 +13,10 @@ export const generateMetadata = (): Metadata => ({ title: t("demo.title") });
 // Konta demo zmieniają się przy każdym zakładaniu demo, więc strona nie może być zbudowana raz na zawsze.
 export const dynamic = "force-dynamic";
 
-const lines = (text: string) => text.split("\n");
-
-/** Wejście do firmy demo dla zainteresowanych klientów: wybór roli bez logowania. */
+/**
+ * Wejście do firmy demo dla zainteresowanych klientów: „Kim chcesz być?” z czterema kartami ról, każda z jednym zdaniem
+ * o tym, co ta osoba zobaczy. Wejście jest bez logowania, a resztę pokazuje krótki przewodnik na tablicy.
+ */
 export default async function DemoPage(props: PageProps<"/demo">) {
   const { niedostepne } = await props.searchParams;
   const accounts = await getRegistry().system().demoAccounts();
@@ -58,11 +59,6 @@ export default async function DemoPage(props: PageProps<"/demo">) {
                     <p className="demo-role-summary">{t(`demo.roles.${role}.summary`)}</p>
                     {account && <p className="muted">{t("demo.person", { name: account.fullName })}</p>}
                   </div>
-                  <ul className="demo-role-points">
-                    {lines(t(`demo.roles.${role}.points`)).map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
                   <DemoRoleButton
                     role={role}
                     label={t("demo.enter", { role: t(`roles.${role}`).toLowerCase() })}
@@ -74,20 +70,12 @@ export default async function DemoPage(props: PageProps<"/demo">) {
             })}
           </form>
 
-          <section className="demo-tips" aria-labelledby="demo-tips">
-            <h2 id="demo-tips" className="display section-title">
-              {t("demo.tipsTitle")}
-            </h2>
-            <ol>
-              {lines(t("demo.tips")).map((tip) => (
-                <li key={tip}>{tip}</li>
-              ))}
-            </ol>
+          <section className="demo-about" aria-labelledby="demo-contact">
             <p className="muted">{t("demo.note")}</p>
-            <div className="demo-contact">
-              <p>{t("demo.contact")}</p>
-              <SalesContact />
-            </div>
+            <h2 id="demo-contact" className="display section-title">
+              {t("demo.contact")}
+            </h2>
+            <SalesContact />
             <CallbackForm source="demo" />
           </section>
         </main>

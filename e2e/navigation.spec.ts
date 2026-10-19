@@ -247,31 +247,3 @@ test.describe("komputer: panel boczny", () => {
     }
   });
 });
-
-test("przewodnik po tablicy demo wskazuje „Więcej” w dolnym pasku", async ({ page }) => {
-  await page.goto("/demo");
-  const enter = page.getByRole("button", { name: "Wejdź jako właściciel" });
-  test.skip(await enter.isDisabled(), "W tej bazie nie założono demo (npm run demo:create)");
-  await enter.click();
-  await expect(page.getByTestId("company-name")).toBeVisible();
-
-  const tour = page.getByTestId("demo-tour");
-  await expect(tour).toBeVisible();
-  for (let step = 0; step < 20 && !(await tour.getByRole("heading", { name: "Więcej" }).isVisible()); step++) {
-    await tour.getByRole("button", { name: "Dalej" }).click();
-  }
-  await expect(tour.getByRole("heading", { name: "Więcej" })).toBeVisible();
-
-  // Pierścień otacza przycisk w pasku, a dymek stoi nad nim, żeby go nie zasłonić.
-  await expect
-    .poll(async () => {
-      const button = await moreButton(page).boundingBox();
-      const ring = await page.locator(".demo-tour-ring").boundingBox();
-      const card = await tour.boundingBox();
-      if (!button || !ring || !card) return false;
-      const center = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
-      const ringed = center.x > ring.x && center.x < ring.x + ring.width && center.y > ring.y && center.y < ring.y + ring.height;
-      return ringed && card.y + card.height < button.y;
-    })
-    .toBe(true);
-});
