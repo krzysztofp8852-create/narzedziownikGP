@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useActionState, useRef, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { formatDays } from "@/i18n/days";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
@@ -152,14 +153,14 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
     setDone(null);
   }
 
-  if (route.to.length === 0) return <p className="empty">{t(`checklist.kinds.${kind}.noTo`)}</p>;
-  if (route.from.length === 0) return <p className="empty">{t(`checklist.kinds.${kind}.noFrom`)}</p>;
+  if (route.to.length === 0) return <EmptyState>{t(`checklist.kinds.${kind}.noTo`)}</EmptyState>;
+  if (route.from.length === 0) return <EmptyState>{t(`checklist.kinds.${kind}.noFrom`)}</EmptyState>;
 
   const placeChoice = (side: "from" | "to", options: ChecklistPlace[], current: ChecklistPlace | undefined) => (
     <fieldset key={side} className="checklist-section">
       <legend className="display section-title">{t(`checklist.kinds.${kind}.${side}`)}</legend>
       {options.length === 0 ? (
-        <p className="empty">{t(`checklist.kinds.${kind}.${side === "from" ? "noFrom" : "noTo"}`)}</p>
+        <EmptyState>{t(`checklist.kinds.${kind}.${side === "from" ? "noFrom" : "noTo"}`)}</EmptyState>
       ) : (
         <div className="choice-list">
           {options.map((place) => (
@@ -185,7 +186,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
     <fieldset key="tools" className="checklist-section">
       <legend className="display section-title">{t("checklist.tools")}</legend>
       {available.length === 0 ? (
-        <p className="empty">{emptyText}</p>
+        <EmptyState>{emptyText}</EmptyState>
       ) : (
         <>
           <div className="field">
@@ -200,7 +201,7 @@ export function Checklist({ kind, operationId: firstOperationId, userId, places,
             />
           </div>
           {visible.length === 0 ? (
-            <p className="empty">{t("checklist.noMatches")}</p>
+            <EmptyState>{t("checklist.noMatches")}</EmptyState>
           ) : (
             <ul className="tool-list">
               {visible.map((tool) => (

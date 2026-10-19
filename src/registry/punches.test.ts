@@ -128,6 +128,25 @@ describe("wejście, wyjście i przejście", () => {
     expect(await presentAt(z.zawbud.ownerId, z.winogradyId)).toEqual(["Jan Mazur"]);
   });
 
+  it("pasek stanu odbicia: gdzie i od kiedy aktor jest odbity teraz, po przejściu nowe miejsce, po wyjściu nic", async () => {
+    const z = await givenZawbud();
+    const jan = testbed.registry.as(z.janId);
+    expect(await jan.ownOpenPunch()).toBeNull();
+
+    await punch(z.janId, z.tokens.rataje, north(RATAJE, 20));
+    await punch(z.nowakId, z.tokens.base, north(FRANOWO, 20));
+    expect(await jan.ownOpenPunch()).toEqual({ place: { id: z.ratajeId, kind: "budowa", name: "Rataje" }, enteredAt: START });
+    expect(await testbed.registry.as(z.nowakId).ownOpenPunch()).toMatchObject({ place: { kind: "baza", name: "Baza Franowo" } });
+
+    testbed.clock.advance(2 * 60 * 60 * 1000);
+    await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 20));
+    expect(await jan.ownOpenPunch()).toEqual({ place: { id: z.winogradyId, kind: "budowa", name: "Winogrady" }, enteredAt: testbed.clock.now() });
+
+    await punch(z.janId, z.tokens.winogrady, north(WINOGRADY, 20), { confirmExit: true });
+    expect(await jan.ownOpenPunch()).toBeNull();
+    expect(await testbed.registry.as(z.ewaId).ownOpenPunch()).toBeNull();
+  });
+
   it("odbija się każdy z kontem: właściciel, kierownik i magazynier na bazie", async () => {
     const z = await givenZawbud();
 

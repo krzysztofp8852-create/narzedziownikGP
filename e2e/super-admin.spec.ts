@@ -94,13 +94,14 @@ test("super-admin zakłada firmę z właścicielem, zmienia pakiet, wpisuje „o
   await page.getByLabel("Powtórz nowe hasło").fill(ownerPassword);
   await page.getByRole("button", { name: "Zapisz hasło" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
   await expect(page.getByTestId("read-only-banner")).toContainText("Firma jest w trybie tylko do odczytu.");
 
-  await page.goto("/ustawienia");
+  await page.goto("/ustawienia/firma");
   await expect(page.getByTestId("read-only-banner")).toBeVisible();
   await expect(page.getByTestId("subscription")).toContainText("Duży");
   await expect(page.getByTestId("subscription-tools")).toHaveText("0 (pakiet bez limitu)");
+  await page.goto("/ustawienia/sprzet");
   await page.getByLabel("Po ilu dniach").fill("21");
   await page.getByRole("region", { name: "Alarm na budowie" }).getByRole("button", { name: "Zapisz", exact: true }).click();
   // Next.js ma też własny, pusty `role="alert"` (ogłaszanie zmiany strony), więc szukamy komunikatu po treści.

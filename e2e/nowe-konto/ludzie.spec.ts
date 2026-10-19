@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { type Browser, expect as baseExpect, devices, type Locator, type Page, test, type TestInfo } from "@playwright/test";
 import { type Credentials, expectNoHorizontalScroll, firstSignIn, openFreshAccount } from "../support/fresh-account";
+import { appNav, moreButton, openFromNav, openMyAccount } from "../support/navigation";
 
 /*
  * Kartoteka „Ludzie” i uprawnienia ludzi na zupełnie nowym koncie, tak jak klient: właściciel po pierwszym logowaniu
@@ -52,12 +53,10 @@ async function newPhone(browser: Browser, testInfo: TestInfo): Promise<Page> {
   return context.newPage();
 }
 
-const menuButton = (page: Page) => page.getByRole("button", { name: "Menu" });
-const menu = (page: Page) => page.getByRole("navigation", { name: "Menu" });
-
-async function openFromMenu(page: Page, label: string) {
-  await menuButton(page).click();
-  await menu(page).getByRole("link", { name: label, exact: true }).click();
+/** Imię i rola osoby w Moim koncie (klik w imię w nagłówku). */
+async function expectAccount(page: Page, who: string) {
+  await openMyAccount(page);
+  await expect(page.getByRole("main")).toContainText(who);
 }
 
 const peopleList = (page: Page) => page.locator("#ludzie");
@@ -188,8 +187,8 @@ test("właściciel nowej firmy buduje kartotekę Ludzie: konta kierownika, praco
   const storekeeperEmail = `e2e-mag-${id}@narzedziownik.test`;
   const workerLogin = `tomek.${id}`;
 
-  // Menu prowadzi właściciela do kartoteki; w nowej firmie jest w niej tylko on.
-  await openFromMenu(page, "Ludzie");
+  // Nawigacja prowadzi właściciela do kartoteki; w nowej firmie jest w niej tylko on.
+  await openFromNav(page, "Ludzie");
   await expect(page).toHaveURL(/\/ludzie$/);
   await expect(page.getByRole("heading", { level: 1, name: "Ludzie" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Po terminie i kończące się w 30 dni" })).toContainText(
@@ -294,11 +293,11 @@ test("właściciel nowej firmy buduje kartotekę Ludzie: konta kierownika, praco
   // Kartoteka mieści się na wąskim telefonie, także z rozwiniętymi formularzami.
   await expectNoHorizontalScroll(page);
 
-  // Kierownik: pierwsze logowanie hasłem tymczasowym, nowa nazwa w nagłówku, „Ludzie” w trybie uprawnień bez zarządzania kontami.
+  // Kierownik: pierwsze logowanie hasłem tymczasowym, nowa nazwa w Moim koncie, „Ludzie” w trybie uprawnień bez zarządzania kontami.
   const manager = await newPhone(browser, testInfo);
   await firstSignIn(manager, managerEmail, managerPassword, companyName);
-  await expect(manager.locator(".app-header-user")).toHaveText("Anna Nowak-Kierowniczka · Kierownik");
-  await openFromMenu(manager, "Ludzie");
+  await expectAccount(manager, "Anna Nowak-Kierowniczka · Kierownik");
+  await openFromNav(manager, "Ludzie");
   await expect(manager.getByRole("heading", { level: 1, name: "Ludzie" })).toBeVisible();
   await expect(manager.getByText("Badania, szkolenia BHP i uprawnienia wszystkich w firmie.")).toBeVisible();
   const managerPeople = manager.getByRole("region", { name: "Osoby" });
@@ -317,10 +316,10 @@ test("właściciel nowej firmy buduje kartotekę Ludzie: konta kierownika, praco
   // Magazynier (konto założone osobie z kartoteki) loguje się e-mailem i widzi tylko własne uprawnienia.
   const storekeeper = await newPhone(browser, testInfo);
   await firstSignIn(storekeeper, storekeeperEmail, storekeeperPassword, companyName);
-  await expect(storekeeper.locator(".app-header-user")).toHaveText("Marek Brygadzista · Magazynier");
-  await menuButton(storekeeper).click();
-  await expect(menu(storekeeper).getByRole("link", { name: "Ludzie", exact: true })).toHaveCount(0);
-  await menu(storekeeper).getByRole("link", { name: "Moje uprawnienia" }).click();
+  await expectAccount(storekeeper, "Marek Brygadzista · Magazynier");
+  await moreButton(storekeeper).click();
+  await expect(appNav(storekeeper).getByRole("link", { name: "Ludzie", exact: true })).toHaveCount(0);
+  await appNav(storekeeper).getByRole("link", { name: "Moje uprawnienia" }).click();
   await expect(storekeeper.getByRole("heading", { level: 1, name: "Moje uprawnienia" })).toBeVisible();
   // Pusta lista (treść komunikatu sprawdza osobny test niżej).
   await expect(storekeeper.locator("#uprawnienia li.deadline")).toHaveCount(0);
@@ -329,7 +328,7 @@ test("właściciel nowej firmy buduje kartotekę Ludzie: konta kierownika, praco
   // Pracownik loguje się nazwą użytkownika; cudzej karty w kartotece nie otworzy.
   const worker = await newPhone(browser, testInfo);
   const workerCredentials: Credentials = await firstSignIn(worker, workerLogin, workerPassword, companyName);
-  await openFromMenu(worker, "Moje uprawnienia");
+  await openFromNav(worker, "Moje uprawnienia");
   await expect(worker.getByRole("heading", { level: 1, name: "Moje uprawnienia" })).toBeVisible();
   // Cudza karta to „nie znaleziono”. Strona aplikacji płynie od razu (loading.tsx), więc status zostaje 200, a o 404
   // mówi treść strony (i noindex), jak przy naklejkach.
@@ -476,25 +475,22 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   expect(remindQualifications(companyId)).toEqual({ qualifications: 4 });
   expect(remindQualifications(companyId)).toEqual({ qualifications: 0 });
 
-  // Właściciel dostaje jedno zbiorcze przypomnienie, które prowadzi do kartoteki.
+  // Właściciel ma w „Do zrobienia” każde uprawnienie z przypomnieniem, od najwcześniejszego; każde prowadzi do osoby.
   await page.goto("/");
-  await expect(page.getByTestId("bell-count")).toHaveText("1");
-  await page.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const ownerBell = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(ownerBell).toHaveCount(1);
-  await expect(ownerBell.first()).toContainText("Uprawnienia ludzi: 4");
-  await expect(ownerBell.first()).toContainText(`Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`);
-  await expect(ownerBell.first()).toContainText(`Tomasz Pracowity: Szkolenie BHP okresowe, ważne do ${shown(safetyDue)}`);
-  await expect(ownerBell.first()).toContainText(`Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`);
-  await expect(ownerBell.first()).toContainText(`Marek Brygadzista: Prawo jazdy kat. C+E, ważne do ${shown(licenceDue)}`);
-  await expect(ownerBell.first()).not.toContainText("Ewa Sezonowa");
-  await expect(ownerBell.first()).not.toContainText("Kurs pierwszej pomocy");
-  await ownerBell.first().getByRole("button", { name: "Pokaż" }).click();
-  await expect(page).toHaveURL(/\/ludzie$/);
-  await expect(page.getByTestId("bell-count")).toHaveCount(0);
+  await expect(page.getByTestId("bell-count")).toHaveText("4");
+  await page.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 4" }).click();
+  const ownerToDo = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem");
+  await expect(ownerToDo.locator(".movement-head")).toHaveText([
+    `Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`,
+    `Tomasz Pracowity: Szkolenie BHP okresowe, ważne do ${shown(safetyDue)}`,
+    `Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`,
+    `Marek Brygadzista: Prawo jazdy kat. C+E, ważne do ${shown(licenceDue)}`,
+  ]);
+  await ownerToDo.first().getByRole("link", { name: "Pokaż" }).click();
+  await expect(page).toHaveURL(new RegExp(`/ludzie/${ids.tomasz}$`));
 
   // Raport tygodniowy na teraz ma sekcję uprawnień z odnośnikami do osób.
-  await openFromMenu(page, "Raporty");
+  await openFromNav(page, "Raporty");
   await page.getByRole("link", { name: /Raport tygodniowy/ }).first().click();
   const reportSection = page.getByRole("region", { name: "Uprawnienia ludzi w najbliższych 30 dniach i po terminie" });
   await expect(reportSection.getByRole("listitem")).toHaveCount(4);
@@ -515,22 +511,23 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   await expect(qualificationItem(page, "Szkolenie BHP okresowe").locator(".deadline-head .tag")).toHaveText("ważne");
   await page.goto("/ludzie");
   await expect(page.getByTestId("upcoming-qualifications").getByRole("link")).toHaveCount(3);
+  // Odnowione znika z „Do zrobienia”.
+  await expect(page.getByTestId("bell-count")).toHaveText("3");
 
-  // Kierownik: przypomnienie tylko o własnym uprawnieniu, a o innych nic.
+  // Kierownik: tylko własne uprawnienie, a o innych nic.
   const manager = await newPhone(browser, testInfo);
   await firstSignIn(manager, managerEmail, managerPassword, companyName);
   await expect(manager.getByTestId("bell-count")).toHaveText("1");
-  await manager.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const managerBell = manager.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(managerBell).toHaveCount(1);
-  await expect(managerBell.first()).toContainText(`Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`);
-  await expect(managerBell.first()).toContainText("Umów badania albo szkolenie na czas.");
-  await expect(managerBell.first()).not.toContainText("Tomasz Pracowity");
-  await managerBell.first().getByRole("button", { name: "Pokaż" }).click();
+  await manager.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
+  const managerToDo = manager.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem");
+  await expect(managerToDo).toHaveCount(1);
+  await expect(managerToDo.first()).toContainText(`Anna Nowak: SEP E G1, ważne do ${shown(sepDue)}`);
+  await expect(managerToDo.first()).toContainText("Umów badania albo szkolenie na czas.");
+  await managerToDo.first().getByRole("link", { name: "Pokaż" }).click();
   await expect(manager).toHaveURL(new RegExp(`/ludzie/${ids.anna}$`));
 
   // Kierownik widzi stan wszystkich, z liczbą uprawnień po terminie i wkrótce.
-  await openFromMenu(manager, "Ludzie");
+  await openFromNav(manager, "Ludzie");
   await expect(manager.getByTestId("upcoming-qualifications").getByRole("link")).toHaveCount(3);
   await expect(manager.getByRole("region", { name: "Osoby" }).getByRole("link", { name: /Tomasz Pracowity/ })).toContainText(
     "uprawnienia: 2 · po terminie: 1",
@@ -564,20 +561,18 @@ test("uprawnienia z dokumentami i przypomnieniami: właściciel wpisuje, kierown
   await addQualification(manager, { kind: "Operator koparki", dueOn: addDays(today, 100), note: "Kurs w ośrodku Koparka" }, "Operator koparki");
   await expect(qualificationItem(manager, "Operator koparki")).toContainText("Kurs w ośrodku Koparka");
 
-  // Pracownik: przypomnienie o własnych dwóch uprawnieniach, bez cudzych.
+  // Pracownik: tylko własne uprawnienia, bez cudzych.
   const worker = await newPhone(browser, testInfo);
   await firstSignIn(worker, workerLogin, workerPassword, companyName);
+  // Szkolenie BHP właściciel już odnowił, więc czekają tylko badania.
   await expect(worker.getByTestId("bell-count")).toHaveText("1");
-  await worker.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const workerBell = worker.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(workerBell).toHaveCount(1);
-  await expect(workerBell.first()).toContainText("Uprawnienia ludzi: 2");
-  await expect(workerBell.first()).toContainText(`Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`);
-  await expect(workerBell.first()).not.toContainText("Marek Brygadzista");
-  await expect(workerBell.first()).not.toContainText("Anna Nowak");
+  await worker.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
+  await expect(worker.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").locator(".movement-head")).toHaveText([
+    `Tomasz Pracowity: Badania lekarskie okresowe, po terminie (${shown(medicalDue)})`,
+  ]);
 
   // „Moje uprawnienia”: tylko podgląd, bez formularzy; zaświadczenie BHP tak, orzeczenie nie.
-  await openFromMenu(worker, "Moje uprawnienia");
+  await openFromNav(worker, "Moje uprawnienia");
   await expect(worker.getByRole("heading", { level: 1, name: "Moje uprawnienia" })).toBeVisible();
   await expect(worker.locator("#uprawnienia li.deadline .deadline-head strong")).toHaveText(["Badania lekarskie okresowe", "Szkolenie BHP okresowe"]);
   await expect(qualificationItem(worker, "Badania lekarskie okresowe").getByRole("list", { name: "Dokumenty" })).toHaveCount(0);
@@ -729,7 +724,7 @@ test("pracownik bez wpisanych uprawnień widzi na „Moje uprawnienia” komunik
 
   const worker = await newPhone(browser, testInfo);
   await firstSignIn(worker, workerLogin, workerPassword, companyName);
-  await openFromMenu(worker, "Moje uprawnienia");
+  await openFromNav(worker, "Moje uprawnienia");
   await expect(worker.getByRole("heading", { level: 1, name: "Moje uprawnienia" })).toBeVisible();
   // Strona „Moje uprawnienia” ma własny komunikat (qualifications.myEmpty), a nie ogólny z karty osoby.
   await expect(worker.locator("main")).not.toContainText("Ta osoba nie ma jeszcze wpisanych uprawnień.");

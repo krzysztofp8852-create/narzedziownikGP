@@ -1,10 +1,24 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
+import { openFromNav, openMyAccount, typeScanCode } from "./support/navigation";
+import { north } from "./support/punch-crew";
 
 interface Credentials {
   email: string;
   password: string;
+}
+
+interface WorkerBoardCompany {
+  companyName: string;
+  posterCode: string;
+  site: { lat: number; lng: number };
+  worker: { login: string; password: string };
+}
+
+function seedWorkerBoard(): WorkerBoardCompany {
+  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-worker-board.mts"], { encoding: "utf8" });
+  return JSON.parse(output.trim().split("\n").at(-1)!) as WorkerBoardCompany;
 }
 
 function seedCompany() {
@@ -24,13 +38,14 @@ async function signIn(page: Page, login: string, password: string) {
 test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a ten loguje się nazwą użytkownika i widzi tablicę bez złotówek i ruchów", async ({
   page,
 }) => {
+  // Cztery logowania, zmiana hasła i dwa hasła tymczasowe.
+  test.setTimeout(90_000);
   const company = seedCompany();
 
   await signIn(page, company.owner.email, company.owner.password);
   // Przejście dalej dopiero po zalogowaniu; inaczej /ludzie odeśle z powrotem do logowania.
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Ludzie" }).click();
+  await openFromNav(page, "Ludzie");
   await expect(page).toHaveURL(/\/ludzie$/);
   const people = page.locator("#ludzie");
   await people.locator("summary", { hasText: "Dopisz osobę bez konta" }).click();
@@ -55,8 +70,7 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
   await expect(person).toContainText("Konto: Pracownik");
   await expect(person.getByText("Login: jan.kowalski")).toBeVisible();
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, "jan.kowalski", "zle-haslo-123");
@@ -71,17 +85,14 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /H-01/ })).toBeVisible();
+  await expect(page.getByTestId("punch-status")).toHaveText("Nie jesteś odbity");
+  await expect(page.getByRole("region", { name: "Sprzęt na Twojej budowie" })).toBeVisible();
   await expect(page.locator("main")).not.toContainText("zł");
   await expect(page.getByRole("heading", { name: "Operacje" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Wydaj z bazy" })).toHaveCount(0);
 
-  await page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /H-01/ }).click();
-  await expect(page.getByRole("heading", { name: /H-01/ })).toBeVisible();
-  await expect(page.locator("main")).not.toContainText("zł");
-
   // Pracownik zapomniał hasła: właściciel nadaje nowe tymczasowe, a pracownik loguje się nim, odczytanym z ekranu.
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, company.owner.email, company.owner.password);
@@ -93,10 +104,64 @@ test("właściciel dopisuje osobę bez konta, zakłada jej konto pracownika, a t
   const resetPassword = await member.getByTestId("temporary-password").innerText();
   expect(resetPassword).not.toBe(temporaryPassword);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await signIn(page, "jan.kowalski", resetPassword);
   await expect(page).toHaveURL(/\/zmien-haslo$/);
+});
+
+test.describe("tablica pracownika", () => {
+  test.use({ permissions: ["geolocation"] });
+
+  test("nieodbity widzi swoje sprawy i podpowiedź zamiast sprzętu, a po odbiciu plakatem sprzęt swojej budowy, tylko do podglądu", async ({
+    page,
+    context,
+  }) => {
+    const company = seedWorkerBoard();
+    // Telefon stoi przy budowie Rataje z seeda.
+    await context.setGeolocation({ latitude: company.site.lat + north(50), longitude: company.site.lng, accuracy: 15 });
+    await signIn(page, company.worker.login, company.worker.password);
+    await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
+
+    // Trzy części: stan odbicia, jego sprawy i sprzęt dzisiejszej budowy. Nic o całej firmie.
+    await expect(page.getByTestId("punch-status")).toHaveText("Nie jesteś odbity");
+    const attention = page.getByRole("region", { name: "Wymaga uwagi" });
+    await expect(attention.getByRole("listitem")).toHaveCount(2);
+    await expect(attention).toContainText("Szkolenie BHP okresowe");
+    await expect(attention).toContainText("Tarcza pęknięta");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText(["Wymaga uwagi", "Sprzęt na Twojej budowie"]);
+    await expect(page.getByRole("heading", { name: "Ostatnie ruchy" })).toHaveCount(0);
+    await expect(page.getByTestId("alarm-count")).toHaveCount(0);
+    await expect(page.locator("main")).not.toContainText("zł");
+
+    const equipment = page.getByRole("region", { name: "Sprzęt na Twojej budowie" });
+    await expect(equipment).toContainText("Naciśnij Skanuj i zeskanuj plakat budowy");
+    await expect(page.getByRole("link", { name: /S-01|W-01|H-01/ })).toHaveCount(0);
+    // Na wąskim telefonie tablica się nie poszerza.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+
+    // Skanuj z podpowiedzi otwiera skaner na tablicy; plakat Rataje odbija wejście.
+    await equipment.getByRole("link", { name: "Skanuj" }).click();
+    const scanner = page.getByRole("region", { name: "Skanuj" });
+    await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
+    await typeScanCode(page, company.posterCode);
+    await expect(page.getByTestId("punch-done")).toHaveText(/^Wejście zapisane: Rataje/);
+    await page.getByRole("link", { name: "Na tablicę" }).click();
+
+    await expect(page.getByTestId("punch-status")).toHaveText(/^Jesteś na budowie Rataje od \d{1,2}:\d{2}$/);
+    const onSite = page.getByRole("region", { name: "Sprzęt na budowie Rataje" });
+    await expect(onSite.getByRole("link")).toHaveText([/S-01/, /S-02/]);
+    await expect(page.getByRole("link", { name: /W-01|H-01/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Wydaj|Zwróć|Przenieś/ })).toHaveCount(0);
+    await expect(page.locator("main")).not.toContainText("zł");
+
+    // Podgląd: karta narzędzia bez złotówek, a sprawy prowadzą do całej skrzynki.
+    await onSite.getByRole("link", { name: /S-02/ }).click();
+    await expect(page.getByRole("heading", { name: /S-02/ })).toBeVisible();
+    await expect(page.locator("main")).not.toContainText("zł");
+    await page.goBack();
+    await attention.getByRole("link", { name: "Zobacz wszystkie (2)" }).click();
+    await expect(page).toHaveURL(/\/dzwonek$/);
+  });
 });

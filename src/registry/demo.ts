@@ -37,6 +37,32 @@ export async function demoAccounts(sql: Sql): Promise<DemoAccount[]> {
     .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
 }
 
+/** Plakat do przewodnika pracownika demo: miejsce i kod, który oglądający wpisuje w Skanuj zamiast skanu. */
+export interface DemoPoster {
+  place: string;
+  code: string;
+}
+
+/**
+ * Plakat budowy albo bazy, na której konto obecnego demo odbiło się ostatnio (dziś kod, który ma obecnie, także po
+ * „Nowy kod”). Null poza obecnym demo, bez odbić albo gdy tego miejsca już nie ma (zakończona budowa).
+ */
+export async function demoPoster(sql: Sql, userId: string): Promise<DemoPoster | null> {
+  if (!UUID_PATTERN.test(userId)) return null;
+  const [row] = await sql<{ name: string; poster_token: string }>(
+    `select l.name, l.poster_token
+     from app.punches p
+     join app.people pe on pe.id = p.person_id
+     join app.locations l on l.id = p.location_id
+     where pe.user_id = $1 and (l.kind = 'baza' or l.status = 'aktywna') and l.poster_token is not null
+       and p.company_id = (select id from app.companies where demo_since is not null order by demo_since desc limit 1)
+     order by p.entered_at desc
+     limit 1`,
+    [userId],
+  );
+  return row ? { place: row.name, code: row.poster_token } : null;
+}
+
 /** Użycie obecnego demo: kiedy ktoś ostatnio do niego wszedł (null: jeszcze nikt). */
 export interface DemoUse {
   lastEntryAt: Date | null;

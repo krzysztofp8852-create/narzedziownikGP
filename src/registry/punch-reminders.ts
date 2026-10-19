@@ -1,8 +1,9 @@
 import { deliverAsSystem } from "./bell";
-import type { ForgottenExitNotification } from "./notifications";
+import type { ForgottenExitNotification, NotifiedPunch } from "./notifications";
 import type { Sql } from "./ports";
 import type { PunchPlaceKind } from "./punches";
 import type { PushCopy } from "./push";
+import type { Session } from "./registry";
 import { warsawTime } from "./validation";
 
 /** Od tej godziny w Polsce osoba nadal odbita dostaje przypomnienie o wyjściu. */
@@ -65,6 +66,39 @@ export async function notifyForgottenExits(sql: Sql, companyId: string, now: Dat
   }
   const copies = await deliverAsSystem(sql, companyId, notifications, now);
   return { punches: rows.length, copies };
+}
+
+/**
+ * Nieodbite wyjścia aktora w skrzynce „Wymaga uwagi”: odbicia, o których przyszło mu przypomnienie (ta sama reguła
+ * adresata co w `notifyForgottenExits`), a które są nadal otwarte. Znikają po odbiciu wyjścia albo o północy, gdy
+ * odbicie zamyka się „bez wyjścia”. Od najwcześniejszego wejścia.
+ */
+export async function forgottenExitsToHandle(sql: Sql, session: Session): Promise<NotifiedPunch[]> {
+  const rows = await sql<{
+    id: string;
+    person_id: string;
+    person_name: string;
+    location_id: string;
+    location_kind: PunchPlaceKind;
+    location_name: string;
+    entered_at: Date;
+  }>(
+    `select p.id, p.person_id, pe.full_name as person_name, p.location_id, l.kind as location_kind, l.name as location_name, p.entered_at
+     from app.punches p
+     join app.people pe on pe.id = p.person_id
+     join app.locations l on l.id = p.location_id
+     left join app.users bu on bu.user_id = p.punched_by and bu.active
+     left join app.users ou on ou.user_id = pe.user_id and ou.active
+     where p.left_at is null and p.exit_reminded_at is not null and coalesce(bu.user_id, ou.user_id) = $1
+     order by p.entered_at, pe.full_name, p.id`,
+    [session.userId],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    person: { id: row.person_id, fullName: row.person_name },
+    place: { id: row.location_id, kind: row.location_kind, name: row.location_name },
+    enteredAt: new Date(row.entered_at),
+  }));
 }
 
 /**

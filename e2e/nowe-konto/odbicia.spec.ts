@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { openFreshAccount, signIn, signOut } from "../support/fresh-account";
+import { appNav, moreButton, openScan, typeScanCode } from "../support/navigation";
 import {
   buildCrew,
   closeCrew,
@@ -167,10 +168,8 @@ test("położenie przy skanie: 5 km od budowy, telefon bez zgody na GPS, słaba 
   await expect(list).toContainText("Do wyjaśnienia przez kierownika: poza budową, 100 m.");
 
   // Właściciel widzi wszystkie trzy oznaczone odbicia, od najnowszego; własne odbicie na budowie nie jest oznaczone.
-  await owner.page.goto("/");
-  await owner.page.getByRole("button", { name: "Menu" }).click();
-  await owner.page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
-  await expect(owner.page).toHaveURL("/odbicia");
+  // Lista nie ma pozycji w nawigacji; wejście do niej da skrzynka „Wymaga uwagi” (#177).
+  await owner.page.goto("/odbicia");
   const ownerList = owner.page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
   const heads = (page: typeof owner.page) =>
     page.getByRole("list", { name: "Odbicia do wyjaśnienia" }).getByTestId("punch").locator(".movement-head > span:first-child");
@@ -223,14 +222,12 @@ test("role i kod plakatu: pracownik nie ma plakatu, poprawek, wyjaśniania ani z
   expect(posterResponse.status()).toBe(400);
   expect(await posterResponse.text()).toBe("Nie masz uprawnień do tej operacji.");
 
-  // Bez listy do wyjaśnienia, a w menu tylko własny czas na budowie.
+  // Bez listy do wyjaśnienia, a pod „Moje” tylko własny czas na budowie.
   await worker.page.goto("/odbicia");
   await expect(worker.page).toHaveURL("/");
-  await worker.page.getByRole("button", { name: "Menu" }).click();
-  const menu = worker.page.getByRole("navigation", { name: "Menu" });
-  await expect(menu.getByRole("link", { name: "Odbicia do wyjaśnienia" })).toHaveCount(0);
-  await expect(menu.getByRole("link", { name: "Czas na budowie", exact: true })).toHaveCount(0);
-  await menu.getByRole("link", { name: "Mój czas na budowie" }).click();
+  await moreButton(worker.page).click();
+  await expect(appNav(worker.page).getByRole("link", { name: "Czas na budowie", exact: true })).toHaveCount(0);
+  await appNav(worker.page).getByRole("link", { name: "Mój czas na budowie" }).click();
   await expect(worker.page).toHaveURL("/czas");
   await expect(worker.page.getByText("Twoje odbicia i czas na budowie w tym i poprzednim miesiącu.", { exact: false })).toBeVisible();
   await expect(worker.page.getByRole("link", { name: "Pobierz Excel" })).toHaveCount(0);
@@ -259,16 +256,15 @@ test("role i kod plakatu: pracownik nie ma plakatu, poprawek, wyjaśniania ani z
     "Ten kod plakatu nie działa: plakat jest nieaktualny albo z innej firmy. Poproś kierownika budowy o nowy plakat.",
   );
 
-  // Skaner w programie: zły tekst to nie plakat, a nowy kod przepisany małymi literami ze spacją działa.
+  // Skanuj w programie: kod, którego nie ma ani na tablicy, ani na plakacie, jest nierozpoznany, a nowy kod plakatu
+  // przepisany małymi literami ze spacją działa.
   await worker.page.goto("/");
-  const scanner = worker.page.getByRole("region", { name: "Odbij się" });
-  await scanner.getByRole("button", { name: "Odbij się" }).click();
+  await openScan(worker.page);
+  const scanner = worker.page.getByRole("region", { name: "Skanuj" });
   await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
-  await scanner.getByLabel("Kod z plakatu").fill("H-03");
-  await scanner.getByRole("button", { name: "Dalej" }).click();
-  await expect(scanner.getByText("To nie jest kod plakatu budowy.")).toBeVisible();
-  await scanner.getByLabel("Kod z plakatu").fill(`${newCode.slice(0, 5).toLowerCase()} ${newCode.slice(5).toLowerCase()}`);
-  await scanner.getByRole("button", { name: "Dalej" }).click();
+  await typeScanCode(worker.page, "H-03");
+  await expect(scanner.getByText("Nie rozpoznano kodu H-03. To nie jest kod narzędzia z tablicy ani kod plakatu budowy.")).toBeVisible();
+  await typeScanCode(worker.page, `${newCode.slice(0, 5).toLowerCase()} ${newCode.slice(5).toLowerCase()}`);
   await expect(worker.page).toHaveURL(`/odbicie/${newCode}`);
   // Nowy kod nie przerywa pobytu: skan na tej samej budowie to wyjście.
   await expect(worker.page.getByText("Kończysz na tej budowie?")).toBeVisible();
@@ -296,12 +292,10 @@ test("bez zasięgu: wyjście czeka w kolejce i dochodzi z oznaczeniem „zapisan
   const pending = (page: typeof worker.page) => page.getByTestId("pending-count");
 
   async function scanOffline(page: typeof worker.page, { firstTime = false } = {}) {
-    const scanner = page.getByRole("region", { name: "Odbij się" });
-    await scanner.getByRole("button", { name: "Odbij się" }).click();
+    await openScan(page);
     // Wyłączony aparat zostaje wyłączony przy następnym otwarciu skanera.
-    if (firstTime) await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
-    await scanner.getByLabel("Kod z plakatu").fill(typedCode(site));
-    await scanner.getByRole("button", { name: "Dalej" }).click();
+    if (firstTime) await page.getByRole("region", { name: "Skanuj" }).getByRole("button", { name: "Wyłącz aparat" }).click();
+    await typeScanCode(page, typedCode(site));
   }
 
   // Wejście z siecią: telefon poznaje nazwę budowy z kodu.
@@ -402,11 +396,10 @@ test("kierownik bez zasięgu odbija wyjście osoby z kartoteki z listy „Odbij 
 
   // Po południu bez zasięgu: telefon pyta kierownika „Kończysz?” i pokazuje listę z porannego skanu.
   await manager.context.setOffline(true);
-  const scanner = manager.page.getByRole("region", { name: "Odbij się" });
-  await scanner.getByRole("button", { name: "Odbij się" }).click();
-  await scanner.getByRole("button", { name: "Wyłącz aparat" }).click();
-  await scanner.getByLabel("Kod z plakatu").fill(typedCode(site));
-  await scanner.getByRole("button", { name: "Dalej" }).click();
+  // Skanuj kierownika to skaner ruchów, który plakat rozpoznaje sam.
+  await openScan(manager.page);
+  await manager.page.getByRole("button", { name: "Wyłącz aparat" }).click();
+  await typeScanCode(manager.page, typedCode(site));
   await expect(manager.page.getByText("Kończysz na tej budowie?")).toBeVisible();
   const offlineList = manager.page.getByRole("region", { name: "Odbij też…" });
   await expect(offlineList).toContainText("Lista z ostatniego odbicia z zasięgiem.");
@@ -473,9 +466,7 @@ test("zapomniane wyjście: wczorajsze odbicie zamyka się o północy „bez wyj
   await expect(owner.page.getByTestId("time-on-site-total")).toHaveText("0 min");
 
   // Kierownik budowy dostaje odbicie do wyjaśnienia i uzupełnia wyjście; wyjście przed wejściem nie przejdzie.
-  await manager.page.goto("/");
-  await manager.page.getByRole("button", { name: "Menu" }).click();
-  await manager.page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  await manager.page.goto("/odbicia");
   const forgotten = punchOf(manager.page.getByRole("list", { name: "Odbicia do wyjaśnienia" }), "Piotr Kowalczyk");
   await expect(forgotten).toContainText(`${shownDateTime(yesterday, "07:00")} – bez wyjścia`);
   await expect(forgotten).toContainText("Wyjście: bez wyjścia, zamknięte o północy");

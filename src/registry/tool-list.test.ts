@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { ALARM, ALL, filterTools, IN_SERVICE, LOST, type ToolListShow } from "@/lib/tool-list-filters";
 import type { RegisteredKind } from "./registry";
 import { setupRegistryTestbed } from "./testing/harness";
 
 const testbed = setupRegistryTestbed();
+const DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Zawbud (dziś 2 marca 2026, 7:00): kierownik Nowak prowadzi Rataje i bus, kierownik Kowalski Winogrady, magazynier
@@ -62,6 +64,7 @@ describe("lista narzędzi firmy", () => {
       responsible: "Adam Nowak",
       damaged: false,
       rented: false,
+      alarm: false,
     });
     expect(tools[1]).toMatchObject({ code: "H-10", location: { name: "Magazyn Swarzędz", kind: "baza" }, responsible: null, brand: null });
     expect(tools[3]).toMatchObject({ code: "S-02", location: { name: "Bus WX 12345", kind: "pojazd" }, responsible: "Adam Nowak" });
@@ -148,5 +151,61 @@ describe("lista narzędzi firmy", () => {
 
     expect((await z.owner.toolList()).map((tool) => tool.name)).not.toContain("Szlifierka Budeksu");
     expect((await otherOwner.toolList()).map((tool) => tool.name)).toEqual(["Szlifierka Budeksu"]);
+  });
+
+  it("narzędzie na budowie dłużej niż próg firmy ma alarm, tak jak na tablicy; na bazie, w serwisie i na pojeździe bez alarmu nie", async () => {
+    const z = await givenZawbud();
+    const { locationId: serviceId } = await z.owner.addService({ name: "Serwis Hilti" });
+    await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.h01]);
+    await move(z.nowakId, "wydanie", z.baseId, z.busId, [z.s01]);
+    await move(z.ownerId, "do_serwisu", z.baseId, serviceId, [z.s02]);
+    testbed.clock.advance(30 * DAY);
+    expect((await z.owner.toolList()).filter((tool) => tool.alarm)).toEqual([]);
+
+    testbed.clock.advance(DAY);
+    const alarms = async () => (await z.owner.toolList()).filter((tool) => tool.alarm).map((tool) => tool.code);
+    expect(await alarms()).toEqual(["H-01"]);
+    expect((await z.owner.whereIsWhat()).counts.alarms).toBe(1);
+
+    await z.owner.setVehicleAlarm(z.busId, true);
+    expect(await alarms()).toEqual(["H-01", "S-01"]);
+  });
+
+  it("zaginione nie mają alarmu, choć zaginęły na budowie po progu", async () => {
+    const z = await givenZawbud();
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+    testbed.clock.advance(40 * DAY);
+    await z.owner.markToolLost({ operationId: randomUUID(), toolId: z.s01, reason: "nie ma go na budowie" });
+
+    expect((await z.owner.toolList()).find((tool) => tool.id === z.s01)).toMatchObject({ state: "zaginione", alarm: false });
+  });
+
+  it("filtry zaginione, w serwisie i z alarmem dają każdej roli te same narzędzia całej firmy, bez sprzętu innej firmy", async () => {
+    const z = await givenZawbud();
+    const { locationId: serviceId } = await z.owner.addService({ name: "Serwis Hilti" });
+    await move(z.nowakId, "wydanie", z.baseId, z.ratajeId, [z.h01]);
+    await move(z.kowalskiId, "wydanie", z.baseId, z.winogradyId, [z.s01]);
+    await move(z.ownerId, "do_serwisu", z.baseId, serviceId, [z.s02]);
+    testbed.clock.advance(31 * DAY);
+    await z.owner.markToolLost({ operationId: randomUUID(), toolId: z.s01, reason: "nie ma go na budowie" });
+    const other = await testbed.givenActiveCompany("Budex");
+    const otherOwner = testbed.registry.as(other.ownerId);
+    const category = await otherOwner.addCategory({ name: "Szlifierki", prefix: "S" });
+    await otherOwner.addTool({ operationId: randomUUID(), name: "Szlifierka Budeksu", categoryId: category.id });
+    await otherOwner.markToolLost({
+      operationId: randomUUID(),
+      toolId: (await otherOwner.toolList())[0].id,
+      reason: "zginęła",
+    });
+
+    const shown = async (userId: string, show: ToolListShow) =>
+      filterTools(await testbed.registry.as(userId).toolList(), { query: "", category: ALL, place: ALL, show, withRetiredAndReturned: false }).map(
+        (tool) => tool.code,
+      );
+    for (const userId of [z.ownerId, z.nowakId, z.kowalskiId, z.storekeeperId, z.workerId]) {
+      expect(await shown(userId, LOST)).toEqual(["S-01"]);
+      expect(await shown(userId, IN_SERVICE)).toEqual(["S-02"]);
+      expect(await shown(userId, ALARM)).toEqual(["H-01"]);
+    }
   });
 });

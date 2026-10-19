@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
+import { addToolStep } from "@/lib/empty-step";
 import { getRegistry } from "@/lib/registry-instance";
 import { canImportTools } from "@/registry/registry";
 import { ToolImport } from "./tool-import";
@@ -42,7 +44,9 @@ export default async function ImportPage() {
             <span className="muted">{t("import.sample.hint")}</span>
           </p>
           {categories.length === 0 ? (
-            <p className="empty">{t("import.noCategories")}</p>
+            <EmptyState step={addToolStep(session)}>
+              {t("import.noCategories")}
+            </EmptyState>
           ) : (
             <p>
               <strong>{t("import.categories")}:</strong>{" "}

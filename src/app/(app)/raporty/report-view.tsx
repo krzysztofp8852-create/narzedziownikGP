@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { reportHeading, reportSections } from "@/lib/report-text";
 import type { Report } from "@/registry/registry";
 
@@ -20,7 +21,7 @@ export function ReportView({ report, live = false }: { report: Report; live?: bo
               {line}
             </p>
           ))}
-          {section.items.length === 0 && section.empty && <p className="empty">{section.empty}</p>}
+          {section.items.length === 0 && section.empty && <EmptyState>{section.empty}</EmptyState>}
           {section.items.length > 0 && (
             <ul className="tool-list">
               {section.items.map((item, itemIndex) => (

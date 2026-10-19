@@ -1,6 +1,6 @@
 # 0017. Demo dla klientów to prawdziwa firma w bazie z wejściem bez hasła
 
-Data: 2026-09-28 · Status: przyjęta (usuwanie poprzedniego demo zmienia ADR 0020)
+Data: 2026-09-28 · Status: przyjęta (usuwanie poprzedniego demo zmienia ADR 0020; układ demo z nawigacją zależną od konta zmienia ADR 0048)
 
 ## Kontekst
 
@@ -36,9 +36,14 @@ oglądającego (np. PGlite w pamięci) nie działa na Vercelu, gdzie kolejne ż�
   po wylogowaniu wraca na `/demo`.
 - W demo Rejestr odmawia dezaktywacji konta i nadania hasła tymczasowego (`demo_locked`), bo odebrałyby rolę
   następnym oglądającym. Reszta działa jak u klienta.
-- Na tablicy demo przewodnik (dymki przy elementach oznaczonych `data-tour`, osobne kroki dla każdej roli) włącza się
-  sam przy pierwszym wejściu do roli. Krok, koniec i pominięcie pamięta tylko przeglądarka oglądającego (localStorage):
-  pominięty nie włącza się sam w żadnej roli, a przycisk „Przewodnik” na pasku demo włącza go od początku.
+- Strona /demo zaczyna się od „Kim chcesz być?”: cztery karty ról, każda z jednym zdaniem o tym, co ta osoba zobaczy.
+- Na tablicy demo przewodnik (dymki przy elementach oznaczonych `data-tour`) ma 3–4 kroki wokół jednego zadania:
+  właściciel, kierownik i magazynier wydają sprzęt na budowę, sprawdzają, u kogo jest, i przyjmują zwrot, a pracownik
+  odbija się w Skanuj i zgłasza usterkę (kroki w `src/lib/demo-tour.ts`). W demo nie ma plakatu do zeskanowania, więc
+  dymek pracownika podaje kod plakatu budowy, na której konto demo odbiło się ostatnio. Przewodnik włącza się sam przy
+  pierwszym wejściu do roli. Krok, koniec i pominięcie pamięta tylko przeglądarka oglądającego (localStorage):
+  pominięty nie włącza się sam w żadnej roli, a przycisk „Przewodnik” na pasku demo wznawia go od kroku, na którym go
+  pominięto (skończony zaczyna od początku).
 - Konta demo mają adresy w domenie `demo.narzedziownik.gp-engineering.pl`, na które adapter e-mail nic nie wysyła.
   Lista zespołu pokazuje zamiast nich „Konto demo”.
 - Sprawy samego konta, które w demo dzieliliby wszyscy oglądający, są wyłączone. Okno 💬 nie pokazuje wspólnego

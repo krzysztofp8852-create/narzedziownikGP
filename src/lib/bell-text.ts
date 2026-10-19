@@ -3,9 +3,11 @@ import { t } from "@/i18n/t";
 import type { NotificationContent } from "@/registry/registry";
 import { deadlineKindName, deadlineLink, deadlineName, deadlineWhen, deadlineWord } from "./deadline-text";
 import { historySearch } from "./history-filters";
+import { SCAN_HREF } from "./nav-path";
 import { placeAt, placeFrom } from "./place-text";
 import { qualificationName, qualificationWhen } from "./qualification-text";
 import { reportLink, reportText } from "./report-text";
+import { settingsHref } from "./settings-pages";
 
 /** Tekst powiadomienia w dzwonku: nagłówek i jedno zdanie szczegółów. */
 export function notificationText(notification: NotificationContent): { title: string; body: string } {
@@ -126,8 +128,8 @@ export function notificationText(notification: NotificationContent): { title: st
 }
 
 /**
- * Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica (także z „Odbij się” po przypomnieniu o wyjściu),
- * terminy, kartoteka Ludzie albo abonament w ustawieniach.
+ * Dokąd prowadzi powiadomienie: karta narzędzia, historia, tablica, Skanuj (przypomnienie o wyjściu: skan plakatu je odbija),
+ * terminy, kartoteka Ludzie albo abonament w ustawieniach Firmy i abonamentu.
  */
 export function notificationLink(notification: NotificationContent): string {
   switch (notification.kind) {
@@ -139,8 +141,9 @@ export function notificationLink(notification: NotificationContent): string {
     case "sprzet_wynajety":
       return `/narzedzia/${notification.tool.id}`;
     case "progi_przekroczone":
-    case "przypomnienie_wyjscia":
       return "/";
+    case "przypomnienie_wyjscia":
+      return SCAN_HREF;
     case "ruch_odrzucony":
       return "/do-wyjasnienia";
     case "raport_tygodniowy":
@@ -148,7 +151,7 @@ export function notificationLink(notification: NotificationContent): string {
       return reportLink(notification.report);
     case "tylko_do_odczytu_wkrotce":
     case "tylko_do_odczytu":
-      return "/ustawienia";
+      return settingsHref("firma");
     case "terminy":
       return notification.deadlines.length === 1 ? deadlineLink(notification.deadlines[0]) : "/terminy";
     case "uprawnienia":

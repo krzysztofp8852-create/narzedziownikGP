@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount, openScan, typeScanCode } from "./support/navigation";
 
 interface Credentials {
   login: string;
@@ -84,23 +85,23 @@ test("kierownik po skanie plakatu odbija z listy „Odbij też…” osobę bez 
   await expect(present.getByText("Wojciech Lis")).toHaveCount(0);
 });
 
-test("odbicie 5 km od budowy przyciskiem „Odbij się” zapisuje się z oznaczeniem, a kierownik je wyjaśnia", async ({ page, context }) => {
+test("odbicie 5 km od budowy w Skanuj zapisuje się z oznaczeniem, a kierownik je wyjaśnia", async ({ page, context }) => {
   const company = seedCompany();
   await context.setGeolocation({ latitude: company.site.lat + north(5_000), longitude: company.site.lng, accuracy: 30 });
 
   await page.goto("/logowanie");
   await fillLogin(page, company.worker);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await page.getByRole("button", { name: "Odbij się" }).click();
+  await openScan(page);
   await page.getByRole("button", { name: "Wyłącz aparat" }).click();
   // Kod spod kodu QR plakatu, przepisany tak, jak go widać na plakacie.
-  await page.getByLabel("Kod z plakatu").fill(`${company.posterCode.slice(0, 5)}-${company.posterCode.slice(5)}`);
+  await page.getByLabel("Kod z naklejki albo plakatu").fill(`${company.posterCode.slice(0, 5)}-${company.posterCode.slice(5)}`);
   await page.getByRole("button", { name: "Dalej" }).click();
 
   await expect(page.getByTestId("punch-done")).toHaveText(/^Wejście zapisane: Rataje/);
   await expect(page.getByTestId("punch-check")).toHaveText("Do wyjaśnienia przez kierownika: poza budową, 5,0 km.");
 
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await fillLogin(page, company.manager);
@@ -111,8 +112,8 @@ test("odbicie 5 km od budowy przyciskiem „Odbij się” zapisuje się z oznacz
   await expect(present).toContainText("Piotr Kowalczyk");
   await expect(present).toContainText("poza budową, 5,0 km");
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  // Lista nie ma pozycji w nawigacji; wejście do niej da skrzynka „Wymaga uwagi” (#177).
+  await page.goto("/odbicia");
   const toClarify = page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
   await expect(toClarify.getByTestId("punch")).toHaveCount(1);
   await toClarify.getByLabel("Notatka (opcjonalnie)").fill("Był na budowie, zły GPS");
@@ -128,8 +129,7 @@ test("kierownik uzupełnia z powodem wyjście odbicia zamkniętego o północy �
   await fillLogin(page, company.manager);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Odbicia do wyjaśnienia" }).click();
+  await page.goto("/odbicia");
   const toClarify = page.getByRole("list", { name: "Odbicia do wyjaśnienia" });
   await expect(toClarify.getByTestId("punch")).toHaveCount(1);
   await expect(toClarify).toContainText("Wyjście: bez wyjścia, zamknięte o północy");
@@ -148,7 +148,7 @@ test("kierownik uzupełnia z powodem wyjście odbicia zamkniętego o północy �
   await expect(history.getByTestId("punch-time-on-site")).toHaveText("Czas na budowie: 8 godz. 0 min");
 });
 
-test("pracownik bez zasięgu odbija wejście i wyjście skanerem programu: telefon pyta „Kończysz?”, a po powrocie sieci odbicie ma oznaczenie „zapisane offline”", async ({
+test("pracownik bez zasięgu odbija wejście i wyjście w Skanuj: telefon pyta „Kończysz?”, a po powrocie sieci odbicie ma oznaczenie „zapisane offline”", async ({
   page,
   context,
 }) => {
@@ -162,11 +162,11 @@ test("pracownik bez zasięgu odbija wejście i wyjście skanerem programu: telef
 
   await context.setOffline(true);
   for (const step of ["wejście", "wyjście"]) {
-    await page.getByRole("button", { name: "Odbij się" }).click();
+    // Skanuj na tablicy otwiera skaner bez przejścia, więc działa też bez sieci.
+    await openScan(page);
     // Wyłączony aparat zostaje wyłączony przy następnym otwarciu skanera.
     if (step === "wejście") await page.getByRole("button", { name: "Wyłącz aparat" }).click();
-    await page.getByLabel("Kod z plakatu").fill(typedCode);
-    await page.getByRole("button", { name: "Dalej" }).click();
+    await typeScanCode(page, typedCode);
     if (step === "wyjście") {
       // Telefon pamięta wejście z kolejki, więc bez sieci pyta jak serwer.
       await expect(page.getByText("Kończysz na tej budowie?")).toBeVisible();
@@ -185,7 +185,7 @@ test("pracownik bez zasięgu odbija wejście i wyjście skanerem programu: telef
   await context.setOffline(false);
   await expect(page.getByTestId("pending-count")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await fillLogin(page, company.manager);

@@ -85,7 +85,8 @@ describe("tablica „Gdzie jest co”", () => {
 
     expect(await testbed.registry.as(ownerId).whereIsWhat()).toEqual({
       offBaseValue: 0,
-      alarmCount: 0,
+      counts: { atBase: 0, onSites: 0, alarms: 0 },
+      places: [{ kind: "baza", id: expect.any(String), name: "Baza", toolCount: 0, alarm: false, mine: false, totalValue: 0 }],
       base: { id: expect.any(String), name: "Baza", totalValue: 0, tools: [] },
       sites: [],
       vehicles: [],

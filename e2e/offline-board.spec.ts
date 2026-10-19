@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { placeTile } from "./support/equipment";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -45,12 +47,12 @@ test("kierownik ma w telefonie kopię tablicy bez złotówek, a po wylogowaniu k
 
   await signIn(page, company.manager);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toContain("H-01");
+  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toContain("Gdzie jest sprzęt");
+  expect(await cachedBoard(page)).toContain("Rataje");
   expect(await cachedBoard(page)).not.toContain("zł");
   await expect(page.getByTestId("board-snapshot")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   expect(await cachedBoard(page)).toBeNull();
@@ -63,7 +65,7 @@ test("kopia tablicy znika z telefonu przy logowaniu, także gdy poprzednia sesja
   const company = seedCompany();
 
   await signIn(page, company.owner);
-  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toMatch(/3200,00\szł/);
+  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toMatch(/3650,50\szł/);
 
   await context.clearCookies();
   await page.goto("/logowanie");
@@ -81,27 +83,45 @@ test("kierownik bez zasięgu otwiera ostatnio pobraną tablicę z godziną pobra
 
   await signIn(page, company.manager);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toContain("H-01");
+  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toContain("Gdzie jest sprzęt");
 
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /H-01/ })).toBeVisible();
+  await expect(placeTile(page, "Rataje")).toContainText("2 szt.");
+  await expect(page.getByRole("region", { name: "Operacje" })).toBeVisible();
   await expect(page.getByTestId("board-snapshot")).toContainText(/Brak sieci\. Stan z \d{1,2}\.\d{2}\.\d{4}, \d{2}:\d{2}/);
 
   await page.goto("/historia");
   await expect(page.getByRole("heading", { name: "Brak sieci" })).toBeVisible();
   await page.getByRole("link", { name: "Otwórz tablicę" }).click();
-  await expect(page.getByRole("region", { name: "Budowa Rataje" })).toBeVisible();
+  await expect(placeTile(page, "Rataje")).toBeVisible();
 
   await context.setOffline(false);
   await page.reload();
   await expect(page.getByTestId("board-snapshot")).toHaveCount(0);
 });
 
-test("właściciel ma w kopii tablicy w telefonie wartości sprzętu", async ({ page }) => {
+test("właściciel ma w kopii tablicy w telefonie liczniki i kafle z wartościami sprzętu", async ({ page }) => {
   const company = seedCompany();
 
   await signIn(page, company.owner);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
-  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toMatch(/3200,00\szł/);
+  await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toMatch(/3650,50\szł/);
+  expect(await cachedBoard(page)).toContain("Gdzie jest sprzęt");
+});
+
+test.describe("komputer", () => {
+  test.use({ viewport: { width: 1280, height: 900 }, isMobile: false, hasTouch: false });
+
+  test("kopia nowej tablicy zapisuje się też w przeglądarce na komputerze, z kaflami i ostatnimi ruchami", async ({ page }) => {
+    const company = seedCompany();
+
+    await signIn(page, company.owner);
+    await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
+    await expect.poll(() => cachedBoard(page), { timeout: 20_000 }).toContain("Gdzie jest sprzęt");
+    const copy = (await cachedBoard(page))!;
+    expect(copy).toContain("data-fetched-at=");
+    expect(copy).toContain("Ostatnie ruchy");
+    expect(copy).toMatch(/3650,50\szł/);
+  });
 });

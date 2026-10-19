@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
+import { openFromNav, signOut } from "./support/navigation";
 
 interface Credentials {
   email: string;
@@ -20,9 +21,9 @@ function createCompany() {
   return { name, email, temporaryPassword };
 }
 
-/** Firma z kierownikiem, budową Rataje i narzędziami, bez wydrukowanych naklejek. */
-function seedCompany() {
-  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-board.mts"], {
+/** Firma z kierownikiem, budową Rataje i narzędziami, bez wydrukowanych naklejek (albo z nimi: `stickers`). */
+function seedCompany({ stickers = false } = {}) {
+  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-board.mts", ...(stickers ? ["--naklejki"] : [])], {
     encoding: "utf8",
   });
   return JSON.parse(output.trim().split("\n").at(-1)!) as { companyName: string; owner: Credentials; manager: Credentials };
@@ -35,7 +36,7 @@ async function signIn(page: Page, login: string, password: string) {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 }
 
-test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samouczek nie wraca sam, ale otwiera się z menu", async ({
+test("po pierwszym logowaniu właściciel widzi „Uruchom firmę w 4 krokach” z paskiem postępu; pominięte nie wraca samo, ale otwiera się z Pomocy", async ({
   page,
 }) => {
   const company = createCompany();
@@ -48,31 +49,35 @@ test("po pierwszym logowaniu właściciel widzi pierwsze kroki; pominięty samou
 
   await expect(page).toHaveURL(/\/$/);
   const tutorial = page.getByTestId("tutorial");
-  await expect(tutorial.getByRole("heading", { name: "Pierwsze kroki" })).toBeVisible();
+  await expect(tutorial.getByRole("heading", { name: "Uruchom firmę w 4 krokach" })).toBeVisible();
   await expect(tutorial.getByTestId("tutorial-progress")).toHaveText("Zrobione: 0 z 4");
+  await expect(tutorial.getByRole("progressbar")).toHaveAttribute("value", "0");
+  // Pierwsze kroki stoją nad tablicą: pod nimi pasek odbicia i operacje.
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
 
   await tutorial.getByRole("button", { name: "Pomiń samouczek" }).click();
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Samouczek" }).click();
+  await openFromNav(page, "Pomoc");
+  await page.getByRole("link", { name: "Otwórz samouczek" }).click();
   await expect(page).toHaveURL(/\/samouczek$/);
-  await expect(page.getByTestId("tutorial").getByRole("heading", { name: "Pierwsze kroki" })).toBeVisible();
+  await expect(page.getByTestId("tutorial").getByRole("heading", { name: "Uruchom firmę w 4 krokach" })).toBeVisible();
   await page.getByTestId("tutorial").getByRole("button", { name: "Gotowe" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
 });
 
-test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik przechodzi samouczek zapisu ruchu", async ({ page }) => {
+test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik bez samouczka na start otwiera samouczek zapisu ruchu z Pomocy", async ({ page }) => {
   const company = seedCompany();
 
   await signIn(page, company.owner.email, company.owner.password);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
   const tutorial = page.getByTestId("tutorial");
   await expect(tutorial.getByTestId("tutorial-progress")).toHaveText("Zrobione: 3 z 4");
+  await expect(tutorial.getByRole("progressbar")).toHaveAttribute("value", "3");
   await expect(tutorial.getByTestId("first-step-kierownik")).toHaveAttribute("data-done", "true");
   await expect(tutorial.getByTestId("first-step-budowa")).toHaveAttribute("data-done", "true");
   await expect(tutorial.getByTestId("first-step-narzedzia")).toHaveAttribute("data-done", "true");
@@ -80,16 +85,19 @@ test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik
   await tutorial.getByRole("link", { name: "Przejdź do naklejek →" }).click();
   await expect(page).toHaveURL(/\/naklejki$/);
 
-  await page.getByRole("button", { name: "Menu" }).click();
-
-  await page.getByRole("button", { name: "Wyloguj" }).click();
-  await expect(page).toHaveURL(/\/logowanie$/);
+  await signOut(page);
   await signIn(page, company.manager.email, company.manager.password);
   await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
+  // Samouczek ekran po ekranie nie startuje sam: kierownik otwiera go z Pomocy, kiedy zechce.
+  const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
+  await expect(recent).toBeVisible();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+  const movementCount = await recent.locator("li").count();
+  await openFromNav(page, "Pomoc");
+  await page.getByRole("link", { name: "Otwórz samouczek" }).click();
+  await expect(page).toHaveURL(/\/samouczek$/);
   const guide = page.getByTestId("tutorial");
   await expect(guide.getByRole("heading", { name: "Ruchy na Twoich budowach" })).toBeVisible();
-  const recent = page.getByRole("region", { name: "Ostatnie ruchy" });
-  const movementCount = await recent.locator("li").count();
   await guide.getByRole("button", { name: "Dalej" }).click();
   await expect(guide.getByRole("heading", { name: "Wydanie z bazy" })).toBeVisible();
   await guide.getByRole("button", { name: "Wstecz" }).click();
@@ -102,7 +110,17 @@ test("pierwsze kroki właściciela pokazują, co już jest w firmie, a kierownik
   while (await guide.getByRole("button", { name: "Dalej" }).isVisible()) await guide.getByRole("button", { name: "Dalej" }).click();
   await expect(guide.getByRole("heading", { name: "Gotowe" })).toBeVisible();
   await guide.getByRole("button", { name: "Gotowe" }).click();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
   // Samouczek niczego nie zapisał.
   await expect(recent.locator("li")).toHaveCount(movementCount);
+});
+
+test("pierwsze kroki znikają z tablicy same, gdy wszystkie cztery są zrobione", async ({ page }) => {
+  const company = seedCompany({ stickers: true });
+
+  await signIn(page, company.owner.email, company.owner.password);
+  await expect(page.getByTestId("company-name")).toHaveText(company.companyName);
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
 });

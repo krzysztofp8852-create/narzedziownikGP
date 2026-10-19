@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 interface Credentials {
   login: string;
@@ -8,7 +9,7 @@ interface Credentials {
 
 /** Firma z właścicielem, kierownikiem i pracownikiem. */
 function seedCompany() {
-  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-menu.mts"], { encoding: "utf8" });
+  const output = execFileSync("npx", ["tsx", "--env-file-if-exists=.env.local", "e2e/support/seed-navigation.mts"], { encoding: "utf8" });
   return JSON.parse(output.trim().split("\n").at(-1)!) as {
     companyName: string;
     owner: Credentials;
@@ -31,14 +32,15 @@ test("pracownik przełącza aplikację na ukraiński; właściciel w innej przeg
 }) => {
   const company = seedCompany();
   await signIn(page, company.worker);
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Język / Language" }).click();
-  await expect(page).toHaveURL(/\/jezyk$/);
+  // Język jest w Moim koncie (klik w imię w nagłówku).
+  await openMyAccount(page);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moje konto");
 
   await page.getByLabel("Język aplikacji").selectOption("uk");
   await page.getByRole("button", { name: "Zapisz język" }).click();
 
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Мова");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Мій обліковий запис");
+  await expect(page.getByRole("heading", { name: "Мова" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "uk");
   await expect(page.getByTestId("locale-select")).toHaveValue("uk");
 
@@ -46,8 +48,11 @@ test("pracownik przełącza aplikację na ukraiński; właściciel w innej przeg
   const ownerPage = await ownerContext.newPage();
   await signIn(ownerPage, company.owner);
   await expect(ownerPage.locator("html")).toHaveAttribute("lang", "pl");
+  // Stary adres strony języka prowadzi do Mojego konta.
   await ownerPage.goto("/jezyk");
-  await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText("Język");
+  await expect(ownerPage).toHaveURL(/\/konto$/);
+  await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText("Moje konto");
+  await expect(ownerPage.getByRole("heading", { name: "Język" })).toBeVisible();
   await ownerContext.close();
 
   // Nowa przeglądarka bez ciasteczka: po zalogowaniu pracownik od razu widzi swój język z konta.

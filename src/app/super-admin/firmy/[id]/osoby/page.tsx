@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AnonymizePersonButton } from "@/components/anonymize-person-button";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
@@ -37,7 +38,7 @@ export default async function CompanyPeoplePage(props: PageProps<"/super-admin/f
         </p>
       )}
       {people.length === 0 ? (
-        <p className="muted">{t("superAdmin.peopleEmpty")}</p>
+        <EmptyState>{t("superAdmin.peopleEmpty")}</EmptyState>
       ) : (
         <ul className="member-list">
           {people.map((person) => (

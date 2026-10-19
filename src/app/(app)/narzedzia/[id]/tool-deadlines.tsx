@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
+import { addDeadlineStep } from "@/lib/empty-step";
 import { ADDABLE_DEADLINE_KINDS, canManageDeadlines, type Session, type ToolCard } from "@/registry/registry";
 import { AddDeadlineForm } from "../../terminy/deadline-forms";
 import { DeadlineItem } from "../../terminy/deadline-item";
@@ -22,7 +24,7 @@ export function ToolDeadlines({ session, card }: { session: Session; card: ToolC
         <Link href="/terminy">{t("deadlines.companyLink")}</Link>
       </div>
       {card.deadlines.length === 0 ? (
-        <p className="empty">{owner ? t("deadlines.emptyOwner") : t("deadlines.empty")}</p>
+        <EmptyState step={addDeadlineStep(session)}>{owner ? t("deadlines.emptyOwner") : t("deadlines.empty")}</EmptyState>
       ) : (
         <ul className="deadlines">
           {card.deadlines.map((deadline) => (

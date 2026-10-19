@@ -18,11 +18,7 @@ export function ToolList({ tools, wide, atBase }: { tools: ToolOnBoard[]; wide?:
     <ul className={wide ? "tool-list tool-list-wide" : "tool-list"}>
       {tools.map((tool) => (
         <li key={tool.id}>
-          <Link
-            href={`/narzedzia/${tool.id}`}
-            className={tool.alarm ? "tool-row tool-row-alarm" : "tool-row"}
-            data-tour={tool.alarm ? "alarm-tool" : undefined}
-          >
+          <Link href={`/narzedzia/${tool.id}`} className={tool.alarm ? "tool-row tool-row-alarm" : "tool-row"}>
             <span className="plate">{tool.code}</span>
             <span className="tool-row-name">
               {tool.name}

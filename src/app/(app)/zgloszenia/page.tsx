@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { EmptyState } from "@/components/empty-state";
 import { MissingIcon } from "@/components/missing-icon";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
@@ -34,8 +35,8 @@ export default async function IssuesPage() {
   return (
     <>
       <p>
-        <Link href="/" className="muted">
-          {t("issues.back")}
+        <Link href="/dzwonek" className="muted">
+          {t("inbox.back")}
         </Link>
       </p>
       <div className="section-head">
@@ -73,14 +74,14 @@ export default async function IssuesPage() {
       )}
 
       {issues.length === 0 ? (
-        <p className="empty">{t("issues.empty")}</p>
+        <EmptyState>{t("issues.empty")}</EmptyState>
       ) : (
         <>
           <section aria-labelledby="issues-open">
             <h2 id="issues-open" className="display section-title">
               {t("issues.open")}
             </h2>
-            {open.length === 0 ? <p className="empty">{t("issues.openEmpty")}</p> : <IssueList issues={open} />}
+            {open.length === 0 ? <EmptyState>{t("issues.openEmpty")}</EmptyState> : <IssueList issues={open} />}
           </section>
           {closed.length > 0 && (
             <section aria-labelledby="issues-closed">

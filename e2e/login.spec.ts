@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { openMyAccount } from "./support/navigation";
 
 /** Zakłada nową firmę tym samym skryptem, którego używa GP Engineering. */
 function createCompany() {
@@ -42,11 +43,11 @@ test("właściciel loguje się hasłem tymczasowym, musi je zmienić i widzi pus
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("company-name")).toHaveText(company.name);
-  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
-  await expect(page.getByText("Na bazie nie ma jeszcze żadnych narzędzi.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Gdzie jest sprzęt" }).getByRole("link", { name: /^Baza Baza 0 szt\./ })).toBeVisible();
 
   // Nowe hasło działa po wylogowaniu, a zmiana nie jest już wymagana.
-  await page.getByRole("button", { name: "Menu" }).click();
+  await openMyAccount(page);
   await page.getByRole("button", { name: "Wyloguj" }).click();
   await expect(page).toHaveURL(/\/logowanie$/);
   await page.getByLabel("E-mail").fill(company.email);

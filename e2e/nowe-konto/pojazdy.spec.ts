@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect as baseExpect, type Locator, type Page, test } from "@playwright/test";
+import { openOperation } from "../support/equipment";
 import { type Credentials, expectNoHorizontalScroll, firstSignIn, openFreshAccount, signIn, signOut } from "../support/fresh-account";
 
 /**
@@ -415,45 +416,35 @@ test("przypomnienia w dzwonku zależą od rodzaju terminu: 30 dni przed OC i tac
   // Każde przypomnienie raz: drugie uruchomienie tego samego dnia nic nie dodaje.
   expect(remindDeadlines(account.companyId)).toBe(0);
 
-  // Właściciel: jedno zbiorcze o wszystkich, od najwcześniejszego.
+  // Właściciel: w „Do zrobienia” każdy termin, któremu należy się przypomnienie, od najwcześniejszego.
   await page.goto("/dzwonek");
-  const ownerBell = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(ownerBell).toHaveCount(1);
-  await expect(ownerBell.first().locator(".movement-head")).toHaveText(/Terminy: 4/);
-  await expect(ownerBell.first().locator("p").first()).toHaveText(
-    [
-      `Bus Ducato: przegląd techniczny, po terminie (${shown(inDays(-3))})`,
-      `Osobówka Skoda: Wymiana opon, termin ${shown(inDays(7))}`,
-      `Bus Ducato: legalizacja tachografu, termin ${shown(inDays(20))}`,
-      `Bus Ducato: OC, termin ${shown(inDays(30))}`,
-    ].join(" · "),
-  );
-  await expect(ownerBell.first()).not.toContainText("Serwis klimatyzacji");
-  await expect(ownerBell.first()).not.toContainText("AC,");
-  await ownerBell.first().getByRole("button", { name: "Pokaż" }).click();
-  await expect(page).toHaveURL(/\/terminy$/);
+  const ownerToDo = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem");
+  await expect(ownerToDo.locator(".movement-head")).toHaveText([
+    `Przegląd techniczny pojazdu Bus Ducato: po terminie (${shown(inDays(-3))})`,
+    `Wymiana opon pojazdu Osobówka Skoda: termin ${shown(inDays(7))}`,
+    `Legalizacja tachografu pojazdu Bus Ducato: termin ${shown(inDays(20))}`,
+    `OC pojazdu Bus Ducato: termin ${shown(inDays(30))}`,
+  ]);
+  await expect(page.getByRole("link", { name: "Do zrobienia (4)" })).toBeVisible();
+  await ownerToDo.first().getByRole("link", { name: "Pokaż" }).click();
+  await expect(page).toHaveURL(new RegExp(`/pojazdy/${busId}/terminy$`));
   await signOut(page);
 
   // Kierownik busa: tylko terminy swojego pojazdu.
   await firstSignIn(page, adamEmail, adamTemporary, account.companyName);
-  await expect(page.getByTestId("bell-count")).toHaveText("1");
+  await expect(page.getByTestId("bell-count")).toHaveText("3");
   await page.goto("/dzwonek");
-  const adamBell = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem");
-  await expect(adamBell).toHaveCount(1);
-  await expect(adamBell.first().locator(".movement-head")).toHaveText(/Terminy: 3/);
-  await expect(adamBell.first().locator("p").first()).toHaveText(
-    [
-      `Bus Ducato: przegląd techniczny, po terminie (${shown(inDays(-3))})`,
-      `Bus Ducato: legalizacja tachografu, termin ${shown(inDays(20))}`,
-      `Bus Ducato: OC, termin ${shown(inDays(30))}`,
-    ].join(" · "),
-  );
+  await expect(page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").locator(".movement-head")).toHaveText([
+    `Przegląd techniczny pojazdu Bus Ducato: po terminie (${shown(inDays(-3))})`,
+    `Legalizacja tachografu pojazdu Bus Ducato: termin ${shown(inDays(20))}`,
+    `OC pojazdu Bus Ducato: termin ${shown(inDays(30))}`,
+  ]);
   await signOut(page);
 
   // Pracownik nie dostaje przypomnień o terminach.
   await firstSignIn(page, `marek.${suffix}`, marekTemporary, account.companyName);
   await page.goto("/dzwonek");
-  await expect(page.getByText("Terminy:")).toHaveCount(0);
+  await expect(page.getByText("Nic na Ciebie nie czeka.")).toBeVisible();
   await signOut(page);
 
   // Nowy termin w nieaktywnym pojeździe nie przypomina, a w aktywnym tak (jedno przypomnienie: tekst o pojeździe).
@@ -469,11 +460,11 @@ test("przypomnienia w dzwonku zależą od rodzaju terminu: 30 dni przed OC i tac
   expect(remindDeadlines(account.companyId)).toBe(1);
 
   await page.goto("/dzwonek");
-  const latest = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem").first();
-  await expect(latest.locator(".movement-head")).toHaveText(/Wymiana oleju pojazdu Bus Ducato: termin/);
-  await expect(latest).toContainText(`Wymiana oleju pojazdu Bus Ducato: termin ${shown(inDays(3))}`);
+  const latest = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").filter({ hasText: "Wymiana oleju" });
+  await expect(latest.locator(".movement-head")).toHaveText(`Wymiana oleju pojazdu Bus Ducato: termin ${shown(inDays(3))}`);
+  await expect(page.getByRole("list", { name: "Do zrobienia" })).not.toContainText("Osobówka Skoda");
   await expect(latest).toContainText("Dane pojazdu i dokumenty są na jego stronie.");
-  await latest.getByRole("button", { name: "Pokaż" }).click();
+  await latest.getByRole("link", { name: "Pokaż" }).click();
   await expect(page).toHaveURL(new RegExp(`/pojazdy/${busId}/terminy$`));
 
   // Nazwy własnych terminów pojazdu nie powtarzają się także przy zmianie nazwy.
@@ -598,8 +589,7 @@ test("pojazd ze sprzętem ma koszt na zakładce Koszty i nie da się go dezaktyw
 
   // Narzędzie z wartością 2000 zł dodane na tablicy i wydane na busa.
   await page.goto("/");
-  await page.getByRole("button", { name: "Dodaj narzędzie" }).click();
-  const body = page.locator("#operation-body");
+  const body = await openOperation(page, "Dodaj narzędzie");
   const category = panel(page, body, "Nowa kategoria");
   await expand(category);
   await category.getByLabel("Nazwa kategorii").fill("Młoty");

@@ -5,6 +5,7 @@ import { ChangeLogList } from "@/components/change-log-list";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import { canReadChangeLog } from "@/registry/registry";
 
 export const generateMetadata = (): Metadata => ({ title: t("changeLog.title") });
@@ -18,7 +19,7 @@ export default async function ChangeLogPage() {
   return (
     <>
       <p>
-        <Link href="/ustawienia" className="muted">
+        <Link href={settingsHref("dokumenty")} className="muted">
           {t("changeLog.back")}
         </Link>
       </p>

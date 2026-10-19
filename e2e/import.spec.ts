@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { openOperation } from "./support/equipment";
 
 interface Credentials {
   email: string;
@@ -28,7 +29,7 @@ test("właściciel importuje listę z CSV: podgląd pokazuje błędy, a po popra
   const company = seedCompany();
 
   await signIn(page, company.owner);
-  await page.getByRole("button", { name: "Dodaj narzędzie" }).click();
+  await openOperation(page, "Dodaj narzędzie");
   await page.getByRole("link", { name: /Importuj z pliku/ }).click();
   await expect(page.getByRole("heading", { name: "Import narzędzi z pliku" })).toBeVisible();
 
@@ -46,8 +47,12 @@ test("właściciel importuje listę z CSV: podgląd pokazuje błędy, a po popra
   await page.getByRole("button", { name: "Zatwierdź import (2 szt.)" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Zaimportowano narzędzia: 2." })).toBeVisible();
 
-  await page.getByRole("link", { name: /Zobacz je na tablicy/ }).click();
-  await expect(page.getByRole("region", { name: "Budowa Rataje" }).getByRole("link", { name: /H-02/ })).toContainText("1200,00 zł");
-  await expect(page.getByRole("region", { name: "Baza Magazyn" }).getByRole("link", { name: /S-03/ })).toContainText("99,90 zł");
+  await page.getByRole("link", { name: /Zobacz je na liście narzędzi/ }).click();
+  const tools = page.getByTestId("tools-list");
+  await expect(tools.getByRole("link", { name: /H-02/ })).toContainText("Rataje");
+  await expect(tools.getByRole("link", { name: /H-02/ })).toContainText("1200,00 zł");
+  await expect(tools.getByRole("link", { name: /S-03/ })).toContainText("Magazyn");
+  await expect(tools.getByRole("link", { name: /S-03/ })).toContainText("99,90 zł");
+  await page.goto("/");
   await expect(page.getByRole("region", { name: "Ostatnie ruchy" })).toContainText("Jan Testowy · import");
 });

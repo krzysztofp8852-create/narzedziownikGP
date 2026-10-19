@@ -1,6 +1,6 @@
 # 0022. Samouczek jako karta nad tablicą, a jego stan w app.users
 
-Data: 2026-09-29 · Status: przyjęta
+Data: 2026-09-29 · Status: przyjęta; samouczek startujący sam u kierownika i magazyniera zastąpiony przez ADR 0048 (otwiera się z Pomocy)
 
 ## Kontekst
 

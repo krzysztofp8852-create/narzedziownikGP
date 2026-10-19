@@ -46,10 +46,10 @@ test("kierownik bez zasięgu wydaje dwie szlifierki: ruchy czekają w kolejce, p
   await expect(recent.getByRole("listitem").filter({ hasText: "Adam Nowak" })).toContainText("S-01");
   await expect(page.getByTestId("bell-count")).toHaveText("1");
 
-  await page.getByRole("link", { name: "Dzwonek, nieprzeczytane: 1" }).click();
-  const entry = page.getByRole("list", { name: "Dzwonek" }).getByRole("listitem").first();
+  await page.getByRole("link", { name: "Wymaga uwagi, do zrobienia: 1" }).click();
+  const entry = page.getByRole("list", { name: "Do zrobienia" }).getByRole("listitem").first();
   await expect(entry).toContainText("Ruch z kolejki odrzucony: Wydanie S-02");
-  await entry.getByRole("button", { name: "Pokaż" }).click();
+  await entry.getByRole("link", { name: "Pokaż" }).click();
 
   await expect(page).toHaveURL(/\/do-wyjasnienia$/);
   // Tylko pozycje listy: każda ma w środku własną listę konfliktów („S-02 jest teraz: …”).
@@ -60,4 +60,5 @@ test("kierownik bez zasięgu wydaje dwie szlifierki: ruchy czekają w kolejce, p
   await expect(toClarify).toContainText("S-02 jest teraz: Rataje (przeniósł: Jan Testowy");
   await toClarify.getByRole("button", { name: "Wyjaśnione" }).click();
   await expect(page.getByText("Nie ma ruchów do wyjaśnienia.")).toBeVisible();
+  await expect(page.getByTestId("bell-count")).toHaveCount(0);
 });

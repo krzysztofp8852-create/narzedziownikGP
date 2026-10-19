@@ -15,6 +15,25 @@
     "kierownik": "Kierownik",
     "pracownik": "Pracownik"
   },
+  "emptyState": {
+    "roles": {
+      "wlasciciel": "właściciel",
+      "kierownik": "kierownik",
+      "magazynier": "magazynier",
+      "pracownik": "pracownik"
+    },
+    "who": {
+      "sites": "Budowy dodaje {roles}.",
+      "vehicles": "Pojazdy dodaje {roles}.",
+      "tools": "Narzędzia dodaje {roles}.",
+      "categories": "Kategorie narzędzi dodaje {roles}.",
+      "deadlines": "Terminy dodaje {roles}.",
+      "qualifications": "Uprawnienia wpisuje {roles}.",
+      "rates": "Stawkę dzienną ustawia {roles}.",
+      "movements": "Sprzęt wydaje {roles}."
+    },
+    "issueTools": "Wydaj sprzęt"
+  },
   "login": {
     "title": "Logowanie",
     "login": "E-mail lub nazwa użytkownika",
@@ -56,45 +75,72 @@
     "logout": "Wyloguj",
     "search": "Szukaj narzędzia",
     "searchShort": "Szukaj",
-    "bell": "Dzwonek",
-    "bellUnread": "Dzwonek, nieprzeczytane: {count}",
-    "issues": "Zgłoszenia",
-    "issuesUnread": "Zgłoszenia, nieprzeczytane: {count}",
-    "chat": "Czat z supportem",
-    "chatUnread": "Czat z supportem, nowe odpowiedzi: {count}",
+    "bell": "Wymaga uwagi",
+    "bellToDo": "Wymaga uwagi, do zrobienia: {count}",
     "loading": "Wczytywanie strony…"
   },
-  "menu": {
-    "title": "Menu",
-    "groups": {
-      "equipment": "Sprzęt",
-      "places": "Budowy i pojazdy",
-      "people": "Ludzie",
-      "company": "Firma"
-    },
+  "nav": {
+    "title": "Nawigacja",
     "board": "Tablica",
     "tools": "Narzędzia",
+    "scan": "Skanuj",
+    "sites": "Budowy",
+    "mySites": "Moje budowy",
+    "people": "Ludzie",
     "deadlines": "Terminy",
+    "report": "Zgłoś",
+    "more": "Więcej",
+    "mine": "Moje",
     "history": "Historia",
     "stickers": "Naklejki",
-    "sites": "Budowy",
     "vehicles": "Pojazdy",
     "costs": "Koszty sprzętu",
-    "people": "Ludzie",
     "myQualifications": "Moje uprawnienia",
-    "punchesToClarify": "Odbicia do wyjaśnienia",
     "timeOnSite": "Czas na budowie",
     "myTimeOnSite": "Mój czas na budowie",
     "reports": "Raporty",
-    "documents": "Dokumenty",
     "settings": "Ustawienia",
-    "tutorial": "Samouczek",
-    "language": "Język / Language",
-    "deleteAccount": "Usuń konto",
-    "logout": "Wyloguj"
+    "help": "Pomoc",
+    "account": "Moje konto: {name}",
+    "groups": {
+      "equipment": "Sprzęt",
+      "people": "Ludzie",
+      "mine": "Moje",
+      "company": "Firma"
+    }
+  },
+  "myAccount": {
+    "title": "Moje konto",
+    "password": {
+      "title": "Hasło",
+      "linkIntro": "Wyślemy na e-mail tego konta link do ustawienia nowego hasła. Link działa godzinę.",
+      "submit": "Wyślij link do zmiany hasła",
+      "submitting": "Wysyłanie…",
+      "sent": "Link wysłany. Otwórz go w e-mailu i ustaw nowe hasło.",
+      "fromOwner": "Nowe hasło nadaje właściciel firmy. Poproś go o hasło tymczasowe, a przy następnym logowaniu ustawisz własne."
+    },
+    "deleteAccount": {
+      "title": "Usunięcie konta",
+      "text": "Konto i dane usuwamy na prośbę. Jak o to poprosić i co się stanie z danymi, opisuje osobna strona.",
+      "link": "Jak usunąć konto i dane"
+    },
+    "signOut": {
+      "title": "Wylogowanie",
+      "text": "Wylogowanie usuwa z tego urządzenia kopię tablicy i wyłącza na nim powiadomienia."
+    }
+  },
+  "help": {
+    "chat": {
+      "open": "Otwórz czat",
+      "unread": "Nowe odpowiedzi: {count}"
+    },
+    "tutorial": {
+      "textOwner": "Cztery pierwsze kroki firmy z postępem: kierownik, budowa, narzędzia i naklejki.",
+      "textMovements": "Ekran po ekranie: jak zapisać wydanie, zwrot i przeniesienie sprzętu.",
+      "open": "Otwórz samouczek"
+    }
   },
   "board": {
-    "title": "Gdzie jest co",
     "snapshot": "Brak sieci. Stan z {when}: to, co ten telefon pobrał ostatnio.",
     "baseKind": "Baza",
     "toolCount": "{count} szt.",
@@ -106,11 +152,8 @@
     "siteEmpty": "Na tej budowie nie ma jeszcze narzędzi.",
     "vehicleKind": "Pojazd",
     "vehicleEmpty": "Na tym pojeździe nie ma jeszcze narzędzi.",
-    "vehiclesTitle": "Pojazdy",
     "addVehicle": "Dodaj pojazd",
-    "vehiclesLink": "Wszystkie pojazdy",
     "vehicleAlarmOff": "bez alarmu po progu",
-    "noSites": "Nie ma aktywnych budów.",
     "addSite": "Dodaj budowę",
     "scan": "Skanuj QR",
     "textEntry": "Wpisz tekstem",
@@ -128,8 +171,6 @@
     "sidebar": "Operacje i ostatnie ruchy",
     "statBase": "Na bazie",
     "statSites": "Na budowach",
-    "statSiteCount": "Budowy",
-    "statVehicles": "Na pojazdach",
     "statOffBase": "Poza bazą",
     "statAlarms": "Alarmy",
     "peopleCount": "{count} aktywne",
@@ -137,11 +178,7 @@
     "undoing": "Cofanie…",
     "overThreshold": "po progu",
     "unused": "nieużywane {days}",
-    "servicesTitle": "W serwisie",
-    "servicesEmpty": "W serwisie nie ma żadnego sprzętu.",
     "serviceKind": "Serwis",
-    "lostTitle": "Zaginione",
-    "lostEmpty": "Nie ma zaginionych narzędzi.",
     "lostFor": "zaginione od {days}",
     "reportTool": "Zgłoś narzędzie",
     "addRentedTool": "Sprzęt wynajęty",
@@ -150,8 +187,18 @@
     "reportedMissing": "zgłoszony brak",
     "rented": "wynajęte",
     "returnOverdue": "po terminie zwrotu",
-    "toolReportsWaiting": "Zgłoszone narzędzia czekają na decyzję: {count}",
-    "toolReportsLink": "Rozpatrz w zgłoszeniach →"
+    "moreOperations": "Więcej operacji",
+    "closeScanner": "Zamknij skaner",
+    "countersLabel": "Liczniki sprzętu",
+    "alarmTag": "alarm",
+    "whereTitle": "Gdzie jest sprzęt",
+    "otherPlaces": "Pozostałe budowy i pojazdy ({count})"
+  },
+  "workerBoard": {
+    "equipmentTitle": "Sprzęt na Twojej budowie",
+    "equipmentSite": "Sprzęt na budowie {place}",
+    "equipmentBase": "Sprzęt na bazie ({place})",
+    "punchHint": "Nie jesteś odbity, więc nie wiemy, na której budowie dziś jesteś. Naciśnij Skanuj i zeskanuj plakat budowy, a zobaczysz tu jej sprzęt."
   },
   "siteMap": {
     "title": "Mapa",
@@ -172,7 +219,7 @@
     "failed": "Nie udało się wczytać mapy. Spróbuj odświeżyć stronę.",
     "liveHint": "Kliknij pinezkę, żeby zobaczyć szczegóły budowy.",
     "ownerHint": "Kliknij pinezkę, żeby zobaczyć szczegóły. Pinezkę w złym miejscu przeciągnij tam, gdzie jest budowa.",
-    "openLocation": "Pokaż na tablicy →",
+    "openLocation": "Pokaż sprzęt →",
     "movePin": "Wskaż nowe miejsce na mapie",
     "placing": "Kliknij na mapie, gdzie jest {name}.",
     "cancelPlacing": "Anuluj",
@@ -206,7 +253,26 @@
   },
   "settingsPage": {
     "title": "Ustawienia",
-    "back": "← Wróć do tablicy"
+    "backToSettings": "← Wróć do ustawień",
+    "pages": {
+      "firma": {
+        "title": "Firma i abonament",
+        "hint": "Pakiet, wykorzystanie limitów narzędzi i osób, termin płatności."
+      },
+      "sprzet": {
+        "title": "Sprzęt",
+        "hint": "Stawki dzienne, alarm na budowie, naklejki QR, serwisy i baza na mapie."
+      },
+      "dostep": {
+        "title": "Ludzie i dostęp",
+        "hint": "Kto widzi koszty, kto widzi zgłoszenia i wylogowanie po bezczynności.",
+        "hintDemo": "Kto widzi koszty i kto widzi zgłoszenia."
+      },
+      "dokumenty": {
+        "title": "Dokumenty i dziennik zmian",
+        "hint": "Regulamin, polityka prywatności, umowa powierzenia i dziennik zmian."
+      }
+    }
   },
   "changeLog": {
     "title": "Dziennik zmian",
@@ -519,6 +585,9 @@
     "place": "Gdzie jest",
     "any": "Wszystkie",
     "lost": "Zaginione",
+    "inService": "W serwisie",
+    "withAlarm": "Z alarmem",
+    "show": "Pokaż tylko",
     "withRetiredAndReturned": "Pokaż też wycofane i zwrócone do wypożyczalni",
     "count": "Narzędzia: {count}",
     "totalValue": "wartość w obiegu {amount}",
@@ -528,7 +597,9 @@
     "lostResponsible": "odpowiadał: {name}",
     "lostFor": "zaginione od {days}",
     "stateFor": "od {days}",
-    "import": "Importuj z pliku"
+    "import": "Importuj z pliku",
+    "onSites": "Na budowach",
+    "offBase": "Poza bazą"
   },
   "vehiclesPage": {
     "title": "Pojazdy",
@@ -540,6 +611,17 @@
     "noDeadlines": "Bez terminów w najbliższych {days} dniach.",
     "deadlinesLink": "Dane i terminy",
     "inactiveTitle": "Nieaktywne"
+  },
+  "sitesPage": {
+    "back": "← Tablica",
+    "intro": "Aktywne budowy firmy: adres, kierownik i ile sprzętu na nich jest. Kliknij budowę, żeby otworzyć jej stronę z pełną listą sprzętu.",
+    "introOwn": "Budowy, którymi kierujesz: adres i ile sprzętu na nich jest. Kliknij budowę, żeby otworzyć jej stronę z pełną listą sprzętu.",
+    "views": "Widok budów",
+    "list": "Lista",
+    "map": "Mapa",
+    "empty": "Firma nie ma aktywnych budów.",
+    "emptyOwner": "Nie masz aktywnych budów. Dodaj nową poniżej.",
+    "emptyOwn": "Nie kierujesz teraz żadną aktywną budową."
   },
   "toolReports": {
     "title": "Zgłoszone narzędzia",
@@ -560,7 +642,7 @@
     "site": "Na budowę",
     "sitePlaceholder": "Wybierz budowę",
     "noSites": "Nie masz aktywnej budowy, na którą możesz zgłosić narzędzie.",
-    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi.",
     "reportHint": "Narzędzie od razu będzie na Twojej budowie jako „zgłoszone”. Właściciel uzupełni wartość i zaakceptuje zgłoszenie.",
     "submitReport": "Zgłoś narzędzie",
     "reported": "Zgłoszono {code} {name} na {place}."
@@ -802,9 +884,6 @@
     "back": "← Wróć do tablicy",
     "itemAt": "{when} · {place}",
     "itemResponsible": " · kierownik: {name}",
-    "boardDue": "Sprzęt z terminem w najbliższych {days} dniach: {count} szt.",
-    "boardOverdue": "po terminie: {count}",
-    "boardLink": "Zobacz terminy",
     "extendRental": "Przedłuż wynajem",
     "policyUntilLabel": "Ostatni dzień polisy",
     "policyDue": "Polisa do {day} ({left})",
@@ -938,20 +1017,19 @@
   "scanner": {
     "cameraPreview": "Podgląd aparatu",
     "cameraStarting": "Uruchamianie aparatu…",
-    "cameraHint": "Nakieruj aparat na naklejkę. Możesz skanować kilka naklejek pod rząd.",
+    "cameraHint": "Nakieruj aparat na naklejkę narzędzia albo plakat budowy. Naklejki możesz skanować kilka pod rząd.",
     "cameraDenied": "Brak zgody na użycie aparatu. Zezwól na nie w ustawieniach przeglądarki albo wpisz kod ręcznie.",
     "cameraUnavailable": "Aparat jest niedostępny. Wpisz kod z naklejki ręcznie.",
     "cameraInsecure": "Aparat działa tylko na stronie otwartej przez HTTPS. Wpisz kod z naklejki ręcznie.",
     "cameraOn": "Włącz aparat",
     "cameraOff": "Wyłącz aparat",
-    "manualCode": "Kod z naklejki",
-    "manualPlaceholder": "np. H-03",
+    "manualCode": "Kod z naklejki albo plakatu",
+    "manualPlaceholder": "np. H-03 albo 7K3MQ-9XZ2B",
     "manualAdd": "Dodaj",
     "added": "Dodano {code}.",
     "alreadyAdded": "{code} już jest na liście.",
-    "notSticker": "To nie jest naklejka narzędzia.",
     "unknownSticker": "Tego narzędzia nie ma na tablicy firmy.",
-    "unknownCode": "Nie ma na tablicy narzędzia o kodzie {code}.",
+    "unknownCode": "Nie rozpoznano kodu {code}. To nie jest kod narzędzia z tablicy ani kod plakatu budowy.",
     "empty": "Zeskanuj naklejki albo wpisz kody. Rodzaj ruchu podpowiemy na podstawie tego, gdzie sprzęt jest teraz.",
     "groupLabel": "Ruch z: {place}",
     "from": "Teraz: {place}",
@@ -961,7 +1039,9 @@
     "chooseTo": "wybierz, dokąd",
     "cannotMove": "Tego sprzętu nie możesz ruszyć. Usuń go z listy.",
     "clear": "Wyczyść listę",
-    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź ruchy i zatwierdź ponownie."
+    "conflictRefreshed": "Lista poniżej jest już odświeżona. Sprawdź ruchy i zatwierdź ponownie.",
+    "notRecognized": "Nie rozpoznano kodu. Zeskanuj naklejkę narzędzia albo plakat budowy.",
+    "posterWithList": "Na liście są niezatwierdzone narzędzia. Zatwierdź ruch albo wyczyść listę, a potem zeskanuj plakat."
   },
   "settings": {
     "title": "Alarm na budowie",
@@ -973,7 +1053,7 @@
     "invalidDays": "Wpisz liczbę dni od 1 do {max}.",
     "baseAddressTitle": "Baza na mapie",
     "baseAddress": "Adres bazy",
-    "baseAddressHint": "Z adresem baza jest na mapie budów na tablicy. Zostaw puste, żeby jej tam nie było.",
+    "baseAddressHint": "Z adresem baza jest na mapie budów (Budowy → Mapa). Zostaw puste, żeby jej tam nie było.",
     "baseAddressSaved": "Zapisano adres bazy."
   },
   "subscription": {
@@ -1099,7 +1179,7 @@
       "warrantyUntil": "Gwarancja do"
     },
     "categories": "Kategorie firmy",
-    "noCategories": "Firma nie ma jeszcze kategorii. Dodaj je na tablicy przy dodawaniu narzędzia, zanim wgrasz plik.",
+    "noCategories": "Firma nie ma jeszcze kategorii. Dodaj pierwszą w formularzu „Dodaj narzędzie”, zanim wgrasz plik.",
     "locations": "Lokalizacje",
     "file": "Plik XLSX lub CSV",
     "reading": "Wczytywanie pliku…",
@@ -1127,7 +1207,6 @@
     "submit": "Zatwierdź import ({count} szt.)",
     "submitting": "Zapisywanie…",
     "done": "Zaimportowano narzędzia: {count}.",
-    "openBoard": "Zobacz je na tablicy →",
     "rowErrors": {
       "name_missing": "Brak nazwy.",
       "category_missing": "Brak kategorii.",
@@ -1142,7 +1221,8 @@
       "vehicle_inactive": "Pojazd „{value}” jest nieaktywny.",
       "inspection_invalid": "Zła data przeglądu „{value}”: wpisz np. 30.09.2026 albo 2026-09-30.",
       "warranty_invalid": "Zła data końca gwarancji „{value}”: wpisz np. 30.09.2026 albo 2026-09-30."
-    }
+    },
+    "openTools": "Zobacz je na liście narzędzi →"
   },
   "notifications": {
     "greeting": "Dzień dobry, {name}!",
@@ -1194,7 +1274,7 @@
   "siteClosing": {
     "close": "Oznacz budowę jako zakończoną",
     "title": "Zamykanie budowy {name}",
-    "back": "← Wróć do tablicy",
+    "back": "← Budowy",
     "emptyHint": "Na budowie nie zostało żadne narzędzie w obiegu. Po zamknięciu budowa zniknie z tablicy, a jej historia zostanie.",
     "submit": "Oznacz jako zakończoną",
     "confirm": "Zamknąć budowę {name}? Nie da się jej potem otworzyć ponownie.",
@@ -1217,15 +1297,12 @@
     "forceSubmit": "Zamknij i oznacz jako zaginione",
     "forceConfirm": "Oznaczyć {count} szt. jako zaginione i zamknąć budowę {name}?",
     "finishedTitle": "Zakończone budowy",
-    "finishedLink": "Zakończone budowy →",
     "finishedEmpty": "Nie ma jeszcze zakończonych budów.",
     "finishedOn": "Zamknięcie: {when}, {name}",
     "history": "Historia budowy →"
   },
   "bell": {
-    "title": "Dzwonek",
     "back": "← Wróć do tablicy",
-    "empty": "Nie masz jeszcze żadnych powiadomień. Pojawi się tu np. sprzęt zabrany z Twojej budowy albo pojazdu, albo narzędzie, które stoi za długo.",
     "unread": "Nowe",
     "open": "Pokaż",
     "markRead": "Oznacz jako przeczytane",
@@ -1264,6 +1341,25 @@
     "forgottenExitBody": "Wejście {when}. Bez wyjścia odbicie zamknie się o północy i nie wejdzie do czasu na budowie.",
     "forgottenExits": "Nieodbite wyjścia: {count}",
     "forgottenExitItem": "{person} ({place})"
+  },
+  "inbox": {
+    "title": "Wymaga uwagi",
+    "back": "← Wróć do „Wymaga uwagi”",
+    "lists": "Listy spraw",
+    "toDo": "Do zrobienia",
+    "toDoCount": "Do zrobienia ({count})",
+    "info": "Informacje",
+    "toDoEmpty": "Nic na Ciebie nie czeka. Gdy coś będzie wymagało Twojej reakcji, pojawi się tutaj.",
+    "infoEmpty": "Nie ma jeszcze informacji. Pojawią się tu raporty i potwierdzenia, np. o sprzęcie zabranym z Twojej budowy.",
+    "punch": "Odbicie do wyjaśnienia: {person}, {place}",
+    "punchBody": "{time}. Wejście: {check}.",
+    "punchExit": "Wyjście: {check}.",
+    "punchConflict": "Odbicie offline niezapisane: {person}, {place}",
+    "punchConflictBody": "Skan w telefonie {when}: {reason}.",
+    "alarm": "Sprzęt stoi za długo {place}",
+    "alarmBody": "Narzędzia ponad próg {days} dni: {count}. Zwróć je na bazę albo przenieś, jeśli nie są już potrzebne.",
+    "allIssues": "Wszystkie zgłoszenia, także zamknięte →",
+    "seeAll": "Zobacz wszystkie ({count})"
   },
   "push": {
     "title": "Powiadomienia na telefonie",
@@ -1323,8 +1419,7 @@
     "intro": "Ruchy zapisane w telefonie bez zasięgu, których serwer nie przyjął, bo stan zmienił się w międzyczasie. Nic z nich nie trafiło do historii. Sprawdź, gdzie jest sprzęt, zarejestruj ruch jeszcze raz, jeśli trzeba, i oznacz go jako wyjaśniony.",
     "empty": "Nie ma ruchów do wyjaśnienia.",
     "when": "Zapisany w telefonie {recorded}, odrzucony {rejected}",
-    "resolve": "Wyjaśnione",
-    "back": "← Wróć do tablicy"
+    "resolve": "Wyjaśnione"
   },
   "reports": {
     "weeklyTitle": "Raport tygodniowy",
@@ -1605,7 +1700,6 @@
   },
   "issues": {
     "title": "Zgłoszenia",
-    "back": "← Wróć do tablicy",
     "backToList": "← Wróć do zgłoszeń",
     "intro": "Uszkodzenia, braki i inne sprawy do właściciela. Nowe zgłoszenia, komentarze i zamknięcia trafiają tutaj.",
     "new": "Nowe zgłoszenie",
@@ -1762,32 +1856,26 @@
   },
   "demo": {
     "title": "Wersja demo",
-    "heading": "Zobacz NarzędziownikGP w działaniu",
-    "lead": "To przykładowa firma budowlana „DemoBud”: kilkadziesiąt narzędzi, pięć budów, trzy busy i osobówka, dwa serwisy, dziewięć kont, brygada bez kont w kartotece Ludzie i kilka tygodni historii: ruchy sprzętu, odbicia na budowach, koszty, terminy i uprawnienia. Wejdź bez logowania w dowolną rolę. Na każdej stronie przełączysz się na inną paskiem u góry.",
+    "heading": "Kim chcesz być?",
+    "lead": "Przykładowa firma budowlana „DemoBud”. Wejdź bez logowania, a krótki przewodnik pokaże, jak wydać sprzęt na budowę i przyjąć zwrot. Rolę zmienisz na żółtym pasku u góry.",
     "enter": "Wejdź jako {role}",
     "entering": "Wchodzę…",
     "person": "W demo: {name}",
     "unavailable": "Demo jest właśnie odświeżane. Spróbuj ponownie za kilka minut.",
     "roles": {
       "wlasciciel": {
-        "summary": "Widzi całą firmę i pilnuje pieniędzy.",
-        "points": "Tablica „Gdzie jest co” z wartością sprzętu w zł i kwotą poza bazą\nAlarmy: co za długo stoi na budowie, co zaginęło, co jest w serwisie\nKoszty sprzętu każdej budowy i pojazdu ze stawek dziennych\nCzas na budowie każdej osoby z odbić na plakatach budów\nTerminy przeglądów, kalibracji, zwrotów do wypożyczalni, pojazdów i uprawnień ludzi\nAkceptuje narzędzia kupione przez kierowników; naklejki QR, import z Excela i raporty"
+        "summary": "Zobaczysz całą firmę: gdzie jest sprzęt, ile wart jest ten poza bazą i co czeka na Twoją decyzję."
       },
       "kierownik": {
-        "summary": "Rusza sprzęt i pilnuje ludzi na swoich budowach.",
-        "points": "Wydania, zwroty, przeniesienia i serwis: checklistą, skanerem QR, tekstem albo głosem\nOdbija na plakacie budowy siebie i brygadę bez telefonu, wyjaśnia odbicia poza budową\nPowiadomienie w dzwonku, gdy ktoś zabierze mu sprzęt z budowy\nZgłasza narzędzia kupione na budowę i zamyka swoje budowy\nRuchy i odbicia zapisane bez zasięgu wysyłają się same, gdy wróci sieć"
+        "summary": "Zobaczysz swoje budowy i ludzi: wydasz sprzęt z bazy na budowę, przyjmiesz zwrot i odbijesz brygadę."
       },
       "magazynier": {
-        "summary": "Obsługuje bazę i serwisy.",
-        "points": "Wydaje i przyjmuje sprzęt dla wszystkich budów i busów\nWysyła narzędzia do serwisu, przyjmuje je z powrotem i wpisuje wykonane przeglądy i kalibracje\nWidzi zgłoszenia braków i uszkodzeń od brygady\nPełna historia ruchów z filtrami i eksportem do Excela\nOdbija się na plakacie bazy i widzi swój czas pracy"
+        "summary": "Zobaczysz bazę i serwisy: wydajesz i przyjmujesz sprzęt dla wszystkich budów i busów."
       },
       "pracownik": {
-        "summary": "Odbija się na budowie, sprawdza, gdzie jest sprzęt, i zgłasza problemy.",
-        "points": "Odbija wejście i wyjście, skanując telefonem plakat budowy\nWidzi swój czas na budowie i swoje uprawnienia z terminami\nWidzi tablicę i karty narzędzi, ale nie rejestruje ruchów\nZgłasza uszkodzenia, braki i inne sprawy, także ze zdjęciem, i widzi odpowiedzi\nLoguje się nazwą użytkownika, bez e-maila"
+        "summary": "Zobaczysz tylko kilka przycisków: odbijesz się na budowie i zgłosisz usterkę narzędzia."
       }
     },
-    "tipsTitle": "Co warto kliknąć",
-    "tips": "Jako właściciel: czerwone alarmy na tablicy, kwota poza bazą i dwa narzędzia czekające na akceptację.\nDowolne narzędzie na tablicy: karta z historią, kto i kiedy je ruszał, i kto za nie teraz odpowiada.\nLupa w nagłówku: wpisz albo powiedz, czego szukasz, np. „gdzie jest niwelator?”.\nJako kierownik: panel „Operacje”. Kliknij „Wydaj z bazy” albo „Powiedz lub wpisz” i napisz, co zabierasz, np. „biorę dwie wkrętarki na Tarasy”.\nJako kierownik: „Odbij się” na górze tablicy. Kod plakatu jest na stronie budowy Osiedle Zielone Tarasy, w zakładce „Ludzie na budowie”. Po skanie odbijesz też brygadę bez telefonu.\nJako właściciel, w menu „Koszty sprzętu”: ile w tym miesiącu kosztuje sprzęt na każdej budowie i busie, z plikiem Excel dla księgowej.\nJako właściciel, w menu „Czas na budowie” i „Odbicia do wyjaśnienia”: godziny ludzi w miesiącu i odbicia bez wyjścia albo bez położenia telefonu.\nJako właściciel, w menu „Terminy” i „Ludzie”: przegląd busa i kalibracja po terminie, podnośnik do zwrotu do wypożyczalni, szkolenie BHP do odnowienia.\nDzwonek i 📋 w nagłówku: alarmy, raporty i sprawy zgłoszone przez brygadę.\nHistoria: filtry po budowie, osobie i narzędziu oraz eksport do Excela.",
     "note": "To wspólne demo: inni oglądający też mogą w nim coś zmienić, a my co jakiś czas przywracamy je do stanu wyjściowego. E-maile z demo nigdzie nie wychodzą.",
     "contact": "Chcesz takie narzędzie dla swojej firmy?",
     "bar": {
@@ -1804,97 +1892,31 @@
       "back": "Wstecz",
       "done": "Zakończ",
       "skip": "Pomiń przewodnik",
-      "welcome": {
-        "title": "Krótki przewodnik",
-        "text": "W kilku krokach pokażemy, co widać w tej roli i co można tu zrobić. Możesz go pominąć w każdej chwili, a wrócić do niego przyciskiem „Przewodnik” na żółtym pasku."
+      "resumeHint": "Pominięty przewodnik wznowisz przyciskiem „Przewodnik” na żółtym pasku.",
+      "issue": {
+        "title": "Wydaj narzędzie na budowę",
+        "text": "Kliknij „Wydaj z bazy”, wybierz budowę i zaznacz narzędzia. Możesz też kliknąć „Powiedz lub wpisz” i napisać zdanie, np. „biorę dwie wkrętarki na Tarasy”."
       },
-      "roles": {
-        "title": "Przełączanie ról",
-        "text": "Tu w każdej chwili zmienisz rolę bez logowania i zobaczysz tę samą firmę oczami właściciela, kierownika, magazyniera albo pracownika."
+      "where": {
+        "title": "Zobacz, u kogo jest",
+        "text": "Każdy kafel to baza, budowa, pojazd albo serwis z liczbą narzędzi, a czerwony znaczek to alarm. Kliknij budowę: zobaczysz jej sprzęt, od ilu dni tam jest i kto za niego odpowiada."
       },
-      "offBase": {
-        "title": "Pieniądze poza bazą",
-        "text": "Tylko właściciel widzi wartości w zł. Ta kwota mówi, ile sprzętu jest teraz na budowach i busach, czyli ile mogłoby zginąć."
-      },
-      "alarms": {
-        "title": "Alarmy",
-        "text": "Czerwony licznik to narzędzia, które stoją na budowie dłużej niż próg dni (w demo 30). Na liście są podświetlone na czerwono."
-      },
-      "alarmTool": {
-        "title": "Karta narzędzia",
-        "text": "Kliknij dowolne narzędzie, np. to z alarmem. Zobaczysz, gdzie jest, od ilu dni, kto za nie odpowiada i całą historię ruchów."
-      },
-      "search": {
-        "title": "Szukaj",
-        "text": "Lupa w nagłówku: wpisz kod, nazwę albo markę i od razu zobaczysz, gdzie jest narzędzie, od ilu dni i kto za nie odpowiada. Możesz też zapytać głosem, np. „gdzie jest niwelator?”."
-      },
-      "toolReports": {
-        "title": "Do akceptacji",
-        "text": "Kierownicy dopisują narzędzia kupione na budowie. Właściciel uzupełnia kod i wartość, a potem akceptuje albo odrzuca zgłoszenie."
-      },
-      "operationsOwner": {
-        "title": "Operacje",
-        "text": "Stąd zapiszesz każdy ruch sprzętu, dodasz narzędzie, zaimportujesz listę z Excela i wydrukujesz naklejki QR."
-      },
-      "operationsManager": {
-        "title": "Operacje",
-        "text": "Wydanie, zwrot albo przeniesienie zapiszesz checklistą („Wydaj z bazy”, „Zwróć na bazę”), skanerem naklejek QR albo zdaniem. Kliknij „Powiedz lub wpisz” i napisz np. „biorę dwie wkrętarki na Tarasy”."
-      },
-      "operationsStorekeeper": {
-        "title": "Obsługa bazy",
-        "text": "Magazynier wydaje i przyjmuje sprzęt dla wszystkich budów i busów, wysyła narzędzia do serwisu i przyjmuje je z powrotem."
-      },
-      "recent": {
-        "title": "Ostatnie ruchy",
-        "text": "Każdy ruch ma autora i godzinę. Własny ruch cofniesz przez 15 minut. Pełna historia z filtrami i eksportem do Excela jest pod „Cała historia”."
-      },
-      "recentWorker": {
-        "title": "Ostatnie ruchy",
-        "text": "Tu widać, kto, kiedy i dokąd ruszał sprzęt. Pełna historia z filtrami jest pod „Cała historia”."
-      },
-      "map": {
-        "title": "Mapa",
-        "text": "Baza, budowy, busy i sprzęt z lokalizatorem na jednej mapie. Kliknij pinezkę, żeby zobaczyć szczegóły."
-      },
-      "lost": {
-        "title": "Zaginione",
-        "text": "Narzędzie, które nie wróciło, oznaczasz jako zaginione. Karta pamięta, gdzie było ostatnio i kto za nie odpowiadał."
-      },
-      "issues": {
-        "title": "Zgłoszenia",
-        "text": "Tu trafiają uszkodzenia, braki i inne sprawy od brygady, każda z wątkiem komentarzy. Liczba przy ikonie to nowe wpisy."
-      },
-      "issuesWorker": {
-        "title": "Zgłoś problem",
-        "text": "Pracownik nie rusza sprzętu, ale zgłasza uszkodzenie albo brak, także ze zdjęciem. Otwórz zgłoszenia i kliknij „Nowe zgłoszenie”."
-      },
-      "bell": {
-        "title": "Dzwonek",
-        "text": "Powiadomienia: ktoś zabrał sprzęt z Twojej budowy, ruch zapisany bez zasięgu czeka na wyjaśnienie albo przyszedł raport."
+      "return": {
+        "title": "Przyjmij zwrot",
+        "text": "Kliknij „Zwróć na bazę”, wybierz budowę albo pojazd i zaznacz, co wróciło. Pomyłkę cofniesz przez 15 minut w „Ostatnich ruchach”."
       },
       "punch": {
-        "title": "Odbij się",
-        "text": "Każdy z kontem odbija wejście i wyjście, skanując telefonem plakat budowy. Program sprawdza tylko odległość od budowy i nie śledzi telefonu. Kierownik po skanie odbija też brygadę bez telefonu. W demo kod plakatu wpiszesz ręcznie: jest na stronie budowy, w zakładce „Ludzie na budowie”."
+        "title": "Odbij się na budowie",
+        "text": "Przy wejściu i przy wyjściu kliknij „Skanuj” i zeskanuj plakat budowy. Pasek na górze tablicy pokaże, gdzie jesteś odbity.",
+        "code": "W demo nie ma plakatu do zeskanowania: w „Skanuj” wpisz kod {code} ({place})."
       },
-      "punchWorker": {
-        "title": "Odbij się",
-        "text": "Przy wejściu i przy wyjściu skanujesz telefonem plakat budowy albo bazy. Swoje godziny zobaczysz w menu, w „Mój czas na budowie”, a uprawnienia z terminami w „Moje uprawnienia”. W demo kod plakatu znajdziesz jako właściciel na stronie budowy, w zakładce „Ludzie na budowie”."
-      },
-      "deadlines": {
-        "title": "Terminy",
-        "text": "Przeglądy, kalibracje, badania UDT, gwarancje i zwroty do wypożyczalni, a przy pojazdach przegląd, OC, AC i tachograf. Przypomnienie przychodzi do dzwonka tydzień przed terminem, a o OC, AC i tachografie 30 dni przed. Pełną listę otworzysz tutaj albo w menu, w „Terminy”, a uprawnienia ludzi (BHP, badania, UDT) w „Ludzie”."
-      },
-      "costs": {
-        "title": "Koszty sprzętu",
-        "text": "Każde narzędzie ma stawkę dzienną (w demo 1% wartości, pomiarowe 2%), więc program liczy, ile kosztuje sprzęt na każdej budowie i każdym pojeździe. Zestawienie z plikiem dla księgowej jest w menu, w „Koszty sprzętu”, a stawki w ustawieniach."
-      },
-      "menu": {
-        "title": "Menu",
-        "text": "Pod trzema kreskami są wszystkie podstrony: narzędzia, terminy, historia, naklejki QR, pojazdy, koszty sprzętu, kartoteka Ludzie z uprawnieniami, czas na budowie, odbicia do wyjaśnienia, raporty i ustawienia firmy (próg dni alarmu, stawki dzienne, kto widzi zgłoszenia, serwisy, abonament). Budowę dodasz na tablicy, a pojazd na tablicy albo na stronie Pojazdy."
+      "report": {
+        "title": "Zgłoś usterkę",
+        "text": "Kliknij „Zgłoś”, wybierz narzędzie i opisz, co się stało, także ze zdjęciem. Zgłoszenie trafi do osób, które zajmują się sprzętem, a ich odpowiedź zobaczysz na swojej tablicy."
       },
       "finish": {
         "title": "Gotowe",
-        "text": "Klikaj śmiało, to przykładowe dane, i zajrzyj do innej roli na żółtym pasku. Firma wielkości DemoBud to pakiet {name}: {implementation} za wdrożenie ze szkoleniem i {yearly} za rok utrzymania."
+        "text": "Zobacz tę samą firmę oczami innej osoby: przełącz rolę na żółtym pasku. Firma wielkości DemoBud to pakiet {name}: {implementation} za wdrożenie ze szkoleniem i {yearly} za rok utrzymania."
       },
       "offer": "Chcę to u siebie"
     },
@@ -2328,9 +2350,9 @@
     "next": "Dalej",
     "back": "Wstecz",
     "count": "Krok {step} z {count}",
-    "reopen": "Samouczek otworzysz ponownie znakiem „?” w nagłówku.",
+    "reopen": "Samouczek otworzysz ponownie w Pomocy, pod „Więcej”.",
     "firstSteps": {
-      "title": "Pierwsze kroki",
+      "title": "Uruchom firmę w 4 krokach",
       "intro": "Od tych czterech rzeczy zaczyna każda firma. Kroki odhaczają się same, gdy dana rzecz już jest w firmie.",
       "progress": "Zrobione: {done} z {count}",
       "doneTag": "zrobione",
@@ -2341,7 +2363,7 @@
       },
       "budowa": {
         "title": "Dodaj budowę",
-        "text": "Na tablicy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada. Jeśli sam prowadzisz budowę, wybierz siebie.",
+        "text": "Na stronie Budowy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada. Jeśli sam prowadzisz budowę, wybierz siebie.",
         "link": "Przejdź do budów"
       },
       "narzedzia": {
@@ -2473,7 +2495,7 @@
     "startTitle": "Ustaw stawkę dzienną",
     "startHint": "Koszt sprzętu to dni na budowie razy stawka dzienna. Ustaw stawkę firmy jako procent wartości narzędzia na dzień; na start proponujemy 1%. Stawka ustawiona pierwszy raz liczy się wstecz przez całą historię ruchów, więc od razu zobaczysz koszt trwających i zakończonych budów.",
     "startSettings": "Stawki kategorii w ustawieniach",
-    "startManager": "Właściciel nie ustawił jeszcze stawki dziennej, więc nie ma jeszcze kosztów sprzętu."
+    "startManager": "Nie ma jeszcze kosztów sprzętu, bo firma nie ma stawki dziennej."
   },
   "costSummary": {
     "back": "← Wróć do tablicy",
@@ -2571,8 +2593,7 @@
     "label": "Język aplikacji",
     "submit": "Zapisz język",
     "submitting": "Zapisywanie…",
-    "invalid": "Wybierz język z listy.",
-    "back": "← Wróć do tablicy"
+    "invalid": "Wybierz język z listy."
   },
   "costSettings": {
     "title": "Kto widzi koszty",
@@ -2615,7 +2636,7 @@
     "sitesGroup": "Budowy",
     "vehiclesGroup": "Pojazdy",
     "noPlaces": "Nie masz aktywnej budowy ani pojazdu, na które możesz przyjąć sprzęt wynajęty.",
-    "noCategories": "Firma nie ma jeszcze kategorii narzędzi. Poproś właściciela o dodanie kategorii.",
+    "noCategories": "Firma nie ma jeszcze kategorii narzędzi.",
     "company": "Wypożyczalnia",
     "companyPlaceholder": "np. Ramirent Poznań",
     "dailyRate": "Stawka dobowa (zł)",
@@ -2640,12 +2661,6 @@
     "title": "Odbicie",
     "tab": "Ludzie na budowie",
     "tabBase": "Ludzie na bazie",
-    "button": "Odbij się",
-    "cameraHint": "Nakieruj aparat na kod QR plakatu budowy.",
-    "manualCode": "Kod z plakatu",
-    "manualPlaceholder": "np. 7K3MQ-9XZ2B",
-    "manualGo": "Dalej",
-    "notPoster": "To nie jest kod plakatu budowy.",
     "locating": "Sprawdzam położenie telefonu…",
     "saving": "Zapisuję…",
     "confirmExit": "Kończysz na tej budowie?",
@@ -2721,7 +2736,7 @@
     "openPlace": "Ludzie: {place}",
     "posterHeading": "Odbij się przy wejściu i przy wyjściu",
     "posterCodeLabel": "Kod:",
-    "posterStep1": "Zeskanuj kod QR aparatem telefonu albo przyciskiem „Odbij się” na tablicy w NarzędziownikuGP. Bez aparatu wpisz kod spod kodu QR.",
+    "posterStep1": "Zeskanuj kod QR aparatem telefonu albo przyciskiem „Skanuj” w NarzędziownikuGP. Bez aparatu wpisz kod spod kodu QR.",
     "posterStep2": "Pierwszy skan zapisuje wejście. Przy wyjściu zeskanuj kod jeszcze raz i potwierdź „Kończysz na tej budowie?”. Skan na innej budowie zapisuje przejście.",
     "posterStep3": "Program sprawdza położenie telefonu tylko w chwili skanu i zapisuje tylko odległość od budowy, a nie miejsce, w którym stoisz.",
     "posterFileName": "plakat-odbicia.pdf",
@@ -2761,6 +2776,15 @@
     "peopleDoneTransfer": "{name}: przejście {from} → {place}, {time}",
     "peopleAlreadyHere": "{name}: ktoś odbił tę osobę tutaj w międzyczasie. Zeskanuj plakat jeszcze raz, żeby odbić jej wyjście.",
     "peopleNotHere": "{name}: ktoś odbił tę osobę w międzyczasie gdzie indziej, więc wyjścia nie zapisałem. Zeskanuj plakat jeszcze raz.",
-    "peopleQueued": "Brak zasięgu. Odbicia {count} os. zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć."
+    "peopleQueued": "Brak zasięgu. Odbicia {count} os. zapisane w telefonie: {place}, {time}. Wyślę je sam, gdy wróci sieć.",
+    "statusSite": "Jesteś na budowie {place} od {time}",
+    "statusBase": "Jesteś na bazie ({place}) od {time}",
+    "statusNone": "Nie jesteś odbity"
+  },
+  "scan": {
+    "cameraHint": "Nakieruj aparat na plakat budowy albo naklejkę narzędzia.",
+    "go": "Dalej",
+    "close": "Zamknij",
+    "toolOffline": "Kartę narzędzia otworzysz, gdy wróci zasięg."
   }
 }

@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { SiteManagerLabel } from "@/components/site-manager-label";
 import { Money, ToolList } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
 import { t } from "@/i18n/t";
 import { daysLeftText, deadlineName, deadlineWhen } from "@/lib/deadline-text";
-import { type SiteManagerCandidate, UPCOMING_DAYS, type UpcomingDeadline, type WhereIsWhat } from "@/registry/registry";
-import { changeVehicleManager } from "./actions";
-import { locationPagePath } from "./location-page";
-import { ChangeManagerForm, DeactivateVehicleForm, VehicleAlarmForm } from "./location-forms";
+import { canCloseSite, type Session, type SiteManagerCandidate, UPCOMING_DAYS, type UpcomingDeadline, type WhereIsWhat } from "@/registry/registry";
+import { changeSiteManager, changeVehicleManager } from "./actions";
+import { locationPagePath } from "@/lib/location-path";
+import { ChangeManagerForm, ChangeSiteAddressForm, DeactivateVehicleForm, VehicleAlarmForm } from "./location-forms";
 
 /** Liczba sztuk i, dla właściciela, suma wartości lokalizacji. */
 export function LocationTotals({ count, totalValue }: { count: number; totalValue?: number }) {
@@ -27,6 +28,61 @@ export function AddLocationTile({ title, form }: { title: string; form: ReactNod
       <summary className="panel-summary">{title}</summary>
       {form}
     </details>
+  );
+}
+
+/**
+ * Aktywna budowa: adres, kierownik i ile sprzętu na niej jest. Kto zarządza lokalizacjami
+ * (`managers`), zmienia tu kierownika i adres; kto może ją zamknąć, ma odnośnik do domykania budowy.
+ */
+export function SiteCard({
+  site,
+  managers,
+  session,
+}: {
+  site: WhereIsWhat["sites"][number];
+  managers: SiteManagerCandidate[] | null;
+  session: Session;
+}) {
+  return (
+    <section className="location location-site" aria-labelledby={`location-${site.id}`}>
+      <div className="location-head">
+        <h3 id={`location-${site.id}`} className="display location-name">
+          <span className="location-kind">{t("board.siteKind")}</span> <Link href={locationPagePath("budowa", site.id)}>{site.name}</Link>
+        </h3>
+        <LocationTotals count={site.tools.length} totalValue={site.totalValue} />
+      </div>
+      <div className="location-details">
+        <p className="muted">{site.address}</p>
+        <p>
+          <SiteManagerLabel manager={site.manager} />
+        </p>
+      </div>
+      {managers && (
+        <>
+          <details className="location-more">
+            <summary>{t("locations.changeManager")}</summary>
+            <ChangeManagerForm
+              action={changeSiteManager.bind(null, site.id)}
+              location={site}
+              label={t("locations.newManager", { name: site.name })}
+              managers={managers}
+            />
+          </details>
+          <details className="location-more">
+            <summary>{t("locations.changeAddress")}</summary>
+            <ChangeSiteAddressForm site={site} />
+          </details>
+        </>
+      )}
+      {canCloseSite(session, site) && (
+        <p>
+          <Link className="button button-quiet button-small" href={`/budowy/${site.id}/zamykanie`}>
+            {t("siteClosing.close")}
+          </Link>
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -67,7 +123,7 @@ export function VehicleCard({
         {!vehicle.alarmEnabled && <p className="muted">{t("board.vehicleAlarmOff")}</p>}
       </div>
       {deadlines && <VehicleDeadlines vehicleId={vehicle.id} deadlines={deadlines} />}
-      {vehicle.tools.length === 0 ? <p className="empty">{t("board.vehicleEmpty")}</p> : <ToolList tools={vehicle.tools} />}
+      {vehicle.tools.length === 0 ? <EmptyState>{t("board.vehicleEmpty")}</EmptyState> : <ToolList tools={vehicle.tools} />}
       {managers && (
         <>
           <details className="location-more">
@@ -98,7 +154,7 @@ function VehicleDeadlines({ vehicleId, deadlines }: { vehicleId: string; deadlin
   return (
     <div className="location-details" aria-label={t("vehiclesPage.deadlines")} role="group">
       {deadlines.length === 0 ? (
-        <p className="muted">{t("vehiclesPage.noDeadlines", { days: UPCOMING_DAYS })}</p>
+        <EmptyState>{t("vehiclesPage.noDeadlines", { days: UPCOMING_DAYS })}</EmptyState>
       ) : (
         <ul className="vehicle-deadline-list">
           {deadlines.map((deadline) => (

@@ -12,6 +12,25 @@
     "kierownik": "Site manager",
     "pracownik": "Worker"
   },
+  "emptyState": {
+    "roles": {
+      "wlasciciel": "the owner",
+      "kierownik": "the site manager",
+      "magazynier": "the storekeeper",
+      "pracownik": "the worker"
+    },
+    "who": {
+      "sites": "Sites are added by {roles}.",
+      "vehicles": "Vehicles are added by {roles}.",
+      "tools": "Tools are added by {roles}.",
+      "categories": "Tool categories are added by {roles}.",
+      "deadlines": "Deadlines are added by {roles}.",
+      "qualifications": "Qualifications are entered by {roles}.",
+      "rates": "The daily rate is set by {roles}.",
+      "movements": "Equipment is issued by {roles}."
+    },
+    "issueTools": "Issue equipment"
+  },
   "login": {
     "title": "Sign in",
     "login": "Email or username",
@@ -53,45 +72,72 @@
     "logout": "Sign out",
     "search": "Find a tool",
     "searchShort": "Search",
-    "bell": "Notifications",
-    "bellUnread": "Notifications, unread: {count}",
-    "issues": "Issues",
-    "issuesUnread": "Issues, unread: {count}",
-    "chat": "Support chat",
-    "chatUnread": "Support chat, new replies: {count}",
+    "bell": "Needs attention",
+    "bellToDo": "Needs attention, to do: {count}",
     "loading": "Loading page…"
   },
-  "menu": {
-    "title": "Menu",
-    "groups": {
-      "equipment": "Equipment",
-      "places": "Sites and vehicles",
-      "people": "People",
-      "company": "Company"
-    },
+  "nav": {
+    "title": "Navigation",
     "board": "Board",
     "tools": "Tools",
+    "scan": "Scan",
+    "sites": "Sites",
+    "mySites": "My sites",
+    "people": "People",
     "deadlines": "Deadlines",
+    "report": "Report",
+    "more": "More",
+    "mine": "Mine",
     "history": "History",
     "stickers": "Stickers",
-    "sites": "Sites",
     "vehicles": "Vehicles",
     "costs": "Equipment costs",
-    "people": "People",
     "myQualifications": "My qualifications",
-    "punchesToClarify": "Clock-ins to clarify",
     "timeOnSite": "Time on site",
     "myTimeOnSite": "My time on site",
     "reports": "Reports",
-    "documents": "Documents",
     "settings": "Settings",
-    "tutorial": "Tutorial",
-    "language": "Language",
-    "deleteAccount": "Delete account",
-    "logout": "Sign out"
+    "help": "Help",
+    "account": "My account: {name}",
+    "groups": {
+      "equipment": "Equipment",
+      "people": "People",
+      "mine": "Mine",
+      "company": "Company"
+    }
+  },
+  "myAccount": {
+    "title": "My account",
+    "password": {
+      "title": "Password",
+      "linkIntro": "We'll send a link for setting a new password to this account's email. The link works for an hour.",
+      "submit": "Send a password change link",
+      "submitting": "Sending…",
+      "sent": "Link sent. Open it from the email and set a new password.",
+      "fromOwner": "A new password is issued by the company owner. Ask them for a temporary password, and you'll set your own at the next sign-in."
+    },
+    "deleteAccount": {
+      "title": "Deleting your account",
+      "text": "We delete accounts and data on request. A separate page explains how to ask and what happens to the data.",
+      "link": "How to delete your account and data"
+    },
+    "signOut": {
+      "title": "Signing out",
+      "text": "Signing out removes the copy of the board from this device and turns off its notifications."
+    }
+  },
+  "help": {
+    "chat": {
+      "open": "Open the chat",
+      "unread": "New replies: {count}"
+    },
+    "tutorial": {
+      "textOwner": "The company's first four steps with progress: site manager, site, tools and stickers.",
+      "textMovements": "Screen by screen: how to record issuing, returning and moving equipment.",
+      "open": "Open the tutorial"
+    }
   },
   "board": {
-    "title": "What's where",
     "snapshot": "No connection. State from {when}: what this phone downloaded last.",
     "baseKind": "Base",
     "toolCount": "{count} pcs",
@@ -103,11 +149,8 @@
     "siteEmpty": "There are no tools on this site yet.",
     "vehicleKind": "Vehicle",
     "vehicleEmpty": "There are no tools in this vehicle yet.",
-    "vehiclesTitle": "Vehicles",
     "addVehicle": "Add vehicle",
-    "vehiclesLink": "All vehicles",
     "vehicleAlarmOff": "no day-limit alarm",
-    "noSites": "There are no active sites.",
     "addSite": "Add site",
     "scan": "Scan QR",
     "textEntry": "Type text",
@@ -125,8 +168,6 @@
     "sidebar": "Operations and recent movements",
     "statBase": "At Base",
     "statSites": "On sites",
-    "statSiteCount": "Sites",
-    "statVehicles": "In vehicles",
     "statOffBase": "Off Base",
     "statAlarms": "Alarms",
     "peopleCount": "{count} active",
@@ -134,11 +175,7 @@
     "undoing": "Undoing…",
     "overThreshold": "over limit",
     "unused": "unused for {days}",
-    "servicesTitle": "In service",
-    "servicesEmpty": "No equipment is in service.",
     "serviceKind": "Service",
-    "lostTitle": "Lost",
-    "lostEmpty": "There are no lost tools.",
     "lostFor": "lost for {days}",
     "reportTool": "Report a tool",
     "addRentedTool": "Rented equipment",
@@ -147,8 +184,18 @@
     "reportedMissing": "reported missing",
     "rented": "rented",
     "returnOverdue": "return overdue",
-    "toolReportsWaiting": "Reported tools waiting for a decision: {count}",
-    "toolReportsLink": "Review in issues →"
+    "moreOperations": "More operations",
+    "closeScanner": "Close scanner",
+    "countersLabel": "Equipment counters",
+    "alarmTag": "alarm",
+    "whereTitle": "Where the equipment is",
+    "otherPlaces": "Other sites and vehicles ({count})"
+  },
+  "workerBoard": {
+    "equipmentTitle": "Equipment on your site",
+    "equipmentSite": "Equipment on site {place}",
+    "equipmentBase": "Equipment at the Base ({place})",
+    "punchHint": "You're not clocked in, so we don't know which site you're on today. Tap Scan and scan the site poster to see its equipment here."
   },
   "siteMap": {
     "title": "Map",
@@ -169,7 +216,7 @@
     "failed": "Couldn't load the map. Try refreshing the page.",
     "liveHint": "Click a pin to see site details.",
     "ownerHint": "Click a pin to see details. If a pin is in the wrong place, drag it to where the site is.",
-    "openLocation": "Show on board →",
+    "openLocation": "Show equipment →",
     "movePin": "Pick a new place on the map",
     "placing": "Click on the map where {name} is.",
     "cancelPlacing": "Cancel",
@@ -203,7 +250,26 @@
   },
   "settingsPage": {
     "title": "Settings",
-    "back": "← Back to board"
+    "backToSettings": "← Back to settings",
+    "pages": {
+      "firma": {
+        "title": "Company and subscription",
+        "hint": "Plan, tool and people limit usage, payment due date."
+      },
+      "sprzet": {
+        "title": "Equipment",
+        "hint": "Daily rates, site alarm, QR stickers, service shops and base on the map."
+      },
+      "dostep": {
+        "title": "People and access",
+        "hint": "Who sees costs, who sees issues and sign out when idle.",
+        "hintDemo": "Who sees costs and who sees issues."
+      },
+      "dokumenty": {
+        "title": "Documents and change log",
+        "hint": "Terms of service, privacy policy, data processing agreement and change log."
+      }
+    }
   },
   "changeLog": {
     "title": "Change log",
@@ -516,6 +582,9 @@
     "place": "Where it is",
     "any": "All",
     "lost": "Lost",
+    "inService": "In service",
+    "withAlarm": "With alarm",
+    "show": "Show only",
     "withRetiredAndReturned": "Also show retired and returned to rental company",
     "count": "Tools: {count}",
     "totalValue": "value in use {amount}",
@@ -525,7 +594,9 @@
     "lostResponsible": "was responsible: {name}",
     "lostFor": "lost for {days}",
     "stateFor": "for {days}",
-    "import": "Import from file"
+    "import": "Import from file",
+    "onSites": "On sites",
+    "offBase": "Off base"
   },
   "vehiclesPage": {
     "title": "Vehicles",
@@ -537,6 +608,17 @@
     "noDeadlines": "No deadlines in the next {days} days.",
     "deadlinesLink": "Details and deadlines",
     "inactiveTitle": "Inactive"
+  },
+  "sitesPage": {
+    "back": "← Board",
+    "intro": "The company's active sites: address, manager and how much equipment is on them. Click a site to open its page with the full equipment list.",
+    "introOwn": "Sites you manage: address and how much equipment is on them. Click a site to open its page with the full equipment list.",
+    "views": "Sites view",
+    "list": "List",
+    "map": "Map",
+    "empty": "The company has no active sites.",
+    "emptyOwner": "You have no active sites. Add a new one below.",
+    "emptyOwn": "You are not managing any active site right now."
   },
   "toolReports": {
     "title": "Reported tools",
@@ -557,7 +639,7 @@
     "site": "To site",
     "sitePlaceholder": "Choose a site",
     "noSites": "You have no active site you can report a tool to.",
-    "noCategories": "The company has no tool categories yet. Ask the owner to add categories.",
+    "noCategories": "The company has no tool categories yet.",
     "reportHint": "The tool will appear on your site right away as “reported”. The owner will fill in the value and accept the report.",
     "submitReport": "Report tool",
     "reported": "Reported {code} {name} to {place}."
@@ -799,9 +881,6 @@
     "back": "← Back to board",
     "itemAt": "{when} · {place}",
     "itemResponsible": " · site manager: {name}",
-    "boardDue": "Equipment with a deadline in the next {days} days: {count} pcs",
-    "boardOverdue": "overdue: {count}",
-    "boardLink": "See deadlines",
     "extendRental": "Extend rental",
     "policyUntilLabel": "Last day of policy",
     "policyDue": "Policy until {day} ({left})",
@@ -935,20 +1014,19 @@
   "scanner": {
     "cameraPreview": "Camera preview",
     "cameraStarting": "Starting camera…",
-    "cameraHint": "Point the camera at the sticker. You can scan several stickers in a row.",
+    "cameraHint": "Point the camera at a tool sticker or a site poster. You can scan several stickers in a row.",
     "cameraDenied": "No permission to use the camera. Allow it in your browser settings or enter the code manually.",
     "cameraUnavailable": "The camera is unavailable. Enter the sticker code manually.",
     "cameraInsecure": "The camera only works on a page opened over HTTPS. Enter the sticker code manually.",
     "cameraOn": "Turn on camera",
     "cameraOff": "Turn off camera",
-    "manualCode": "Sticker code",
-    "manualPlaceholder": "e.g. H-03",
+    "manualCode": "Sticker or poster code",
+    "manualPlaceholder": "e.g. H-03 or 7K3MQ-9XZ2B",
     "manualAdd": "Add",
     "added": "Added {code}.",
     "alreadyAdded": "{code} is already on the list.",
-    "notSticker": "This isn't a tool sticker.",
     "unknownSticker": "This tool isn't on the company board.",
-    "unknownCode": "There's no tool with code {code} on the board.",
+    "unknownCode": "Code {code} not recognized. It isn't a tool code from the board or a site poster code.",
     "empty": "Scan stickers or enter codes. We'll suggest the movement type based on where the equipment is now.",
     "groupLabel": "Movement from: {place}",
     "from": "Now: {place}",
@@ -958,7 +1036,9 @@
     "chooseTo": "choose where to",
     "cannotMove": "You can't move this equipment. Remove it from the list.",
     "clear": "Clear list",
-    "conflictRefreshed": "The list below has been refreshed. Check the movements and confirm again."
+    "conflictRefreshed": "The list below has been refreshed. Check the movements and confirm again.",
+    "notRecognized": "Code not recognized. Scan a tool sticker or a site poster.",
+    "posterWithList": "There are unconfirmed tools on the list. Confirm the movement or clear the list, then scan the poster."
   },
   "settings": {
     "title": "Site alarm",
@@ -970,7 +1050,7 @@
     "invalidDays": "Enter a number of days from 1 to {max}.",
     "baseAddressTitle": "Base on the map",
     "baseAddress": "Base address",
-    "baseAddressHint": "With an address, the Base appears on the sites map on the board. Leave empty to keep it off the map.",
+    "baseAddressHint": "With an address, the Base appears on the sites map (Sites → Map). Leave empty to keep it off the map.",
     "baseAddressSaved": "Base address saved."
   },
   "subscription": {
@@ -1083,7 +1163,7 @@
       "hint": "An XLSX with the headers we recognize and this company's categories: replace the examples with your equipment."
     },
     "categories": "Company categories",
-    "noCategories": "The company has no categories yet. Add them on the board when adding a tool, before you upload the file.",
+    "noCategories": "The company has no categories yet. Add the first one in the “Add tool” form before you upload the file.",
     "locations": "Locations",
     "file": "XLSX or CSV file",
     "reading": "Reading file…",
@@ -1111,7 +1191,6 @@
     "submit": "Confirm import ({count} pcs)",
     "submitting": "Saving…",
     "done": "Tools imported: {count}.",
-    "openBoard": "See them on the board →",
     "rowErrors": {
       "name_missing": "Name missing.",
       "category_missing": "Category missing.",
@@ -1126,7 +1205,8 @@
       "vehicle_inactive": "Vehicle “{value}” is inactive.",
       "inspection_invalid": "Invalid inspection date “{value}”: enter e.g. 30.09.2026 or 2026-09-30.",
       "warranty_invalid": "Invalid warranty end date “{value}”: enter e.g. 30.09.2026 or 2026-09-30."
-    }
+    },
+    "openTools": "See them in the tool list →"
   },
   "notifications": {
     "greeting": "Hello, {name}!",
@@ -1177,7 +1257,7 @@
   "siteClosing": {
     "close": "Mark site as finished",
     "title": "Closing site {name}",
-    "back": "← Back to board",
+    "back": "← Sites",
     "emptyHint": "No tools in circulation are left on the site. After closing, the site disappears from the board, but its history stays.",
     "submit": "Mark as finished",
     "confirm": "Close site {name}? It can't be reopened later.",
@@ -1200,15 +1280,12 @@
     "forceSubmit": "Close and mark as lost",
     "forceConfirm": "Mark {count} pcs as lost and close site {name}?",
     "finishedTitle": "Finished sites",
-    "finishedLink": "Finished sites →",
     "finishedEmpty": "No finished sites yet.",
     "finishedOn": "Closed: {when}, {name}",
     "history": "Site history →"
   },
   "bell": {
-    "title": "Notifications",
     "back": "← Back to board",
-    "empty": "You don't have any notifications yet. They'll show up here, e.g. when equipment is taken from your site or vehicle, or a tool has been sitting too long.",
     "unread": "New",
     "open": "Show",
     "markRead": "Mark as read",
@@ -1247,6 +1324,25 @@
     "forgottenExitBody": "Entry {when}. Without a clock-out, the record closes at midnight and won't count towards time on site.",
     "forgottenExits": "Missing clock-outs: {count}",
     "forgottenExitItem": "{person} ({place})"
+  },
+  "inbox": {
+    "title": "Needs attention",
+    "back": "← Back to “Needs attention”",
+    "lists": "Lists",
+    "toDo": "To do",
+    "toDoCount": "To do ({count})",
+    "info": "Information",
+    "toDoEmpty": "Nothing is waiting for you. When something needs your action, it will show up here.",
+    "infoEmpty": "No information yet. Reports and confirmations will show up here, e.g. about equipment taken from your site.",
+    "punch": "Clock-in to clarify: {person}, {place}",
+    "punchBody": "{time}. Clock-in: {check}.",
+    "punchExit": "Clock-out: {check}.",
+    "punchConflict": "Unsaved offline clock-in: {person}, {place}",
+    "punchConflictBody": "Scan on the phone {when}: {reason}.",
+    "alarm": "Equipment has been sitting too long {place}",
+    "alarmBody": "Tools over the {days}-day limit: {count}. Return them to the Base or transfer them if they're no longer needed.",
+    "allIssues": "All issues, including closed ones →",
+    "seeAll": "See all ({count})"
   },
   "push": {
     "title": "Phone notifications",
@@ -1306,8 +1402,7 @@
     "intro": "Movements saved on the phone without signal that the server didn't accept because things changed in the meantime. None of them went into the history. Check where the equipment is, record the movement again if needed, and mark it as clarified.",
     "empty": "No movements to clarify.",
     "when": "Saved on the phone {recorded}, rejected {rejected}",
-    "resolve": "Clarified",
-    "back": "← Back to board"
+    "resolve": "Clarified"
   },
   "reports": {
     "weeklyTitle": "Weekly report",
@@ -1399,7 +1494,6 @@
   },
   "issues": {
     "title": "Issues",
-    "back": "← Back to board",
     "backToList": "← Back to issues",
     "intro": "Damage, missing items and other matters for the owner. New issues, comments and closings show up here.",
     "new": "New issue",
@@ -1556,32 +1650,26 @@
   },
   "demo": {
     "title": "Demo",
-    "heading": "See NarzędziownikGP in action",
-    "lead": "This is a sample construction company, “DemoBud”: dozens of tools, five sites, three vans and a car, two service shops, nine accounts, a crew without accounts in the People directory and several weeks of history: equipment movements, clock-ins on sites, costs, deadlines and qualifications. Enter any role without signing in. On every page you can switch to another one using the bar at the top.",
+    "heading": "Who do you want to be?",
+    "lead": "A sample construction company, “DemoBud”. Enter without signing in; a short guide shows how to issue equipment to a site and take a return. Switch roles on the yellow bar at the top.",
     "enter": "Enter as {role}",
     "entering": "Entering…",
     "person": "In the demo: {name}",
     "unavailable": "The demo is being refreshed right now. Try again in a few minutes.",
     "roles": {
       "wlasciciel": {
-        "summary": "Sees the whole company and keeps an eye on the money.",
-        "points": "The “What's where” board with equipment value in zł and the amount off Base\nAlarms: what's been on a site too long, what's lost, what's in service\nEquipment costs of every site and vehicle from daily rates\nTime on site of every person from clock-ins on site posters\nDeadlines for inspections, calibrations, rental returns, vehicles and people's qualifications\nApproves tools bought by site managers; QR stickers, Excel import and reports"
+        "summary": "You'll see the whole company: where the equipment is, how much the equipment off base is worth and what is waiting for your decision."
       },
       "kierownik": {
-        "summary": "Moves equipment and keeps track of people on their sites.",
-        "points": "Issuing, returns, transfers and service: by checklist, QR scanner, text or voice\nClocks in themselves and crew members without a phone on the site poster, clarifies clock-ins off site\nA notification when someone takes equipment from their site\nReports tools bought for the site and closes their sites\nMovements and clock-ins saved without signal are sent automatically when the network is back"
+        "summary": "You'll see your sites and people: issue equipment from the base to a site, take a return and clock in your crew."
       },
       "magazynier": {
-        "summary": "Runs the Base and service shops.",
-        "points": "Issues and takes back equipment for all sites and vans\nSends tools to service, takes them back and records completed inspections and calibrations\nSees issues about missing items and damage from the crew\nFull movement history with filters and Excel export\nClocks in on the base poster and sees their own working time"
+        "summary": "You'll see the base and the service shops: you issue and take back equipment for every site and van."
       },
       "pracownik": {
-        "summary": "Clocks in on site, checks where equipment is and reports problems.",
-        "points": "Clocks in and out by scanning the site poster with their phone\nSees their own time on site and their qualifications with deadlines\nSees the board and tool cards, but doesn't record movements\nReports damage, missing items and other matters, also with a photo, and sees replies\nSigns in with a username, no email needed"
+        "summary": "You'll see just a few buttons: clock in on site and report a faulty tool."
       }
     },
-    "tipsTitle": "What to click",
-    "tips": "As the owner: the red alarms on the board, the amount off Base and two tools waiting for acceptance.\nAny tool on the board: its card with history, who moved it and when, and who's responsible for it now.\nThe magnifier in the header: type or say what you're looking for, e.g. “where's the level?”.\nAs a site manager: the “Operations” panel. Click “Issue from Base” or “Say or type” and write what you're taking, e.g. “taking two drills to Tarasy”.\nAs a site manager: “Clock in” at the top of the board. The poster code is on the Osiedle Zielone Tarasy site page, in the “People on site” tab. After the scan you can also clock in crew members without a phone.\nAs the owner, in the “Equipment costs” menu item: how much the equipment on each site and van costs this month, with an Excel file for the accountant.\nAs the owner, in “Time on site” and “Clock-ins to clarify”: people's hours in the month and clock-ins without an exit or without phone location.\nAs the owner, in “Deadlines” and “People”: an overdue van inspection and calibration, a lift to return to the rental shop, health and safety training to renew.\nNotifications (the bell) and 📋 in the header: alarms, reports and issues raised by the crew.\nHistory: filters by site, person and tool, and export to Excel.",
     "note": "This is a shared demo: other viewers can change things too, and we reset it to its starting state from time to time. Emails from the demo aren't sent anywhere.",
     "contact": "Want a tool like this for your company?",
     "bar": {
@@ -1598,97 +1686,31 @@
       "back": "Back",
       "done": "Finish",
       "skip": "Skip the guide",
-      "welcome": {
-        "title": "Quick guide",
-        "text": "In a few steps we'll show you what this role sees and what you can do here. You can skip it at any time and come back to it with the “Guide” button on the yellow bar."
+      "resumeHint": "If you skip the guide, resume it with the “Guide” button on the yellow bar.",
+      "issue": {
+        "title": "Issue a tool to a site",
+        "text": "Click “Issue from Base”, choose a site and tick the tools. You can also click “Say or type” and write a sentence, e.g. “taking two drivers to Tarasy”."
       },
-      "roles": {
-        "title": "Switching roles",
-        "text": "Here you can switch roles at any time without signing in and see the same company through the eyes of the owner, site manager, storekeeper or worker."
+      "where": {
+        "title": "See who has it",
+        "text": "Each tile is the base, a site, a van or a service shop with its number of tools, and a red badge is an alarm. Click a site to see its equipment, how many days it has been there and who is responsible for it."
       },
-      "offBase": {
-        "title": "Money off Base",
-        "text": "Only the owner sees values in zł. This amount shows how much equipment is now on sites and vans, meaning how much could go missing."
-      },
-      "alarms": {
-        "title": "Alarms",
-        "text": "The red counter shows tools that have been on a site longer than the day limit (30 in the demo). They're highlighted in red on the list."
-      },
-      "alarmTool": {
-        "title": "Tool card",
-        "text": "Click any tool, e.g. one with an alarm. You'll see where it is, for how many days, who's responsible for it and its whole movement history."
-      },
-      "search": {
-        "title": "Search",
-        "text": "The magnifier in the header: type a code, name or brand and you'll instantly see where the tool is, for how many days and who's responsible for it. You can also ask by voice, e.g. “where's the level?”."
-      },
-      "toolReports": {
-        "title": "To accept",
-        "text": "Site managers add tools bought on site. The owner fills in the code and value, then accepts or rejects the tool report."
-      },
-      "operationsOwner": {
-        "title": "Operations",
-        "text": "From here you can record any equipment movement, add a tool, import a list from Excel and print QR stickers."
-      },
-      "operationsManager": {
-        "title": "Operations",
-        "text": "Record an issue from the Base, a return or a transfer with a checklist (“Issue from Base”, “Return to Base”), the QR sticker scanner or a sentence. Click “Say or type” and write e.g. “taking two drills to Tarasy”."
-      },
-      "operationsStorekeeper": {
-        "title": "Running the Base",
-        "text": "The storekeeper issues and takes back equipment for all sites and vans, sends tools to service and takes them back."
-      },
-      "recent": {
-        "title": "Recent movements",
-        "text": "Every movement has an author and a time. You can undo your own movement within 15 minutes. The full history with filters and Excel export is under “Full history”."
-      },
-      "recentWorker": {
-        "title": "Recent movements",
-        "text": "Here you can see who moved equipment, when and where to. The full history with filters is under “Full history”."
-      },
-      "map": {
-        "title": "Map",
-        "text": "The Base, sites, vans and equipment with trackers on one map. Click a pin to see details."
-      },
-      "lost": {
-        "title": "Lost",
-        "text": "A tool that didn't come back is marked as lost. Its card remembers where it was last and who was responsible for it."
-      },
-      "issues": {
-        "title": "Issues",
-        "text": "Damage, missing items and other matters from the crew land here, each with a comment thread. The number on the icon shows new entries."
-      },
-      "issuesWorker": {
-        "title": "Report an issue",
-        "text": "A worker doesn't move equipment but reports damage or missing items, also with a photo. Open the Issues page and click “New issue”."
-      },
-      "bell": {
-        "title": "Notifications",
-        "text": "Notifications: someone took equipment from your site, a movement saved without signal needs clarifying, or a report has arrived."
+      "return": {
+        "title": "Take a return",
+        "text": "Click “Return to Base”, choose a site or van and tick what came back. You can undo a mistake for 15 minutes in “Recent movements”."
       },
       "punch": {
-        "title": "Clock in",
-        "text": "Everyone with an account clocks in and out by scanning the site poster with their phone. The app only checks the distance from the site and doesn't track the phone. After the scan, a site manager can also clock in crew members without a phone. In the demo you type the poster code by hand: it's on the site page, in the “People on site” tab."
+        "title": "Clock in on site",
+        "text": "When you arrive and when you leave, click “Scan” and scan the site poster. The bar at the top of the board shows where you are clocked in.",
+        "code": "There is no poster to scan in the demo: in “Scan”, type the code {code} ({place})."
       },
-      "punchWorker": {
-        "title": "Clock in",
-        "text": "When you arrive and when you leave, you scan the site or base poster with your phone. Your hours are in the menu under “My time on site”, and your qualifications with deadlines under “My qualifications”. In the demo, you'll find the poster code as the owner on the site page, in the “People on site” tab."
-      },
-      "deadlines": {
-        "title": "Deadlines",
-        "text": "Inspections, calibrations, UDT inspections, warranties and rental returns, and for vehicles the roadworthiness test, third-party and comprehensive insurance and the tachograph. A reminder arrives in the bell a week before the deadline, and 30 days before for insurance and the tachograph. Open the full list here or in the menu under “Deadlines”, and people's qualifications (health and safety, medical checks, UDT) under “People”."
-      },
-      "costs": {
-        "title": "Equipment costs",
-        "text": "Every tool has a daily rate (in the demo 1% of its value, measuring tools 2%), so the app calculates what the equipment costs on each site and each vehicle. The summary with a file for the accountant is in the menu under “Equipment costs”, and the rates are in the settings."
-      },
-      "menu": {
-        "title": "Menu",
-        "text": "Under the three lines you'll find all subpages: tools, deadlines, history, QR stickers, vehicles, equipment costs, the People directory with qualifications, time on site, clock-ins to clarify, reports and company settings (alarm day limit, daily rates, who sees issues, service shops, subscription). You add sites on the board, and vehicles on the board or on the Vehicles page."
+      "report": {
+        "title": "Report a fault",
+        "text": "Click “Report”, choose the tool and describe what happened, with a photo if you like. The report goes to the people who look after equipment, and you'll see their reply on your board."
       },
       "finish": {
         "title": "All set",
-        "text": "Click around freely, this is sample data, and try another role on the yellow bar at the top. A company the size of DemoBud fits the {name} plan: {implementation} for setup with training and {yearly} a year for maintenance."
+        "text": "See the same company through someone else's eyes: switch the role on the yellow bar. A company the size of DemoBud fits the {name} plan: {implementation} for setup with training and {yearly} a year for maintenance."
       },
       "offer": "I want this for my company"
     },
@@ -1717,9 +1739,9 @@
     "next": "Next",
     "back": "Back",
     "count": "Step {step} of {count}",
-    "reopen": "You can reopen the tutorial with the “?” sign in the header.",
+    "reopen": "You can reopen the tutorial under “More”, in “Help”.",
     "firstSteps": {
-      "title": "First steps",
+      "title": "Get your company running in 4 steps",
       "intro": "Every company starts with these four things. Steps tick themselves off once the thing is already in your company.",
       "progress": "Done: {done} of {count}",
       "doneTag": "done",
@@ -1730,7 +1752,7 @@
       },
       "budowa": {
         "title": "Add a site",
-        "text": "On the board, click “Add site”, enter a name and address and choose the site manager responsible for it. If you run the site yourself, choose yourself.",
+        "text": "On the Sites page, click “Add site”, enter a name and address and choose the site manager responsible for it. If you run the site yourself, choose yourself.",
         "link": "Go to sites"
       },
       "narzedzia": {
@@ -1860,7 +1882,7 @@
     "startTitle": "Set a daily rate",
     "startHint": "Equipment cost is days on site times the daily rate. Set the company rate as a percentage of the tool's value per day; we suggest 1% to start. A rate set for the first time applies retroactively to the whole movement history, so you'll immediately see the cost of ongoing and finished sites.",
     "startSettings": "Category rates in settings",
-    "startManager": "The owner hasn't set a daily rate yet, so there are no equipment costs yet."
+    "startManager": "There are no equipment costs yet because the company has no daily rate."
   },
   "costSummary": {
     "back": "← Back to board",
@@ -1956,8 +1978,7 @@
     "label": "App language",
     "submit": "Save language",
     "submitting": "Saving…",
-    "invalid": "Choose a language from the list.",
-    "back": "← Back to board"
+    "invalid": "Choose a language from the list."
   },
   "costSettings": {
     "title": "Who sees costs",
@@ -2000,7 +2021,7 @@
     "sitesGroup": "Sites",
     "vehiclesGroup": "Vehicles",
     "noPlaces": "You don't have an active site or vehicle where you can receive rented equipment.",
-    "noCategories": "The company doesn't have any tool categories yet. Ask the owner to add categories.",
+    "noCategories": "The company has no tool categories yet.",
     "company": "Rental company",
     "companyPlaceholder": "e.g. Ramirent Poznań",
     "dailyRate": "Daily rate (zł)",
@@ -2025,12 +2046,6 @@
     "title": "Clock-in",
     "tab": "People on site",
     "tabBase": "People at the Base",
-    "button": "Clock in",
-    "cameraHint": "Point the camera at the QR code on the site poster.",
-    "manualCode": "Code from the poster",
-    "manualPlaceholder": "e.g. 7K3MQ-9XZ2B",
-    "manualGo": "Next",
-    "notPoster": "This isn't a site poster code.",
     "locating": "Checking the phone's location…",
     "saving": "Saving…",
     "confirmExit": "Are you finishing on this site?",
@@ -2106,7 +2121,7 @@
     "openPlace": "People: {place}",
     "posterHeading": "Clock in when you arrive and when you leave",
     "posterCodeLabel": "Code:",
-    "posterStep1": "Scan the QR code with your phone camera or with the “Clock in” button on the board in NarzędziownikGP. Without a camera, enter the code printed under the QR code.",
+    "posterStep1": "Scan the QR code with your phone camera or with the “Scan” button in NarzędziownikGP. Without a camera, enter the code printed under the QR code.",
     "posterStep2": "The first scan saves your entry. When leaving, scan the code again and confirm “Are you finishing on this site?”. A scan on another site saves a switch.",
     "posterStep3": "The app checks the phone's location only at the moment of the scan and saves only the distance from the site, not where you're standing.",
     "offlineMark": "saved offline",
@@ -2145,6 +2160,15 @@
     "peopleDoneTransfer": "{name}: switch {from} → {place}, {time}",
     "peopleAlreadyHere": "{name}: someone clocked this person in here in the meantime. Scan the poster again to clock their exit.",
     "peopleNotHere": "{name}: someone clocked this person in somewhere else in the meantime, so I didn't save the exit. Scan the poster again.",
-    "peopleQueued": "No signal. Clock-ins for {count} people saved on the phone: {place}, {time}. I'll send them when the connection is back."
+    "peopleQueued": "No signal. Clock-ins for {count} people saved on the phone: {place}, {time}. I'll send them when the connection is back.",
+    "statusSite": "You've been on site {place} since {time}",
+    "statusBase": "You've been at base ({place}) since {time}",
+    "statusNone": "You're not clocked in"
+  },
+  "scan": {
+    "cameraHint": "Point the camera at a site poster or a tool sticker.",
+    "go": "Next",
+    "close": "Close",
+    "toolOffline": "You can open the tool card when you're back online."
   }
 }

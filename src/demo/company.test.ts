@@ -65,7 +65,7 @@ describe("firma demo", () => {
       ["WPZ 2C55", true],
       ["PO 5T812", false],
     ]);
-    expect(board.alarmCount).toBe(5);
+    expect(board.counts.alarms).toBe(5);
     expect(board.services.flatMap((service) => service.tools).length).toBe(2);
     expect(board.lost.length).toBe(1);
     expect(board.offBaseValue).toBeGreaterThan(50_000);
@@ -187,6 +187,30 @@ describe("firma demo", () => {
     }
   });
 
+  it("przewodnik pracownika podaje kod plakatu budowy, na której pracownik demo się odbija, i tylko w obecnym demo", async () => {
+    await demo();
+    const accounts = await bed.registry.system().demoAccounts();
+    const owner = bed.registry.as(accounts[0].userId);
+    const worker = accounts.find((account) => account.role === "pracownik")!;
+    const tarasy = (await owner.locations()).sites.find((site) => site.name === "Osiedle Zielone Tarasy")!;
+
+    expect(await bed.registry.system().demoPoster(worker.userId)).toEqual({ place: "Osiedle Zielone Tarasy", code: (await owner.poster(tarasy.id)).code });
+    // Nowy kod plakatu (np. kliknięty przez innego oglądającego) przewodnik podaje od razu.
+    await owner.renewPosterToken(tarasy.id);
+    expect(await bed.registry.system().demoPoster(worker.userId)).toMatchObject({ code: (await owner.poster(tarasy.id)).code });
+    // Po odbiciu na plakacie bazy przewodnik podaje plakat bazy.
+    const { base } = await owner.locations();
+    const baseCode = (await owner.poster(base.id)).code;
+    await bed.registry.as(worker.userId).punch({ operationId: randomUUID(), posterToken: baseCode, position: null, confirmExit: false });
+    expect(await bed.registry.system().demoPoster(worker.userId)).toEqual({ place: base.name, code: baseCode });
+
+    // Konto zwykłej firmy i konto zastąpionego demo nie dostają kodu.
+    const zawbud = await bed.givenActiveCompany("Zawbud");
+    expect(await bed.registry.system().demoPoster(zawbud.ownerId)).toBeNull();
+    await demo(minutesAfterStart(1));
+    expect(await bed.registry.system().demoPoster(worker.userId)).toBeNull();
+  });
+
   it("dzwonek wygląda jak u pracującej firmy: właściciel ma alarmy i raporty, a kierownik alarm o swoim sprzęcie i raport", async () => {
     await demo();
     const [owner, manager] = await bed.registry.system().demoAccounts();
@@ -221,8 +245,9 @@ describe("firma demo", () => {
     const [owner, manager] = await bed.registry.system().demoAccounts();
     const registry = bed.registry.as(owner.userId);
 
-    for (const attempt of [registry.deactivateMember(manager.userId), registry.resetMemberPassword(manager.userId)]) {
-      const error = await attempt.catch((caught: unknown) => caught);
+    // Po kolei: obie obietnice naraz dałyby nieobsłużone odrzucenie drugiej, zanim test na nią poczeka.
+    for (const attempt of [() => registry.deactivateMember(manager.userId), () => registry.resetMemberPassword(manager.userId)]) {
+      const error = await attempt().catch((caught: unknown) => caught);
       expect(isRegistryError(error) && error.code).toBe("demo_locked");
     }
   });

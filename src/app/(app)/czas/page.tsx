@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { formatMonth } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
@@ -114,7 +115,7 @@ function Summary({ summary }: { summary: TimeOnSiteSummary }) {
         )}
       </div>
       {summary.people.length === 0 ? (
-        <p className="empty">{t("timeOnSite.empty")}</p>
+        <EmptyState>{t("timeOnSite.empty")}</EmptyState>
       ) : (
         <div className="import-table-wrap">
           <table className="import-table time-table" aria-label={title}>
@@ -192,7 +193,7 @@ function OwnMonth({ own }: { own: OwnTimeOnSite }) {
       )}
       {own.withoutExit > 0 && <p className="muted">{t("timeOnSite.withoutExitNote", { count: own.withoutExit })}</p>}
       {own.punches.length === 0 ? (
-        <p className="empty">{t("timeOnSite.emptyOwn")}</p>
+        <EmptyState>{t("timeOnSite.emptyOwn")}</EmptyState>
       ) : (
         <ol className="movements" aria-label={t("timeOnSite.punches")}>
           {own.punches.map((punch) => (

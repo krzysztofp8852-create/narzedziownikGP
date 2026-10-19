@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
+import { addQualificationStep } from "@/lib/empty-step";
 import { getRegistry } from "@/lib/registry-instance";
 import { canAddQualificationKinds, canManageQualifications, canManageTeam } from "@/registry/registry";
 import { PeopleSection } from "./people-section";
@@ -29,7 +31,7 @@ export default async function PeoplePage(props: PageProps<"/ludzie">) {
         {own ? (
           <QualificationList session={session} entry={own} customKinds={customKinds} emptyText={t("qualifications.myEmpty")} />
         ) : (
-          <p className="empty">{t("qualifications.myEmpty")}</p>
+          <EmptyState step={addQualificationStep(session)}>{t("qualifications.myEmpty")}</EmptyState>
         )}
       </>
     );

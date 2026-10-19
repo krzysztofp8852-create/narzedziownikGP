@@ -26,9 +26,12 @@ export function money(amount: string): RegExp {
   return new RegExp(`(?<![\\d,])${amount.replace(/ /g, "\\s")}\\s*zł`);
 }
 
-/** Nowe konto widzi samouczek nad tablicą; testy sprzętu go pomijają. */
+/** Tablica (nagłówek strony), u każdej roli. */
+export const boardHeading = (page: Page) => page.getByRole("heading", { name: "Tablica", level: 1 });
+
+/** Nowe konto właściciela widzi „Uruchom firmę w 4 krokach” nad tablicą; testy sprzętu je pomijają. */
 export async function skipTutorial(page: Page) {
-  await expect(page.getByRole("heading", { name: "Gdzie jest co" })).toBeVisible();
+  await expect(boardHeading(page)).toBeVisible();
   const skip = page.getByTestId("tutorial").getByRole("button", { name: "Pomiń samouczek" });
   if (await skip.isVisible()) {
     await skip.click();
@@ -66,9 +69,9 @@ export async function addWorker(page: Page, person: { firstName: string; lastNam
   return { username: person.username, temporaryPassword };
 }
 
-/** Budowa z kafelka „Dodaj budowę” na tablicy. */
+/** Budowa z kafelka „Dodaj budowę” na stronie Budowy; potem wraca na tablicę, gdzie są operacje. */
 export async function addSite(page: Page, site: { name: string; address: string; manager: string }) {
-  await page.goto("/");
+  await page.goto("/budowy");
   const tile = page.locator("details.location-add").filter({ has: page.locator("summary", { hasText: "Dodaj budowę" }) });
   await tile.locator("summary").click();
   await tile.getByLabel("Nazwa budowy").fill(site.name);
@@ -78,14 +81,43 @@ export async function addSite(page: Page, site: { name: string; address: string;
   // Zapis budowy czeka na geokodowanie adresu, więc bywa wolniejszy.
   await expect(tile.getByText(`Dodano budowę ${site.name}.`)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("region", { name: `Budowa ${site.name}` })).toBeVisible();
+  await page.goto("/");
 }
 
-/** Otwiera operację z panelu tablicy (drugi klik by ją zwinął) i zwraca jej formularz. */
+/**
+ * Otwiera operację z panelu tablicy (drugi klik by ją zwinął) i zwraca jej formularz. Rzadsze operacje są pod
+ * „Więcej operacji”, które najpierw się rozwija.
+ */
 export async function openOperation(page: Page, name: string): Promise<Locator> {
-  const tab = page.locator(".operation-tabs").getByRole("button", { name, exact: true });
+  const panel = page.getByRole("region", { name: "Operacje" });
+  const tab = panel.locator(".operation-tabs").getByRole("button", { name, exact: true });
+  if (!(await tab.isVisible())) await panel.getByRole("button", { name: "Więcej operacji" }).click();
   if ((await tab.getAttribute("aria-expanded")) !== "true") await tab.click();
   await expect(tab).toHaveAttribute("aria-expanded", "true");
   return page.locator("#operation-body");
+}
+
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Kafel miejsca w „Gdzie jest sprzęt” na tablicy, np. placeTile(page, "Rataje"); nazwa z rodzajem i liczbą narzędzi. */
+export function placeTile(page: Page, name: string): Locator {
+  return page.getByRole("region", { name: "Gdzie jest sprzęt" }).getByRole("link", { name: new RegExp(`(Baza|Budowa|Pojazd|Serwis) ${escapeRegExp(name)} \\d`) });
+}
+
+/**
+ * Sprzęt w miejscu: z tablicy klik w kafel prowadzi na stronę bazy, budowy albo pojazdu z listą narzędzi. Kierownik
+ * ma cudze budowy i pojazdy zwinięte pod „Pozostałe budowy i pojazdy”.
+ */
+export async function equipmentAt(page: Page, name: string): Promise<Locator> {
+  await page.goto("/");
+  const tile = placeTile(page, name);
+  if (!(await tile.isVisible())) {
+    const others = page.locator("details.place-others");
+    if (await others.count()) await others.locator("summary").click();
+  }
+  await tile.click();
+  await expect(page.getByRole("heading", { level: 1, name: new RegExp(escapeRegExp(name)) })).toBeVisible();
+  return page.getByRole("region", { name: "Sprzęt", exact: true });
 }
 
 /** Nowa kategoria z formularza „Dodaj narzędzie”; po dodaniu formularz ją wybiera. */

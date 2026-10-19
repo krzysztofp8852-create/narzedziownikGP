@@ -38,11 +38,36 @@ type BoardLocation<L> = L & {
   tools: ToolOnBoard[];
 };
 
+/** Zwinięty kafel „Gdzie jest sprzęt”: jedno miejsce, ile w nim narzędzi i czy któreś ma alarm. */
+export interface PlaceOnBoard {
+  kind: LocationKind;
+  id: string;
+  name: string;
+  toolCount: number;
+  /** Choć jedno narzędzie w tym miejscu ma alarm. */
+  alarm: boolean;
+  /** Budowa albo pojazd, którym aktor kieruje. */
+  mine: boolean;
+  /** Suma wartości narzędzi w zł; klucz istnieje tylko dla właściciela. */
+  totalValue?: number;
+}
+
+/** Liczniki tablicy, każdy prowadzi do przefiltrowanej listy narzędzi. */
+export interface BoardCounts {
+  /** Narzędzia w obiegu na bazie. */
+  atBase: number;
+  /** Narzędzia w obiegu na aktywnych budowach. */
+  onSites: number;
+  /** Narzędzia z alarmem. */
+  alarms: number;
+}
+
 export interface WhereIsWhat {
-  /** Łączna wartość sprzętu poza bazą w zł; klucz istnieje tylko dla właściciela. */
+  /** Łączna wartość sprzętu poza bazą (budowy i pojazdy) w zł; klucz istnieje tylko dla właściciela. */
   offBaseValue?: number;
-  /** Ile narzędzi ma alarm. */
-  alarmCount: number;
+  counts: BoardCounts;
+  /** Kafle w kolejności: baza, aktywne budowy, aktywne pojazdy i serwisy, w których jest sprzęt. */
+  places: PlaceOnBoard[];
   base: BoardLocation<{ id: string; name: string }>;
   /** Aktywne budowy. */
   sites: BoardLocation<Site>[];
@@ -84,15 +109,38 @@ export async function whereIsWhat(sql: Sql, session: Session, now: Date): Promis
     const tools = toolsAt.get(location.id) ?? [];
     return { ...location, ...(withValues && { totalValue: sumValues(tools) }), tools };
   };
+  const boardBase = withTools(base);
   const boardSites = sites.map(withTools);
   const boardVehicles = vehicles.map(withTools);
+  const boardServices = services.map(withTools);
+  const summary =
+    (kind: LocationKind) =>
+    (place: BoardLocation<{ id: string; name: string; manager?: { id: string } }>): PlaceOnBoard => ({
+      kind,
+      id: place.id,
+      name: place.name,
+      toolCount: place.tools.length,
+      alarm: place.tools.some((tool) => tool.alarm),
+      mine: place.manager?.id === session.userId,
+      ...(withValues && { totalValue: place.totalValue }),
+    });
   return {
     ...(withValues && { offBaseValue: sumAmounts([...boardSites, ...boardVehicles].map((place) => place.totalValue!)) }),
-    alarmCount: [...toolsAt.values()].flat().filter((tool) => tool.alarm).length,
-    base: withTools(base),
+    counts: {
+      atBase: boardBase.tools.length,
+      onSites: boardSites.reduce((count, site) => count + site.tools.length, 0),
+      alarms: [...toolsAt.values()].flat().filter((tool) => tool.alarm).length,
+    },
+    places: [
+      summary("baza")(boardBase),
+      ...boardSites.map(summary("budowa")),
+      ...boardVehicles.map(summary("pojazd")),
+      ...boardServices.filter((service) => service.tools.length > 0).map(summary("serwis")),
+    ],
+    base: boardBase,
     sites: boardSites,
     vehicles: boardVehicles,
-    services: services.map(withTools),
+    services: boardServices,
     lost,
     ...(withValues && { lostValue: sumValues(lost) }),
   };

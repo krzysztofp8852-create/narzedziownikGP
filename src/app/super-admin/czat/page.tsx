@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSuperAdmin } from "@/lib/auth";
@@ -18,7 +19,7 @@ export default async function SupportThreadsPage() {
       <h1 className="display page-title">{t("supportChat.admin.title")}</h1>
       <p className="muted">{t("supportChat.admin.intro")}</p>
       {threads.length === 0 ? (
-        <p className="empty">{t("supportChat.admin.empty")}</p>
+        <EmptyState>{t("supportChat.admin.empty")}</EmptyState>
       ) : (
         <ol className="movements issue-list">
           {threads.map((thread) => (

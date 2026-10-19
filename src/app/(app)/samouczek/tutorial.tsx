@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type Ref, useEffect, useRef, useState } from "react";
 import { t } from "@/i18n/t";
+import { SITES_HREF } from "@/lib/nav-path";
 import type { FirstStepId, Tutorial, TutorialOutcome } from "@/registry/registry";
 import { closeTutorial } from "./actions";
 import { type MovementEntry, type MovementRole, movementScreens } from "./screens";
@@ -10,7 +11,7 @@ import { type MovementEntry, type MovementRole, movementScreens } from "./screen
 /** Dokąd prowadzi każdy z pierwszych kroków właściciela. */
 const FIRST_STEP_LINKS: Record<FirstStepId, string> = {
   kierownik: "/ludzie?konto#konto",
-  budowa: "/#budowy",
+  budowa: SITES_HREF,
   narzedzia: "/narzedzia/import",
   naklejki: "/naklejki",
 };

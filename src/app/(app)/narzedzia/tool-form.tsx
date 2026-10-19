@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { submitKeepingValues } from "@/lib/forms";
 import type { Category } from "@/registry/registry";
@@ -58,7 +59,7 @@ export function ToolForm({
     <>
       <form onSubmit={submitKeepingValues(formAction)} className="stack-form">
         {operationId && <input type="hidden" name="operationId" value={operationId} />}
-        {categories.length === 0 && <p className="empty">{t("tools.noCategories")}</p>}
+        {categories.length === 0 && <EmptyState>{t("tools.noCategories")}</EmptyState>}
         <div className="field">
           <label htmlFor="categoryId">{t("tools.category")}</label>
           <select id="categoryId" name="categoryId" value={categoryId} onChange={(event) => chooseCategory(event.target.value)} required>

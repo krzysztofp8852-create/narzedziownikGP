@@ -3,20 +3,53 @@
 import Link from "next/link";
 import { useState } from "react";
 import { DamagedIcon } from "@/components/damaged-icon";
+import { EmptyState } from "@/components/empty-state";
 import { KIND_LABELS } from "@/components/found-tools";
 import { Money } from "@/components/tool-list";
 import { VehicleIcon } from "@/components/vehicle-icon";
 import { formatDays } from "@/i18n/days";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
-import { ALL, filterTools, LOST, type ToolListFilters, toolListOptions } from "@/lib/tool-list-filters";
+import {
+  ALARM,
+  ALL,
+  changeFilters,
+  filterTools,
+  IN_SERVICE,
+  LOST,
+  OFF_BASE,
+  ON_SITES,
+  type ToolListFilters,
+  toolListOptions,
+  toolListSearch,
+} from "@/lib/tool-list-filters";
 import type { ListedTool } from "@/registry/registry";
 
-/** Lista całego sprzętu z filtrami, które zawężają ją od razu w przeglądarce. Każde narzędzie otwiera swoją kartę. */
-export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withValues: boolean }) {
-  const [filters, setFilters] = useState<ToolListFilters>({ query: "", category: ALL, place: ALL, withRetiredAndReturned: false });
-  const change = (changes: Partial<ToolListFilters>) => setFilters((current) => ({ ...current, ...changes }));
+const SHOW_LABELS = [
+  [ON_SITES, "toolsPage.onSites"],
+  [OFF_BASE, "toolsPage.offBase"],
+  [LOST, "toolsPage.lost"],
+  [IN_SERVICE, "toolsPage.inService"],
+  [ALARM, "toolsPage.withAlarm"],
+] as const;
+
+/**
+ * Lista całego sprzętu z filtrami, które zawężają ją od razu w przeglądarce i zapisują się w adresie, żeby link do
+ * przefiltrowanej listy otwierał ją tak samo. Każde narzędzie otwiera swoją kartę.
+ */
+export function ToolBrowser({ tools, initialFilters, withValues }: { tools: ListedTool[]; initialFilters: ToolListFilters; withValues: boolean }) {
   const options = toolListOptions(tools);
+  // Kategorii albo lokalizacji z adresu może już nie być na liście; wtedy filtr niczego nie zawęża, zamiast ukryć wszystko.
+  const [filters, setFilters] = useState<ToolListFilters>(() => ({
+    ...initialFilters,
+    category: options.categories.includes(initialFilters.category) ? initialFilters.category : ALL,
+    place: options.places.some((place) => place.id === initialFilters.place) ? initialFilters.place : ALL,
+  }));
+  const change = (changes: Partial<ToolListFilters>) => {
+    const next = changeFilters(filters, changes);
+    setFilters(next);
+    window.history.replaceState(null, "", `${window.location.pathname}${toolListSearch(next)}`);
+  };
   const shown = filterTools(tools, filters);
   // Jak na tablicy: zaginione i wycofane nie wchodzą do sumy sprzętu w obiegu. Sumujemy w groszach.
   const inCirculation = shown.filter((tool) => tool.state === "w_obiegu");
@@ -58,9 +91,24 @@ export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withVa
                   {`${t(KIND_LABELS[place.kind])}: ${place.name}`}
                 </option>
               ))}
-              {options.hasLost && <option value={LOST}>{t("toolsPage.lost")}</option>}
             </select>
           </div>
+        </div>
+        <div className="tool-browser-shows" role="group" aria-label={t("toolsPage.show")}>
+          {SHOW_LABELS.map(([show, label]) => {
+            const pressed = filters.show === show;
+            return (
+              <button
+                key={show}
+                type="button"
+                className={pressed ? "button button-small" : "button button-quiet button-small"}
+                aria-pressed={pressed}
+                onClick={() => change({ show: pressed ? ALL : show })}
+              >
+                {t(label)} <span className="tool-browser-show-count">{options.counts[show]}</span>
+              </button>
+            );
+          })}
         </div>
         {options.hasRetiredOrReturned && (
           <label className="checkbox tool-browser-retired">
@@ -76,7 +124,7 @@ export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withVa
           {withValues && inCirculation.length > 0 && ` · ${t("toolsPage.totalValue", { amount: formatMoney(totalCents / 100) })}`}
         </p>
         {shown.length === 0 ? (
-          <p className="empty">{t("toolsPage.noMatches")}</p>
+          <EmptyState>{t("toolsPage.noMatches")}</EmptyState>
         ) : (
           <ul className="tool-list tool-list-wide" data-testid="tools-list">
             {shown.map((tool) => (
@@ -94,7 +142,7 @@ export function ToolBrowser({ tools, withValues }: { tools: ListedTool[]; withVa
 function ToolRow({ tool }: { tool: ListedTool }) {
   const details = [tool.category, [tool.brand, tool.model].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
   return (
-    <Link href={`/narzedzia/${tool.id}`} className="tool-row">
+    <Link href={`/narzedzia/${tool.id}`} className={tool.alarm ? "tool-row tool-row-alarm" : "tool-row"}>
       <span className="plate">{tool.code}</span>
       <span className="tool-row-name">
         {tool.name}
@@ -105,6 +153,7 @@ function ToolRow({ tool }: { tool: ListedTool }) {
           </span>
         )}
         {tool.rented && <span className="tag tag-rented">{t("board.rented")}</span>}
+        {tool.alarm && <span className="tag tag-alarm">{t("board.overThreshold")}</span>}
         <span className="tool-row-sub muted">{details}</span>
         <span className="tool-row-sub found-tool-place">
           <Place tool={tool} />

@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { formatDateTime } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
 import { punchCheckText } from "@/lib/punch-text";
 import { getRegistry } from "@/lib/registry-instance";
 import { canClarifyPunches, type PunchConflict } from "@/registry/registry";
-import { locationPagePath } from "../lokalizacje/location-page";
+import { locationPagePath } from "@/lib/location-path";
 import { CorrectPunch, PunchEntry } from "../lokalizacje/people-on-site";
 import { ExplainPunchConflictForm, ExplainPunchForm } from "../lokalizacje/punch-forms";
 
@@ -30,14 +31,14 @@ export default async function PunchesToClarifyPage() {
   return (
     <>
       <p>
-        <Link href="/" className="muted">
-          {t("locationPage.back")}
+        <Link href="/dzwonek" className="muted">
+          {t("inbox.back")}
         </Link>
       </p>
       <h1 className="display page-title">{t("punches.toClarifyTitle")}</h1>
       <p className="muted">{t(session.role === "wlasciciel" ? "punches.toClarifyIntroOwner" : "punches.toClarifyIntroManager")}</p>
       {punches.length === 0 ? (
-        conflicts.length === 0 && <p className="empty">{t("punches.toClarifyEmpty")}</p>
+        conflicts.length === 0 && <EmptyState>{t("punches.toClarifyEmpty")}</EmptyState>
       ) : (
         <ol className="movements" aria-label={t("punches.toClarifyTitle")}>
           {punches.map((punch) => (

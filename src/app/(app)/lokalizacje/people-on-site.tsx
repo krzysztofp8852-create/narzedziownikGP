@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { dateTimeInputValue } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 import { formatPosterCode } from "@/posters/url";
@@ -7,7 +8,8 @@ import { distanceText, punchChecksText, punchCorrectionText, punchedByText, punc
 import { getRegistry } from "@/lib/registry-instance";
 import { isRegistryError } from "@/registry/errors";
 import { canPrintPoster, canSetPunchRadius, type Poster, type Punch } from "@/registry/registry";
-import { LocationShell, loadPlacePage, type PlacePageKind } from "./location-page";
+import type { PlacePageKind } from "@/lib/location-path";
+import { LocationShell, loadPlacePage } from "./location-page";
 import { CorrectPunchForm, PunchRadiusForm, RenewPosterForm } from "./punch-forms";
 
 /**
@@ -85,7 +87,7 @@ export async function PeopleOnSitePage({ id, kind }: { id: string | null; kind: 
           {here} ({people.present.length})
         </h2>
         {people.present.length === 0 ? (
-          <p className="empty">{t("punches.presentEmpty")}</p>
+          <EmptyState>{t("punches.presentEmpty")}</EmptyState>
         ) : (
           <ol className="movements" aria-label={here}>
             {people.present.map((punch) => (
@@ -132,7 +134,7 @@ export async function PeopleOnSitePage({ id, kind }: { id: string | null; kind: 
           {t("punches.historyTitle")}
         </h2>
         {people.history.length === 0 ? (
-          <p className="empty">{t("punches.historyEmpty")}</p>
+          <EmptyState>{t("punches.historyEmpty")}</EmptyState>
         ) : (
           <ol className="movements" aria-label={t("punches.historyTitle")}>
             {people.history.map((punch) => (

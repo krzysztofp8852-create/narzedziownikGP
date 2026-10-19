@@ -20,7 +20,7 @@ _Avoid_: brygadzista, majster
 Rola w firmie obsługująca bazę; rejestruje ruchy dla wszystkich lokalizacji.
 
 **Pracownik**:
-Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłoszenia. Loguje się nazwą użytkownika nadaną przez właściciela, bez wymogu e-maila.
+Rola w firmie bez prawa do ruchów: widzi, gdzie jest sprzęt, i składa zgłoszenia. Loguje się nazwą użytkownika nadaną przez właściciela, bez wymogu e-maila. Jego tablica mówi o nim, a nie o całej firmie: stan odbicia, jego sprawy z „Do zrobienia” i sprzęt na budowie, na której jest odbity.
 _Avoid_: robotnik, użytkownik (jako nazwa roli)
 
 **Język**:
@@ -28,7 +28,7 @@ Język interfejsu, który konto wybiera samo dla siebie (polski, ukraiński, ros
 _Avoid_: lokalizacja (to miejsce sprzętu), wersja językowa firmy
 
 **Ludzie**:
-Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w menu. Prowadzi ją właściciel; przy osobie widać, czy ma konto i jaką rolę. Kierownik widzi w niej osoby z uprawnieniami, a magazynier i pracownik tylko własne uprawnienia („Moje uprawnienia”).
+Kartoteka wszystkich osób firmy: konta w programie i osoby bez konta, pozycja „Ludzie” w nawigacji. Prowadzi ją właściciel; przy osobie widać, czy ma konto i jaką rolę. Kierownik widzi w niej osoby z uprawnieniami, a magazynier i pracownik tylko własne uprawnienia („Moje uprawnienia”).
 _Avoid_: zespół, kadry, pracownicy (pracownik to rola)
 
 **Osoba**:
@@ -59,8 +59,12 @@ _Avoid_: landing modułu, podstrona funkcji
 Lista wizyt w demo dla super-admina: wejścia do ról, otwierane ekrany i akcje oglądających. Wizyta to jedna przeglądarka, także po przełączeniu roli. Zostaje po usunięciu firmy demo.
 _Avoid_: analityka, śledzenie
 
+**Tablica**:
+Pierwszy ekran po zalogowaniu: co zrobić teraz. U właściciela, kierownika i magazyniera ma pasek stanu odbicia, operacje (Wydaj, Zwróć, Powiedz lub wpisz i „Więcej operacji”), najpilniejsze sprawy z „Do zrobienia”, klikalne liczniki prowadzące do przefiltrowanej listy narzędzi, zwinięte kafle „Gdzie jest sprzęt” (baza, budowy, pojazdy, serwisy ze sprzętem; klik prowadzi na stronę miejsca) i trzy ostatnie ruchy. Kwoty w zł widzi tylko właściciel, a kierownik ma na kaflach przede wszystkim swoje budowy i pojazdy. Tablica pracownika mówi o nim (zob. Pracownik).
+_Avoid_: pulpit, dashboard, „Gdzie jest co” (to zapytanie Rejestru za tablicą, kafelkami i pełnymi listami)
+
 **Samouczek**:
-Pierwsze kroki właściciela (kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Startuje sam po pierwszym logowaniu, dopóki go nie pominięto ani nie ukończono; potem otwiera się z menu pod trzema kreskami. Pracownik i firma demo go nie mają.
+Pierwsze kroki właściciela („Uruchom firmę w 4 krokach”: kierownik, budowa, narzędzia, naklejki QR, odhaczane stanem firmy, z paskiem postępu) albo krótki samouczek zapisu ruchu dla kierownika i magazyniera. Pierwsze kroki stoją na górze tablicy właściciela, dopóki ich nie pominięto, nie ukończono ani nie zrobiono wszystkich kroków; samouczek kierownika i magazyniera nie startuje sam. Oba otwierają się z Pomocy. Pracownik i firma demo go nie mają.
 _Avoid_: onboarding (to wdrożenie), tutorial, przewodnik (to przewodnik po tablicy w demo)
 
 **Super-admin**:
@@ -80,7 +84,7 @@ Wszystkie dane firmy w jednym ZIP-ie na jej żądanie: każda tabela jako CSV z 
 _Avoid_: kopia zapasowa, backup, zrzut bazy
 
 **Dziennik zmian**:
-Lista zmian kont i ustawień firmy: kto i kiedy założył firmę albo konto (z rolą i loginem), dezaktywował konto albo osobę, nadał innej osobie hasło tymczasowe, zanonimizował osobę albo zmienił ustawienie firmy (z wartością przed i po). Autorem jest osoba z firmy, super-admin albo program. Widzi go właściciel w ustawieniach i super-admin; wpisy tylko się dopisują i znikają tylko z usunięciem firmy, a anonimizacja osoby zamienia w nich jej imię i nazwisko na nazwę zastępczą.
+Lista zmian kont i ustawień firmy: kto i kiedy założył firmę albo konto (z rolą i loginem), dezaktywował konto albo osobę, nadał innej osobie hasło tymczasowe, zanonimizował osobę albo zmienił ustawienie firmy (z wartością przed i po). Autorem jest osoba z firmy, super-admin albo program. Widzi go właściciel w ustawieniach (Dokumenty i dziennik zmian) i super-admin; wpisy tylko się dopisują i znikają tylko z usunięciem firmy, a anonimizacja osoby zamienia w nich jej imię i nazwisko na nazwę zastępczą.
 _Avoid_: audyt, log, historia (to ruchy)
 
 **Wylogowanie po bezczynności**:
@@ -102,7 +106,7 @@ Jedyny magazyn firmy; miejsce sprzętu, który nie jest nigdzie wydany. Może mi
 _Avoid_: magazyn, warsztat
 
 **Budowa**:
-Lokalizacja z adresem, przypisanym kierownikiem i statusem aktywna albo zakończona. Kierownikiem budowy jest kierownik albo właściciel, który sam ją prowadzi.
+Lokalizacja z adresem, przypisanym kierownikiem i statusem aktywna albo zakończona. Kierownikiem budowy jest kierownik albo właściciel, który sam ją prowadzi. Wszystkie budowy firmy są na stronie Budowy; kierownik ma tam „Moje budowy”, czyli tylko te, którymi kieruje.
 _Avoid_: projekt, inwestycja, obiekt
 
 **Serwis**:
@@ -116,7 +120,7 @@ _Avoid_: bus, auto, samochód (jako nazwa rodzaju lokalizacji), flota (jako nazw
 Każda lokalizacja inna niż baza i serwis. Łączna wartość sprzętu poza bazą to miara ryzyka dla właściciela.
 
 **Mapa budów**:
-Mapa na tablicy z bazą (jeśli ma adres) i aktywnymi budowami w miejscu ich adresu. Widzi ją każdy w firmie, a pinezki przesuwa tylko właściciel. Firma demo ma zamiast niej mapę demo z przykładowym położeniem i lokalizatorami.
+Mapa na stronie Budowy (widok Mapa) z bazą (jeśli ma adres) i aktywnymi budowami w miejscu ich adresu. Widzi ją każdy w firmie (kierownik ze swoimi budowami), a pinezki przesuwa tylko właściciel. Firma demo ma zamiast niej mapę demo z przykładowym położeniem i lokalizatorami.
 _Avoid_: mapa lokalizacji (pojazdów i serwisów na niej nie ma)
 
 **Położenie**:
@@ -144,11 +148,11 @@ Flaga narzędzia ustawiana przez zgłoszenie uszkodzenia. Nie blokuje ruchów; z
 _Avoid_: zepsute, niesprawne (jako stan)
 
 **Zgłoszony brak**:
-Dopisek przy narzędziu na tablicy, dopóki jest do niego otwarte zgłoszenie braku lub zaginięcia. Nie jest flagą ani stanem: nie zmienia stanu narzędzia i nie przenosi go do zaginionych (to robi tylko korekta właściciela); znika z zamknięciem ostatniego takiego zgłoszenia.
+Dopisek przy narzędziu na listach sprzętu (strona miejsca, Narzędzia), dopóki jest do niego otwarte zgłoszenie braku lub zaginięcia. Nie jest flagą ani stanem: nie zmienia stanu narzędzia i nie przenosi go do zaginionych (to robi tylko korekta właściciela); znika z zamknięciem ostatniego takiego zgłoszenia.
 _Avoid_: zaginione (to stan narzędzia)
 
 **Sprzęt wynajęty**:
-Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na tablicy ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi pakietu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
+Narzędzie z wypożyczalni, przyjęte od razu tam, gdzie stoi (kierownik na swojej budowie albo pojeździe, magazynier i właściciel wszędzie), bez akceptacji, z kodem jak każde, stawką dobową z umowy i terminem zwrotu. Na listach sprzętu ma dopisek „wynajęte”, rusza się zwykłymi ruchami i nie liczy się do limitu narzędzi pakietu. Koszt liczy się ze stawki wypożyczalni przed każdą stawką dzienną, także po terminie zwrotu, aż do zwrotu do wypożyczalni. Właściciel dostaje wpis w dzwonku.
 _Avoid_: wypożyczone, najem, sprzęt obcy
 
 **Wypożyczalnia**:
@@ -170,7 +174,7 @@ Termin przy pojeździe zamiast narzędzia: przegląd techniczny, OC, AC, legaliz
 _Avoid_: termin floty, ubezpieczenie (jako ogólne pojęcie), badanie techniczne
 
 **Termin zwrotu**:
-Dzień, do którego sprzęt wynajęty ma wrócić do wypożyczalni. Powstaje z przyjęciem, bez cyklu i wykonania; przedłużenie to zmiana tej daty przez tych, którzy mogą zapisać zwrot do wypożyczalni. Przypomina dzień przed i raz po, a po nim tablica ma dopisek „po terminie zwrotu”, który niczego nie blokuje.
+Dzień, do którego sprzęt wynajęty ma wrócić do wypożyczalni. Powstaje z przyjęciem, bez cyklu i wykonania; przedłużenie to zmiana tej daty przez tych, którzy mogą zapisać zwrot do wypożyczalni. Przypomina dzień przed i raz po, a po nim listy sprzętu mają dopisek „po terminie zwrotu”, który niczego nie blokuje.
 _Avoid_: koniec wynajmu, data oddania
 
 **Po terminie**:
@@ -207,12 +211,12 @@ Dni narzędzi na budowie albo pojeździe razy stawka dzienna z każdego dnia, w 
 _Avoid_: koszt wynajmu, amortyzacja
 
 **Zestawienie kosztów**:
-Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, pozycja „Koszty sprzętu” w menu. Pokazuje każdą aktywną budowę i aktywny pojazd, a zakończone i nieaktywne tylko z kosztem w okresie.
+Koszt sprzętu wszystkich budów i pojazdów za miesiąc albo własny zakres, pozycja „Koszty sprzętu” pod „Więcej”. Pokazuje każdą aktywną budowę i aktywny pojazd, a zakończone i nieaktywne tylko z kosztem w okresie.
 
 ## Odbijanie na budowie
 
 **Odbicie**:
-Pobyt osoby na budowie albo bazie zapisany skanem plakatu budowy: wejście, a potem wyjście (skan na tej samej budowie, po pytaniu „Kończysz na tej budowie?”) albo przejście (skan na innej budowie zamyka ten pobyt i otwiera nowy). Przy każdym skanie program sprawdza położenie telefonu i zapisuje tylko wynik (na budowie, poza budową z odległością, brak położenia, bez sprawdzenia) i odległość, nigdy współrzędne. Odbicie z wynikiem innym niż „na budowie” się zapisuje, ale trafia do wyjaśnienia: wyjaśnia je właściciel albo kierownik budowy (własne odbicia kierownika i te, które sam odbił, wyjaśnia właściciel), z opcjonalną notatką. Odbija się każdy z kontem, a właściciel i kierownik po skanie odbijają też osoby z kartoteki z listy „Odbij też…” (np. robotnika bez telefonu): z położeniem odbijającego i oznaczeniem „odbił: X”. Widzi je właściciel, kierownik na swoich budowach i te, które sam odbił, a każdy własne. W firmie demo położenia się nie sprawdza. Skan bez zasięgu w skanerze programu czeka w kolejce offline i zapisuje się z chwilą skanu, z oznaczeniem „zapisane offline”. Od 18:00 ten, kto odbił wejście osoby nadal odbitej (ona sama albo kierownik za osobę z kartoteki), dostaje przypomnienie o wyjściu, a o północy otwarte odbicie zamyka się jako odbicie bez wyjścia.
+Pobyt osoby na budowie albo bazie zapisany skanem plakatu budowy: wejście, a potem wyjście (skan na tej samej budowie, po pytaniu „Kończysz na tej budowie?”) albo przejście (skan na innej budowie zamyka ten pobyt i otwiera nowy). Przy każdym skanie program sprawdza położenie telefonu i zapisuje tylko wynik (na budowie, poza budową z odległością, brak położenia, bez sprawdzenia) i odległość, nigdy współrzędne. Odbicie z wynikiem innym niż „na budowie” się zapisuje, ale trafia do wyjaśnienia: wyjaśnia je właściciel albo kierownik budowy (własne odbicia kierownika i te, które sam odbił, wyjaśnia właściciel), z opcjonalną notatką. Odbija się każdy z kontem, a właściciel i kierownik po skanie odbijają też osoby z kartoteki z listy „Odbij też…” (np. robotnika bez telefonu): z położeniem odbijającego i oznaczeniem „odbił: X”. Widzi je właściciel, kierownik na swoich budowach i te, które sam odbił, a każdy własne. W firmie demo położenia się nie sprawdza. W programie plakat skanuje się przyciskiem Skanuj, który sam rozpoznaje plakat budowy (odbicie) i naklejkę narzędzia (ruch albo karta narzędzia), a na górze tablicy pasek stanu odbicia mówi, gdzie i od kiedy osoba jest odbita. Skan bez zasięgu w Skanuj czeka w kolejce offline i zapisuje się z chwilą skanu, z oznaczeniem „zapisane offline”. Od 18:00 ten, kto odbił wejście osoby nadal odbitej (ona sama albo kierownik za osobę z kartoteki), dostaje przypomnienie o wyjściu, a o północy otwarte odbicie zamyka się jako odbicie bez wyjścia.
 _Avoid_: check-in, ewidencja czasu pracy, wejściówka
 
 **Odbicie bez wyjścia**:
@@ -229,7 +233,7 @@ _Avoid_: odrzucony ruch (to ruch z kolejki), błąd odbicia
 
 **Plakat budowy**:
 Kartka A4 z nazwą budowy, kodem QR i instrukcją, wisząca przy wejściu albo kontenerze; ma ją też baza z adresem. Kod QR prowadzi na stronę odbicia po losowym kodzie plakatu, który nie zdradza budowy; ten sam kod jest wydrukowany do wpisania ręcznie. Drukuje go właściciel albo kierownik budowy, a „Nowy kod” unieważnia stary plakat. Pojazd i serwis plakatu nie mają.
-_Avoid_: kod budowy (kod to identyfikator narzędzia), tablica (to ekran „Gdzie jest co”), naklejka (to przy narzędziu)
+_Avoid_: kod budowy (kod to identyfikator narzędzia), tablica (to pierwszy ekran po zalogowaniu), naklejka (to przy narzędziu)
 
 **Promień odbicia**:
 Odległość od położenia budowy albo bazy, do której skan liczy się jako „na budowie”; domyślnie 300 m, zmienia go właściciel (np. dla dużego placu). Budowa bez położenia ma odbicia „bez sprawdzenia”.
@@ -304,8 +308,12 @@ Wniosek kierownika o dopisanie do ewidencji sprzętu kupionego na budowę; końc
 _Avoid_: zgłoszenie (bez dopełnienia)
 
 **Dzwonek**:
-Skrzynka powiadomień użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm, przypomnienia o terminach, raporty, odrzucone ruchy, płatność). Zgłoszenia i czat mają własne okna.
-_Avoid_: powiadomienia (jako nazwa miejsca), inbox
+Wpisy użytkownika o zdarzeniach systemu (zabrany sprzęt, alarm, przypomnienia o terminach, raporty, odrzucone ruchy, płatność), z kopią push. Ikona w nagłówku otwiera **skrzynkę „Wymaga uwagi”**.
+_Avoid_: powiadomienia (jako nazwa miejsca)
+
+**Skrzynka „Wymaga uwagi”**:
+Jedno miejsce pod dzwonkiem z dwiema zakładkami. **Do zrobienia**: sprawy, które czekają na reakcję osoby (zgłoszenia narzędzi do akceptacji, usterki i braki, odrzucone ruchy offline, odbicia do wyjaśnienia i nieodbite wyjścia, alarmy, terminy, uprawnienia); wynikają ze stanu firmy, więc znikają same, gdy ktoś je załatwi, i tylko je liczy licznik przy dzwonku. **Informacje**: raporty i potwierdzenia z dzwonka. Każdy rodzaj wpisu dzwonka ma stałe miejsce w jednej z zakładek. Zgłoszenia i obie listy do wyjaśnienia to widoki szczegółowe otwierane ze skrzynki. W kodzie `inbox`.
+_Avoid_: powiadomienia, okno zgłoszeń
 
 **Czat z supportem**:
 Rozmowa użytkownika firmy z GP Engineering, jeden wątek na użytkownika. Działa także w trybie tylko do odczytu; w firmie demo jest wyłączona.
@@ -345,3 +353,15 @@ _Avoid_: aplikacja (to wersja z Google Play), skrót
 **Aplikacja**:
 NarzędziownikGP na Androida instalowany z Google Play: ten sam program co w przeglądarce, z tymi samymi kontami, otwarty w natywnej skorupie z dostępem do funkcji telefonu. Zmiany programu dochodzą do niej bez aktualizacji ze sklepu.
 _Avoid_: aplikacja mobilna, apka, PWA (to wersja z przeglądarki)
+
+**Nawigacja**:
+Pasek na dole ekranu telefonu i stały panel z boku na komputerze, z tymi samymi pozycjami zależnymi od konta: kilka najczęstszych, wyróżnione Skanuj i „Więcej” z resztą modułów (u pracownika „Moje”). Pokazuje tylko to, co dane konto może otworzyć (ADR 0048).
+_Avoid_: menu, hamburger, menu pod trzema kreskami
+
+**Moje konto**:
+Sprawy osobiste osoby, otwierane kliknięciem jej imienia w nagłówku: język, zmiana hasła, informacja o usunięciu konta i wylogowanie.
+_Avoid_: profil, ustawienia (to ustawienia firmy)
+
+**Pomoc**:
+Czat z obsługą (GP Engineering) i samouczek, pod „Więcej”. Pracownik jej nie ma.
+_Avoid_: wsparcie, support

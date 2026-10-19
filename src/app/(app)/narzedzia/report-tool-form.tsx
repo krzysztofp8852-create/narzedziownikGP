@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
+import type { EmptyStep } from "@/lib/empty-step";
 import { submitKeepingValues } from "@/lib/forms";
 import { newOperationId } from "@/lib/operation-id";
 import type { Category } from "@/registry/registry";
@@ -13,6 +15,10 @@ export interface ReportToolFormProps {
   /** Aktywne budowy zgłaszającego kierownika. */
   sites: { id: string; name: string }[];
   operationId: string;
+  /** Bez budów: kto dodaje budowy. */
+  noSites: EmptyStep | null;
+  /** Bez kategorii: kto je dodaje. */
+  noCategories: EmptyStep | null;
 }
 
 /** Kierownik zgłasza sprzęt kupiony na budowę; po zapisie pusty formularz pod następne zgłoszenie. */
@@ -20,8 +26,8 @@ export function ReportToolForm(props: ReportToolFormProps) {
   const [operationId, setOperationId] = useState(props.operationId);
   const [reported, setReported] = useState<ToolReportFormState["reported"]>();
 
-  if (props.sites.length === 0) return <p className="empty">{t("toolReports.noSites")}</p>;
-  if (props.categories.length === 0) return <p className="empty">{t("toolReports.noCategories")}</p>;
+  if (props.sites.length === 0) return <EmptyState step={props.noSites}>{t("toolReports.noSites")}</EmptyState>;
+  if (props.categories.length === 0) return <EmptyState step={props.noCategories}>{t("toolReports.noCategories")}</EmptyState>;
 
   return (
     <div className="stack-form">

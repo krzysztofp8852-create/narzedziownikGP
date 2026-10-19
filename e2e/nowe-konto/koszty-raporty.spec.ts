@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { type Page, test } from "@playwright/test";
-import { expectNoHorizontalScroll, firstSignIn, openFreshAccount } from "../support/fresh-account";
+import { expectNoHorizontalScroll, firstSignIn, openFreshAccount, signOut } from "../support/fresh-account";
+import { appNav, moreButton, openFromNav } from "../support/navigation";
 import {
   addCategory,
   addManager,
@@ -62,11 +63,10 @@ test("stawki z ustawień: 0% dla kategorii, zły procent odrzucony; zestawienie 
   await givenCompany(page, "koszty");
 
   // Przed pierwszą stawką firmy zestawienie zachęca do jej ustawienia.
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("link", { name: "Koszty sprzętu" }).click();
+  await openFromNav(page, "Koszty sprzętu");
   await expect(page.getByRole("heading", { name: "Ustaw stawkę dzienną" })).toBeVisible();
   await page.getByRole("link", { name: "Ustaw stawkę dzienną w ustawieniach" }).click();
-  await expect(page).toHaveURL(/\/ustawienia#stawki$/);
+  await expect(page).toHaveURL(/\/ustawienia\/sprzet#stawki$/);
 
   const rates = page.getByRole("region", { name: "Stawki dzienne" });
   await expect(rates.getByLabel("Stawka firmy (% wartości na dzień)")).toHaveValue("1");
@@ -138,8 +138,7 @@ test("raporty: na teraz i z harmonogramu; właściciel oba, kierownik tylko pią
   const company = await givenCompany(page, "raporty");
   const today = plDay(warsawDay(0));
 
-  await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Raporty" }).click();
+  await openFromNav(page, "Raporty");
   await expect(page).toHaveURL(/\/raporty$/);
   await expect(page.getByRole("heading", { name: "Raporty", level: 1 })).toBeVisible();
   await expect(page.getByText("Raport tygodniowy przychodzi do dzwonka w poniedziałek o 7:00", { exact: false })).toBeVisible();
@@ -189,7 +188,7 @@ test("raporty: na teraz i z harmonogramu; właściciel oba, kierownik tylko pią
   await expect(rataje.getByRole("link")).toHaveText([/H-01/, /M-01/]);
   await page.goto("/raporty/piatkowy/2020-01-03");
   await expect(page.getByText("Nie ma tu takiego raportu.", { exact: false })).toBeVisible();
-  await page.goto("/dzwonek");
+  await page.goto("/dzwonek?lista=informacje");
   await expect(page.getByText("Przed weekendem poza bazą: 2 szt.")).toBeVisible();
 
   // Kierownik: tylko piątkowy, ze swoją budową.
@@ -209,22 +208,22 @@ test("raporty: na teraz i z harmonogramu; właściciel oba, kierownik tylko pią
   await expectNoHorizontalScroll(manager);
 
   // Pracownik: bez raportów i kosztów; widzi wynajęte na liście, ale bez złotówek i bez zwrotu do wypożyczalni.
-  await manager.getByRole("button", { name: "Menu" }).click();
-  await manager.getByRole("navigation", { name: "Menu" }).getByRole("button", { name: "Wyloguj" }).click();
-  await expect(manager).toHaveURL(/\/logowanie$/);
+  await signOut(manager);
   const worker = manager;
   await firstSignIn(worker, company.worker.username, company.worker.temporaryPassword, company.companyName);
-  await skipTutorial(worker);
-  await worker.getByRole("button", { name: "Menu" }).click();
-  const menu = worker.getByRole("navigation", { name: "Menu" });
-  await expect(menu.getByRole("link", { name: "Narzędzia" })).toBeVisible();
-  await expect(menu.getByRole("link", { name: "Raporty" })).toHaveCount(0);
-  await expect(menu.getByRole("link", { name: "Koszty sprzętu" })).toHaveCount(0);
-  await worker.getByRole("button", { name: "Menu" }).click();
+  // Pracownik nie ma samouczka, a jego tablica mówi o nim, więc ma własny nagłówek.
+  await expect(worker.getByRole("heading", { name: "Tablica", level: 1 })).toBeVisible();
+  await moreButton(worker).click();
+  await expect(appNav(worker).getByRole("link", { name: "Mój czas na budowie" })).toBeVisible();
+  await expect(appNav(worker).getByRole("link", { name: "Raporty" })).toHaveCount(0);
+  await expect(appNav(worker).getByRole("link", { name: "Koszty sprzętu" })).toHaveCount(0);
+  await moreButton(worker).click();
   await worker.goto("/raporty");
   await expect(worker).toHaveURL(/\/$/);
+  // Raport piątkowy odsyła do Raportów, a te pracownika na tablicę. Czekamy na koniec tej drogi, bo przekierowanie
+  // w drodze przerwałoby następne `goto` (net::ERR_ABORTED).
   await worker.goto("/raporty/piatkowy");
-  await expect(worker).toHaveURL(/\/raporty$|\/$/);
+  await expect(worker).toHaveURL(/\/$/);
   await worker.goto("/koszty");
   await expect(worker).toHaveURL(/\/$/);
   await worker.goto("/narzedzia");

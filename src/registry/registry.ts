@@ -2,6 +2,8 @@ import * as bell from "./bell";
 import * as callbackRequests from "./callback-requests";
 import type { CallbackRequestInput, CallbackRequestList } from "./callback-requests";
 import type { Bell, BellEntry } from "./bell";
+import * as inbox from "./inbox";
+import type { Inbox } from "./inbox";
 import * as board from "./board";
 import * as catalog from "./catalog";
 import type { CatalogTool } from "./catalog";
@@ -20,7 +22,7 @@ import * as deadlineReminders from "./deadline-reminders";
 import * as deadlines from "./deadlines";
 import type { AddDocumentInput, CompleteDeadlineInput, Deadline, DeadlineChanges, NewDeadlineInput, UpcomingDeadline } from "./deadlines";
 import * as demo from "./demo";
-import type { DemoAccount, DemoDevice, DemoUse, DemoVisit } from "./demo";
+import type { DemoAccount, DemoDevice, DemoPoster, DemoUse, DemoVisit } from "./demo";
 import * as history from "./history";
 import * as idleLogout from "./idle-logout";
 import type { BrowserSession, IdleStatus } from "./idle-logout";
@@ -73,6 +75,7 @@ import type {
   CorrectPunchInput,
   ExplainPunchConflictInput,
   ExplainPunchInput,
+  OwnOpenPunch,
   PeopleOnSite,
   Poster,
   PersonPunchOutcome,
@@ -116,7 +119,7 @@ import { isLocale, type Locale } from "@/i18n/locales";
 
 export type Role = "wlasciciel" | "magazynier" | "kierownik" | "pracownik";
 
-export type { LostOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
+export type { BoardCounts, LostOnBoard, PlaceOnBoard, ToolOnBoard, WhereIsWhat } from "./board";
 export type { CatalogTool } from "./catalog";
 export type { CompanyExportSummary, ExportSink } from "./company-export";
 export type { ListedTool } from "./tool-list";
@@ -258,6 +261,7 @@ export type {
   CorrectPunchInput,
   ExplainPunchConflictInput,
   ExplainPunchInput,
+  OwnOpenPunch,
   PeopleOnSite,
   PhonePosition,
   PersonPunchOutcome,
@@ -303,6 +307,9 @@ export { canSeeTimeOnSiteSummary } from "./time-on-site";
 export { normalizePosterCode } from "./poster-code";
 export { canSeeReports, isReportKind, reportKindsOf } from "./reports";
 export type { Bell, BellEntry } from "./bell";
+export type { Inbox, InboxList, ToDoItem, ToDoKind } from "./inbox";
+export { inboxList } from "./inbox";
+export type { LocationAlarm } from "./thresholds";
 export type {
   CloseIssueInput,
   CommentOnIssueInput,
@@ -341,7 +348,7 @@ export { canManageTeam, MEMBER_ROLES } from "./team";
 export type { AcceptToolReportInput, RejectToolReportInput, ReportToolInput, ToolReport } from "./tool-reports";
 export { canReportTools, canReviewToolReports } from "./tool-reports";
 export type { StickerBatch, StickerCandidate, StickerSelection } from "./stickers";
-export type { DemoAccount, DemoUse } from "./demo";
+export type { DemoAccount, DemoPoster, DemoUse } from "./demo";
 export type { CallbackRequest, CallbackRequestInput, CallbackRequestList, CallbackSource } from "./callback-requests";
 export { formatPhone, isCallbackSource, MAX_CALLBACK_NAME_LENGTH, normalizePhone } from "./callback-requests";
 export { DEMO_EMAIL_DOMAIN, isDemoEmail, LOGGED_DEMO_COMMANDS } from "./demo";
@@ -538,6 +545,8 @@ export interface Registry {
     demoAccounts(): Promise<DemoAccount[]>;
     /** Kiedy ktoś ostatnio wszedł do obecnego demo (zadanie godzinowe odświeża tylko używane); null, gdy demo nie założono. */
     demoUse(): Promise<DemoUse | null>;
+    /** Plakat, na którym konto obecnego demo odbiło się ostatnio (kod do przewodnika pracownika); null poza demo. */
+    demoPoster(userId: string): Promise<DemoPoster | null>;
     /** Czy użytkownik ma konto w firmie demo, obecnej albo poprzedniej (wtedy wraca na stronę /demo). */
     isDemoAccount(userId: string): Promise<boolean>;
     /**
@@ -598,8 +607,9 @@ export interface Registry {
     /** Osoba coś zrobiła w przeglądarce: odsuwa jej wylogowanie po bezczynności, chyba że sesja już wygasła. */
     recordActivity(browser: BrowserSession): Promise<IdleStatus>;
     /**
-     * Tablica „Gdzie jest co”: baza, aktywne budowy i pojazdy, serwisy i zaginione, z alarmami. Wartości
-     * w zł (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
+     * „Gdzie jest co”, dane tablicy i stron miejsc: baza, aktywne budowy i pojazdy, serwisy i zaginione, z alarmami, kafle miejsc
+     * (rodzaj, nazwa, liczba narzędzi, alarm, czy to budowa lub pojazd aktora) i liczniki tablicy. Wartości w zł
+     * (narzędzia, sumy lokalizacji, kwota poza bazą) tylko dla właściciela.
      */
     whereIsWhat(): Promise<WhereIsWhat>;
     /**
@@ -806,6 +816,8 @@ export interface Registry {
      * kod” i z innej firmy): `poster_invalid`; zakończona budowa: `site_finished`.
      */
     punchPreview(posterToken: string): Promise<PunchPreview>;
+    /** Pasek stanu odbicia na tablicy: gdzie i od kiedy aktor jest odbity teraz (także przez kierownika); null, gdy nie jest. */
+    ownOpenPunch(): Promise<OwnOpenPunch | null>;
     /**
      * Odbicie aktora skanem plakatu: wejście zapisuje się od razu, wyjście z tej samej budowy dopiero z `confirmExit`
      * (bez niego wynik `potwierdz_wyjscie` i nic się nie zapisuje), a skan na innej budowie to przejście (wyjście
@@ -996,6 +1008,14 @@ export interface Registry {
     historyFilterOptions(): Promise<HistoryFilterOptions>;
     /** Stan „Gdzie jest co” i historia z filtrami do eksportu, w jednej transakcji. */
     exportData(filters?: HistoryFilters): Promise<ExportData>;
+    /**
+     * Skrzynka „Wymaga uwagi” aktora: „Do zrobienia” (zgłoszenia narzędzi, usterki i braki, odrzucone ruchy z kolejki,
+     * odbicia do wyjaśnienia i nieodbite wyjścia, alarmy, terminy, uprawnienia) z licznikiem i „Informacje” (raporty
+     * i potwierdzenia z dzwonka). Sprawa znika z „Do zrobienia”, gdy ktoś ją załatwi.
+     */
+    inbox(): Promise<Inbox>;
+    /** Licznik przy dzwonku: ile spraw aktor ma w „Do zrobienia” (jak `inbox().toDoCount`, bez „Informacji”). */
+    toDoCount(): Promise<number>;
     /** Dzwonek: nieprzeczytane i ostatnie powiadomienia aktora, od najnowszego. */
     bell(options?: { limit?: number }): Promise<Bell>;
     /** Liczba nieprzeczytanych powiadomień aktora (licznik przy dzwonku). */
@@ -1250,6 +1270,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
       },
       demoAccounts: () => deps.db.transaction((sql) => demo.demoAccounts(sql)),
       demoUse: () => deps.db.transaction((sql) => demo.demoUse(sql)),
+      demoPoster: (userId) => deps.db.transaction((sql) => demo.demoPoster(sql, userId)),
       isDemoAccount: (userId) => deps.db.transaction((sql) => demo.isDemoAccount(sql, userId)),
       activateDemoCompany: async (companyId) => {
         const retired = await deps.db.transaction((sql) => demo.activateDemoCompany(sql, companyId, deps.clock.now()));
@@ -1785,6 +1806,7 @@ export function createRegistry(deps: RegistryDeps): Registry {
         },
         upcomingQualifications: () => asMember((sql) => qualifications.upcomingQualifications(sql, deps.clock.now())),
         punchPreview: (posterToken) => asMember((sql, session) => punches.punchPreview(sql, session, posterToken)),
+        ownOpenPunch: () => asMember((sql, session) => punches.ownOpenPunch(sql, session)),
         punch: async (input) => {
           const attempt = () => asWriter((sql, session) => punches.punch(sql, session, input, deps.clock.now()));
           try {
@@ -1963,6 +1985,8 @@ export function createRegistry(deps: RegistryDeps): Registry {
               movements: (await history.movementHistory(sql, filters, {})).movements,
             };
           }),
+        inbox: () => asMember((sql, session) => inbox.inbox(sql, session, deps.clock.now())),
+        toDoCount: () => asMember((sql, session) => inbox.toDoCount(sql, session, deps.clock.now())),
         bell: ({ limit = 50 } = {}) => asMember((sql, session) => bell.bell(sql, session, limit)),
         unreadNotificationCount: () => asMember((sql, session) => bell.unreadCount(sql, session)),
         markNotificationRead: (notificationId) => asPersonal((sql, session) => bell.markRead(sql, session, notificationId, deps.clock.now())),

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
 import { requireSession } from "@/lib/auth";
+import { addToolStep } from "@/lib/empty-step";
 import { getRegistry } from "@/lib/registry-instance";
+import { settingsHref } from "@/lib/settings-pages";
 import { canPrintStickers } from "@/registry/registry";
 import { StickerSheetForm } from "./sticker-forms";
 
@@ -18,13 +21,19 @@ export default async function StickersPage() {
   return (
     <>
       <p>
-        <Link href="/ustawienia" className="muted">
+        <Link href={settingsHref("sprzet")} className="muted">
           {t("stickers.back")}
         </Link>
       </p>
       <h1 className="display page-title">{t("stickers.title")}</h1>
       <p className="muted">{t("stickers.intro")}</p>
-      <StickerSheetForm candidates={candidates} />
+      {candidates.length === 0 ? (
+        <EmptyState step={addToolStep(session)}>
+          {t("stickers.noCandidates")}
+        </EmptyState>
+      ) : (
+        <StickerSheetForm candidates={candidates} />
+      )}
     </>
   );
 }

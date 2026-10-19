@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { t } from "@/i18n/t";
+import { addDeadlineStep } from "@/lib/empty-step";
 import { getRegistry } from "@/lib/registry-instance";
 import { canManageDeadlines, canManageLocations, VEHICLE_DEADLINE_KINDS } from "@/registry/registry";
 import { AddDeadlineForm } from "../terminy/deadline-forms";
@@ -46,7 +48,7 @@ export async function VehicleDeadlinesPage({ id }: { id: string }) {
             )}
           </dl>
         ) : (
-          <p className="empty">{t("locationPage.noVehicleData")}</p>
+          <EmptyState>{t("locationPage.noVehicleData")}</EmptyState>
         )}
         {writable && canManageLocations(session) && (
           <details className="panel">
@@ -64,7 +66,10 @@ export async function VehicleDeadlinesPage({ id }: { id: string }) {
           <Link href="/terminy">{t("deadlines.companyLink")}</Link>
         </div>
         {deadlines.length === 0 ? (
-          <p className="empty">{owner ? t("locationPage.vehicleDeadlinesEmptyOwner") : t("locationPage.vehicleDeadlinesEmpty")}</p>
+          // Terminów nieaktywnego pojazdu nikt już nie dodaje.
+          <EmptyState step={location.open ? addDeadlineStep(session) : null}>
+            {owner ? t("locationPage.vehicleDeadlinesEmptyOwner") : t("locationPage.vehicleDeadlinesEmpty")}
+          </EmptyState>
         ) : (
           <ul className="deadlines">
             {deadlines.map((deadline) => (
