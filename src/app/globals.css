@@ -788,10 +788,6 @@ a.button {
   font-weight: 700;
 }
 
-.location-lost {
-  border-color: var(--danger);
-}
-
 .board-section {
   display: grid;
   gap: 12px;

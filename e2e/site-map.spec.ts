@@ -57,6 +57,7 @@ test("budowa prawdziwej firmy stoi na mapie strony Budowy pod swoim adresem; wł
   await rataje.click();
   await expect(map).toContainText("ul. Piłsudskiego 12, Poznań");
   await expect(map).toContainText("2 szt.");
+  await expect(map.getByRole("link", { name: "Pokaż sprzęt →" })).toHaveAttribute("href", /^\/budowy\/[0-9a-f-]{36}$/);
   await map.getByRole("button", { name: "Wskaż nowe miejsce na mapie" }).click();
   await expect(map.getByRole("status")).toContainText("Kliknij na mapie, gdzie jest Rataje.");
   // Przeładowanie przed końcem zapisu przerwałoby go, więc czekamy na odpowiedź akcji serwera.

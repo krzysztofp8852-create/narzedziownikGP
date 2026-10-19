@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { type MessageKey, t } from "@/i18n/t";
 import { forgetAuthFailure, loadGoogleMaps } from "@/lib/google-maps-loader";
+import { locationPagePath } from "@/lib/location-path";
 import type { MapPin, MapPosition } from "@/registry/registry";
 import { moveMapPin } from "./lokalizacje/actions";
 
@@ -75,7 +77,7 @@ function Details({ pin, canEdit, onMove }: { pin: SiteMapPin | null; canEdit: bo
       <strong>{pin.name}</strong>
       <span className="muted">{pin.address}</span>
       <span>{t("board.toolCount", { count: pin.toolCount })}</span>
-      <a href={`#location-${pin.kind === "baza" ? "base" : pin.id}`}>{t("siteMap.openLocation")}</a>
+      <Link href={locationPagePath(pin.kind, pin.id)}>{t("siteMap.openLocation")}</Link>
       {canEdit && (
         <p>
           <button type="button" className="button button-quiet button-small" onClick={() => onMove(pin)}>

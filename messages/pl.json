@@ -219,7 +219,7 @@
     "failed": "Nie udało się wczytać mapy. Spróbuj odświeżyć stronę.",
     "liveHint": "Kliknij pinezkę, żeby zobaczyć szczegóły budowy.",
     "ownerHint": "Kliknij pinezkę, żeby zobaczyć szczegóły. Pinezkę w złym miejscu przeciągnij tam, gdzie jest budowa.",
-    "openLocation": "Pokaż na tablicy →",
+    "openLocation": "Pokaż sprzęt →",
     "movePin": "Wskaż nowe miejsce na mapie",
     "placing": "Kliknij na mapie, gdzie jest {name}.",
     "cancelPlacing": "Anuluj",
@@ -1053,7 +1053,7 @@
     "invalidDays": "Wpisz liczbę dni od 1 do {max}.",
     "baseAddressTitle": "Baza na mapie",
     "baseAddress": "Adres bazy",
-    "baseAddressHint": "Z adresem baza jest na mapie budów na tablicy. Zostaw puste, żeby jej tam nie było.",
+    "baseAddressHint": "Z adresem baza jest na mapie budów (Budowy → Mapa). Zostaw puste, żeby jej tam nie było.",
     "baseAddressSaved": "Zapisano adres bazy."
   },
   "subscription": {
@@ -2363,7 +2363,7 @@
       },
       "budowa": {
         "title": "Dodaj budowę",
-        "text": "Na tablicy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada. Jeśli sam prowadzisz budowę, wybierz siebie.",
+        "text": "Na stronie Budowy kliknij „Dodaj budowę”, wpisz nazwę i adres i wybierz kierownika, który za nią odpowiada. Jeśli sam prowadzisz budowę, wybierz siebie.",
         "link": "Przejdź do budów"
       },
       "narzedzia": {

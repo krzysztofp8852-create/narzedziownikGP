@@ -216,7 +216,7 @@
     "failed": "Couldn't load the map. Try refreshing the page.",
     "liveHint": "Click a pin to see site details.",
     "ownerHint": "Click a pin to see details. If a pin is in the wrong place, drag it to where the site is.",
-    "openLocation": "Show on board →",
+    "openLocation": "Show equipment →",
     "movePin": "Pick a new place on the map",
     "placing": "Click on the map where {name} is.",
     "cancelPlacing": "Cancel",
@@ -1050,7 +1050,7 @@
     "invalidDays": "Enter a number of days from 1 to {max}.",
     "baseAddressTitle": "Base on the map",
     "baseAddress": "Base address",
-    "baseAddressHint": "With an address, the Base appears on the sites map on the board. Leave empty to keep it off the map.",
+    "baseAddressHint": "With an address, the Base appears on the sites map (Sites → Map). Leave empty to keep it off the map.",
     "baseAddressSaved": "Base address saved."
   },
   "subscription": {
@@ -1752,7 +1752,7 @@
       },
       "budowa": {
         "title": "Add a site",
-        "text": "On the board, click “Add site”, enter a name and address and choose the site manager responsible for it. If you run the site yourself, choose yourself.",
+        "text": "On the Sites page, click “Add site”, enter a name and address and choose the site manager responsible for it. If you run the site yourself, choose yourself.",
         "link": "Go to sites"
       },
       "narzedzia": {
